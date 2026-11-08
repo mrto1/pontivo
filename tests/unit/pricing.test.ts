@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { platformFee, priceStay, grandTotal } from "../../src/domain/pricing";
+import { platformFee, priceStay, grandTotal, occupancyPrices, pricesVaryByOccupancy } from "../../src/domain/pricing";
 import { computeTouristTax, pickRule, TouristTaxUnconfirmedError } from "../../src/domain/tourist-tax";
 import { bpsOf, decimalToRappen, formatChf, rappenToDecimal } from "../../src/domain/money";
 
@@ -82,5 +82,23 @@ describe("Geld", () => {
     expect(decimalToRappen("180.5")).toBe(18050);
     expect(decimalToRappen("0.07")).toBe(7);
     expect(formatChf(123456)).toBe("CHF 1'234.56");
+  });
+});
+
+describe("Preise je Belegung (Channex per_person)", () => {
+  const plan = { baseOccupancy: 2, extraAdultRappen: 4000, singleDiscountRappen: 2000 };
+  it("1 bis max. Erwachsene wie auf der Buchungsseite", () => {
+    expect(occupancyPrices(18000, plan, 4)).toEqual([
+      { occupancy: 1, price_rappen: 16000 },
+      { occupancy: 2, price_rappen: 18000 },
+      { occupancy: 3, price_rappen: 22000 },
+      { occupancy: 4, price_rappen: 26000 },
+    ]);
+  });
+  it("per_person nur, wenn der Preis von der Belegung abhängt", () => {
+    expect(pricesVaryByOccupancy(plan, 2)).toBe(true);
+    expect(pricesVaryByOccupancy({ baseOccupancy: 2, extraAdultRappen: 4000, singleDiscountRappen: 0 }, 2)).toBe(false);
+    expect(pricesVaryByOccupancy({ baseOccupancy: 1, extraAdultRappen: 4000, singleDiscountRappen: 0 }, 1)).toBe(false);
+    expect(pricesVaryByOccupancy({ baseOccupancy: 2, extraAdultRappen: 0, singleDiscountRappen: 0 }, 4)).toBe(false);
   });
 });

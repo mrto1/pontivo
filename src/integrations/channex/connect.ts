@@ -1,6 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client";
 import { channexOutbox, hotels, ratePlans, roomTypes, type Hotel } from "../../db/schema";
+import { pricesVaryByOccupancy } from "../../domain/pricing";
 import { audit } from "../../services/audit";
 import { channex } from "./client";
 import { enqueueFullSync } from "./outbox-worker";
@@ -10,8 +11,9 @@ import { enqueueFullSync } from "./outbox-worker";
  * (Felder gemäss Channex-Doku create property / room type / rate plan) und die UUIDs speichern.
  * Bereits vorhandene IDs werden nicht neu angelegt.
  */
-// ASSUMPTION: Rate Plan "per_room" mit einer Belegungsoption = base_occupancy (primär). Zuschläge für zusätzliche
-// Erwachsene/Einzelrabatt werden nicht an Channex übertragen (QUESTIONS.md).
+// Tarife ohne Zuschlag/Einzelrabatt: "per_room" mit einer Belegungsoption = base_occupancy (primär).
+// Tarife, deren Preis von der Anzahl Erwachsener abhängt: "per_person" mit je einer Option für 1 … max_adults
+// (Rate-Plans-Doku), primär = base_occupancy; die Preise je Belegung sendet der Outbox-Worker als `rates`.
 export async function createInChannex(hotel: Hotel, actor: string) {
   let propertyId = hotel.channexPropertyId;
   if (!propertyId) {
@@ -50,22 +52,28 @@ export async function createInChannex(hotel: Hotel, actor: string) {
     const rps = await db().select().from(ratePlans).where(and(eq(ratePlans.roomTypeId, rt.id), eq(ratePlans.active, true)));
     for (const rp of rps) {
       if (rp.channexRatePlanId) continue;
+      const primary = Math.min(rp.baseOccupancy, rt.maxAdults);
+      const perPerson = pricesVaryByOccupancy(rp, rt.maxAdults);
       const res = await channex.createRatePlan({
         title: rp.name,
         property_id: propertyId,
         room_type_id: rtId,
         currency: hotel.currency,
-        sell_mode: "per_room",
+        sell_mode: perPerson ? "per_person" : "per_room",
         rate_mode: "manual",
-        options: [{ occupancy: Math.min(rp.baseOccupancy, rt.maxAdults), is_primary: true }],
+        options: perPerson
+          ? Array.from({ length: rt.maxAdults }, (_, i) => ({ occupancy: i + 1, is_primary: i + 1 === primary }))
+          : [{ occupancy: primary, is_primary: true }],
       });
-      await db().update(ratePlans).set({ channexRatePlanId: res.data.id }).where(eq(ratePlans.id, rp.id));
+      await db().update(ratePlans).set({ channexRatePlanId: res.data.id, channexPerPerson: perPerson }).where(eq(ratePlans.id, rp.id));
     }
   }
   await audit(db(), { hotelId: hotel.id, actor, action: "channex.create", entity: "hotel", entityId: hotel.id, details: { propertyId } });
 }
 
 /** Bestehende Channex-IDs von Hand zuordnen (Hotel hat schon eine Property in Channex) */
+// ASSUMPTION: Von Hand zugeordnete Tarife gelten als "per_room" (channex_per_person bleibt unverändert, Standard false);
+// es wird ein Preis für die Basisbelegung gesendet (QUESTIONS.md).
 export async function saveMapping(
   hotel: Hotel,
   m: { propertyId: string | null; roomTypes: Record<string, string | null>; ratePlans: Record<string, string | null> },

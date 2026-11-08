@@ -124,6 +124,8 @@ export const ratePlans = pgTable("rate_plans", {
   extraAdultRappen: integer("extra_adult_rappen").notNull().default(0),
   singleDiscountRappen: integer("single_discount_rappen").notNull().default(0),
   channexRatePlanId: uuid("channex_rate_plan_id").unique(),
+  /** Tarif ist in Channex als sell_mode "per_person" angelegt → Preise je Belegung senden */
+  channexPerPerson: boolean("channex_per_person").notNull().default(false),
   active: boolean("active").notNull().default(true),
   i18n: jsonb("i18n").$type<{ en?: { name?: string } }>().notNull().default({}),
   createdAt: ts("created_at").notNull().defaultNow(),

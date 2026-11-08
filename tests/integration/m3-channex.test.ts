@@ -140,6 +140,23 @@ describe("M3 ARI senden", () => {
     expect(ob.every((o) => o.status === "sent")).toBe(true);
   });
 
+  it("Tarif per_person → POST /restrictions mit Preisen je Belegung statt einem Preis", async () => {
+    const h = await channexHotel();
+    const rp = h.rooms[0].plans[0];
+    await db().update(ratePlans).set({ channexPerPerson: true, baseOccupancy: 2, extraAdultRappen: 4000, singleDiscountRappen: 2000 }).where(eq(ratePlans.id, rp.id));
+    const from = inDays(10);
+    await updateRates(h.hotel.id, rp.id, from, from, { priceRappen: 20000 }, { actor: "test" });
+    await runOutboxOnce(new OutboxState());
+    const v = mine(h.prop, "/restrictions")[0].body.values;
+    expect(v).toHaveLength(1);
+    expect(v[0].rate).toBeUndefined();
+    // Doppel: max. 2 Erwachsene → 1 Person mit Einzelrabatt, 2 Personen Grundpreis
+    expect(v[0].rates).toEqual([
+      { occupancy: 1, rate: "180.00" },
+      { occupancy: 2, rate: "200.00" },
+    ]);
+  });
+
   it("Hold → POST /availability mit reduziertem Wert", async () => {
     const h = await channexHotel();
     const rt = h.rooms[0].roomType;

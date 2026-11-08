@@ -34,6 +34,8 @@ export type RestrictionValue = {
   date_from: string;
   date_to: string;
   rate?: string;
+  /** Statt `rate` bei Tarifen mit mehreren Belegungen (ARI-Doku: rates[].occupancy/rate) */
+  rates?: { occupancy: number; rate: string }[];
   min_stay_arrival?: number;
   max_stay?: number;
   closed_to_arrival?: boolean;

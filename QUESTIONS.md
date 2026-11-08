@@ -11,7 +11,9 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Hotels mit eigenem Channel-Manager (z. B. Hotel-Spider) statt Channex.
 - [ ] Rechtstexte: AGB und Datenschutzerklärung für Gäste liegen als Entwurf vor (`src/legal/texts.ts`) – juristisch prüfen lassen. Es fehlt noch der Vertrag mit dem Hotel inkl. Auftragsbearbeitungsvereinbarung. Betreiberangaben in `PLATFORM_*` setzen.
 - [ ] Channex-Feed: Namen der Paginierungsparameter (Doku nennt sie nicht).
-- [ ] Channex: Zuschläge pro Person (extra_adult, Einzelrabatt) werden nicht übertragen – Rate Plan nur mit Basisbelegung.
+- [x] Channex: Zuschläge pro Person (extra_adult, Einzelrabatt) werden übertragen – Tarife mit Zuschlag/Rabatt als `per_person` mit Preis je Belegung (gegen Channex-Staging geprüft, 8.11.2026).
+- [ ] Channex: Wird bei einem verbundenen `per_room`-Tarif später ein Zuschlag/Einzelrabatt eingetragen, bleibt der Tarif in Channex `per_room` (nur Basispreis). Lösung offen: Tarif in Channex umstellen oder neu verbinden.
+- [ ] Channex lehnt zwei Tarife mit gleichem Namen im selben Zimmertyp ab ("Duplication in Rate Plan title"). Pontivo prüft das beim Anlegen noch nicht.
 - [ ] Stripe/TWINT: Branchencode (MCC) für Hotels – TWINT ist für einzelne Branchen eingeschränkt. Mit Stripe klären, bevor das erste Hotel live geht.
 
 ## Getroffene Annahmen (v1)
@@ -31,6 +33,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 | Zimmer sperren | `blocked` wird auf `total` begrenzt | `src/services/inventory.ts` |
 | Stornierung durch Gast | Nur bis zum Anreisetag; danach nur durch das Hotel | `src/services/bookings.ts` |
 | Channex-Outbox | Vergangene Tage weggelassen, höchstens 500 Tage in die Zukunft (Channex `state_length`); fehlende Preiszeile → `stop_sell`; `max_stay` NULL → 0 | `src/integrations/channex/outbox-worker.ts` |
+| Channex per_person | Primäre Belegung = `base_occupancy`; Optionen 1 … `max_adults`; Preise je Belegung nach `priceForNight` ohne Kinder; von Hand zugeordnete Tarife gelten als `per_room` | `src/integrations/channex/connect.ts`, `outbox-worker.ts` |
 | Channex-Feed | Paginierung durch erneutes Laden der ersten Seite nach den Acks; fehlgeschlagene Revisionen blockieren weitere Revisionen derselben Buchung im Lauf | `src/integrations/channex/feed.ts` |
 | OTA-Buchungen | Kurtaxe 0 (unbekannt), `days` fehlt → Betrag gleichmässig verteilt | `src/integrations/channex/feed.ts` |
 | Monatsabrechnung | Stichtag Bestätigung (Hotelzeit), Rückerstattungen beim Buchungsmonat, Netto-Gebühr anteilig; PDF über Druckansicht des Browsers | `src/services/report.ts` |

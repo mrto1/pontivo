@@ -135,8 +135,10 @@ export async function updateRatePlan(hotelId: string, ratePlanId: string, input:
     const [old] = await tx.select().from(ratePlans).where(and(eq(ratePlans.id, ratePlanId), eq(ratePlans.hotelId, hotelId)));
     if (!old) throw new RoomError("Tarif nicht gefunden");
     const [rp] = await tx.update(ratePlans).set(v).where(eq(ratePlans.id, ratePlanId)).returning();
-    // aktiv/inaktiv wirkt bei Channex als Verkaufsstopp → neu senden
-    if (old.active !== v.active) await enqueueRestrictions(tx, hotelId, ratePlanId, today, addDays(today, HORIZON_DAYS - 1));
+    // aktiv/inaktiv wirkt bei Channex als Verkaufsstopp; Belegung/Zuschläge ändern die Preise je Belegung → neu senden
+    const pricingChanged =
+      old.baseOccupancy !== rp.baseOccupancy || old.extraAdultRappen !== rp.extraAdultRappen || old.singleDiscountRappen !== rp.singleDiscountRappen;
+    if (old.active !== v.active || pricingChanged) await enqueueRestrictions(tx, hotelId, ratePlanId, today, addDays(today, HORIZON_DAYS - 1));
     await audit(tx, { hotelId, actor, action: "rate_plan.update", entity: "rate_plan", entityId: ratePlanId, details: v });
     return rp;
   });

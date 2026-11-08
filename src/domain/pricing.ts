@@ -24,6 +24,22 @@ export function priceForNight(
   return p;
 }
 
+/**
+ * Preise je Anzahl Erwachsene (1 … maxAdults) für Channex-Tarife "per_person".
+ * Gleiche Rechnung wie auf der Buchungsseite (ohne Kinder).
+ */
+export function occupancyPrices(baseRappen: number, plan: PlanPricing, maxAdults: number): { occupancy: number; price_rappen: number }[] {
+  const out: { occupancy: number; price_rappen: number }[] = [];
+  for (let n = 1; n <= Math.max(1, maxAdults); n++) out.push({ occupancy: n, price_rappen: priceForNight(baseRappen, plan, n, 0) });
+  return out;
+}
+
+/** Hängt der Preis von der Anzahl Erwachsener ab? Dann braucht Channex einen Tarif "per_person". */
+export function pricesVaryByOccupancy(plan: PlanPricing, maxAdults: number): boolean {
+  const p = occupancyPrices(100_000, plan, maxAdults).map((o) => o.price_rappen);
+  return p.some((x) => x !== p[0]);
+}
+
 export function priceStay(
   rates: { night: Day; priceRappen: number }[],
   plan: PlanPricing,

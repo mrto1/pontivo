@@ -3,6 +3,7 @@ import { db } from "../../db/client";
 import { channexOutbox, hotels, inventoryDays, ratePlans, ratesDays, roomTypes, type Hotel } from "../../db/schema";
 import { addDays, nightsOf, todayIn } from "../../domain/dates";
 import { rappenToDecimal } from "../../domain/money";
+import { occupancyPrices } from "../../domain/pricing";
 import { audit } from "../../services/audit";
 import { enqueueAvailability, enqueueRestrictions } from "../../services/outbox";
 import { HORIZON_DAYS } from "../../services/inventory";
@@ -96,16 +97,21 @@ async function buildAvailability(hotel: Hotel, entries: Entry[], today: string):
   return values;
 }
 
-type R = { rate: string | null; min: number; max: number; cta: boolean; ctd: boolean; ss: boolean };
+type R = { rate: string | null; rates: { occupancy: number; rate: string }[] | null; min: number; max: number; cta: boolean; ctd: boolean; ss: boolean };
 
 async function buildRestrictions(hotel: Hotel, entries: Entry[], today: string): Promise<RestrictionValue[]> {
   const byRp = new Map<string, [string, string][]>();
   for (const e of entries) if (e.ratePlanId) byRp.set(e.ratePlanId, [...(byRp.get(e.ratePlanId) ?? []), [e.dateFrom, e.dateTo]]);
   if (!byRp.size) return [];
   const rps = await db().select().from(ratePlans).where(and(eq(ratePlans.hotelId, hotel.id), inArray(ratePlans.id, [...byRp.keys()])));
+  const maxAdults = new Map(
+    (await db().select({ id: roomTypes.id, maxAdults: roomTypes.maxAdults }).from(roomTypes).where(eq(roomTypes.hotelId, hotel.id))).map((r) => [r.id, r.maxAdults]),
+  );
   const values: RestrictionValue[] = [];
   for (const rp of rps) {
     if (!rp.channexRatePlanId) continue;
+    const perPerson = rp.channexPerPerson;
+    const occupancies = maxAdults.get(rp.roomTypeId) ?? rp.baseOccupancy;
     for (const [f, t] of clamp(mergeRanges(byRp.get(rp.id)!), today)) {
       const rows = await db()
         .select()
@@ -115,9 +121,12 @@ async function buildRestrictions(hotel: Hotel, entries: Entry[], today: string):
       const valueOf = (d: string): R => {
         const r = by.get(d);
         // ASSUMPTION: Fehlende Zeile = nicht buchbar → nur stop_sell senden. max_stay NULL → 0 (keine Begrenzung).
-        if (!r) return { rate: null, min: 1, max: 0, cta: false, ctd: false, ss: true };
+        if (!r) return { rate: null, rates: null, min: 1, max: 0, cta: false, ctd: false, ss: true };
         return {
           rate: rappenToDecimal(r.priceRappen),
+          rates: perPerson
+            ? occupancyPrices(r.priceRappen, rp, occupancies).map((o) => ({ occupancy: o.occupancy, rate: rappenToDecimal(o.price_rappen) }))
+            : null,
           min: r.minStayArrival,
           max: r.maxStay ?? 0,
           cta: r.closedToArrival,
@@ -125,7 +134,8 @@ async function buildRestrictions(hotel: Hotel, entries: Entry[], today: string):
           ss: r.stopSell || !rp.active,
         };
       };
-      const same = (a: R, b: R) => a.rate === b.rate && a.min === b.min && a.max === b.max && a.cta === b.cta && a.ctd === b.ctd && a.ss === b.ss;
+      const same = (a: R, b: R) =>
+        a.rate === b.rate && JSON.stringify(a.rates) === JSON.stringify(b.rates) && a.min === b.min && a.max === b.max && a.cta === b.cta && a.ctd === b.ctd && a.ss === b.ss;
       for (const r of runs(nightsOf(f, addDays(t, 1)), valueOf, same)) {
         const v = r.value;
         values.push(
@@ -136,7 +146,7 @@ async function buildRestrictions(hotel: Hotel, entries: Entry[], today: string):
                 rate_plan_id: rp.channexRatePlanId,
                 date_from: r.from,
                 date_to: r.to,
-                rate: v.rate,
+                ...(v.rates ? { rates: v.rates } : { rate: v.rate }),
                 min_stay_arrival: v.min,
                 max_stay: v.max,
                 closed_to_arrival: v.cta,
