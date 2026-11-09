@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import type { CheckoutArgs, PaymentProvider, RefundArgs } from "./provider";
+import type { CheckoutArgs, PaymentCheckoutArgs, PaymentProvider, RefundArgs } from "./provider";
 
 /**
  * PAYMENT_PROVIDER=fake (SPEC 12, M1): keine echte Zahlung.
@@ -12,6 +12,10 @@ export class FakePaymentProvider implements PaymentProvider {
 
   async createCheckout(args: CheckoutArgs) {
     return { url: args.successUrl, sessionId: `fake_cs_${args.booking.id}` };
+  }
+
+  async createPaymentCheckout(args: PaymentCheckoutArgs) {
+    return { url: args.successUrl, sessionId: `fake_cs_${args.idempotencyKey}` };
   }
 
   async refund(args: RefundArgs) {

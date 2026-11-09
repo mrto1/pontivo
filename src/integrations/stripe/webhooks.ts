@@ -1,6 +1,7 @@
+import { cancelPendingVoucher, markVoucherPaid } from "../../services/vouchers";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import { bookings, guests, hotels, inboundEvents, payments } from "../../db/schema";
+import { bookings, guests, hotels, inboundEvents, payments, vouchers } from "../../db/schema";
 import { env, requireEnv } from "../../env";
 import { confirmBooking, releaseHold } from "../../services/bookings";
 import { audit } from "../../services/audit";
@@ -73,7 +74,24 @@ async function paymentMethodOf(paymentIntentId: string, account: string): Promis
   }
 }
 
+/** Gutschein zur Session: nur, wenn das Ereignis vom Konto des Hotels kommt */
+async function voucherForSession(session: Stripe.Checkout.Session, account: string | undefined) {
+  const id = session.metadata?.voucher_id;
+  if (!id) return null;
+  const [v] = await db().select().from(vouchers).where(eq(vouchers.id, id));
+  if (!v) return null;
+  const [h] = await db().select().from(hotels).where(eq(hotels.id, v.hotelId));
+  if (!h || !account || h.stripeAccountId !== account) throw new Error(`Ereignis von Konto ${account} passt nicht zum Hotel des Gutscheins ${id}`);
+  return v;
+}
+
 async function onPaid(session: Stripe.Checkout.Session, account: string) {
+  const voucher = await voucherForSession(session, account);
+  if (voucher) {
+    const piId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+    await markVoucherPaid(voucher.id, { sessionId: session.id, paymentIntentId: piId });
+    return;
+  }
   const found = await bookingForSession(session, account);
   if (!found) return;
   const piId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
@@ -111,11 +129,15 @@ async function processEvent(event: Stripe.Event) {
       return;
     }
     case "checkout.session.async_payment_failed": {
+      const vf = await voucherForSession(event.data.object as Stripe.Checkout.Session, account);
+      if (vf) return cancelPendingVoucher(vf.id);
       const found = await bookingForSession(event.data.object as Stripe.Checkout.Session, account);
       if (found) await releaseHold(found.booking.id, { reason: "payment_failed", actor: "stripe", paymentFailed: true });
       return;
     }
     case "checkout.session.expired": {
+      const v = await voucherForSession(event.data.object as Stripe.Checkout.Session, account);
+      if (v) return cancelPendingVoucher(v.id);
       const found = await bookingForSession(event.data.object as Stripe.Checkout.Session, account);
       if (found) await releaseHold(found.booking.id, { reason: "checkout_expired", actor: "stripe", paymentFailed: true });
       return;

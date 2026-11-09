@@ -2,8 +2,10 @@
 import { useState } from "react";
 import { t, type Locale } from "@/src/i18n/dict";
 
-export function SearchBar({ action, locale, defaults, today }: {
+export function SearchBar({ action, locale, defaults, today, plan }: {
   action: string;
+  /** Angebot/Tarif beibehalten (Baustein «Angebote») */
+  plan?: string;
   locale: Locale;
   today: string;
   defaults: { checkin?: string; checkout?: string; adults?: number; children?: number; ages?: number[] };
@@ -12,6 +14,7 @@ export function SearchBar({ action, locale, defaults, today }: {
   const [children, setChildren] = useState(defaults.children ?? 0);
   return (
     <form className="card searchbar" action={action} method="get">
+      {plan ? <input type="hidden" name="plan" value={plan} /> : null}
       <div>
         <label htmlFor="checkin">{d.checkin}</label>
         <input id="checkin" type="date" name="checkin" min={today} defaultValue={defaults.checkin} required />

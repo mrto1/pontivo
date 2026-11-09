@@ -35,6 +35,7 @@ const holdOnly: PaymentProvider = {
   name: "fake",
   confirmsImmediately: false,
   async createCheckout(a) { return { url: "https://checkout.test/" + a.booking.id, sessionId: "cs_" + a.booking.id }; },
+  async createPaymentCheckout(a) { return { url: "https://checkout.test/" + a.idempotencyKey, sessionId: "cs_" + a.idempotencyKey }; },
   async refund() { return { refundId: "re_1" }; },
 };
 

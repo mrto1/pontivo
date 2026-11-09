@@ -12,6 +12,22 @@ export type CheckoutArgs = {
   description: string;
 };
 
+/** Einfache Zahlung ohne Buchung (z. B. Gutschein) – Direct Charge aufs Hotelkonto mit Plattformgebühr */
+export type PaymentCheckoutArgs = {
+  hotel: Hotel;
+  amountRappen: number;
+  feeRappen: number;
+  description: string;
+  email: string;
+  lang: "de" | "en" | "fr" | "it" | "nl";
+  successUrl: string;
+  cancelUrl: string;
+  /** z. B. { voucher_id } – kommt im Webhook zurück */
+  metadata: Record<string, string>;
+  reference: string;
+  idempotencyKey: string;
+};
+
 export type RefundArgs = {
   hotel: Hotel;
   booking: Booking;
@@ -24,6 +40,7 @@ export interface PaymentProvider {
   /** true: Zahlung gilt sofort als erfolgt (nur Entwicklung/Tests) */
   readonly confirmsImmediately: boolean;
   createCheckout(args: CheckoutArgs): Promise<{ url: string; sessionId: string }>;
+  createPaymentCheckout(args: PaymentCheckoutArgs): Promise<{ url: string; sessionId: string }>;
   refund(args: RefundArgs): Promise<{ refundId: string }>;
 }
 

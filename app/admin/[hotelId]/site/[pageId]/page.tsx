@@ -7,7 +7,8 @@ import { RichTextarea } from "@/components/admin/RichTextarea";
 import { hotelLocales, isLocale, LOCALE_NAMES, LOCALES, type Locale } from "@/src/i18n/dict";
 import { translatePage, translationEnabled, translationsLeft, TranslateError } from "@/src/services/translate";
 import { publicBase } from "@/src/services/brand";
-import { BLOCK_TYPES, type Block, type BlockType, type L } from "@/src/domain/blocks";
+import { BLOCK_TYPES, INQUIRY_KINDS, TIP_CATEGORIES, type Block, type BlockType, type L } from "@/src/domain/blocks";
+import { listRooms } from "@/src/services/rooms";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,19 @@ async function saveMeta(f: FormData) {
   });
 }
 
+/** Wiederholte Einträge (it0, it1, …) einlesen, leere weglassen */
+function rows(f: FormData, read: (k: string) => unknown): unknown[] {
+  const out: unknown[] = [];
+  const keys = [...f.keys()];
+  for (let i = 0; i < 40; i++) {
+    const k = `it${i}`;
+    if (!keys.some((x) => x.startsWith(`${k}.`))) continue;
+    const v = read(k);
+    if (v) out.push(v);
+  }
+  return out;
+}
+
 const lookFrom = (f: FormData) => ({ align: s(f, "align") || "auto", size: s(f, "size") || "normal" });
 
 /** Formularfelder eines Bausteins in Daten umwandeln */
@@ -70,9 +84,34 @@ function blockFromForm(f: FormData, type: BlockType, id: string, alts: Map<strin
       }
       return { id, type, heading: l10n(f, "heading"), items };
     }
-    case "location": return { id, type, heading: l10n(f, "heading"), address: s(f, "address"), body: l10n(f, "body"), ...lookFrom(f) };
+    case "location": {
+      const m = /^\s*(-?\d{1,2}(?:\.\d+)?)\s*[,; ]\s*(-?\d{1,3}(?:\.\d+)?)\s*$/.exec(s(f, "coords"));
+      return { id, type, heading: l10n(f, "heading"), address: s(f, "address"), body: l10n(f, "body"), ...lookFrom(f), lat: m ? Number(m[1]) : null, lng: m ? Number(m[2]) : null };
+    }
     case "notice": return { id, type, body: l10n(f, "body"), ...lookFrom(f) };
     case "downloads": return { id, type, heading: l10n(f, "heading"), files: f.getAll("files").map(String) };
+    case "reviews": return { id, type, heading: l10n(f, "heading"), moreUrl: s(f, "moreUrl") || null, items: rows(f, (k) => {
+      const quote = l10n(f, `${k}.quote`);
+      if (!Object.values(quote).some(Boolean)) return null;
+      const r = Number(s(f, `${k}.rating`));
+      return { quote, author: s(f, `${k}.author`), source: s(f, `${k}.source`), date: s(f, `${k}.date`), rating: r >= 1 && r <= 5 ? r : null, url: s(f, `${k}.url`) || null };
+    }) };
+    case "faq": return { id, type, heading: l10n(f, "heading"), items: rows(f, (k) => {
+      const q = l10n(f, `${k}.q`), a = l10n(f, `${k}.a`);
+      return Object.values(q).some(Boolean) ? { q, a } : null;
+    }) };
+    case "offers": return { id, type, heading: l10n(f, "heading"), items: rows(f, (k) => {
+      const title = l10n(f, `${k}.title`);
+      if (!Object.values(title).some(Boolean)) return null;
+      return { title, text: l10n(f, `${k}.text`), price: l10n(f, `${k}.price`), image: img(`${k}.image`), ratePlanId: s(f, `${k}.plan`) || null, nights: Math.max(1, Number(s(f, `${k}.nights`)) || 1) };
+    }) };
+    case "tips": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro"), items: rows(f, (k) => {
+      const title = l10n(f, `${k}.title`);
+      if (!Object.values(title).some(Boolean)) return null;
+      return { title, text: l10n(f, `${k}.text`), distance: l10n(f, `${k}.distance`), image: img(`${k}.image`), category: s(f, `${k}.category`) || "ausflug", season: s(f, `${k}.season`) || "all", url: s(f, `${k}.url`) || null };
+    }) };
+    case "inquiry": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro"), kinds: f.getAll("kinds").map(String) };
+    case "voucher": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro") };
   }
 }
 
@@ -197,7 +236,16 @@ function Look({ b }: { b: { align: string; size: string } }) {
   );
 }
 
-function BlockFields({ b, lib, docs, hotelId, langs }: { b: Block; lib: Lib; docs: Docs; hotelId: string; langs: Langs }) {
+/** Wiederholte Einträge im Editor (it0, it1, …) */
+function Items(n: number, render: (i: number, key: string) => React.ReactNode) {
+  return Array.from({ length: Math.min(n, 40) }, (_, i) => (
+    <fieldset key={i} className="item-group"><div className="stack">{render(i, `it${i}`)}</div></fieldset>
+  ));
+}
+const TIP_LABEL: Record<string, string> = { wandern: "Wandern", ausflug: "Ausflug", kultur: "Kultur", essen: "Essen & Trinken", winter: "Winter", familie: "Familie", see: "See & Wasser" };
+const KIND_LABEL: Record<string, string> = { group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
+
+function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: Block; lib: Lib; docs: Docs; hotelId: string; langs: Langs; plans: { id: string; label: string }[]; hotelEmail: string }) {
   switch (b.type) {
     case "hero":
       return (<>
@@ -252,12 +300,96 @@ function BlockFields({ b, lib, docs, hotelId, langs }: { b: Block; lib: Lib; doc
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
         <div><label>Adresse für die Route (leer = Hoteladresse)</label><input name="address" defaultValue={b.address} /></div>
         <LField name="body" label="Anreise-Text" value={b.body} rows={4} langs={langs} />
+        <div><label>Koordinaten für die Karte (optional, z. B. 47.0405, 9.0679)</label><input name="coords" defaultValue={b.lat !== null && b.lng !== null ? `${b.lat}, ${b.lng}` : ""} placeholder="Breite, Länge" />
+          <p className="muted small">In Google Maps: Rechtsklick auf das Hotel → die Zahlen oben anklicken (kopiert sie). Die Karte (OpenStreetMap) lädt für Gäste erst nach einem Klick.</p></div>
         <Look b={b} />
       </>);
     case "notice":
       return (<><LField name="body" label="Hinweis" value={b.body} rows={3} max={1000} langs={langs} /><Look b={b} /></>);
     case "downloads":
       return (<><LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} /><DocPick docs={docs} value={b.files} hotelId={hotelId} /></>);
+    case "reviews":
+      return (<>
+        <p className="notice small">Nur <strong>echte Bewertungen</strong> verwenden – mit Name (oder Vorname und Initial) und Quelle, z. B. Google, Booking.com, Gästebuch. Erfundene oder veränderte Bewertungen sind unlauter (UWG) und schaden dem Vertrauen.</p>
+        <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
+        {Items(b.items.length + 2, (i, k) => {
+          const it = b.items[i];
+          return (<>
+            <LField name={`${k}.quote`} label={`Bewertung ${i + 1}`} value={it?.quote} rows={3} max={800} langs={langs} />
+            <div className="form-grid">
+              <div><label>Name</label><input name={`${k}.author`} defaultValue={it?.author ?? ""} placeholder="z. B. Sandra M." maxLength={80} /></div>
+              <div><label>Quelle</label><input name={`${k}.source`} defaultValue={it?.source ?? ""} placeholder="z. B. Google" list="review-sources" maxLength={60} /></div>
+              <div><label>Monat</label><input name={`${k}.date`} type="month" defaultValue={it?.date ?? ""} /></div>
+              <div><label>Sterne</label><select name={`${k}.rating`} defaultValue={it?.rating ?? ""}><option value="">–</option>{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}</option>)}</select></div>
+              <div><label>Link zur Bewertung (optional)</label><input name={`${k}.url`} defaultValue={it?.url ?? ""} placeholder="https://…" /></div>
+            </div>
+          </>);
+        })}
+        <datalist id="review-sources"><option value="Google" /><option value="Booking.com" /><option value="Tripadvisor" /><option value="Gästebuch" /><option value="E-Mail" /></datalist>
+        <div><label>Link «Alle Bewertungen ansehen» (z. B. Google)</label><input name="moreUrl" defaultValue={b.moreUrl ?? ""} placeholder="https://g.page/…" /></div>
+      </>);
+    case "faq":
+      return (<>
+        <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
+        <p className="muted small">Typisch: Parkplatz, Haustiere, Check-in spät, Frühstückszeiten, Anreise mit ÖV, Kinderbetten, Barrierefreiheit.</p>
+        {Items(b.items.length + 3, (i, k) => (<>
+          <LField name={`${k}.q`} label={`Frage ${i + 1}`} value={b.items[i]?.q} max={300} langs={langs} />
+          <LField name={`${k}.a`} label="Antwort" value={b.items[i]?.a} rows={3} max={2000} langs={langs} />
+        </>))}
+      </>);
+    case "offers":
+      return (<>
+        <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
+        <p className="muted small">Ein Angebot verweist auf einen <a href={`/admin/${hotelId}/rooms`}>Tarif</a>, z. B. «3 Nächte mit Halbpension» mit Mindestaufenthalt 3 Nächte. Der Knopf «Angebot buchen» zeigt dann nur diesen Tarif.</p>
+        {Items(b.items.length + 1, (i, k) => {
+          const it = b.items[i];
+          return (<>
+            <LField name={`${k}.title`} label={`Angebot ${i + 1}`} value={it?.title} max={120} langs={langs} />
+            <LField name={`${k}.text`} label="Beschreibung" value={it?.text} rows={3} max={1000} langs={langs} />
+            <LField name={`${k}.price`} label="Preis-Hinweis (optional)" value={it?.price} max={80} langs={langs} />
+            <div className="form-grid">
+              <div><label>Tarif</label><select name={`${k}.plan`} defaultValue={it?.ratePlanId ?? ""}><option value="">alle Tarife</option>{plans.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
+              <div><label>Nächte vorschlagen</label><input name={`${k}.nights`} type="number" min={1} max={60} defaultValue={it?.nights ?? 2} /></div>
+            </div>
+            <ImagePick name={`${k}.image`} lib={lib} value={it?.image?.url} />
+          </>);
+        })}
+      </>);
+    case "tips":
+      return (<>
+        <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
+        <LField name="intro" label="Einleitung" value={b.intro} rows={2} max={1000} langs={langs} />
+        <p className="muted small">Die Tipps nutzt später auch der KI-Chat, um Gästen Ausflüge zu empfehlen. Je genauer (Dauer, Saison, für wen), desto besser.</p>
+        {Items(b.items.length + 2, (i, k) => {
+          const it = b.items[i];
+          return (<>
+            <LField name={`${k}.title`} label={`Tipp ${i + 1}`} value={it?.title} max={120} langs={langs} />
+            <LField name={`${k}.text`} label="Beschreibung" value={it?.text} rows={3} max={1000} langs={langs} />
+            <LField name={`${k}.distance`} label="Entfernung / Dauer" value={it?.distance} max={80} langs={langs} />
+            <div className="form-grid">
+              <div><label>Kategorie</label><select name={`${k}.category`} defaultValue={it?.category ?? "ausflug"}>{TIP_CATEGORIES.map((c) => <option key={c} value={c}>{TIP_LABEL[c]}</option>)}</select></div>
+              <div><label>Saison</label><select name={`${k}.season`} defaultValue={it?.season ?? "all"}><option value="all">ganzjährig</option><option value="summer">Sommer</option><option value="winter">Winter</option></select></div>
+              <div><label>Link (optional)</label><input name={`${k}.url`} defaultValue={it?.url ?? ""} placeholder="https://…" /></div>
+            </div>
+            <ImagePick name={`${k}.image`} lib={lib} value={it?.image?.url} />
+          </>);
+        })}
+      </>);
+    case "inquiry":
+      return (<>
+        <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
+        <LField name="intro" label="Einleitung" value={b.intro} rows={2} max={1000} langs={langs} />
+        <fieldset className="plain"><legend className="small muted">Anlässe zur Auswahl</legend>
+          <div className="weekdays">{INQUIRY_KINDS.map((k) => <label key={k}><input type="checkbox" name="kinds" value={k} defaultChecked={b.kinds.includes(k)} />{KIND_LABEL[k]}</label>)}</div>
+        </fieldset>
+        <p className="muted small">Anfragen kommen per E-Mail an {hotelEmail} und stehen unter <a href={`/admin/${hotelId}/inquiries`}>Anfragen</a>.</p>
+      </>);
+    case "voucher":
+      return (<>
+        <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
+        <LField name="intro" label="Einleitung" value={b.intro} rows={2} max={1000} langs={langs} />
+        <p className="muted small">Beträge, Gültigkeit und Ein/Aus stellen Sie unter <a href={`/admin/${hotelId}/vouchers`}>Gutscheine</a> ein.</p>
+      </>);
   }
 }
 
@@ -275,6 +407,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
   const canEdit = atLeast(role, "manager");
   const lib = await photoLibrary(hotel);
   const docs = documentLibrary(hotel);
+  const plans = (await listRooms(hotel.id)).flatMap(({ roomType, plans }) => plans.map((p) => ({ id: p.id, label: `${roomType.name} · ${p.name}${p.minNights > 1 ? ` (ab ${p.minNights} Nächten)` : ""}` })));
   const isHome = page.slug === "";
   const offered = hotelLocales(hotel);
   const extra: Locale[] = offered.filter((l) => l !== "de");
@@ -364,7 +497,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
             <input type="hidden" name="blockId" value={b.id} />
             <input type="hidden" name="type" value={b.type} />
             <fieldset disabled={!canEdit} className="plain">
-              <div className="stack"><BlockFields b={b} lib={lib} docs={docs} hotelId={hotel.id} langs={langs} /></div>
+              <div className="stack"><BlockFields b={b} lib={lib} docs={docs} hotelId={hotel.id} langs={langs} plans={plans} hotelEmail={hotel.contactEmail} /></div>
             </fieldset>
             {canEdit ? <button className="btn small">Baustein speichern</button> : null}
           </form>

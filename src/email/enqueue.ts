@@ -2,6 +2,10 @@ import type { Executor } from "../db/client";
 import { emailOutbox } from "../db/schema";
 
 export type TemplateName =
+  | "voucher_purchased"
+  | "hotel_voucher_sold"
+  | "inquiry_received"
+  | "inquiry_confirmation"
   | "booking_confirmed"
   | "hotel_new_booking"
   | "booking_cancelled"

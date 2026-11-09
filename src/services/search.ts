@@ -96,6 +96,10 @@ export async function searchOffers(
   for (const rt of rts) {
     const rtInv = inv.filter((i) => i.roomTypeId === rt.id);
     for (const rp of rps.filter((p) => p.roomTypeId === rt.id)) {
+      if (nights.length < rp.minNights) {
+        rejected.push({ roomTypeId: rt.id, ratePlanId: rp.id, reason: "min_stay" });
+        continue;
+      }
       const res = evaluateOffer(input, rt, rtInv, rates.filter((r) => r.ratePlanId === rp.id));
       if (!res.ok) {
         rejected.push({ roomTypeId: rt.id, ratePlanId: rp.id, reason: res.reason });

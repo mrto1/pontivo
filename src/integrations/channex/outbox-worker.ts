@@ -127,7 +127,7 @@ async function buildRestrictions(hotel: Hotel, entries: Entry[], today: string):
           rates: perPerson
             ? occupancyPrices(r.priceRappen, rp, occupancies).map((o) => ({ occupancy: o.occupancy, rate: rappenToDecimal(o.price_rappen) }))
             : null,
-          min: r.minStayArrival,
+          min: Math.max(r.minStayArrival, rp.minNights),
           max: r.maxStay ?? 0,
           cta: r.closedToArrival,
           ctd: r.closedToDeparture,

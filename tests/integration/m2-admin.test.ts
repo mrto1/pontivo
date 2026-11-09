@@ -69,6 +69,8 @@ describe("Admin-Mandantentrennung und Rollen", () => {
   });
 
   it("Plattform-Admin sieht alle Hotels", async () => {
+    // unabhängig von der Reihenfolge der Testdateien: mindestens drei Hotels anlegen
+    await Promise.all([makeHotel(), makeHotel(), makeHotel()]);
     const u = await createUser(`pa-${uid()}@example.ch`, { platformAdmin: true });
     expect((await hotelsForUser(u.id)).length).toBeGreaterThan(2);
   });
@@ -106,7 +108,8 @@ describe("E-Mail-Outbox", () => {
     await createDirectBooking(h.hotel, { roomTypeId: h.rooms[0].roomType.id, ratePlanId: h.rooms[0].plans[0].id, checkin: d, checkout: addDays(d, 2), adults: 2, children: 0, childrenAges: [], guest: { ...guest, email: `mail-${uid()}@example.ch` } });
     const sent: { to: string; subject: string; text: string }[] = [];
     setMailer(async (m) => { sent.push(m); });
-    await sendDueEmails();
+    // hohes Limit: die Test-Datenbank enthält auch Mails anderer Tests
+    await sendDueEmails(new Date(), 100_000);
     const subjects = sent.map((m) => m.subject);
     expect(subjects.some((s) => s.startsWith("Buchungsbestätigung"))).toBe(true);
     expect(subjects.some((s) => s.startsWith("Neue Buchung"))).toBe(true);
@@ -115,7 +118,7 @@ describe("E-Mail-Outbox", () => {
     expect(confirm.text).toContain("Kurtaxe");
     expect(confirm.text).toContain("/b/");
     const n = sent.length;
-    await sendDueEmails();
+    await sendDueEmails(new Date(), 100_000);
     expect(sent.length).toBe(n);
 
     // Fehler: 3 Versuche, dann failed

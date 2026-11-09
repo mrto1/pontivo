@@ -12,6 +12,9 @@ const imageUrl = z.string().regex(/^\/media\/[0-9a-f-]{36}\/[A-Za-z0-9_-]{16,64}
 const image = z.object({ url: imageUrl, alt: text(200) });
 /** Erweitert (nicht empfohlen, aber erlaubt): Ausrichtung und Textgrösse pro Baustein */
 const look = { align: z.enum(["auto", "left", "center"]).default("auto"), size: z.enum(["normal", "large"]).default("normal") };
+const httpUrl = z.string().trim().max(500).regex(/^https?:\/\/[^\s]+$/, "Adresse mit https:// angeben");
+export const TIP_CATEGORIES = ["wandern", "ausflug", "kultur", "essen", "winter", "familie", "see"] as const;
+export const INQUIRY_KINDS = ["group", "seminar", "wedding", "company", "other"] as const;
 const docUrl = z.string().regex(/^\/media\/[0-9a-f-]{36}\/[A-Za-z0-9_-]{16,64}\.pdf$/, "Dokument aus der Bibliothek wählen");
 
 export const blockSchema = z.discriminatedUnion("type", [
@@ -22,9 +25,41 @@ export const blockSchema = z.discriminatedUnion("type", [
   z.object({ id: z.string(), type: z.literal("rooms"), heading: l10n(200) }),
   z.object({ id: z.string(), type: z.literal("booking"), heading: l10n(200) }),
   z.object({ id: z.string(), type: z.literal("facts"), heading: l10n(200), items: z.array(z.object({ label: l10n(100), value: l10n(300) })).max(20).default([]) }),
-  z.object({ id: z.string(), type: z.literal("location"), heading: l10n(200), address: z.string().max(300).default(""), body: l10n(), ...look }),
+  z.object({
+    id: z.string(), type: z.literal("location"), heading: l10n(200), address: z.string().max(300).default(""), body: l10n(), ...look,
+    // Koordinaten für die Karte (OpenStreetMap, lädt erst nach Klick)
+    lat: z.number().min(-90).max(90).nullable().default(null), lng: z.number().min(-180).max(180).nullable().default(null),
+  }),
   z.object({ id: z.string(), type: z.literal("notice"), body: l10n(1000), ...look }),
   z.object({ id: z.string(), type: z.literal("downloads"), heading: l10n(200), files: z.array(docUrl).max(20).default([]) }),
+  // Gästestimmen: nur echte Bewertungen, immer mit Name und Quelle
+  z.object({
+    id: z.string(), type: z.literal("reviews"), heading: l10n(200),
+    items: z.array(z.object({
+      quote: l10n(800), author: z.string().trim().max(80).default(""), source: z.string().trim().max(60).default(""),
+      date: z.string().regex(/^(\d{4}-\d{2})?$/).default(""), rating: z.number().int().min(1).max(5).nullable().default(null), url: httpUrl.nullable().default(null),
+    })).max(12).default([]),
+    moreUrl: httpUrl.nullable().default(null),
+  }),
+  z.object({ id: z.string(), type: z.literal("faq"), heading: l10n(200), items: z.array(z.object({ q: l10n(300), a: l10n(2000) })).max(30).default([]) }),
+  // Angebote/Pakete: verweisen auf einen Tarif (z. B. «3 Nächte mit Halbpension», Mindestnächte im Tarif)
+  z.object({
+    id: z.string(), type: z.literal("offers"), heading: l10n(200),
+    items: z.array(z.object({
+      title: l10n(120), text: l10n(1000), image: image.nullable().default(null), price: l10n(80),
+      ratePlanId: z.string().uuid().nullable().default(null), nights: z.number().int().min(1).max(60).default(1),
+    })).max(12).default([]),
+  }),
+  // Ausflugstipps: strukturiert, damit auch der spätere KI-Chat sie kennt (src/services/knowledge.ts)
+  z.object({
+    id: z.string(), type: z.literal("tips"), heading: l10n(200), intro: l10n(1000),
+    items: z.array(z.object({
+      title: l10n(120), text: l10n(1000), image: image.nullable().default(null), category: z.enum(TIP_CATEGORIES).default("ausflug"),
+      distance: l10n(80), url: httpUrl.nullable().default(null), season: z.enum(["all", "summer", "winter"]).default("all"),
+    })).max(30).default([]),
+  }),
+  z.object({ id: z.string(), type: z.literal("inquiry"), heading: l10n(200), intro: l10n(1000), kinds: z.array(z.enum(INQUIRY_KINDS)).min(1).default(["group", "seminar", "wedding"]) }),
+  z.object({ id: z.string(), type: z.literal("voucher"), heading: l10n(200), intro: l10n(1000) }),
 ]);
 
 export type Block = z.infer<typeof blockSchema>;
@@ -42,6 +77,12 @@ export const BLOCK_TYPES: { type: BlockType; label: string; hint: string }[] = [
   { type: "location", label: "Lage & Anreise", hint: "Adresse mit Link zur Route und Text zur Anreise" },
   { type: "notice", label: "Hinweis", hint: "Hervorgehobene Box, z. B. Betriebsferien" },
   { type: "downloads", label: "Downloads (PDF)", hint: "Speisekarte, Preisliste, Seminarunterlagen – aus Ihren Dokumenten" },
+  { type: "offers", label: "Angebote & Pakete", hint: "z. B. «3 Nächte mit Halbpension», direkt buchbar über einen Tarif" },
+  { type: "reviews", label: "Gästestimmen", hint: "Echte Bewertungen mit Name und Quelle, Link zu allen Bewertungen" },
+  { type: "faq", label: "Häufige Fragen", hint: "Fragen und Antworten zum Aufklappen – spart Anrufe, hilft bei Google" },
+  { type: "tips", label: "Ausflugstipps", hint: "Wanderungen, Ausflüge, Restaurants in der Umgebung" },
+  { type: "inquiry", label: "Anfrageformular", hint: "Für Gruppen, Seminare, Hochzeiten – kommt per E-Mail und im Admin an" },
+  { type: "voucher", label: "Gutscheine", hint: "Gäste kaufen Wertgutscheine online, Sie lösen sie im Admin ein" },
 ];
 
 export function newBlock(type: BlockType, id: string): Block {

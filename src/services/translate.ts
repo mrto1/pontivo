@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { hotels, ratePlans, roomTypes, sitePages, type Hotel } from "../db/schema";
 import { blockSchema, type Block, type L } from "../domain/blocks";
-import { hotelLocales, LOCALE_NAMES, type Locale } from "../i18n/dict";
+import { hotelLocales, LOCALE_NAMES, LOCALES, type Locale } from "../i18n/dict";
 import { env } from "../env";
 import { audit } from "./audit";
 import { getPage, SiteError } from "./site";
@@ -103,6 +103,24 @@ async function withQuota<T>(hotel: Hotel, work: () => Promise<T | null>, actor: 
 
 type Slot = { key: string; get: () => L | undefined; set: (v: L) => void };
 
+const LOC = new Set<string>(LOCALES);
+/** Ein mehrsprachiges Textfeld: Objekt, dessen Schlüssel nur Sprachcodes sind */
+function isL10n(v: unknown): v is L {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return false;
+  return Object.entries(v).every(([k, x]) => LOC.has(k) && (x === undefined || typeof x === "string"));
+}
+
+function walk(node: unknown, path: string, out: Slot[]) {
+  if (!node || typeof node !== "object") return;
+  const o = node as Record<string, unknown>;
+  for (const [k, v] of Object.entries(o)) {
+    if (k === "id" || k === "type") continue;
+    if (Array.isArray(v)) v.forEach((item, i) => walk(item, `${path}.${k}${i}`, out));
+    else if (isL10n(v) && Object.keys(v).length) out.push({ key: `${path}.${k}`, get: () => o[k] as L, set: (x) => (o[k] = x) });
+    else if (v && typeof v === "object") walk(v, `${path}.${k}`, out);
+  }
+}
+
 /** Alle zweisprachigen Felder einer Seite (Titel, Menü, Google, Bausteine) als Zugriffspunkte */
 function pageSlots(page: { title: L; navLabel: L; seo: Partial<Record<Locale, { title?: string; description?: string }>> }, blocks: Block[]): Slot[] {
   const slots: Slot[] = [
@@ -118,16 +136,8 @@ function pageSlots(page: { title: L; navLabel: L; seo: Partial<Record<Locale, { 
       },
     });
   }
-  for (const b of blocks) {
-    const o = b as unknown as Record<string, unknown>;
-    for (const k of ["headline", "intro", "heading", "body"]) {
-      if (o[k] && typeof o[k] === "object") slots.push({ key: `${b.id}.${k}`, get: () => o[k] as L, set: (v) => (o[k] = v) });
-    }
-    if (b.type === "facts") b.items.forEach((it, i) => {
-      slots.push({ key: `${b.id}.l${i}`, get: () => it.label, set: (v) => (it.label = v) });
-      slots.push({ key: `${b.id}.v${i}`, get: () => it.value, set: (v) => (it.value = v) });
-    });
-  }
+  // Alle Texte in allen Bausteinen (auch in Listen wie FAQ, Angebote, Tipps), generisch gesucht
+  for (const b of blocks) walk(b, b.id, slots);
   return slots;
 }
 

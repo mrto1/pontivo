@@ -3,9 +3,13 @@ import { searchParamsSchema } from "@/src/lib/validation";
 import { searchOffers } from "@/src/services/search";
 import { isBookable } from "@/src/services/hotels";
 import { env } from "@/src/env";
-import { diffDays, todayIn } from "@/src/domain/dates";
+import { addDays, diffDays, todayIn } from "@/src/domain/dates";
 import { formatChf } from "@/src/domain/money";
-import { formatDay, t, type Locale } from "@/src/i18n/dict";
+import { fill, formatDay, t, type Locale } from "@/src/i18n/dict";
+import { and, eq } from "drizzle-orm";
+import { db } from "@/src/db/client";
+import { ratePlans } from "@/src/db/schema";
+import { planName } from "@/src/domain/i18n-names";
 import { Shell } from "./Shell";
 import { SearchBar } from "./SearchBar";
 import { BookingForm } from "./BookingForm";
@@ -19,15 +23,21 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
   const parsed = searchParamsSchema.safeParse({ checkin: one("checkin"), checkout: one("checkout"), adults: one("adults"), children: one("children"), ages: ageList });
   const today = todayIn(hotel.timezone);
   const q = parsed.success ? parsed.data : null;
-  const path = q ? `/book?checkin=${q.checkin}&checkout=${q.checkout}&adults=${q.adults}&children=${q.children}${q.ages.length ? `&ages=${q.ages.join(",")}` : ""}` : "";
+  // Aus dem Baustein «Angebote»: nur dieser Tarif, Nächte vorschlagen
+  const planId = /^[0-9a-f-]{36}$/.test(one("plan") ?? "") ? one("plan")! : undefined;
+  const plan = planId ? (await db().select().from(ratePlans).where(and(eq(ratePlans.id, planId), eq(ratePlans.hotelId, hotel.id), eq(ratePlans.active, true))))[0] : undefined;
+  const wantNights = Math.min(60, Math.max(1, Number(one("nights")) || plan?.minNights || 2));
+  const path = q ? `/book?checkin=${q.checkin}&checkout=${q.checkout}&adults=${q.adults}&children=${q.children}${q.ages.length ? `&ages=${q.ages.join(",")}` : ""}${plan ? `&plan=${plan.id}` : ""}` : "";
 
   let body: React.ReactNode;
   if (!isBookable(hotel, env().PAYMENT_PROVIDER)) {
     body = <p className="notice warn">{d.notBookable}</p>;
   } else if (!q) {
-    body = <p className="notice warn">{d.invalidSearch}</p>;
+    body = <p className={`notice ${one("checkin") ? "warn" : ""}`}>{one("checkin") ? d.invalidSearch : d.chooseDates}</p>;
+  } else if (plan && diffDays(q.checkin, q.checkout) < plan.minNights) {
+    body = <p className="notice warn">{fill(d.offerMinNights, { n: plan.minNights })}</p>;
   } else {
-    const res = await searchOffers(hotel, { checkin: q.checkin, checkout: q.checkout, adults: q.adults, children: q.children, childrenAges: q.ages }, { lang: locale });
+    const res = await searchOffers(hotel, { checkin: q.checkin, checkout: q.checkout, adults: q.adults, children: q.children, childrenAges: q.ages }, { lang: locale, ratePlanId: plan?.id });
     if (!res.ok) {
       body = (
         <p className="notice warn">
@@ -89,9 +99,11 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
   }
 
   return (
-    <Shell hotel={hotel} locale={locale} base={base} path={path}>
+    <Shell hotel={hotel} locale={locale} base={base} path={path} noBookButton>
       <div style={{ padding: "24px 0" }}>
-        <SearchBar action={`${base}/${locale}/book`} locale={locale} today={today} defaults={{ checkin: q?.checkin, checkout: q?.checkout, adults: q?.adults, children: q?.children, ages: q?.ages }} />
+        {plan ? <p className="small muted" style={{ margin: "0 0 8px" }}>{d.offerFor}: <strong>{planName(plan, locale)}</strong>{plan.minNights > 1 ? ` · ${fill(d.fromNights, { n: plan.minNights })}` : ""}</p> : null}
+        <SearchBar action={`${base}/${locale}/book`} locale={locale} today={today} plan={plan?.id}
+          defaults={{ checkin: q?.checkin ?? addDays(today, 1), checkout: q?.checkout ?? addDays(q?.checkin ?? addDays(today, 1), wantNights), adults: q?.adults, children: q?.children, ages: q?.ages }} />
       </div>
       <section>{body}</section>
     </Shell>

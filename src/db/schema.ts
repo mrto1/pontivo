@@ -52,6 +52,8 @@ export type HotelContent = {
   languages?: string[];
   /** Automatische Übersetzungen pro Monat ("YYYY-MM" → Anzahl), für das Limit */
   translations?: Record<string, number>;
+  /** Gutscheine: Verkauf an/aus, Beträge, Gültigkeit (src/services/vouchers.ts) */
+  vouchers?: { enabled?: boolean; amounts?: number[]; minRappen?: number; maxRappen?: number; validityYears?: number };
   /** Dokumente (PDF) für den Baustein «Downloads», z. B. Speisekarte, Preisliste */
   documents?: HotelDocument[];
   /** Erscheinungsbild der Buchungsseite */
@@ -140,6 +142,8 @@ export const ratePlans = pgTable("rate_plans", {
   extraAdultRappen: integer("extra_adult_rappen").notNull().default(0),
   singleDiscountRappen: integer("single_discount_rappen").notNull().default(0),
   channexRatePlanId: uuid("channex_rate_plan_id").unique(),
+  /** Mindestaufenthalt dieses Tarifs (z. B. Paket «3 Nächte»), zusätzlich zu den Tagesregeln im Kalender */
+  minNights: integer("min_nights").notNull().default(1),
   /** Tarif ist in Channex als sell_mode "per_person" angelegt → Preise je Belegung senden */
   channexPerPerson: boolean("channex_per_person").notNull().default(false),
   active: boolean("active").notNull().default(true),
@@ -354,3 +358,53 @@ export type RoomType = typeof roomTypes.$inferSelect;
 export type RatePlan = typeof ratePlans.$inferSelect;
 export type Booking = typeof bookings.$inferSelect;
 export type TouristTaxRule = typeof touristTaxRules.$inferSelect;
+
+export const inquiries = pgTable("inquiries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  kind: text("kind").notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  dateFrom: date("date_from", { mode: "string" }),
+  dateTo: date("date_to", { mode: "string" }),
+  persons: integer("persons"),
+  message: text("message").notNull().default(""),
+  language: text("language").notNull().default("de"),
+  pageSlug: text("page_slug").notNull().default(""),
+  status: text("status").notNull().default("new"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type Inquiry = typeof inquiries.$inferSelect;
+
+export const vouchers = pgTable("vouchers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  code: text("code").notNull().unique(),
+  publicToken: text("public_token").notNull().unique(),
+  amountRappen: integer("amount_rappen").notNull(),
+  remainingRappen: integer("remaining_rappen").notNull(),
+  platformFeeRappen: integer("platform_fee_rappen").notNull().default(0),
+  buyerName: text("buyer_name").notNull(),
+  buyerEmail: text("buyer_email").notNull(),
+  recipientName: text("recipient_name").notNull().default(""),
+  message: text("message").notNull().default(""),
+  language: text("language").notNull().default("de"),
+  status: text("status").notNull().default("pending"),
+  stripeSessionId: text("stripe_session_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  validUntil: date("valid_until", { mode: "string" }).notNull(),
+  paidAt: ts("paid_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type Voucher = typeof vouchers.$inferSelect;
+
+export const voucherRedemptions = pgTable("voucher_redemptions", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  voucherId: uuid("voucher_id").notNull(),
+  hotelId: uuid("hotel_id").notNull(),
+  amountRappen: integer("amount_rappen").notNull(),
+  note: text("note").notNull().default(""),
+  actor: text("actor").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});

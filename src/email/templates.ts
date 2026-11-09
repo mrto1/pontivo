@@ -1,6 +1,6 @@
 import { formatChf } from "../domain/money";
 import { cancellationPolicyText } from "../domain/cancellation";
-import { formatDay, isLocale, type Locale } from "../i18n/dict";
+import { formatDay, isLocale, t, type Locale } from "../i18n/dict";
 import type { Booking, Hotel, RatePlan, RoomType } from "../db/schema";
 import { planName, roomName } from "../domain/i18n-names";
 
@@ -108,6 +108,25 @@ ${link ? `<p style="margin-top:24px"><a href="${esc(link.href)}" style="backgrou
   return { subject, text, html };
 }
 
+/** Gutschein- und Anfrage-Mails an Gäste */
+const X: Record<Locale, {
+  vSubject: (h: string) => string; vText: (amount: string, until: string) => string; vOpen: string;
+  iSubject: (h: string) => string; iText: string;
+}> = {
+  de: { vSubject: (h) => `Ihr Gutschein – ${h}`, vText: (a, u) => `vielen Dank für Ihren Gutschein über ${a}. Er ist gültig bis ${u}. Über den Link können Sie ihn ansehen und ausdrucken.`, vOpen: "Gutschein ansehen und drucken",
+    iSubject: (h) => `Ihre Anfrage – ${h}`, iText: "vielen Dank für Ihre Anfrage. Sie ist bei uns angekommen, wir melden uns so rasch wie möglich." },
+  en: { vSubject: (h) => `Your gift voucher – ${h}`, vText: (a, u) => `thank you for your gift voucher worth ${a}. It is valid until ${u}. Use the link to view and print it.`, vOpen: "View and print voucher",
+    iSubject: (h) => `Your request – ${h}`, iText: "thank you for your request. We have received it and will get back to you as soon as possible." },
+  fr: { vSubject: (h) => `Votre bon cadeau – ${h}`, vText: (a, u) => `merci pour votre bon cadeau d'une valeur de ${a}. Il est valable jusqu'au ${u}. Le lien vous permet de le consulter et de l'imprimer.`, vOpen: "Voir et imprimer le bon",
+    iSubject: (h) => `Votre demande – ${h}`, iText: "merci pour votre demande. Elle nous est bien parvenue, nous vous répondrons dès que possible." },
+  it: { vSubject: (h) => `Il vostro buono regalo – ${h}`, vText: (a, u) => `grazie per il buono regalo di ${a}. È valido fino al ${u}. Con il link potete vederlo e stamparlo.`, vOpen: "Vedi e stampa il buono",
+    iSubject: (h) => `La vostra richiesta – ${h}`, iText: "grazie per la vostra richiesta. È arrivata, vi risponderemo il prima possibile." },
+  nl: { vSubject: (h) => `Uw cadeaubon – ${h}`, vText: (a, u) => `hartelijk dank voor uw cadeaubon van ${a}. Hij is geldig tot ${u}. Via de link kunt u hem bekijken en afdrukken.`, vOpen: "Bon bekijken en afdrukken",
+    iSubject: (h) => `Uw aanvraag – ${h}`, iText: "hartelijk dank voor uw aanvraag. We hebben hem ontvangen en nemen zo snel mogelijk contact op." },
+};
+
+const KIND_DE: Record<string, string> = { group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
+
 export function render(template: string, lang: string, c: EmailContext): Rendered {
   // Gäste-Mails in jeder Website-Sprache; Hotel-interne Mails nur DE/EN
   const gl: Locale = isLocale(lang) ? lang : "de";
@@ -146,6 +165,27 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
       return wrap(c, l, de ? "Ihr Login-Link" : "Your login link",
         [de ? "Klicken Sie auf den Link, um sich anzumelden. Er ist 15 Minuten gültig und nur einmal verwendbar." : "Click the link to sign in. It is valid for 15 minutes and can be used once."],
         [], { href: String(c.data.link), label: de ? "Anmelden" : "Sign in" });
+    case "voucher_purchased": {
+      const x = X[gl];
+      return wrap(c, gl, x.vSubject(c.hotel.name),
+        [m.hi(String(c.data.buyer ?? "")) + ",", x.vText(money("amountRappen"), formatDay(String(c.data.validUntil), gl))],
+        [`${t(gl).vCode}: ${c.data.code}`], { href: `${c.baseUrl}/v/${c.data.token}`, label: x.vOpen });
+    }
+    case "hotel_voucher_sold":
+      return wrap(c, l, `${de ? "Gutschein verkauft" : "Voucher sold"} ${c.data.code} – ${money("amountRappen")}`,
+        [de ? `${c.data.buyer} hat einen Gutschein über ${money("amountRappen")} gekauft${c.data.recipient ? ` (für ${c.data.recipient})` : ""}. Einlösen unter Admin → Gutscheine.` : `${c.data.buyer} bought a voucher worth ${money("amountRappen")}${c.data.recipient ? ` (for ${c.data.recipient})` : ""}. Redeem under Admin → Vouchers.`],
+        [`Code: ${c.data.code}`, `${de ? "Gültig bis" : "Valid until"}: ${formatDay(String(c.data.validUntil), l)}`]);
+    case "inquiry_received": {
+      const d = c.data as Record<string, string | number | null>;
+      return wrap(c, l, `${de ? "Neue Anfrage" : "New request"}: ${KIND_DE[String(d.kind)] ?? d.kind} – ${d.name}`,
+        [de ? "Über die Website ist eine Anfrage eingegangen. Antworten Sie direkt an die E-Mail-Adresse des Gastes." : "A request came in through the website. Reply directly to the guest's email address.", String(d.message ?? "")],
+        [`${de ? "Anlass" : "Occasion"}: ${KIND_DE[String(d.kind)] ?? d.kind}`, `${de ? "Name" : "Name"}: ${d.name}`, `E-Mail: ${d.email}`, ...(d.phone ? [`${de ? "Telefon" : "Phone"}: ${d.phone}`] : []),
+          ...(d.dateFrom ? [`${de ? "Datum" : "Date"}: ${formatDay(String(d.dateFrom), l)}${d.dateTo ? ` – ${formatDay(String(d.dateTo), l)}` : ""}`] : []), ...(d.persons ? [`${de ? "Personen" : "Guests"}: ${d.persons}`] : [])]);
+    }
+    case "inquiry_confirmation": {
+      const x = X[gl];
+      return wrap(c, gl, x.iSubject(c.hotel.name), [m.hi(String(c.data.name ?? "")) + ",", x.iText, String(c.data.message ?? "")]);
+    }
     case "channex_alert":
       return wrap(c, l, `[Channex] ${String(c.data.subject)}${c.data.hotel ? ` – ${c.data.hotel}` : ""}`,
         [String(c.data.subject), String(c.data.details ?? "")]);

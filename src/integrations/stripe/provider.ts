@@ -1,4 +1,4 @@
-import type { CheckoutArgs, PaymentProvider, RefundArgs } from "../../payments/provider";
+import type { CheckoutArgs, PaymentCheckoutArgs, PaymentProvider, RefundArgs } from "../../payments/provider";
 import { stripe } from "./client";
 
 /** TWINT-Limit pro Zahlung (Stripe): CHF 5'000 */
@@ -44,6 +44,32 @@ export class StripePaymentProvider implements PaymentProvider {
         ...(twintAllowed ? {} : { excluded_payment_method_types: ["twint"] }),
       },
       { stripeAccount: hotel.stripeAccountId, idempotencyKey: `checkout-${booking.id}` },
+    );
+    if (!session.url) throw new Error("Stripe lieferte keine Checkout-URL");
+    return { url: session.url, sessionId: session.id };
+  }
+
+  /** Gutschein & Co.: gleiche Direct Charge wie bei Buchungen, ohne Hold-Ablauf (Stripe-Standard 24 h) */
+  async createPaymentCheckout(a: PaymentCheckoutArgs) {
+    const { hotel } = a;
+    if (!hotel.stripeAccountId) throw new Error("Hotel hat kein Stripe-Konto");
+    const twintAllowed = hotel.stripeTwintActive && a.amountRappen <= TWINT_MAX_RAPPEN;
+    const metadata = { ...a.metadata, hotel_id: hotel.id };
+    const session = await stripe().checkout.sessions.create(
+      {
+        mode: "payment",
+        currency: "chf",
+        line_items: [{ quantity: 1, price_data: { currency: "chf", unit_amount: a.amountRappen, product_data: { name: a.description } } }],
+        payment_intent_data: { application_fee_amount: a.feeRappen, metadata },
+        metadata,
+        client_reference_id: a.reference,
+        customer_email: a.email,
+        locale: a.lang,
+        success_url: a.successUrl,
+        cancel_url: a.cancelUrl,
+        ...(twintAllowed ? {} : { excluded_payment_method_types: ["twint"] }),
+      },
+      { stripeAccount: hotel.stripeAccountId, idempotencyKey: a.idempotencyKey },
     );
     if (!session.url) throw new Error("Stripe lieferte keine Checkout-URL");
     return { url: session.url, sessionId: session.id };

@@ -6,9 +6,12 @@ import { tr } from "@/src/domain/blocks";
 import { listPages } from "@/src/services/site";
 import { fontOf, layoutOf } from "@/src/domain/theme";
 import { fontVars } from "./fonts";
+import { hotelJsonLd, ldJson } from "@/src/lib/structured-data";
+import { publicBase } from "@/src/services/brand";
+import { addDays, todayIn } from "@/src/domain/dates";
 
 /** Rahmen der Hotel-Seiten: Kopf mit Logo, Fusszeile, Erscheinungsbild des Hotels (Farbe, Logo) */
-export async function Shell({ hotel, locale, base, path = "", current, children }: { hotel: Hotel; locale: Locale; base: string; path?: string; current?: string; children: React.ReactNode }) {
+export async function Shell({ hotel, locale, base, path = "", current, noBookButton, children }: { hotel: Hotel; locale: Locale; base: string; path?: string; current?: string; noBookButton?: boolean; children: React.ReactNode }) {
   const d = t(locale);
   const brand = hotel.content?.brand ?? {};
   const color = brand.color && HEX.test(brand.color) ? brand.color : null;
@@ -20,6 +23,11 @@ export async function Shell({ hotel, locale, base, path = "", current, children 
   } as React.CSSProperties;
   const homeHref = bookingOnly ? brand.websiteUrl! : `${base}/${locale}`;
   const pages = (await listPages(hotel.id)).filter((p) => p.published);
+  const jsonLd = await hotelJsonLd(hotel, locale, publicBase(hotel), pages);
+  // Fester «Jetzt buchen»-Knopf auf dem Handy (nicht auf Buchungs- und Gutscheinseiten)
+  const today = todayIn(hotel.timezone);
+  const bookHref = `${base}/${locale}/book?checkin=${addDays(today, 1)}&checkout=${addDays(today, 3)}&adults=2`;
+  const showBook = !noBookButton && hotel.status === "live";
   const langs = hotelLocales(hotel);
   const nav = bookingOnly ? [] : pages.filter((p) => p.showInNav && p.slug !== "");
   const imprint = pages.find((p) => p.slug === "impressum");
@@ -46,7 +54,9 @@ export async function Shell({ hotel, locale, base, path = "", current, children 
           </nav>
         </div>
       </header>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(jsonLd) }} />
       <main className="wrap">{children}</main>
+      {showBook ? <a className="sticky-book btn" href={bookHref}>{d.bookNow}</a> : null}
       <footer className="foot">
         <div className="wrap">
           <strong>{hotel.name}</strong>

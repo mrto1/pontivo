@@ -13,6 +13,8 @@ export default async function HotelAdminLayout({ children, params }: { children:
             <a href={`/admin/${hotel.id}/rooms`}>Zimmer</a>
             <a href={`/admin/${hotel.id}/site`}>Website</a>
             <a href={`/admin/${hotel.id}/bookings`}>Buchungen</a>
+            <a href={`/admin/${hotel.id}/inquiries`}>Anfragen</a>
+            <a href={`/admin/${hotel.id}/vouchers`}>Gutscheine</a>
             <a href={`/admin/${hotel.id}/report`}>Abrechnung</a>
             <a href={`/admin/${hotel.id}/channex`}>Channex</a>
             <a href={`/admin/${hotel.id}/embed`}>Einbinden</a>

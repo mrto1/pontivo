@@ -54,6 +54,7 @@ function planInput(f: FormData): RatePlanInput {
     baseOccupancy: n(f, "baseOccupancy"),
     extraAdultRappen: chf(f, "extraAdult"),
     singleDiscountRappen: chf(f, "singleDiscount"),
+    minNights: Math.max(1, n(f, "minNights") || 1),
     active: f.get("active") === "on",
     i18n: Object.fromEntries(EXTRA.map((l) => [l, { name: s(f, `name.${l}`) || undefined }])),
   };
@@ -222,6 +223,7 @@ function PlanForm({ hotelId, roomTypeId, p, canEdit, langs }: { hotelId: string;
         <div><label>Preis gilt für Personen</label><input name="baseOccupancy" type="number" min={1} defaultValue={p?.baseOccupancy ?? 2} required disabled={!canEdit} /></div>
         <div><label>Zuschlag je weitere erw. Person CHF</label><input name="extraAdult" inputMode="decimal" defaultValue={p ? rappenToDecimal(p.extraAdultRappen) : "0"} disabled={!canEdit} /></div>
         <div><label>Rabatt bei 1 Person CHF</label><input name="singleDiscount" inputMode="decimal" defaultValue={p ? rappenToDecimal(p.singleDiscountRappen) : "0"} disabled={!canEdit} /></div>
+        <div><label>Mindestaufenthalt (Nächte)</label><input name="minNights" type="number" min={1} max={60} defaultValue={p?.minNights ?? 1} disabled={!canEdit} title="Für Pakete wie «3 Nächte mit Halbpension». Gilt immer, zusätzlich zu den Regeln im Kalender." /></div>
       </div>
       <div className="form-grid">
         <div>
