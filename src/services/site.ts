@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, rows } from "../db/client";
-import { hotels, sitePages, type Hotel, type SitePage } from "../db/schema";
+import { hotels, sitePages, type Hotel, type HotelDocument, type SitePage } from "../db/schema";
 import { blockSchema, newBlock, RESERVED_SLUGS, slugify, type Block, type BlockType } from "../domain/blocks";
 import { audit } from "./audit";
 
@@ -214,4 +214,38 @@ export async function createImprintPage(hotel: Hotel, actor: string) {
 export async function hotelById(id: string) {
   const [h] = await db().select().from(hotels).where(eq(hotels.id, id));
   return h ?? null;
+}
+
+// ---------------------------------------------------------------- Dokumente (PDF)
+
+export const MAX_DOCUMENTS = 30;
+
+/** Dokument in die Bibliothek aufnehmen (Datei ist bereits gespeichert) */
+export async function addDocument(hotelId: string, doc: HotelDocument, actor: string) {
+  await db().transaction(async (tx) => {
+    const [h] = await tx.select().from(hotels).where(eq(hotels.id, hotelId)).for("update");
+    if (!h) throw new SiteError("Hotel nicht gefunden");
+    const docs = h.content.documents ?? [];
+    if (docs.length >= MAX_DOCUMENTS) throw new SiteError(`Höchstens ${MAX_DOCUMENTS} Dokumente`);
+    const title = { de: doc.title.de?.trim().slice(0, 120) || undefined, en: doc.title.en?.trim().slice(0, 120) || undefined };
+    if (!title.de && !title.en) throw new SiteError("Titel fehlt");
+    await tx.update(hotels).set({ content: { ...h.content, documents: [...docs, { ...doc, title }] } }).where(eq(hotels.id, hotelId));
+    await audit(tx, { hotelId, actor, action: "document.add", entity: "hotel", entityId: hotelId, details: { url: doc.url } });
+  });
+}
+
+/** Dokument entfernen; gibt die URL zurück, damit die Datei gelöscht werden kann. Verweise in Bausteinen werden beim Anzeigen übersprungen. */
+export async function removeDocument(hotelId: string, url: string, actor: string): Promise<string> {
+  return db().transaction(async (tx) => {
+    const [h] = await tx.select().from(hotels).where(eq(hotels.id, hotelId)).for("update");
+    const docs = h?.content.documents ?? [];
+    if (!docs.some((d) => d.url === url)) throw new SiteError("Dokument nicht gefunden");
+    await tx.update(hotels).set({ content: { ...h.content, documents: docs.filter((d) => d.url !== url) } }).where(eq(hotels.id, hotelId));
+    await audit(tx, { hotelId, actor, action: "document.remove", entity: "hotel", entityId: hotelId, details: { url } });
+    return url;
+  });
+}
+
+export function documentLibrary(hotel: Hotel): HotelDocument[] {
+  return (hotel.content.documents ?? []).filter((d) => /^\/media\/[0-9a-f-]{36}\/[A-Za-z0-9_-]{16,64}\.pdf$/.test(d.url));
 }

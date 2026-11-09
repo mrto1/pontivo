@@ -1,8 +1,12 @@
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
-import { createImprintPage, createPage, deletePage, ensureHomePage, listPages, movePage, SiteError } from "@/src/services/site";
-import { publicBase } from "@/src/services/brand";
+import { createImprintPage, createPage, deletePage, documentLibrary, ensureHomePage, listPages, movePage, removeDocument, SiteError } from "@/src/services/site";
+import { publicBase as publicBase, updateDesign } from "@/src/services/brand";
+import { FONTS, LAYOUTS, fontOf, layoutOf } from "@/src/domain/theme";
+import { deleteImage } from "@/src/lib/storage";
+import { fontVars } from "@/components/public/fonts";
+import { ZodError } from "zod";
 import { tr } from "@/src/domain/blocks";
 
 export const dynamic = "force-dynamic";
@@ -15,8 +19,9 @@ async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>
   try {
     r = await fn(c);
   } catch (e) {
-    if (!(e instanceof SiteError)) throw e;
-    r = `Nicht möglich: ${e.message}`;
+    if (e instanceof SiteError) r = `Nicht möglich: ${e.message}`;
+    else if (e instanceof ZodError) r = `Nicht möglich: ${e.issues.map((i) => i.message).join(", ")}`;
+    else throw e;
   }
   redirect(typeof r === "string" ? `/admin/${c.hotel.id}/site?msg=${encodeURIComponent(r)}` : r.to);
 }
@@ -54,6 +59,21 @@ async function remove(f: FormData) {
   });
 }
 
+async function saveDesign(f: FormData) {
+  "use server";
+  await run(f, async ({ hotel, actor }) => {
+    await updateDesign(hotel.id, { layout: s(f, "layout") as never, font: s(f, "font") as never }, actor);
+    return { to: `/admin/${hotel.id}/site?msg=${encodeURIComponent("Gestaltung gespeichert")}#gestaltung` };
+  });
+}
+async function removeDoc(f: FormData) {
+  "use server";
+  await run(f, async ({ hotel, actor }) => {
+    await deleteImage(await removeDocument(hotel.id, s(f, "url"), actor));
+    return { to: `/admin/${hotel.id}/site?msg=${encodeURIComponent("Dokument gelöscht")}#dokumente` };
+  });
+}
+
 export default async function Site({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
@@ -65,6 +85,10 @@ export default async function Site({ params, searchParams }: { params: Promise<{
   const base = publicBase(hotel);
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
   const bookingOnly = hotel.content.brand?.mode === "booking_only";
+  const layout = layoutOf(hotel.content.brand?.layout);
+  const font = fontOf(hotel.content.brand?.font);
+  const docs = documentLibrary(hotel);
+  const kb = (n: number) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
   return (
     <div className="stack">
@@ -78,6 +102,68 @@ export default async function Site({ params, searchParams }: { params: Promise<{
           <p><a className="btn" href={`/admin/${hotel.id}/site/${home.id}`}>Startseite bearbeiten</a> <a href={`${base}/de`} target="_blank">ansehen</a></p>
         ) : canEdit ? (
           <form action={startHome}>{hidden}<p className="small">Heute zeigt die Startseite Titel, Einleitung und Zimmer aus den Einstellungen. Mit dem Editor gestalten Sie sie frei aus Bausteinen – die bisherigen Texte werden übernommen.</p><button className="btn">Startseite gestalten</button></form>
+        ) : null}
+      </section>
+
+      <section className="card stack" id="gestaltung">
+        <h2>Gestaltung</h2>
+        <p className="muted small">Layout und Schrift gelten für alle Seiten und die Buchungsstrecke. Hauptfarbe und Logo stellen Sie unter <a href={`/admin/${hotel.id}/embed`}>Einbinden</a> ein.</p>
+        <form action={saveDesign} className="stack">
+          {hidden}
+          <fieldset className="plain" disabled={!canEdit}>
+            <legend className="small muted">Layout</legend>
+            <div className="choice-grid">
+              {LAYOUTS.map((l) => (
+                <label key={l.key} className="choice">
+                  <input type="radio" name="layout" value={l.key} defaultChecked={l.key === layout} />
+                  <span className={`layout-thumb thumb-${l.key}`} aria-hidden="true"><i /><b /><em /></span>
+                  <strong>{l.label}</strong>
+                  <span className="small muted">{l.hint}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset className="plain" disabled={!canEdit} style={{ marginTop: 12 }}>
+            <legend className="small muted">Schrift (Titel / Text)</legend>
+            <div className="choice-grid">
+              {FONTS.map((f) => (
+                <label key={f.key} className="choice font-choice" style={fontVars(f.key) as React.CSSProperties}>
+                  <input type="radio" name="font" value={f.key} defaultChecked={f.key === font} />
+                  <strong>{f.label}</strong>
+                  <span className="font-sample">Willkommen im Glarnerland</span>
+                  <span className="small muted">{f.head} / {f.body}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          {canEdit ? <div><button className="btn small">Gestaltung speichern</button> <a className="small" href={`${base}/de`} target="_blank">Website ansehen</a></div> : null}
+        </form>
+      </section>
+
+      <section className="card stack" id="dokumente">
+        <h2>Dokumente (PDF)</h2>
+        <p className="muted small">Zum Beispiel Speisekarte, Preisliste, Seminarunterlagen. Auf einer Seite zeigen Sie sie mit dem Baustein «Downloads (PDF)».</p>
+        {docs.length ? (
+          <table className="table">
+            <thead><tr><th>Titel</th><th>Grösse</th><th></th></tr></thead>
+            <tbody>
+              {docs.map((d) => (
+                <tr key={d.url}>
+                  <td><a href={d.url} target="_blank">{d.title.de || d.title.en}</a>{d.title.en && d.title.de ? <span className="muted small"> · EN: {d.title.en}</span> : null}</td>
+                  <td className="small">{kb(d.bytes)}</td>
+                  <td>{canEdit ? <form action={removeDoc}>{hidden}<input type="hidden" name="url" value={d.url} /><button className="btn secondary small">Löschen</button></form> : null}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : <p className="muted small">Noch keine Dokumente.</p>}
+        {canEdit ? (
+          <form action={`/api/admin/hotels/${hotel.id}/documents`} method="post" encType="multipart/form-data" className="inline-form">
+            <div><label>PDF-Datei (max. 15 MB)</label><input type="file" name="file" accept="application/pdf,.pdf" required /></div>
+            <div><label>Titel DE</label><input name="title.de" placeholder="z. B. Speisekarte" maxLength={120} /></div>
+            <div><label>Titel EN</label><input name="title.en" placeholder="z. B. Menu" maxLength={120} /></div>
+            <button className="btn small">Hochladen</button>
+          </form>
         ) : null}
       </section>
 

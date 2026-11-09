@@ -34,6 +34,7 @@ npm run worker                       # optional, zweites Terminal: Holds freigeb
 - Mit `PAYMENT_PROVIDER=fake` wird jede Buchung sofort bestätigt (ohne Zahlung).
 - Hotel behält eigene Website: Admin → «Einbinden» (Logo, Farbe, Link zurück, Buchungs-Knopf/Suchleiste als Code-Schnipsel `/widget/<slug>.js`).
 - Zimmer, Tarife und Fotos: Admin → «Zimmer» (Namen auch auf Englisch).
+- Website: Admin → «Website». Gestaltung (6 Layouts, 6 Schriftpaare), Dokumente (PDF, max. 15 MB) und Seiten aus Bausteinen. Der Editor zeigt rechts eine Vorschau (Computer/Handy, auch Entwürfe) und hat über Textfeldern eine Leiste für fett, kursiv, Link, Listen, Zwischentitel, Hausfarbe und unterstrichen. E-Mail, Telefon und Webadressen werden automatisch klickbar.
 - Website gestalten: Admin → «Website» – Startseite und weitere Seiten aus Bausteinen (DE/EN), Menü, Google-Titel/-Beschreibung, Impressum. Fotos landen im Ordner `UPLOAD_DIR` (Standard `./data/uploads`).
 
 ## Tests

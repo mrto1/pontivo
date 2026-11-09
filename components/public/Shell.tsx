@@ -4,6 +4,8 @@ import { env } from "@/src/env";
 import { HEX, inkOn, readableOnWhite } from "@/src/domain/brand";
 import { tr } from "@/src/domain/blocks";
 import { listPages } from "@/src/services/site";
+import { fontOf, layoutOf } from "@/src/domain/theme";
+import { fontVars } from "./fonts";
 
 /** Rahmen der Hotel-Seiten: Kopf mit Logo, Fusszeile, Erscheinungsbild des Hotels (Farbe, Logo) */
 export async function Shell({ hotel, locale, base, path = "", current, children }: { hotel: Hotel; locale: Locale; base: string; path?: string; current?: string; children: React.ReactNode }) {
@@ -11,15 +13,17 @@ export async function Shell({ hotel, locale, base, path = "", current, children 
   const brand = hotel.content?.brand ?? {};
   const color = brand.color && HEX.test(brand.color) ? brand.color : null;
   const bookingOnly = brand.mode === "booking_only" && !!brand.websiteUrl;
-  const style = color
-    ? ({ "--brand": color, "--brand-ink": inkOn(color), "--brand-link": readableOnWhite(color) } as React.CSSProperties)
-    : undefined;
+  const layout = layoutOf(brand.layout);
+  const style = {
+    ...fontVars(fontOf(brand.font)),
+    ...(color ? { "--brand": color, "--brand-ink": inkOn(color), "--brand-link": readableOnWhite(color) } : {}),
+  } as React.CSSProperties;
   const homeHref = bookingOnly ? brand.websiteUrl! : `${base}/${locale}`;
   const pages = (await listPages(hotel.id)).filter((p) => p.published);
   const nav = bookingOnly ? [] : pages.filter((p) => p.showInNav && p.slug !== "");
   const imprint = pages.find((p) => p.slug === "impressum");
   return (
-    <div className={color ? "branded" : undefined} style={style}>
+    <div className={`site layout-${layout}${color ? " branded" : ""}`} style={style}>
       <header className="site-head">
         <div className="wrap">
           <a className="brand" href={homeHref}>

@@ -2,7 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
-import { addBlock, deleteBlock, getPage, moveBlock, photoLibrary, SiteError, updateBlock, updatePageMeta } from "@/src/services/site";
+import { addBlock, deleteBlock, documentLibrary, getPage, moveBlock, photoLibrary, SiteError, updateBlock, updatePageMeta } from "@/src/services/site";
+import { RichTextarea } from "@/components/admin/RichTextarea";
 import { publicBase } from "@/src/services/brand";
 import { BLOCK_TYPES, type Block, type BlockType, type L } from "@/src/domain/blocks";
 
@@ -26,7 +27,9 @@ async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>
   } catch (e) {
     msg = `Nicht gespeichert: ${errText(e)}`;
   }
-  redirect(`/admin/${c.hotel.id}/site/${s(f, "pageId")}?msg=${encodeURIComponent(msg)}${anchor}`);
+  // `at`: Vorschau springt zum zuletzt bearbeiteten Baustein
+  const at = anchor.startsWith("#b-") ? `&at=${encodeURIComponent(anchor.slice(3))}` : "";
+  redirect(`/admin/${c.hotel.id}/site/${s(f, "pageId")}?msg=${encodeURIComponent(msg)}${at}${anchor}`);
 }
 
 async function saveMeta(f: FormData) {
@@ -44,13 +47,15 @@ async function saveMeta(f: FormData) {
   });
 }
 
+const lookFrom = (f: FormData) => ({ align: s(f, "align") || "auto", size: s(f, "size") || "normal" });
+
 /** Formularfelder eines Bausteins in Daten umwandeln */
 function blockFromForm(f: FormData, type: BlockType, id: string, alts: Map<string, string | undefined>): unknown {
   const img = (k: string) => (s(f, k) ? { url: s(f, k), alt: alts.get(s(f, k)) } : null);
   switch (type) {
     case "hero": return { id, type, headline: l10n(f, "headline"), intro: l10n(f, "intro"), image: img("image"), showSearch: f.get("showSearch") === "on" };
-    case "text": return { id, type, heading: l10n(f, "heading"), body: l10n(f, "body") };
-    case "image_text": return { id, type, heading: l10n(f, "heading"), body: l10n(f, "body"), image: img("image"), imageSide: s(f, "imageSide") === "right" ? "right" : "left" };
+    case "text": return { id, type, heading: l10n(f, "heading"), body: l10n(f, "body"), ...lookFrom(f) };
+    case "image_text": return { id, type, heading: l10n(f, "heading"), body: l10n(f, "body"), image: img("image"), imageSide: s(f, "imageSide") === "right" ? "right" : "left", ...lookFrom(f) };
     case "gallery": return { id, type, heading: l10n(f, "heading"), images: f.getAll("images").map(String).map((u) => ({ url: u, alt: alts.get(u) })) };
     case "rooms": return { id, type, heading: l10n(f, "heading") };
     case "booking": return { id, type, heading: l10n(f, "heading") };
@@ -62,8 +67,9 @@ function blockFromForm(f: FormData, type: BlockType, id: string, alts: Map<strin
       }
       return { id, type, heading: l10n(f, "heading"), items };
     }
-    case "location": return { id, type, heading: l10n(f, "heading"), address: s(f, "address"), body: l10n(f, "body") };
-    case "notice": return { id, type, body: l10n(f, "body") };
+    case "location": return { id, type, heading: l10n(f, "heading"), address: s(f, "address"), body: l10n(f, "body"), ...lookFrom(f) };
+    case "notice": return { id, type, body: l10n(f, "body"), ...lookFrom(f) };
+    case "downloads": return { id, type, heading: l10n(f, "heading"), files: f.getAll("files").map(String) };
   }
 }
 
@@ -107,7 +113,7 @@ async function newBlockAction(f: FormData) {
 function LField({ name, label, value, rows, max }: { name: string; label: string; value?: L; rows?: number; max?: number }) {
   const Comp = (lang: "de" | "en") =>
     rows ? (
-      <textarea name={`${name}.${lang}`} rows={rows} defaultValue={value?.[lang] ?? ""} maxLength={max} />
+      <RichTextarea name={`${name}.${lang}`} rows={rows} defaultValue={value?.[lang] ?? ""} maxLength={max} label={`${label} ${lang.toUpperCase()}`} />
     ) : (
       <input name={`${name}.${lang}`} defaultValue={value?.[lang] ?? ""} maxLength={max} />
     );
@@ -144,7 +150,35 @@ function GalleryPick({ lib, value }: { lib: Lib; value: string[] }) {
   );
 }
 
-function BlockFields({ b, lib }: { b: Block; lib: Lib }) {
+type Docs = ReturnType<typeof documentLibrary>;
+
+function DocPick({ docs, value, hotelId }: { docs: Docs; value: string[]; hotelId: string }) {
+  if (!docs.length) return <p className="notice warn small">Noch keine Dokumente. PDFs laden Sie unter <a href={`/admin/${hotelId}/site#dokumente`}>Website → Dokumente</a> hoch.</p>;
+  return (
+    <fieldset className="plain stack">
+      <legend className="small muted">Dokumente auswählen (Reihenfolge wie in der Liste)</legend>
+      {docs.map((d) => (
+        <label key={d.url} className="check"><input type="checkbox" name="files" value={d.url} defaultChecked={value.includes(d.url)} />{d.title.de || d.title.en}</label>
+      ))}
+    </fieldset>
+  );
+}
+
+/** Erweitert: Ausrichtung und Grösse – bewusst versteckt, Standard folgt dem Layout */
+function Look({ b }: { b: { align: string; size: string } }) {
+  return (
+    <details className="look">
+      <summary className="small">Erweitert: Ausrichtung und Textgrösse{b.align !== "auto" || b.size !== "normal" ? " (angepasst)" : ""}</summary>
+      <p className="muted small">Nur wenn nötig. Das gewählte Layout ist auf gute Lesbarkeit abgestimmt, besonders auf dem Handy.</p>
+      <div className="inline-form">
+        <div><label>Ausrichtung</label><select name="align" defaultValue={b.align}><option value="auto">wie Layout (empfohlen)</option><option value="left">links</option><option value="center">zentriert</option></select></div>
+        <div><label>Textgrösse</label><select name="size" defaultValue={b.size}><option value="normal">normal (empfohlen)</option><option value="large">gross</option></select></div>
+      </div>
+    </details>
+  );
+}
+
+function BlockFields({ b, lib, docs, hotelId }: { b: Block; lib: Lib; docs: Docs; hotelId: string }) {
   switch (b.type) {
     case "hero":
       return (<>
@@ -154,13 +188,14 @@ function BlockFields({ b, lib }: { b: Block; lib: Lib }) {
         <label className="check"><input type="checkbox" name="showSearch" defaultChecked={b.showSearch} />Suchleiste anzeigen</label>
       </>);
     case "text":
-      return (<><LField name="heading" label="Überschrift" value={b.heading} max={200} /><LField name="body" label="Text" value={b.body} rows={6} /></>);
+      return (<><LField name="heading" label="Überschrift" value={b.heading} max={200} /><LField name="body" label="Text" value={b.body} rows={6} /><Look b={b} /></>);
     case "image_text":
       return (<>
         <LField name="heading" label="Überschrift" value={b.heading} max={200} />
         <LField name="body" label="Text" value={b.body} rows={5} />
         <ImagePick name="image" lib={lib} value={b.image?.url} />
         <div><label>Bild</label><select name="imageSide" defaultValue={b.imageSide}><option value="left">links</option><option value="right">rechts</option></select></div>
+        <Look b={b} />
       </>);
     case "gallery":
       return (<><LField name="heading" label="Überschrift" value={b.heading} max={200} /><GalleryPick lib={lib} value={b.images.map((i) => i.url)} /></>);
@@ -192,9 +227,12 @@ function BlockFields({ b, lib }: { b: Block; lib: Lib }) {
         <LField name="heading" label="Überschrift" value={b.heading} max={200} />
         <div><label>Adresse für die Route (leer = Hoteladresse)</label><input name="address" defaultValue={b.address} /></div>
         <LField name="body" label="Anreise-Text" value={b.body} rows={4} />
+        <Look b={b} />
       </>);
     case "notice":
-      return <LField name="body" label="Hinweis" value={b.body} rows={3} max={1000} />;
+      return (<><LField name="body" label="Hinweis" value={b.body} rows={3} max={1000} /><Look b={b} /></>);
+    case "downloads":
+      return (<><LField name="heading" label="Überschrift" value={b.heading} max={200} /><DocPick docs={docs} value={b.files} hotelId={hotelId} /></>);
   }
 }
 
@@ -206,13 +244,16 @@ export default async function EditPage({ params, searchParams }: { params: Promi
   if (!page) notFound();
   const canEdit = atLeast(role, "manager");
   const lib = await photoLibrary(hotel);
+  const docs = documentLibrary(hotel);
   const isHome = page.slug === "";
+  const preview = `/vorschau/${hotel.id}/${page.id}${sp.at ? `#b-${encodeURIComponent(sp.at)}` : ""}`;
   const url = `${publicBase(hotel)}/de${isHome ? "" : `/${page.slug}`}`;
   const ids = (<><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="pageId" value={page.id} /></>);
   const label = (t: BlockType) => BLOCK_TYPES.find((x) => x.type === t)?.label ?? t;
 
   return (
-    <div className="stack">
+    <div className="editor-grid">
+    <div className="stack editor-main">
       <a href={`/admin/${hotel.id}/site`}>← Website</a>
       <div style={{ display: "flex", gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>
         <h1 style={{ margin: 0 }}>{isHome ? "Startseite" : page.title.de || page.title.en}</h1>
@@ -263,7 +304,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
             <input type="hidden" name="blockId" value={b.id} />
             <input type="hidden" name="type" value={b.type} />
             <fieldset disabled={!canEdit} className="plain">
-              <div className="stack"><BlockFields b={b} lib={lib} /></div>
+              <div className="stack"><BlockFields b={b} lib={lib} docs={docs} hotelId={hotel.id} /></div>
             </fieldset>
             {canEdit ? <button className="btn small">Baustein speichern</button> : null}
           </form>
@@ -285,6 +326,19 @@ export default async function EditPage({ params, searchParams }: { params: Promi
           </div>
         </section>
       ) : null}
+    </div>
+    <aside className="editor-preview" aria-label="Vorschau">
+      <div className="preview-bar">
+        <strong>Vorschau</strong>
+        <span className="muted small">aktualisiert sich beim Speichern</span>
+        <span className="preview-size">
+          <label><input type="radio" name="pv-size" value="desktop" defaultChecked />Computer</label>
+          <label><input type="radio" name="pv-size" value="mobile" />Handy</label>
+        </span>
+      </div>
+      <div className="preview-frame"><iframe key={sp.msg ?? "start"} src={preview} title="Vorschau der Seite" /></div>
+      <p className="muted small">Zeigt auch Entwürfe. Layout und Schrift ändern Sie unter <a href={`/admin/${hotel.id}/site#gestaltung`}>Website → Gestaltung</a>.</p>
+    </aside>
     </div>
   );
 }

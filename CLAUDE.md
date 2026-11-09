@@ -10,6 +10,7 @@ Vor jeder Arbeit lesen: `docs/SPEC.md` (Auftrag, Quelle der Wahrheit) und `db/sc
 - Geheimnisse nur aus Umgebungsvariablen (`src/env.ts`, `.env.example`).
 - Schemaänderung = neue Datei in `db/migrations/` UND `src/db/schema.ts` nachführen.
 - Jede Änderung an `inventory_days`/`rates_days` schreibt in derselben Transaktion einen `channex_outbox`-Eintrag (`src/services/outbox.ts`) und einen `audit_log`-Eintrag.
+- **Kein Code für einzelne Hotels.** Alle Hotels laufen auf demselben Code. Unterschiede sind Daten: Inhalte, Bausteine, Layout, Schrift, Farbe, Logo (`hotels.content`, `site_pages`). Nie `if (hotel.slug === "…")`, feste Hotel-IDs/Domains oder CSS nur für ein Hotel. Sonderwunsch eines Hotels → (1) mit bestehenden Bausteinen/Einstellungen lösen, (2) wenn er vielen Hotels nützt: neuen Baustein oder neue Einstellung für alle bauen, (3) sonst ablehnen (individuelle Website über Partner, Pontivo liefert nur die Buchung). Geprüft durch `tests/unit/no-hotel-specific-code.test.ts`.
 - Ein Meilenstein ist fertig, wenn alle Abnahmekriterien (SPEC 12) als Tests grün sind: `npm test` und `npm run test:e2e`.
 
 ## Aufbau

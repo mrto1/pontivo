@@ -1,19 +1,37 @@
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import { roomTypes, type Hotel } from "@/src/db/schema";
-import { paragraphs, tr, type Block } from "@/src/domain/blocks";
+import { lookClass, tr, type Block } from "@/src/domain/blocks";
+import { RichText } from "./RichText";
 import { roomDescription, roomName } from "@/src/domain/i18n-names";
 import { addDays, todayIn } from "@/src/domain/dates";
 import { t, type Locale } from "@/src/i18n/dict";
 import { SearchBar } from "./SearchBar";
 
 function Paras({ text }: { text: string }) {
+  return <RichText text={text} />;
+}
+
+function fileSize(bytes: number): string {
+  return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1).replace(".0", "")} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function DownloadsBlock({ files, hotel, lang }: { files: string[]; hotel: Hotel; lang: Locale }) {
+  const lib = new Map((hotel.content.documents ?? []).map((d) => [d.url, d]));
+  const docs = files.map((u) => lib.get(u)).filter((d): d is NonNullable<typeof d> => !!d);
+  if (!docs.length) return null;
   return (
-    <>
-      {paragraphs(text).map((lines, i) => (
-        <p key={i}>{lines.map((l, k) => <span key={k}>{k ? <br /> : null}{l}</span>)}</p>
+    <ul className="downloads">
+      {docs.map((d) => (
+        <li key={d.url}>
+          <a href={d.url} target="_blank" rel="noopener">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="M9 14h6M9 17h4" /></svg>
+            <span>{tr(d.title, lang)}</span>
+            <span className="small">PDF · {fileSize(d.bytes)}</span>
+          </a>
+        </li>
       ))}
-    </>
+    </ul>
   );
 }
 
@@ -54,7 +72,7 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle }: { blocks:
     switch (b.type) {
       case "hero":
         out.push(
-          <section key={b.id} className="blk blk-hero">
+          <section key={b.id} id={`b-${b.id}`} className="blk blk-hero">
             {b.image ? <img className="hero-photo" src={b.image.url} alt={b.image.alt ?? ""} /> : null}
             <div className="hero">
               <Heading text={tr(b.headline, lang) || hotel.name} level={1} />
@@ -65,11 +83,11 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle }: { blocks:
         );
         break;
       case "text":
-        out.push(<section key={b.id} className="blk blk-text"><Heading text={tr(b.heading, lang)} /><Paras text={tr(b.body, lang)} /></section>);
+        out.push(<section key={b.id} id={`b-${b.id}`} className={`blk blk-text ${lookClass(b)}`}><Heading text={tr(b.heading, lang)} /><Paras text={tr(b.body, lang)} /></section>);
         break;
       case "image_text":
         out.push(
-          <section key={b.id} className={`blk blk-imgtext ${b.imageSide === "right" ? "img-right" : ""}`}>
+          <section key={b.id} id={`b-${b.id}`} className={`blk blk-imgtext ${b.imageSide === "right" ? "img-right" : ""} ${lookClass(b)}`}>
             {b.image ? <img src={b.image.url} alt={b.image.alt ?? ""} loading="lazy" /> : <div />}
             <div><Heading text={tr(b.heading, lang)} /><Paras text={tr(b.body, lang)} /></div>
           </section>,
@@ -77,21 +95,21 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle }: { blocks:
         break;
       case "gallery":
         out.push(
-          <section key={b.id} className="blk">
+          <section key={b.id} id={`b-${b.id}`} className="blk">
             <Heading text={tr(b.heading, lang)} />
             <div className="gallery">{b.images.map((im) => <a key={im.url} href={im.url} target="_blank"><img src={im.url} alt={im.alt ?? ""} loading="lazy" /></a>)}</div>
           </section>,
         );
         break;
       case "rooms":
-        out.push(<section key={b.id} className="blk"><Heading text={tr(b.heading, lang) || t(lang).rooms} /><RoomsBlock hotel={hotel} lang={lang} /></section>);
+        out.push(<section key={b.id} id={`b-${b.id}`} className="blk"><Heading text={tr(b.heading, lang) || t(lang).rooms} /><RoomsBlock hotel={hotel} lang={lang} /></section>);
         break;
       case "booking":
-        out.push(<section key={b.id} className="blk"><Heading text={tr(b.heading, lang)} /><SearchBar action={action} locale={lang} today={today} defaults={defaults} /></section>);
+        out.push(<section key={b.id} id={`b-${b.id}`} className="blk"><Heading text={tr(b.heading, lang)} /><SearchBar action={action} locale={lang} today={today} defaults={defaults} /></section>);
         break;
       case "facts":
         out.push(
-          <section key={b.id} className="blk">
+          <section key={b.id} id={`b-${b.id}`} className="blk">
             <Heading text={tr(b.heading, lang)} />
             <dl className="facts">
               {b.items.map((it, i) => (
@@ -104,7 +122,7 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle }: { blocks:
       case "location": {
         const addr = b.address || [hotel.addressLine, [hotel.postalCode, hotel.city].filter(Boolean).join(" ")].filter(Boolean).join(", ");
         out.push(
-          <section key={b.id} className="blk blk-location">
+          <section key={b.id} id={`b-${b.id}`} className={`blk blk-location ${lookClass(b)}`}>
             <Heading text={tr(b.heading, lang)} />
             {addr ? <p><strong>{addr}</strong><br /><a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`} target="_blank" rel="noopener">{lang === "de" ? "Route planen" : "Get directions"}</a></p> : null}
             <Paras text={tr(b.body, lang)} />
@@ -112,8 +130,11 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle }: { blocks:
         );
         break;
       }
+      case "downloads":
+        out.push(<section key={b.id} id={`b-${b.id}`} className="blk blk-downloads"><Heading text={tr(b.heading, lang)} /><DownloadsBlock files={b.files} hotel={hotel} lang={lang} /></section>);
+        break;
       case "notice":
-        out.push(<section key={b.id} className="blk"><div className="notice"><Paras text={tr(b.body, lang)} /></div></section>);
+        out.push(<section key={b.id} id={`b-${b.id}`} className={`blk ${lookClass(b)}`}><div className="notice"><Paras text={tr(b.body, lang)} /></div></section>);
         break;
     }
   }

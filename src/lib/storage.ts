@@ -4,13 +4,14 @@ import path from "node:path";
 import { env } from "../env";
 
 /**
- * Fotos auf der lokalen Festplatte des Servers, ausgeliefert über /media/<hotelId>/<datei>.
+ * Fotos und PDFs auf der lokalen Festplatte des Servers, ausgeliefert über /media/<hotelId>/<datei>.
  */
 // ASSUMPTION: Lokaler Ordner (UPLOAD_DIR) statt S3 für v1 – keine Zusatzabhängigkeit. Bilder werden nicht verkleinert;
 // darum Grösse begrenzt. Für mehrere Server-Instanzen später auf S3-kompatiblen Speicher (CH/EU) umstellen.
 
 export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
-const TYPES = { jpg: "image/jpeg", png: "image/png", webp: "image/webp" } as const;
+export const MAX_PDF_BYTES = 15 * 1024 * 1024;
+const TYPES = { jpg: "image/jpeg", png: "image/png", webp: "image/webp", pdf: "application/pdf" } as const;
 type Ext = keyof typeof TYPES;
 
 export class UploadError extends Error {}
@@ -24,10 +25,32 @@ export function sniffImage(b: Uint8Array): Ext | null {
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const FILE = /^[A-Za-z0-9_-]{16,64}\.(jpg|png|webp)$/;
+const FILE = /^[A-Za-z0-9_-]{16,64}\.(jpg|png|webp|pdf)$/;
 
 function root() {
   return path.resolve(env().UPLOAD_DIR);
+}
+
+/** PDF anhand der ersten Bytes ("%PDF-") */
+export function isPdf(b: Uint8Array): boolean {
+  return b.length >= 5 && String.fromCharCode(...b.slice(0, 5)) === "%PDF-";
+}
+
+async function store(hotelId: string, bytes: Uint8Array, ext: Ext): Promise<string> {
+  const name = `${crypto.randomBytes(12).toString("base64url")}.${ext}`;
+  const dir = path.join(root(), hotelId);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, name), bytes, { flag: "wx" });
+  return `/media/${hotelId}/${name}`;
+}
+
+/** PDF speichern (z. B. Speisekarte). Nur echte PDFs, max. 15 MB. */
+export async function savePdf(hotelId: string, bytes: Uint8Array): Promise<string> {
+  if (!UUID.test(hotelId)) throw new UploadError("Ungültiges Hotel");
+  if (bytes.length === 0) throw new UploadError("Leere Datei");
+  if (bytes.length > MAX_PDF_BYTES) throw new UploadError(`Datei zu gross (max. ${MAX_PDF_BYTES / 1024 / 1024} MB)`);
+  if (!isPdf(bytes)) throw new UploadError("Nur PDF-Dateien");
+  return store(hotelId, bytes, "pdf");
 }
 
 export async function saveImage(hotelId: string, bytes: Uint8Array): Promise<string> {
@@ -36,11 +59,7 @@ export async function saveImage(hotelId: string, bytes: Uint8Array): Promise<str
   if (bytes.length > MAX_UPLOAD_BYTES) throw new UploadError(`Datei zu gross (max. ${MAX_UPLOAD_BYTES / 1024 / 1024} MB)`);
   const ext = sniffImage(bytes);
   if (!ext) throw new UploadError("Nur JPG, PNG oder WebP");
-  const name = `${crypto.randomBytes(12).toString("base64url")}.${ext}`;
-  const dir = path.join(root(), hotelId);
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, name), bytes, { flag: "wx" });
-  return `/media/${hotelId}/${name}`;
+  return store(hotelId, bytes, ext);
 }
 
 /** Pfad zu einer gespeicherten Datei, nur für gültige Namen (kein ../) */

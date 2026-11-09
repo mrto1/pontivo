@@ -171,3 +171,142 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .addblock:hover { border-color: var(--accent); }
 .addblock span { font-size: .82rem; color: var(--muted); }
 .admin-head .wrap { flex-wrap: wrap; height: auto; min-height: 56px; row-gap: 6px; padding-top: 8px; padding-bottom: 8px; overflow: visible; }
+
+/* ---------- Layouts der Hotel-Website (src/domain/theme.ts) ----------
+   Gleiches Markup für alle Hotels; ein Layout ist nur eine Klasse am Rahmen. */
+.site { font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column; }
+.site > main { flex: 1; width: 100%; }
+.site .brand, .site h1, .site h2 { font-family: var(--serif); }
+
+/* Panorama: Titelbild über die ganze Breite, Titel auf dem Bild */
+.layout-panorama .blk-hero:has(.hero-photo) { display: grid; margin: 0 calc(50% - 50vw); padding: 0; }
+.layout-panorama .blk-hero:has(.hero-photo) > .hero-photo { grid-area: 1 / 1; margin: 0; border-radius: 0; aspect-ratio: auto; height: min(72vh, 640px); min-height: 360px; }
+.layout-panorama .blk-hero:has(.hero-photo) > .hero {
+  grid-area: 1 / 1; align-self: end; z-index: 1; width: 100%; margin: 0; padding-top: 120px; padding-bottom: 72px;
+  color: #fff; background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0));
+  max-width: none; padding-left: max(16px, calc(50vw - 504px)); padding-right: max(16px, calc(50vw - 504px));
+}
+.layout-panorama .blk-hero:has(.hero-photo) > .hero h1 { font-size: clamp(2.2rem, 5.5vw, 3.6rem); text-shadow: 0 1px 12px rgba(0,0,0,.35); }
+.layout-panorama .blk-hero:has(.hero-photo) > .hero p { color: rgba(255,255,255,.92); }
+.layout-panorama .blk-hero:has(.hero-photo) > .searchbar,
+.layout-panorama .blk-hero:has(.hero-photo) > form { width: min(1040px, calc(100% - 32px)); margin: -40px auto 0; position: relative; z-index: 2;
+  background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: 0 8px 30px rgba(0,0,0,.14); }
+.layout-panorama .site-head { position: relative; z-index: 3; }
+
+/* Zentriert: Logo und Menü mittig, Titel zentriert */
+.layout-zentriert .site-head .wrap { flex-direction: column; justify-content: center; gap: 8px; padding-top: 18px; padding-bottom: 14px; }
+.layout-zentriert .site-head .lang { order: -1; align-self: flex-end; }
+.layout-zentriert .brand { font-size: 1.7rem; }
+.layout-zentriert .brand-logo { height: 56px; }
+.layout-zentriert .site-nav { justify-content: center; }
+.layout-zentriert .hero, .layout-zentriert .blk > h2, .layout-zentriert .section > h2, .layout-zentriert main > h1 { text-align: center; }
+.layout-zentriert .hero p, .layout-zentriert .blk-text p, .layout-zentriert .blk-location p { margin-left: auto; margin-right: auto; }
+.layout-zentriert .blk-text, .layout-zentriert .blk-location { text-align: center; }
+.layout-zentriert .foot { text-align: center; }
+
+/* Modern: breit, kräftige Titel, eckig, Menü bleibt sichtbar */
+.layout-modern { --radius: 2px; }
+.layout-modern .wrap { max-width: 1220px; }
+.layout-modern .site-head { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(10px); }
+.layout-modern h1 { font-weight: 800; letter-spacing: -0.03em; font-size: clamp(2.2rem, 5vw, 3.4rem); }
+.layout-modern h2 { font-weight: 700; letter-spacing: -0.02em; font-size: 1.9rem; }
+.layout-modern .btn, .layout-modern input, .layout-modern select { border-radius: 2px; }
+.layout-modern .card { border: 0; background: var(--accent-soft); }
+.layout-modern .hero-photo, .layout-modern .room-photo, .layout-modern .gallery img, .layout-modern .blk-imgtext img { border-radius: 0; }
+.layout-modern .blk-imgtext { gap: 56px; }
+.layout-modern .site-nav a { font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: .8rem; }
+
+/* Landhaus: warmer Grund, gerahmte Bilder, verzierte Titel */
+.layout-landhaus { --bg: #f6efe3; --surface: #fffaf2; --line: #e3d6c2; background: var(--bg); }
+@media (prefers-color-scheme: dark) { .layout-landhaus { --bg: #1d1915; --surface: #26211b; --line: #3b3329; } }
+.layout-landhaus .site-head { border-bottom: 3px double var(--line); }
+.layout-landhaus .blk > h2, .layout-landhaus .section > h2 { text-align: center; }
+.layout-landhaus .blk > h2::after, .layout-landhaus .section > h2::after { content: ""; display: block; width: 64px; height: 2px; margin: 12px auto 0; background: var(--accent); opacity: .7; }
+.layout-landhaus .hero-photo, .layout-landhaus .room-photo, .layout-landhaus .gallery img, .layout-landhaus .blk-imgtext img {
+  border: 6px solid var(--surface); box-shadow: 0 2px 10px rgba(60,40,20,.15); border-radius: 4px; }
+.layout-landhaus .card { border: 1px solid var(--line); box-shadow: 0 1px 0 var(--line); }
+.layout-landhaus .foot { border-top: 3px double var(--line); }
+
+/* Minimal: viel Weissraum, feine Linien, schlichte Knöpfe */
+.layout-minimal { --radius: 0px; --line: color-mix(in srgb, var(--ink) 12%, transparent); }
+.layout-minimal .site-head { background: transparent; }
+.layout-minimal .site-nav a, .layout-minimal .lang a { text-transform: uppercase; letter-spacing: .14em; font-size: .72rem; }
+.layout-minimal .blk { padding: 56px 0; }
+.layout-minimal .blk + .blk { border-top: 1px solid var(--line); }
+.layout-minimal h1 { font-weight: 500; }
+.layout-minimal h2 { font-weight: 500; font-size: 1.35rem; text-transform: uppercase; letter-spacing: .08em; }
+.layout-minimal .card { background: transparent; border: 0; border-top: 1px solid var(--line); padding: 20px 0 0; }
+.layout-minimal .btn { border-radius: 0; text-transform: uppercase; letter-spacing: .1em; font-size: .8rem; padding: 13px 22px; }
+.layout-minimal .hero-photo, .layout-minimal .room-photo, .layout-minimal .gallery img, .layout-minimal .blk-imgtext img { border-radius: 0; }
+
+/* ---------- Downloads (PDF) ---------- */
+.downloads { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-width: 640px; }
+.layout-zentriert .downloads, .layout-landhaus .downloads { margin: 0 auto; }
+.downloads a { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); text-decoration: none; color: var(--ink); }
+.downloads a:hover { border-color: var(--accent); }
+.downloads svg { flex: none; color: var(--accent); }
+.downloads .small { margin-left: auto; color: var(--muted); }
+
+/* ---------- Formatierter Text ---------- */
+.rich-list { max-width: 70ch; padding-left: 1.3em; margin: 0 0 1em; }
+.rich-list li + li { margin-top: .25em; }
+.blk h3 { font-family: var(--serif); font-size: 1.15rem; margin: 1.2em 0 .4em; }
+.layout-zentriert .blk-text .rich-list, .layout-zentriert .blk-location .rich-list { display: inline-block; text-align: left; }
+.layout-panorama .blk-hero:has(.hero-photo) > .hero a { color: #fff; }
+
+/* ---------- Formatierungsleiste im Editor ---------- */
+.rich { display: flex; flex-direction: column; }
+.fmt-bar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding: 4px; border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; background: var(--bg); }
+.rich textarea { border-radius: 0 0 8px 8px; }
+.fmt-btn { font: inherit; font-size: .82rem; min-width: 32px; min-height: 30px; padding: 2px 8px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer; }
+.fmt-btn:hover, .fmt-btn:focus-visible { background: var(--surface); border-color: var(--line); }
+.fmt-sep { width: 1px; height: 18px; background: var(--line); margin: 0 4px; }
+
+/* ---------- Editor mit Vorschau ---------- */
+.editor-preview { display: none; }
+@media (min-width: 1280px) {
+  .editor-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 24px; align-items: start;
+    width: min(1560px, calc(100vw - 48px)); margin-left: calc(50% - min(780px, 50vw - 24px)); }
+  .editor-preview { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 12px; height: calc(100vh - 24px); }
+}
+.preview-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.preview-size { margin-left: auto; display: flex; gap: 12px; }
+.preview-size label { display: flex; align-items: center; margin: 0; color: var(--ink); font-size: .85rem; }
+.preview-size input { width: auto; margin-right: 6px; }
+.preview-frame { flex: 1; min-height: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); overflow: hidden; display: flex; justify-content: center; }
+.preview-frame iframe { width: 100%; height: 100%; border: 0; background: #fff; transition: width .2s; }
+.editor-preview:has(input[value="mobile"]:checked) .preview-frame iframe { width: 390px; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+.site .hl { color: var(--accent); font-weight: 600; }
+.fmt-hl { color: var(--accent); font-weight: 700; }
+/* Grösse und Ausrichtung pro Baustein (Einstellung «Erweitert») */
+.blk.t-center { text-align: center; }
+.blk.t-center p, .blk.t-center .rich-list { margin-left: auto; margin-right: auto; }
+.blk.t-center .rich-list { display: inline-block; text-align: left; }
+.blk.t-left { text-align: left; }
+.blk.t-left p { margin-left: 0; }
+.blk.t-large p, .blk.t-large li { font-size: 1.2rem; line-height: 1.55; }
+.look > summary { color: var(--muted); } .look[open] > summary { margin-bottom: 8px; }
+
+/* ---------- Auswahl Layout / Schrift im Admin ---------- */
+.choice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.choice { position: relative; display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.choice:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.choice input { position: absolute; top: 12px; right: 12px; width: auto; margin: 0; z-index: 1; }
+.layout-thumb { position: relative; display: block; height: 70px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.layout-thumb i, .layout-thumb b, .layout-thumb em { position: absolute; display: block; }
+.layout-thumb i { left: 0; right: 0; top: 0; height: 10px; background: var(--line); }                     /* Kopf */
+.layout-thumb b { left: 8px; right: 8px; top: 16px; height: 28px; background: color-mix(in srgb, var(--accent) 35%, var(--bg)); border-radius: 2px; } /* Titelbild */
+.layout-thumb em { left: 8px; width: 45%; top: 50px; height: 6px; background: var(--muted); opacity: .6; border-radius: 2px; } /* Titel */
+.thumb-panorama b { left: 0; right: 0; top: 10px; height: 44px; border-radius: 0; }
+.thumb-panorama em { top: 40px; background: #fff; opacity: .9; }
+.thumb-zentriert i { height: 14px; }
+.thumb-zentriert em { left: 27.5%; }
+.thumb-modern b { left: 0; right: 0; border-radius: 0; height: 32px; }
+.thumb-modern em { height: 9px; width: 60%; opacity: .9; }
+.thumb-landhaus { background: #f3e9da; }
+.thumb-landhaus b { border: 3px solid #fffaf2; }
+.thumb-landhaus em { left: 30%; width: 40%; }
+.thumb-minimal i { background: transparent; border-bottom: 1px solid var(--line); }
+.thumb-minimal b { left: 16px; right: 16px; top: 18px; border-radius: 0; }
+.thumb-minimal em { height: 3px; left: 16px; }
+.font-choice strong { font-family: var(--serif); font-size: 1.15rem; } .font-choice .font-sample { font-family: var(--font); font-size: .9rem; }

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "../db/client";
 import { hotels, type Hotel, type HotelBrand } from "../db/schema";
 import { HEX } from "../domain/brand";
+import { FONT_KEYS, LAYOUT_KEYS } from "../domain/theme";
 import { env } from "../env";
 import { audit } from "./audit";
 
@@ -40,4 +41,17 @@ export function publicBase(hotel: Pick<Hotel, "slug" | "primaryDomain">): string
   const e = env();
   if (hotel.primaryDomain && e.NODE_ENV === "production") return `https://${hotel.primaryDomain}`;
   return `${e.APP_BASE_URL}/h/${hotel.slug}`;
+}
+
+export const designSchema = z.object({
+  layout: z.enum(LAYOUT_KEYS),
+  font: z.enum(FONT_KEYS),
+});
+
+/** Layout und Schrift der Website setzen (Daten, gleicher Code für alle Hotels) */
+export async function updateDesign(hotelId: string, input: z.infer<typeof designSchema>, actor: string) {
+  const v = designSchema.parse(input);
+  const [h] = await db().select().from(hotels).where(eq(hotels.id, hotelId));
+  await db().update(hotels).set({ content: { ...h.content, brand: { ...h.content.brand, layout: v.layout, font: v.font } }, updatedAt: new Date() }).where(eq(hotels.id, hotelId));
+  await audit(db(), { hotelId, actor, action: "hotel.design", entity: "hotel", entityId: hotelId, details: v });
 }
