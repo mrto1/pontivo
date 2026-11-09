@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { Hotel, SitePage } from "../db/schema";
 import { tr } from "../domain/blocks";
 import { plainText } from "../domain/richtext";
-import type { Locale } from "../i18n/dict";
+import { hotelLocales, OG_LOCALES, type Locale } from "../i18n/dict";
 import { publicBase } from "../services/brand";
 
 /** Titel, Beschreibung und Vorschaubild (Google, WhatsApp, Social Media) einer Hotel-Seite */
@@ -19,7 +19,7 @@ export function pageMetadata(hotel: Hotel, page: SitePage | null, locale: Locale
   return {
     title,
     description,
-    alternates: { languages: { de: `${base}/de${page?.slug ? `/${page.slug}` : ""}`, en: `${base}/en${page?.slug ? `/${page.slug}` : ""}` } },
-    openGraph: { title, description, siteName: hotel.name, locale: locale === "de" ? "de_CH" : "en", images: img ? [{ url: origin + img }] : undefined, type: "website" },
+    alternates: { languages: Object.fromEntries(hotelLocales(hotel).map((l) => [l, `${base}/${l}${page?.slug ? `/${page.slug}` : ""}`])) },
+    openGraph: { title, description, siteName: hotel.name, locale: OG_LOCALES[locale], images: img ? [{ url: origin + img }] : undefined, type: "website" },
   };
 }

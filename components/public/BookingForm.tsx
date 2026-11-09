@@ -73,11 +73,11 @@ export function BookingForm(props: {
       <label className="check">
         <input type="checkbox" name="terms" required />
         <span>
-          {props.locale === "de" ? "Ich akzeptiere die " : "I accept the "}
-          <a href={`${props.base}/${props.locale}/agb`} target="_blank">{props.locale === "de" ? "AGB" : "terms"}</a>
-          {props.locale === "de" ? " und die Stornobedingungen und habe die " : " and the cancellation policy and have read the "}
-          <a href={`${props.base}/${props.locale}/datenschutz`} target="_blank">{props.locale === "de" ? "Datenschutzerklärung" : "privacy policy"}</a>
-          {props.locale === "de" ? " gelesen." : "."}
+          {t(props.locale).accept1}
+          <a href={`${props.base}/${props.locale}/agb`} target="_blank">{t(props.locale).acceptTerms}</a>
+          {t(props.locale).accept2}
+          <a href={`${props.base}/${props.locale}/datenschutz`} target="_blank">{t(props.locale).acceptPrivacy}</a>
+          {t(props.locale).accept3}
         </span>
       </label>
       {error ? <p className="notice warn" role="alert">{error}</p> : null}

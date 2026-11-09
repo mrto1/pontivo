@@ -1,11 +1,11 @@
 import { formatChf } from "../domain/money";
 import { cancellationPolicyText } from "../domain/cancellation";
-import { formatDay, type Locale } from "../i18n/dict";
+import { formatDay, isLocale, type Locale } from "../i18n/dict";
 import type { Booking, Hotel, RatePlan, RoomType } from "../db/schema";
 import { planName, roomName } from "../domain/i18n-names";
 
 /**
- * E-Mail-Texte DE/EN (SPEC 10).
+ * E-Mail-Texte (SPEC 10): an Gäste in allen Website-Sprachen, an das Hotel DE/EN.
  */
 // ASSUMPTION: Einfache HTML-Templates in TypeScript statt React Email – keine zusätzliche Abhängigkeit für v1.
 
@@ -23,17 +23,76 @@ export type Rendered = { subject: string; text: string; html: string };
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
+type GuestMsg = {
+  reference: string; checkin: string; checkout: string; room: string; guests: string; children: string; total: string; inclTax: string;
+  view: string; hi: (n?: string | null) => string; cancellation: string;
+  confirmedSubject: (r: string) => string; confirmedText: string;
+  cancelledSubject: (r: string) => string; cancelledText: (r: string, m: string) => string;
+  preSubject: (h: string) => string; preText: (t: string) => string;
+  postSubject: (h: string) => string; postText: string; bookAgain: string;
+  refundSubject: (r: string) => string; refundText: (m: string) => string;
+};
+
+/** Texte für Gäste in allen Website-Sprachen (Hotel-interne Mails bleiben DE/EN) */
+const G: Record<Locale, GuestMsg> = {
+  de: {
+    reference: "Buchungsnummer", checkin: "Anreise", checkout: "Abreise", room: "Zimmer", guests: "Personen", children: "Kinder", total: "Total", inclTax: "inkl. Kurtaxe",
+    view: "Buchung ansehen", hi: (n) => (n ? `Guten Tag ${n}` : "Guten Tag"), cancellation: "Storno",
+    confirmedSubject: (r) => `Buchungsbestätigung ${r}`, confirmedText: "vielen Dank für Ihre Direktbuchung. Wir freuen uns auf Ihren Besuch.",
+    cancelledSubject: (r) => `Stornierung ${r}`, cancelledText: (r, m) => `die Buchung ${r} wurde storniert. Rückerstattung: ${m}.`,
+    preSubject: (h) => `Bald ist es so weit – ${h}`, preText: (t) => `in wenigen Tagen reisen Sie an. Check-in ab ${t} Uhr.`,
+    postSubject: (h) => `Danke für Ihren Besuch – ${h}`, postText: "vielen Dank für Ihren Aufenthalt. Beim nächsten Mal direkt buchen und den besten Preis sichern.", bookAgain: "Wieder buchen",
+    refundSubject: (r) => `Zahlung erstattet ${r}`, refundText: (m) => `Ihre Zahlung ist nach Ablauf der Reservierung eingegangen und das Zimmer war nicht mehr frei. Wir haben ${m} vollständig zurückerstattet.`,
+  },
+  en: {
+    reference: "Booking number", checkin: "Check-in", checkout: "Check-out", room: "Room", guests: "Guests", children: "children", total: "Total", inclTax: "incl. tourist tax",
+    view: "View booking", hi: (n) => (n ? `Dear ${n}` : "Hello"), cancellation: "Cancellation",
+    confirmedSubject: (r) => `Booking confirmation ${r}`, confirmedText: "thank you for booking direct. We look forward to welcoming you.",
+    cancelledSubject: (r) => `Cancellation ${r}`, cancelledText: (r, m) => `booking ${r} has been cancelled. Refund: ${m}.`,
+    preSubject: (h) => `See you soon – ${h}`, preText: (t) => `you arrive in a few days. Check-in from ${t}.`,
+    postSubject: (h) => `Thank you for staying – ${h}`, postText: "thank you for your stay. Book direct next time for the best price.", bookAgain: "Book again",
+    refundSubject: (r) => `Payment refunded ${r}`, refundText: (m) => `Your payment arrived after the reservation expired and the room was no longer available. We have fully refunded ${m}.`,
+  },
+  fr: {
+    reference: "Numéro de réservation", checkin: "Arrivée", checkout: "Départ", room: "Chambre", guests: "Personnes", children: "enfants", total: "Total", inclTax: "taxe de séjour incluse",
+    view: "Voir la réservation", hi: (n) => (n ? `Bonjour ${n}` : "Bonjour"), cancellation: "Annulation",
+    confirmedSubject: (r) => `Confirmation de réservation ${r}`, confirmedText: "merci pour votre réservation directe. Nous nous réjouissons de vous accueillir.",
+    cancelledSubject: (r) => `Annulation ${r}`, cancelledText: (r, m) => `la réservation ${r} a été annulée. Remboursement : ${m}.`,
+    preSubject: (h) => `À très bientôt – ${h}`, preText: (t) => `vous arrivez dans quelques jours. Arrivée possible dès ${t}.`,
+    postSubject: (h) => `Merci de votre visite – ${h}`, postText: "merci pour votre séjour. La prochaine fois, réservez en direct pour obtenir le meilleur prix.", bookAgain: "Réserver à nouveau",
+    refundSubject: (r) => `Paiement remboursé ${r}`, refundText: (m) => `Votre paiement est arrivé après l'expiration de la réservation et la chambre n'était plus disponible. Nous vous avons remboursé intégralement ${m}.`,
+  },
+  it: {
+    reference: "Numero di prenotazione", checkin: "Arrivo", checkout: "Partenza", room: "Camera", guests: "Persone", children: "bambini", total: "Totale", inclTax: "tassa di soggiorno inclusa",
+    view: "Vedi la prenotazione", hi: (n) => (n ? `Buongiorno ${n}` : "Buongiorno"), cancellation: "Annullamento",
+    confirmedSubject: (r) => `Conferma di prenotazione ${r}`, confirmedText: "grazie per aver prenotato direttamente. Non vediamo l'ora di accogliervi.",
+    cancelledSubject: (r) => `Annullamento ${r}`, cancelledText: (r, m) => `la prenotazione ${r} è stata annullata. Rimborso: ${m}.`,
+    preSubject: (h) => `A presto – ${h}`, preText: (t) => `tra pochi giorni arriverete da noi. Check-in dalle ${t}.`,
+    postSubject: (h) => `Grazie della visita – ${h}`, postText: "grazie per il vostro soggiorno. La prossima volta prenotate direttamente per il miglior prezzo.", bookAgain: "Prenota di nuovo",
+    refundSubject: (r) => `Pagamento rimborsato ${r}`, refundText: (m) => `Il vostro pagamento è arrivato dopo la scadenza della prenotazione e la camera non era più disponibile. Vi abbiamo rimborsato interamente ${m}.`,
+  },
+  nl: {
+    reference: "Boekingsnummer", checkin: "Aankomst", checkout: "Vertrek", room: "Kamer", guests: "Personen", children: "kinderen", total: "Totaal", inclTax: "incl. toeristenbelasting",
+    view: "Boeking bekijken", hi: (n) => (n ? `Beste ${n}` : "Hallo"), cancellation: "Annulering",
+    confirmedSubject: (r) => `Boekingsbevestiging ${r}`, confirmedText: "hartelijk dank voor uw directe boeking. We kijken uit naar uw bezoek.",
+    cancelledSubject: (r) => `Annulering ${r}`, cancelledText: (r, m) => `boeking ${r} is geannuleerd. Terugbetaling: ${m}.`,
+    preSubject: (h) => `Tot binnenkort – ${h}`, preText: (t) => `over een paar dagen komt u aan. Inchecken vanaf ${t} uur.`,
+    postSubject: (h) => `Bedankt voor uw bezoek – ${h}`, postText: "hartelijk dank voor uw verblijf. Boek de volgende keer direct voor de beste prijs.", bookAgain: "Opnieuw boeken",
+    refundSubject: (r) => `Betaling terugbetaald ${r}`, refundText: (m) => `Uw betaling kwam binnen nadat de reservering was verlopen en de kamer was niet meer vrij. We hebben ${m} volledig terugbetaald.`,
+  },
+};
+
 function summary(c: EmailContext, l: Locale): string[] {
   const b = c.booking;
   if (!b) return [];
-  const de = l === "de";
+  const m = G[l];
   return [
-    `${de ? "Buchungsnummer" : "Booking number"}: ${b.reference}`,
-    `${de ? "Anreise" : "Check-in"}: ${formatDay(b.checkin, l)} (${c.hotel.checkinTime.slice(0, 5)})`,
-    `${de ? "Abreise" : "Check-out"}: ${formatDay(b.checkout, l)} (${c.hotel.checkoutTime.slice(0, 5)})`,
-    `${de ? "Zimmer" : "Room"}: ${c.roomType ? roomName(c.roomType, l) : "-"}${c.plan ? ` · ${planName(c.plan, l)}` : ""}`,
-    `${de ? "Personen" : "Guests"}: ${b.adults}${b.children ? ` + ${b.children} ${de ? "Kinder" : "children"}` : ""}`,
-    `${de ? "Total" : "Total"}: ${formatChf(b.totalRappen)}${b.touristTaxRappen ? ` (${de ? "inkl. Kurtaxe" : "incl. tourist tax"} ${formatChf(b.touristTaxRappen)})` : ""}`,
+    `${m.reference}: ${b.reference}`,
+    `${m.checkin}: ${formatDay(b.checkin, l)} (${c.hotel.checkinTime.slice(0, 5)})`,
+    `${m.checkout}: ${formatDay(b.checkout, l)} (${c.hotel.checkoutTime.slice(0, 5)})`,
+    `${m.room}: ${c.roomType ? roomName(c.roomType, l) : "-"}${c.plan ? ` · ${planName(c.plan, l)}` : ""}`,
+    `${m.guests}: ${b.adults}${b.children ? ` + ${b.children} ${m.children}` : ""}`,
+    `${m.total}: ${formatChf(b.totalRappen)}${b.touristTaxRappen ? ` (${m.inclTax} ${formatChf(b.touristTaxRappen)})` : ""}`,
   ];
 }
 
@@ -50,41 +109,36 @@ ${link ? `<p style="margin-top:24px"><a href="${esc(link.href)}" style="backgrou
 }
 
 export function render(template: string, lang: string, c: EmailContext): Rendered {
-  const l: Locale = lang === "en" ? "en" : "de";
+  // Gäste-Mails in jeder Website-Sprache; Hotel-interne Mails nur DE/EN
+  const gl: Locale = isLocale(lang) ? lang : "de";
+  const l: Locale = gl === "de" || gl === "en" ? gl : "en";
   const de = l === "de";
+  const m = G[gl];
   const b = c.booking;
-  const link = b ? { href: `${c.baseUrl}/b/${b.publicToken}`, label: de ? "Buchung ansehen" : "View booking" } : undefined;
-  const hi = c.guestName ? (de ? `Guten Tag ${c.guestName}` : `Dear ${c.guestName}`) : de ? "Guten Tag" : "Hello";
+  const link = b ? { href: `${c.baseUrl}/b/${b.publicToken}`, label: m.view } : undefined;
+  const hi = m.hi(c.guestName);
   const money = (k: string) => formatChf(Number(c.data[k] ?? 0));
+  const ref = b?.reference ?? "";
 
   switch (template) {
     case "booking_confirmed":
-      return wrap(c, l, de ? `Buchungsbestätigung ${b?.reference}` : `Booking confirmation ${b?.reference}`,
-        [hi + ",", de ? "vielen Dank für Ihre Direktbuchung. Wir freuen uns auf Ihren Besuch." : "thank you for booking direct. We look forward to welcoming you."],
-        [...summary(c, l), ...(c.plan ? [`${de ? "Storno" : "Cancellation"}: ${cancellationPolicyText(c.plan, l)}`] : [])], link);
+      return wrap(c, gl, m.confirmedSubject(ref), [hi + ",", m.confirmedText],
+        [...summary(c, gl), ...(c.plan ? [`${m.cancellation}: ${cancellationPolicyText(c.plan, gl)}`] : [])], link);
     case "hotel_new_booking":
       return wrap(c, l, `${de ? "Neue Buchung" : "New booking"} ${b?.reference} (${b?.source})`,
         [de ? `Neue Buchung von ${c.guestName ?? "Gast"} über ${b?.source}.` : `New booking from ${c.guestName ?? "guest"} via ${b?.source}.`],
         summary(c, l));
     case "booking_cancelled":
-      return wrap(c, l, de ? `Stornierung ${b?.reference}` : `Cancellation ${b?.reference}`,
-        [hi + ",", de ? `die Buchung ${b?.reference} wurde storniert. Rückerstattung: ${money("refundRappen")}.` : `booking ${b?.reference} has been cancelled. Refund: ${money("refundRappen")}.`],
-        summary(c, l), link);
+      return wrap(c, gl, m.cancelledSubject(ref), [hi + ",", m.cancelledText(ref, money("refundRappen"))], summary(c, gl), link);
     case "pre_arrival":
-      return wrap(c, l, de ? `Bald ist es so weit – ${c.hotel.name}` : `See you soon – ${c.hotel.name}`,
-        [hi + ",", de ? `in wenigen Tagen reisen Sie an. Check-in ab ${c.hotel.checkinTime.slice(0, 5)} Uhr.` : `you arrive in a few days. Check-in from ${c.hotel.checkinTime.slice(0, 5)}.`],
-        summary(c, l), link);
+      return wrap(c, gl, m.preSubject(c.hotel.name), [hi + ",", m.preText(c.hotel.checkinTime.slice(0, 5))], summary(c, gl), link);
     case "post_stay":
-      return wrap(c, l, de ? `Danke für Ihren Besuch – ${c.hotel.name}` : `Thank you for staying – ${c.hotel.name}`,
-        [hi + ",", de ? "vielen Dank für Ihren Aufenthalt. Beim nächsten Mal direkt buchen und den besten Preis sichern." : "thank you for your stay. Book direct next time for the best price."],
-        [], { href: c.baseUrl, label: de ? "Wieder buchen" : "Book again" });
+      return wrap(c, gl, m.postSubject(c.hotel.name), [hi + ",", m.postText], [], { href: c.baseUrl, label: m.bookAgain });
     case "overbooking_alert":
       return wrap(c, l, `${de ? "ÜBERBUCHUNG" : "OVERBOOKING"} ${b?.reference ?? ""}`,
         [de ? "Eine Buchung aus einem Portal hat eine Überbuchung erzeugt. Bitte sofort prüfen." : "A channel booking caused an overbooking. Please check immediately."], summary(c, l));
     case "late_payment_refunded":
-      return wrap(c, l, de ? `Zahlung erstattet ${b?.reference}` : `Payment refunded ${b?.reference}`,
-        [hi + ",", de ? `Ihre Zahlung ist nach Ablauf der Reservierung eingegangen und das Zimmer war nicht mehr frei. Wir haben ${money("refundRappen")} vollständig zurückerstattet.` : `Your payment arrived after the reservation expired and the room was no longer available. We have fully refunded ${money("refundRappen")}.`],
-        summary(c, l));
+      return wrap(c, gl, m.refundSubject(ref), [hi + ",", m.refundText(money("refundRappen"))], summary(c, gl));
     case "dispute_alert":
       return wrap(c, l, de ? "Zahlung angefochten (Dispute)" : "Payment disputed",
         [de ? `Eine Zahlung über ${money("amountRappen")} wurde angefochten (Grund: ${c.data.reason}). Bitte im Stripe-Dashboard reagieren.` : `A payment of ${money("amountRappen")} was disputed (reason: ${c.data.reason}). Please respond in the Stripe dashboard.`], summary(c, l));

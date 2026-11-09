@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { fallbackChain, type Locale } from "../i18n/dict";
 
 /**
  * Bausteine der Hotel-Website. Jeder Text ist zweisprachig ({de, en}); fehlt EN, wird DE gezeigt.
@@ -6,7 +7,7 @@ import { z } from "zod";
  */
 
 const text = (max: number) => z.string().max(max).optional();
-export const l10n = (max = 4000) => z.object({ de: text(max), en: text(max) }).default({});
+export const l10n = (max = 4000) => z.object({ de: text(max), en: text(max), fr: text(max), it: text(max), nl: text(max) }).default({});
 const imageUrl = z.string().regex(/^\/media\/[0-9a-f-]{36}\/[A-Za-z0-9_-]{16,64}\.(jpg|png|webp)$/, "Bild aus der Bibliothek wählen");
 const image = z.object({ url: imageUrl, alt: text(200) });
 /** Erweitert (nicht empfohlen, aber erlaubt): Ausrichtung und Textgrösse pro Baustein */
@@ -28,7 +29,7 @@ export const blockSchema = z.discriminatedUnion("type", [
 
 export type Block = z.infer<typeof blockSchema>;
 export type BlockType = Block["type"];
-export type L = { de?: string; en?: string };
+export type L = Partial<Record<Locale, string>>;
 
 export const BLOCK_TYPES: { type: BlockType; label: string; hint: string }[] = [
   { type: "hero", label: "Titelbild mit Überschrift", hint: "Grosses Bild, Titel, Einleitung und Suchleiste – passt oben auf die Startseite" },
@@ -47,14 +48,15 @@ export function newBlock(type: BlockType, id: string): Block {
   return blockSchema.parse({ id, type });
 }
 
-/** Text in der gewünschten Sprache, sonst Deutsch, sonst Englisch */
-export function tr(v: L | undefined, lang: "de" | "en"): string {
+/** Text in der gewünschten Sprache, sonst Englisch, sonst Deutsch (fallbackChain) */
+export function tr(v: L | undefined, lang: Locale): string {
   if (!v) return "";
-  return (lang === "en" ? v.en || v.de : v.de || v.en) ?? "";
+  for (const l of fallbackChain(lang)) if (v[l]) return v[l]!;
+  return "";
 }
 
 /** Reservierte Pfade, die keine Seite belegen darf */
-export const RESERVED_SLUGS = new Set(["book", "agb", "datenschutz", "b", "h", "admin", "api", "media", "widget", "de", "en"]);
+export const RESERVED_SLUGS = new Set(["book", "agb", "datenschutz", "b", "h", "admin", "api", "media", "widget", "vorschau", "de", "en", "fr", "it", "nl"]);
 
 export function slugify(s: string): string {
   return s

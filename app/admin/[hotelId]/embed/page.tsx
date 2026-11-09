@@ -99,7 +99,7 @@ export default async function Embed({ params, searchParams }: { params: Promise<
         <CopyBox text={link} label="Link zur Buchungsseite" />
 
         <h3>Knopf «Jetzt buchen»</h3>
-        <p className="small muted">Diesen Code an der Stelle einfügen, wo der Knopf erscheinen soll (in WordPress z. B. mit einem «HTML»-Block). Eigener Text: <code>data-label=&quot;Zimmer buchen&quot;</code>. Englisch: <code>data-lang=&quot;en&quot;</code>.</p>
+        <p className="small muted">Diesen Code an der Stelle einfügen, wo der Knopf erscheinen soll (in WordPress z. B. mit einem «HTML»-Block). Eigener Text: <code>data-label=&quot;Zimmer buchen&quot;</code>. Andere Sprache: <code>data-lang=&quot;en&quot;</code> (oder fr, it, nl, wenn unter Website → Sprachen gewählt).</p>
         <CopyBox text={button} label="Code für den Knopf" />
         <div className="card"><WidgetPreview src={scriptSrc} slug={hotel.slug} mode="button" /></div>
 

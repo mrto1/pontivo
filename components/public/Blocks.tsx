@@ -124,7 +124,7 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle }: { blocks:
         out.push(
           <section key={b.id} id={`b-${b.id}`} className={`blk blk-location ${lookClass(b)}`}>
             <Heading text={tr(b.heading, lang)} />
-            {addr ? <p><strong>{addr}</strong><br /><a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`} target="_blank" rel="noopener">{lang === "de" ? "Route planen" : "Get directions"}</a></p> : null}
+            {addr ? <p><strong>{addr}</strong><br /><a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`} target="_blank" rel="noopener">{t(lang).directions}</a></p> : null}
             <Paras text={tr(b.body, lang)} />
           </section>,
         );

@@ -41,16 +41,24 @@ export const hotels = pgTable("hotels", {
 });
 
 export type HotelContent = {
+  /** Alte Startseite ohne Editor: Titel/Einleitung pro Sprache */
   de?: { headline?: string; intro?: string };
   en?: { headline?: string; intro?: string };
+  fr?: { headline?: string; intro?: string };
+  it?: { headline?: string; intro?: string };
+  nl?: { headline?: string; intro?: string };
   photos?: { url: string; alt?: string }[];
+  /** Angebotene Sprachen der Website (src/i18n/dict.ts hotelLocales), fehlt = Deutsch und Englisch */
+  languages?: string[];
+  /** Automatische Übersetzungen pro Monat ("YYYY-MM" → Anzahl), für das Limit */
+  translations?: Record<string, number>;
   /** Dokumente (PDF) für den Baustein «Downloads», z. B. Speisekarte, Preisliste */
   documents?: HotelDocument[];
   /** Erscheinungsbild der Buchungsseite */
   brand?: HotelBrand;
 };
 
-export type HotelDocument = { url: string; title: { de?: string; en?: string }; bytes: number };
+export type HotelDocument = { url: string; title: Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>; bytes: number };
 
 export type HotelBrand = {
   /** Hauptfarbe als #rrggbb */
@@ -116,7 +124,7 @@ export const roomTypes = pgTable("room_types", {
   sortOrder: integer("sort_order").notNull().default(0),
   channexRoomTypeId: uuid("channex_room_type_id").unique(),
   active: boolean("active").notNull().default(true),
-  i18n: jsonb("i18n").$type<{ en?: { name?: string; description?: string } }>().notNull().default({}),
+  i18n: jsonb("i18n").$type<Partial<Record<"en" | "fr" | "it" | "nl", { name?: string; description?: string }>>>().notNull().default({}),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -135,7 +143,7 @@ export const ratePlans = pgTable("rate_plans", {
   /** Tarif ist in Channex als sell_mode "per_person" angelegt → Preise je Belegung senden */
   channexPerPerson: boolean("channex_per_person").notNull().default(false),
   active: boolean("active").notNull().default(true),
-  i18n: jsonb("i18n").$type<{ en?: { name?: string } }>().notNull().default({}),
+  i18n: jsonb("i18n").$type<Partial<Record<"en" | "fr" | "it" | "nl", { name?: string }>>>().notNull().default({}),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -323,7 +331,7 @@ export const cantonRules = pgTable("canton_rules", {
   sourceUrl: text("source_url"),
 });
 
-export type L10n = { de?: string; en?: string };
+export type L10n = Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>;
 
 export const sitePages = pgTable("site_pages", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -333,7 +341,7 @@ export const sitePages = pgTable("site_pages", {
   navLabel: jsonb("nav_label").$type<L10n>().notNull().default({}),
   showInNav: boolean("show_in_nav").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
-  seo: jsonb("seo").$type<{ de?: { title?: string; description?: string }; en?: { title?: string; description?: string } }>().notNull().default({}),
+  seo: jsonb("seo").$type<Partial<Record<"de" | "en" | "fr" | "it" | "nl", { title?: string; description?: string }>>>().notNull().default({}),
   blocks: jsonb("blocks").$type<import("../domain/blocks").Block[]>().notNull().default([]),
   published: boolean("published").notNull().default(true),
   createdAt: ts("created_at").notNull().defaultNow(),

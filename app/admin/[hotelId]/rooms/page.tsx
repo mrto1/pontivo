@@ -11,6 +11,11 @@ import { deleteImage } from "@/src/lib/storage";
 import { decimalToRappen, rappenToDecimal } from "@/src/domain/money";
 import { cancellationPolicyText } from "@/src/domain/cancellation";
 import type { RatePlan, RoomType } from "@/src/db/schema";
+import { hotelLocales, LOCALE_NAMES, type Locale } from "@/src/i18n/dict";
+import { translateRooms, translationEnabled, translationsLeft, TranslateError } from "@/src/services/translate";
+
+/** Sprachen ausser Deutsch (Deutsch steht im Hauptfeld) */
+const EXTRA = ["en", "fr", "it", "nl"] as const;
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +40,7 @@ function roomInput(f: FormData): RoomTypeInput {
     maxOccupancy: n(f, "maxOccupancy"),
     sortOrder: n(f, "sortOrder"),
     active: f.get("active") === "on",
-    i18n: { en: { name: s(f, "nameEn") || undefined, description: s(f, "descriptionEn") || undefined } },
+    i18n: Object.fromEntries(EXTRA.map((l) => [l, { name: s(f, `name.${l}`) || undefined, description: s(f, `description.${l}`) || undefined }])),
   };
 }
 
@@ -50,7 +55,7 @@ function planInput(f: FormData): RatePlanInput {
     extraAdultRappen: chf(f, "extraAdult"),
     singleDiscountRappen: chf(f, "singleDiscount"),
     active: f.get("active") === "on",
-    i18n: { en: { name: s(f, "nameEn") || undefined } },
+    i18n: Object.fromEntries(EXTRA.map((l) => [l, { name: s(f, `name.${l}`) || undefined }])),
   };
 }
 
@@ -65,6 +70,19 @@ async function act(f: FormData, fn: (ctx: Awaited<ReturnType<typeof requireHotel
   }
   revalidatePath(`/admin/${ctx.hotel.id}/rooms`);
   redirect(`/admin/${ctx.hotel.id}/rooms?msg=${encodeURIComponent(msg)}${anchor}`);
+}
+
+async function translateAll(f: FormData) {
+  "use server";
+  await act(f, async ({ hotel, actor }) => {
+    try {
+      const n = await translateRooms(hotel, actor);
+      return n ? `${n} Feld(er) übersetzt – bitte kurz gegenlesen` : "Nichts zu übersetzen: alle Felder sind schon ausgefüllt";
+    } catch (e) {
+      if (e instanceof TranslateError) return `Nicht übersetzt: ${e.message}`;
+      throw e;
+    }
+  });
 }
 
 async function saveRoom(f: FormData) {
@@ -157,7 +175,7 @@ function Photos({ hotelId, roomTypeId, photos, canEdit }: { hotelId: string; roo
   );
 }
 
-function RoomForm({ hotelId, rt, canEdit, nextOrder = 0 }: { hotelId: string; rt?: RoomType; canEdit: boolean; nextOrder?: number }) {
+function RoomForm({ hotelId, rt, canEdit, nextOrder = 0, langs }: { hotelId: string; rt?: RoomType; canEdit: boolean; nextOrder?: number; langs: Locale[] }) {
   return (
     <form action={saveRoom} className="stack">
       <input type="hidden" name="hotelId" value={hotelId} />
@@ -171,17 +189,24 @@ function RoomForm({ hotelId, rt, canEdit, nextOrder = 0 }: { hotelId: string; rt
         <div><label>Reihenfolge auf der Website</label><input name="sortOrder" type="number" min={0} defaultValue={rt?.sortOrder ?? nextOrder} disabled={!canEdit} /></div>
       </div>
       <div><label>Beschreibung</label><textarea name="description" rows={2} defaultValue={rt?.description ?? ""} disabled={!canEdit} placeholder="Grösse, Bett, Aussicht, Ausstattung" /></div>
-      <div className="form-grid">
-        <div><label>Name auf Englisch</label><input name="nameEn" defaultValue={rt?.i18n?.en?.name ?? ""} disabled={!canEdit} placeholder="z. B. Double room with lake view" /></div>
-      </div>
-      <div><label>Beschreibung auf Englisch</label><textarea name="descriptionEn" rows={2} defaultValue={rt?.i18n?.en?.description ?? ""} disabled={!canEdit} /></div>
+      {EXTRA.map((l) => langs.includes(l) ? (
+        <div key={l} className="form-grid">
+          <div><label>Name {LOCALE_NAMES[l]}</label><input name={`name.${l}`} defaultValue={rt?.i18n?.[l]?.name ?? ""} disabled={!canEdit} placeholder={l === "en" ? "z. B. Double room with lake view" : ""} /></div>
+          <div style={{ gridColumn: "span 2" }}><label>Beschreibung {LOCALE_NAMES[l]}</label><textarea name={`description.${l}`} rows={2} defaultValue={rt?.i18n?.[l]?.description ?? ""} disabled={!canEdit} /></div>
+        </div>
+      ) : (
+        <span key={l} hidden>
+          {rt?.i18n?.[l]?.name ? <input type="hidden" name={`name.${l}`} value={rt.i18n[l]!.name} /> : null}
+          {rt?.i18n?.[l]?.description ? <textarea name={`description.${l}`} defaultValue={rt.i18n[l]!.description} hidden readOnly /> : null}
+        </span>
+      ))}
       <label className="check"><input type="checkbox" name="active" defaultChecked={rt?.active ?? true} disabled={!canEdit} />Buchbar (auf der Website und bei Portalen)</label>
       {canEdit ? <button className="btn">{rt ? "Zimmertyp speichern" : "Zimmertyp anlegen"}</button> : null}
     </form>
   );
 }
 
-function PlanForm({ hotelId, roomTypeId, p, canEdit }: { hotelId: string; roomTypeId: string; p?: RatePlan; canEdit: boolean }) {
+function PlanForm({ hotelId, roomTypeId, p, canEdit, langs }: { hotelId: string; roomTypeId: string; p?: RatePlan; canEdit: boolean; langs: Locale[] }) {
   const free = p ? p.freeCancelHours !== null : true;
   return (
     <form action={savePlan} className="stack">
@@ -190,7 +215,9 @@ function PlanForm({ hotelId, roomTypeId, p, canEdit }: { hotelId: string; roomTy
       <input type="hidden" name="ratePlanId" value={p?.id ?? ""} />
       <div className="form-grid">
         <div><label>Name des Tarifs</label><input name="name" defaultValue={p?.name ?? "Flexibel"} required disabled={!canEdit} /></div>
-        <div><label>Name auf Englisch</label><input name="nameEn" defaultValue={p?.i18n?.en?.name ?? (p ? "" : "Flexible")} disabled={!canEdit} /></div>
+        {EXTRA.map((l) => langs.includes(l) ? (
+          <div key={l}><label>Name {LOCALE_NAMES[l]}</label><input name={`name.${l}`} defaultValue={p?.i18n?.[l]?.name ?? (p ? "" : l === "en" ? "Flexible" : "")} disabled={!canEdit} /></div>
+        ) : p?.i18n?.[l]?.name ? <input key={l} type="hidden" name={`name.${l}`} value={p.i18n[l]!.name} /> : null)}
         {!p ? <div><label>Startpreis CHF pro Nacht</label><input name="price" inputMode="decimal" required placeholder="z. B. 180" disabled={!canEdit} /></div> : null}
         <div><label>Preis gilt für Personen</label><input name="baseOccupancy" type="number" min={1} defaultValue={p?.baseOccupancy ?? 2} required disabled={!canEdit} /></div>
         <div><label>Zuschlag je weitere erw. Person CHF</label><input name="extraAdult" inputMode="decimal" defaultValue={p ? rappenToDecimal(p.extraAdultRappen) : "0"} disabled={!canEdit} /></div>
@@ -221,12 +248,22 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
   const { hotel, role } = await requireHotel(hotelId);
   const canEdit = atLeast(role, "manager");
   const list = await listRooms(hotel.id);
+  const langs = hotelLocales(hotel);
+  const left = translationsLeft(hotel);
 
   return (
     <div className="stack">
       <h1>Zimmer und Tarife</h1>
       {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") || sp.msg.includes(":") ? "warn" : ""}`}>{sp.msg}</p> : null}
       {hotel.channexEnabled ? <p className="notice warn small">Neue Zimmertypen oder Tarife zusätzlich auf der Seite «Channex» anlegen bzw. zuordnen, damit sie auch bei Booking.com erscheinen.</p> : null}
+
+      {langs.length > 1 && canEdit && translationEnabled() ? (
+        <form action={translateAll} className="inline-form" style={{ gap: 8 }}>
+          <input type="hidden" name="hotelId" value={hotel.id} />
+          <button className="btn secondary small" disabled={!left}>Fehlende Namen und Beschreibungen übersetzen</button>
+          <span className="small muted">aus dem Deutschen nach {langs.filter((l) => l !== "de").map((l) => l.toUpperCase()).join(", ")} · noch {left} diesen Monat</span>
+        </form>
+      ) : null}
 
       <section className="card stack" id="hotel-photos">
         <h2>Fotos des Hotels</h2>
@@ -241,7 +278,7 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
           </h2>
           <details>
             <summary className="btn secondary small">Zimmertyp bearbeiten</summary>
-            <div style={{ marginTop: 12 }}><RoomForm hotelId={hotel.id} rt={rt} canEdit={canEdit} /></div>
+            <div style={{ marginTop: 12 }}><RoomForm hotelId={hotel.id} rt={rt} canEdit={canEdit} langs={langs} /></div>
           </details>
           <h3>Fotos</h3>
           <Photos hotelId={hotel.id} roomTypeId={rt.id} photos={rt.photos} canEdit={canEdit} />
@@ -252,13 +289,13 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
               <summary>
                 <strong>{p.name}</strong> <span className="muted small">· {p.breakfastIncluded ? "mit Frühstück" : "ohne Frühstück"} · {p.freeCancelHours !== null ? `kostenlos stornierbar bis ${p.freeCancelHours / 24} Tag(e) vorher` : "nicht kostenlos stornierbar"}{p.active ? "" : " · nicht buchbar"}</span>
               </summary>
-              <div style={{ marginTop: 12 }}><PlanForm hotelId={hotel.id} roomTypeId={rt.id} p={p} canEdit={canEdit} /></div>
+              <div style={{ marginTop: 12 }}><PlanForm hotelId={hotel.id} roomTypeId={rt.id} p={p} canEdit={canEdit} langs={langs} /></div>
             </details>
           ))}
           {canEdit ? (
             <details>
               <summary className="btn secondary small">+ Tarif hinzufügen</summary>
-              <div style={{ marginTop: 12 }}><PlanForm hotelId={hotel.id} roomTypeId={rt.id} canEdit={canEdit} /></div>
+              <div style={{ marginTop: 12 }}><PlanForm hotelId={hotel.id} roomTypeId={rt.id} canEdit={canEdit} langs={langs} /></div>
             </details>
           ) : null}
         </section>
@@ -267,7 +304,7 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
       {canEdit ? (
         <section className="card stack">
           <h2>Neuer Zimmertyp</h2>
-          <RoomForm hotelId={hotel.id} canEdit={canEdit} nextOrder={list.reduce((m, x) => Math.max(m, x.roomType.sortOrder + 1), 0)} />
+          <RoomForm hotelId={hotel.id} canEdit={canEdit} langs={langs} nextOrder={list.reduce((m, x) => Math.max(m, x.roomType.sortOrder + 1), 0)} />
         </section>
       ) : null}
     </div>

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { isDay } from "../domain/dates";
 
 export const dayString = z.string().refine(isDay, "Datum im Format YYYY-MM-DD");
-export const locale = z.enum(["de", "en"]);
+export const locale = z.enum(["de", "en", "fr", "it", "nl"]);
 
 export const createBookingSchema = z
   .object({

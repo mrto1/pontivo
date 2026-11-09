@@ -4,6 +4,7 @@ import { db } from "../db/client";
 import { hotels, type Hotel, type HotelBrand } from "../db/schema";
 import { HEX } from "../domain/brand";
 import { FONT_KEYS, LAYOUT_KEYS } from "../domain/theme";
+import { LOCALES } from "../i18n/dict";
 import { env } from "../env";
 import { audit } from "./audit";
 
@@ -54,4 +55,16 @@ export async function updateDesign(hotelId: string, input: z.infer<typeof design
   const [h] = await db().select().from(hotels).where(eq(hotels.id, hotelId));
   await db().update(hotels).set({ content: { ...h.content, brand: { ...h.content.brand, layout: v.layout, font: v.font } }, updatedAt: new Date() }).where(eq(hotels.id, hotelId));
   await audit(db(), { hotelId, actor, action: "hotel.design", entity: "hotel", entityId: hotelId, details: v });
+}
+
+export const languagesSchema = z.array(z.enum(["de", "en", "fr", "it", "nl"])).max(5);
+
+/** Angebotene Sprachen der Website setzen. Deutsch ist immer dabei. */
+export async function updateLanguages(hotelId: string, input: string[], actor: string) {
+  const v = languagesSchema.parse(input);
+  const langs = ["de", ...LOCALES.filter((l) => l !== "de" && v.includes(l))];
+  const [h] = await db().select().from(hotels).where(eq(hotels.id, hotelId));
+  await db().update(hotels).set({ content: { ...h.content, languages: langs }, updatedAt: new Date() }).where(eq(hotels.id, hotelId));
+  await audit(db(), { hotelId, actor, action: "hotel.languages", entity: "hotel", entityId: hotelId, details: { languages: langs } });
+  return langs;
 }

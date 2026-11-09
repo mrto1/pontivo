@@ -79,18 +79,21 @@ export async function createPage(hotelId: string, titleDe: string, actor: string
 
 const opt = (max: number) => z.string().trim().max(max).optional();
 export const pageMetaSchema = z.object({
-  title: z.object({ de: opt(120), en: opt(120) }),
-  navLabel: z.object({ de: opt(40), en: opt(40) }),
+  title: z.object({ de: opt(120), en: opt(120), fr: opt(120), it: opt(120), nl: opt(120) }),
+  navLabel: z.object({ de: opt(40), en: opt(40), fr: opt(40), it: opt(40), nl: opt(40) }),
   slug: z.string().trim().max(60),
   showInNav: z.boolean(),
   published: z.boolean(),
   seo: z.object({
     de: z.object({ title: opt(70), description: opt(170) }),
     en: z.object({ title: opt(70), description: opt(170) }),
+    fr: z.object({ title: opt(70), description: opt(170) }).default({}),
+    it: z.object({ title: opt(70), description: opt(170) }).default({}),
+    nl: z.object({ title: opt(70), description: opt(170) }).default({}),
   }),
 });
 
-export async function updatePageMeta(hotelId: string, pageId: string, input: z.infer<typeof pageMetaSchema>, actor: string) {
+export async function updatePageMeta(hotelId: string, pageId: string, input: z.input<typeof pageMetaSchema>, actor: string) {
   const v = pageMetaSchema.parse(input);
   const page = await getPage(hotelId, pageId);
   if (!page) throw new SiteError("Seite nicht gefunden");
@@ -227,8 +230,8 @@ export async function addDocument(hotelId: string, doc: HotelDocument, actor: st
     if (!h) throw new SiteError("Hotel nicht gefunden");
     const docs = h.content.documents ?? [];
     if (docs.length >= MAX_DOCUMENTS) throw new SiteError(`Höchstens ${MAX_DOCUMENTS} Dokumente`);
-    const title = { de: doc.title.de?.trim().slice(0, 120) || undefined, en: doc.title.en?.trim().slice(0, 120) || undefined };
-    if (!title.de && !title.en) throw new SiteError("Titel fehlt");
+    const title = Object.fromEntries(Object.entries(doc.title).map(([k, v]) => [k, v?.trim().slice(0, 120) || undefined]).filter(([, v]) => v)) as HotelDocument["title"];
+    if (!Object.keys(title).length) throw new SiteError("Titel fehlt");
     await tx.update(hotels).set({ content: { ...h.content, documents: [...docs, { ...doc, title }] } }).where(eq(hotels.id, hotelId));
     await audit(tx, { hotelId, actor, action: "document.add", entity: "hotel", entityId: hotelId, details: { url: doc.url } });
   });

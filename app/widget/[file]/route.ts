@@ -1,3 +1,4 @@
+import { hotelLocales } from "@/src/i18n/dict";
 import { getHotelBySlug } from "@/src/services/hotels";
 import { publicBase } from "@/src/services/brand";
 import { HEX, inkOn } from "@/src/domain/brand";
@@ -6,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Buchungs-Knopf / Suchleiste zum Einbauen in die bestehende Website eines Hotels.
- *   <div data-pontivo="<slug>" data-mode="button|search" data-lang="de|en"></div>
+ *   <div data-pontivo="<slug>" data-mode="button|search" data-lang="de|en|fr|it|nl"></div>  (nur Sprachen, die das Hotel anbietet)
  *   <script src="<APP_BASE_URL>/widget/<slug>.js" async></script>
  * Rendert in ein Shadow DOM (keine Konflikte mit dem CSS der Hotel-Website) und öffnet die Buchungsseite.
  */
@@ -26,7 +27,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ file: string }
   const hotel = await getHotelBySlug(slug);
   if (!hotel) return js(`console.warn("Pontivo: Hotel ${slug} nicht gefunden");`, 404);
   const color = hotel.content.brand?.color && HEX.test(hotel.content.brand.color) ? hotel.content.brand.color : "#2f5d50";
-  const config = { slug, base: publicBase(hotel), color, ink: inkOn(color), lang: hotel.defaultLanguage === "en" ? "en" : "de" };
+  const config = { slug, base: publicBase(hotel), color, ink: inkOn(color), lang: hotel.defaultLanguage === "en" ? "en" : "de", langs: hotelLocales(hotel) };
   // JSON sicher in JS einbetten
   const cfg = JSON.stringify(config).replace(/</g, "\\u003c");
   return js(WIDGET.replace("__CONFIG__", cfg));
@@ -36,7 +37,10 @@ const WIDGET = String.raw`(function () {
   var C = __CONFIG__;
   var T = {
     de: { book: "Jetzt buchen", checkin: "Anreise", checkout: "Abreise", adults: "Erwachsene", children: "Kinder", search: "Verfügbarkeit prüfen" },
-    en: { book: "Book now", checkin: "Check-in", checkout: "Check-out", adults: "Adults", children: "Children", search: "Check availability" }
+    en: { book: "Book now", checkin: "Check-in", checkout: "Check-out", adults: "Adults", children: "Children", search: "Check availability" },
+    fr: { book: "Réserver", checkin: "Arrivée", checkout: "Départ", adults: "Adultes", children: "Enfants", search: "Vérifier la disponibilité" },
+    it: { book: "Prenota", checkin: "Arrivo", checkout: "Partenza", adults: "Adulti", children: "Bambini", search: "Verifica disponibilità" },
+    nl: { book: "Nu boeken", checkin: "Aankomst", checkout: "Vertrek", adults: "Volwassenen", children: "Kinderen", search: "Beschikbaarheid bekijken" }
   };
   function iso(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
   function addDays(s, n) { var d = new Date(s + "T12:00:00"); d.setDate(d.getDate() + n); return iso(d); }
@@ -53,7 +57,8 @@ const WIDGET = String.raw`(function () {
   function bookUrl(lang, q) { return C.base + "/" + lang + (q ? "/book?" + q : ""); }
   function render(el) {
     if (el.__pontivo) return; el.__pontivo = true;
-    var lang = el.getAttribute("data-lang") === "en" ? "en" : (el.getAttribute("data-lang") === "de" ? "de" : C.lang);
+    var want = el.getAttribute("data-lang");
+    var lang = want && C.langs.indexOf(want) >= 0 ? want : C.lang;
     var t = T[lang];
     var target = el.getAttribute("data-target") === "_blank" ? "_blank" : "_self";
     var root = el.attachShadow ? el.attachShadow({ mode: "open" }) : el;

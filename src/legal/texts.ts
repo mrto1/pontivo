@@ -36,7 +36,8 @@ export function terms(h: Hotel, l: Locale): LegalDoc {
   const hotel = hotelLine(h);
   const ci = h.checkinTime.slice(0, 5);
   const co = h.checkoutTime.slice(0, 5);
-  if (l === "en") {
+  // ASSUMPTION: AGB/Datenschutz gibt es nur DE und EN (juristisch geprüft werden müssen sie ohnehin); FR/IT/NL zeigen Englisch mit Hinweis.
+  if (l !== "de") {
     return {
       title: "General Terms and Conditions for Guests",
       intro: `These terms apply to accommodation booked directly on this website. Your contracting partner is ${hotel} ("Hotel"). The booking system is operated by ${p.name} (${p.operator}) as a technical service provider on behalf of the Hotel.`,
@@ -74,7 +75,8 @@ export function privacy(h: Hotel, l: Locale): LegalDoc {
   const p = platformInfo();
   const hotel = hotelLine(h);
   const channex = h.channexEnabled;
-  if (l === "en") {
+  // ASSUMPTION: AGB/Datenschutz gibt es nur DE und EN (juristisch geprüft werden müssen sie ohnehin); FR/IT/NL zeigen Englisch mit Hinweis.
+  if (l !== "de") {
     return {
       title: "Privacy Policy",
       intro: `This privacy policy explains how personal data is processed when you use this website and book directly. It is based on the Swiss Federal Act on Data Protection (FADP) and, where applicable, the EU General Data Protection Regulation (GDPR).`,

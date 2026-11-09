@@ -3,6 +3,7 @@ import { atLeast, readSessionValue, roleIn, SESSION_COOKIE } from "@/src/auth/se
 import { addDocument, SiteError } from "@/src/services/site";
 import { deleteImage, savePdf, UploadError, MAX_PDF_BYTES } from "@/src/lib/storage";
 import { env } from "@/src/env";
+import { LOCALES } from "@/src/i18n/dict";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +19,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ hotelId: strin
   const form = await req.formData();
   const f = form.get("file");
   if (!(f instanceof File) || f.size === 0) return back("Nicht möglich: Keine Datei ausgewählt");
-  const title = { de: String(form.get("title.de") ?? ""), en: String(form.get("title.en") ?? "") };
-  if (!title.de.trim() && !title.en.trim()) title.de = f.name.replace(/\.pdf$/i, "").slice(0, 120);
+  const title: Record<string, string> = Object.fromEntries(LOCALES.map((l) => [l, String(form.get(`title.${l}`) ?? "")]));
+  if (!Object.values(title).some((v) => v.trim())) title.de = f.name.replace(/\.pdf$/i, "").slice(0, 120);
   let url: string | null = null;
   try {
     const bytes = new Uint8Array(await f.arrayBuffer());

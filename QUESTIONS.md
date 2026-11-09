@@ -16,6 +16,9 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Channex lehnt zwei Tarife mit gleichem Namen im selben Zimmertyp ab ("Duplication in Rate Plan title"). Pontivo prüft das beim Anlegen noch nicht.
 - [ ] Stripe/TWINT: Branchencode (MCC) für Hotels – TWINT ist für einzelne Branchen eingeschränkt. Mit Stripe klären, bevor das erste Hotel live geht.
 
+- [ ] Übersetzungen der festen Texte (Buchungsstrecke, Mails, Storno) FR/IT/NL von Muttersprachlern gegenlesen lassen.
+- [ ] AGB und Datenschutz auf FR/IT/NL übersetzen und prüfen lassen.
+
 ## Getroffene Annahmen (v1)
 
 | Thema | Annahme | Ort |
@@ -42,4 +45,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 | Website-Editor | Feste Bausteine statt freiem Baukasten; Bilder nur aus der Foto-Bibliothek des Hotels; Vorschau aktualisiert sich beim Speichern (nicht bei jedem Tastendruck) | `src/domain/blocks.ts` |
 | Textformatierung | Gespeichert als reiner Text mit einfachen Zeichen (`**`, `*`, `__`, `==`, `[Text](URL)`, `- `, `1. `, `## `), dargestellt ohne HTML aus den Daten; Links nur http(s), mailto, tel oder eigener Pfad; Farbe nur in der Hausfarbe, keine freie Farbwahl | `src/domain/richtext.ts` |
 | Gestaltung | Layout und Schrift sind Einstellungen (`hotels.content.brand.layout/font`), nur CSS-Unterschiede; Schriften über next/font selbst gehostet, nur verwendete werden geladen; Ausrichtung/Grösse pro Baustein unter «Erweitert» (links/zentriert, normal/gross) | `src/domain/theme.ts`, `app/globals.css` |
+| Sprachen | Deutsch ist immer Ausgangssprache und immer angeboten; Rückfall fehlender Texte: gewünschte Sprache → EN → DE; Sprachen, die ein Hotel nicht anbietet, ergeben 404; Hotel-interne Mails bleiben DE/EN | `src/i18n/dict.ts` |
+| Rechtstexte FR/IT/NL | AGB und Datenschutz nur DE/EN; FR/IT/NL zeigen Englisch mit Hinweis, bis übersetzte Texte juristisch geprüft sind | `src/legal/texts.ts` |
+| Automatische Übersetzung | Claude API (Messages), Modell `claude-sonnet-5-5`, ein Aufruf pro Seite bzw. Zimmerliste; zählt nur bei Erfolg; Pontivo trägt die Kosten; Limit 50 pro Hotel und Monat | `src/services/translate.ts` |
 | Dokumente | PDFs im selben Ordner wie Fotos, an den Bytes erkannt (`%PDF-`), max. 15 MB, höchstens 30 pro Hotel; gelöschte Dokumente verschwinden aus Downloads-Bausteinen | `src/lib/storage.ts`, `src/services/site.ts` |

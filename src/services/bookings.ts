@@ -1,3 +1,4 @@
+import { t, type Locale } from "../i18n/dict";
 import { and, eq, lt, sql } from "drizzle-orm";
 import { db, rows, type Executor, type Tx } from "../db/client";
 import {
@@ -35,7 +36,7 @@ export type GuestInput = {
   lastName: string;
   email: string;
   phone?: string | null;
-  language: "de" | "en";
+  language: Locale;
   notes?: string | null;
   marketingConsent: boolean;
 };
@@ -184,7 +185,7 @@ export async function createDirectBooking(
       lang,
       successUrl: `${base}/b/${booking.publicToken}?paid=1`,
       cancelUrl: `${base}/b/${booking.publicToken}?cancelled_payment=1`,
-      description: `${lang === "de" ? "Aufenthalt" : "Stay"} ${hotel.name}, ${input.checkin} – ${input.checkout}`,
+      description: `${t(lang).stay} ${hotel.name}, ${input.checkin} – ${input.checkout}`,
     });
   } catch (e) {
     await releaseHold(booking.id, { reason: "checkout_failed", actor: "system" });

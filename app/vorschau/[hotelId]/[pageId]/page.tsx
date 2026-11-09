@@ -4,6 +4,7 @@ import { requireHotel } from "@/src/auth/guard";
 import { getPage } from "@/src/services/site";
 import { publicBase } from "@/src/services/brand";
 import { SitePageView } from "@/components/public/SitePageView";
+import { isLocale, type Locale } from "@/src/i18n/dict";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Vorschau", robots: { index: false, follow: false } };
@@ -15,5 +16,5 @@ export default async function Preview({ params, searchParams }: { params: Promis
   const { hotel } = await requireHotel(hotelId);
   const page = await getPage(hotel.id, pageId);
   if (!page) notFound();
-  return <SitePageView hotel={hotel} page={page} locale={lang === "en" ? "en" : "de"} base={publicBase(hotel)} />;
+  return <SitePageView hotel={hotel} page={page} locale={isLocale(lang ?? "") ? (lang as Locale) : "de"} base={publicBase(hotel)} />;
 }

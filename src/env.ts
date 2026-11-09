@@ -21,6 +21,10 @@ const schema = z.object({
   PLATFORM_CONTACT_EMAIL: z.string().optional(),
   PLATFORM_PHONE: z.string().optional(),
   DEMO_HOTEL_SLUG: z.string().default("demo-gasthof"),
+  // Automatische Übersetzung der Hotel-Texte (Claude API). Ohne Schlüssel ist der Knopf ausgeblendet.
+  ANTHROPIC_API_KEY: z.string().optional(),
+  TRANSLATE_MODEL: z.string().default("claude-sonnet-5-5"),
+  TRANSLATIONS_PER_MONTH: z.coerce.number().int().min(0).default(50),
   HOSTING_PROVIDER: z.string().optional(),
   // Fotos: Ordner auf dem Server (Docker: als Volume einbinden)
   UPLOAD_DIR: z.string().default("./data/uploads"), // z. B. "Infomaniak Network SA, Genf (Schweiz)"

@@ -5,7 +5,7 @@ export type CheckoutArgs = {
   hotel: Hotel;
   booking: Booking;
   guestEmail: string;
-  lang: "de" | "en";
+  lang: "de" | "en" | "fr" | "it" | "nl";
   successUrl: string;
   cancelUrl: string;
   /** Zeile für die Zahlungsseite, z. B. "Aufenthalt Demo Gasthof, 2026-12-01–2026-12-03" */

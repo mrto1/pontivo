@@ -1,5 +1,5 @@
 import type { Hotel } from "@/src/db/schema";
-import type { Locale } from "@/src/i18n/dict";
+import { t, type Locale } from "@/src/i18n/dict";
 import { platformInfo, privacy, terms } from "@/src/legal/texts";
 import { env } from "@/src/env";
 import { Shell } from "./Shell";
@@ -11,6 +11,7 @@ export function LegalPage({ hotel, locale, base, kind }: { hotel: Hotel; locale:
     <Shell hotel={hotel} locale={locale} base={base} path={`/${kind}`}>
       <article style={{ padding: "32px 0", maxWidth: 760 }}>
         <h1>{doc.title}</h1>
+        {t(locale).legalInEnglish ? <p className="notice small">{t(locale).legalInEnglish}</p> : null}
         {showDraft ? <p className="notice warn small">{doc.draftNote}</p> : null}
         <p>{doc.intro}</p>
         {doc.sections.map((s) => (

@@ -1,3 +1,4 @@
+import type { Locale } from "../i18n/dict";
 import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
 import { db, type Executor } from "../db/client";
 import { inventoryDays, ratePlans, ratesDays, roomTypes, type Hotel, type RatePlan, type RoomType } from "../db/schema";
@@ -33,7 +34,7 @@ export type SearchResult =
 export async function searchOffers(
   hotel: Hotel,
   input: SearchInput,
-  opts: { lang?: "de" | "en"; roomTypeId?: string; ratePlanId?: string; now?: Date; ex?: Executor } = {},
+  opts: { lang?: Locale; roomTypeId?: string; ratePlanId?: string; now?: Date; ex?: Executor } = {},
 ): Promise<SearchResult> {
   const ex = opts.ex ?? db();
   const lang = opts.lang ?? "de";

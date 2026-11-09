@@ -310,3 +310,12 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .thumb-minimal b { left: 16px; right: 16px; top: 18px; border-radius: 0; }
 .thumb-minimal em { height: 3px; left: 16px; }
 .font-choice strong { font-family: var(--serif); font-size: 1.15rem; } .font-choice .font-sample { font-family: var(--font); font-size: .9rem; }
+
+/* ---------- Sprachen im Editor ---------- */
+.lang-bar { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px; }
+.lang-tabs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.lang-tabs a { padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; color: var(--ink); font-size: .85rem; }
+.lang-tabs a.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.preview-lang { display: flex; gap: 4px; }
+.preview-lang a { padding: 2px 8px; border-radius: 6px; text-decoration: none; color: var(--muted); border: 1px solid transparent; }
+.preview-lang a[aria-current="true"] { color: var(--ink); border-color: var(--line); background: var(--surface); }

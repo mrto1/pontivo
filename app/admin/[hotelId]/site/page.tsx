@@ -2,7 +2,9 @@ import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { createImprintPage, createPage, deletePage, documentLibrary, ensureHomePage, listPages, movePage, removeDocument, SiteError } from "@/src/services/site";
-import { publicBase as publicBase, updateDesign } from "@/src/services/brand";
+import { publicBase, updateDesign, updateLanguages } from "@/src/services/brand";
+import { hotelLocales, LOCALE_NAMES, LOCALES } from "@/src/i18n/dict";
+import { translationEnabled, translationsLeft } from "@/src/services/translate";
 import { FONTS, LAYOUTS, fontOf, layoutOf } from "@/src/domain/theme";
 import { deleteImage } from "@/src/lib/storage";
 import { fontVars } from "@/components/public/fonts";
@@ -66,6 +68,13 @@ async function saveDesign(f: FormData) {
     return { to: `/admin/${hotel.id}/site?msg=${encodeURIComponent("Gestaltung gespeichert")}#gestaltung` };
   });
 }
+async function saveLanguages(f: FormData) {
+  "use server";
+  await run(f, async ({ hotel, actor }) => {
+    const langs = await updateLanguages(hotel.id, f.getAll("lang").map(String), actor);
+    return { to: `/admin/${hotel.id}/site?msg=${encodeURIComponent(`Sprachen gespeichert: ${langs.map((l) => l.toUpperCase()).join(", ")}`)}#sprachen` };
+  });
+}
 async function removeDoc(f: FormData) {
   "use server";
   await run(f, async ({ hotel, actor }) => {
@@ -88,6 +97,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
   const layout = layoutOf(hotel.content.brand?.layout);
   const font = fontOf(hotel.content.brand?.font);
   const docs = documentLibrary(hotel);
+  const langs = hotelLocales(hotel);
   const kb = (n: number) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
   return (
@@ -140,6 +150,28 @@ export default async function Site({ params, searchParams }: { params: Promise<{
         </form>
       </section>
 
+      <section className="card stack" id="sprachen">
+        <h2>Sprachen</h2>
+        <p className="muted small">Deutsch ist immer dabei. Für jede weitere Sprache erscheint auf der Website ein Sprachwechsel, und Buchung, Bestätigungs-Mail und Stornoseite sind in der Sprache des Gastes. Fehlt ein Text in einer Sprache, zeigt die Website Englisch, sonst Deutsch.</p>
+        <form action={saveLanguages} className="stack">
+          {hidden}
+          <fieldset className="plain" disabled={!canEdit}>
+            <div className="weekdays">
+              {LOCALES.map((l) => (
+                <label key={l}><input type="checkbox" name="lang" value={l} defaultChecked={langs.includes(l)} disabled={l === "de"} />{LOCALE_NAMES[l]}</label>
+              ))}
+            </div>
+          </fieldset>
+          {canEdit ? <div><button className="btn small">Sprachen speichern</button></div> : null}
+        </form>
+        <p className="muted small">
+          {translationEnabled()
+            ? <>Texte übersetzen Sie im Editor jeder Seite mit «Fehlende Texte übersetzen», Zimmer und Tarife unter <a href={`/admin/${hotel.id}/rooms`}>Zimmer</a>. Noch {translationsLeft(hotel)} automatische Übersetzungen diesen Monat.</>
+            : <>Automatische Übersetzung ist noch nicht eingerichtet; die Felder können Sie im Editor von Hand ausfüllen.</>}
+          {" "}AGB und Datenschutz erscheinen auf Französisch, Italienisch und Niederländisch vorerst auf Englisch.
+        </p>
+      </section>
+
       <section className="card stack" id="dokumente">
         <h2>Dokumente (PDF)</h2>
         <p className="muted small">Zum Beispiel Speisekarte, Preisliste, Seminarunterlagen. Auf einer Seite zeigen Sie sie mit dem Baustein «Downloads (PDF)».</p>
@@ -160,8 +192,9 @@ export default async function Site({ params, searchParams }: { params: Promise<{
         {canEdit ? (
           <form action={`/api/admin/hotels/${hotel.id}/documents`} method="post" encType="multipart/form-data" className="inline-form">
             <div><label>PDF-Datei (max. 15 MB)</label><input type="file" name="file" accept="application/pdf,.pdf" required /></div>
-            <div><label>Titel DE</label><input name="title.de" placeholder="z. B. Speisekarte" maxLength={120} /></div>
-            <div><label>Titel EN</label><input name="title.en" placeholder="z. B. Menu" maxLength={120} /></div>
+            {langs.map((l) => (
+              <div key={l}><label>Titel {l.toUpperCase()}</label><input name={`title.${l}`} placeholder={l === "de" ? "z. B. Speisekarte" : l === "en" ? "z. B. Menu" : ""} maxLength={120} /></div>
+            ))}
             <button className="btn small">Hochladen</button>
           </form>
         ) : null}
