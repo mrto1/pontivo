@@ -7,6 +7,7 @@ import { buyVoucher, markVoucherPaid, updateVoucherSettings } from "../../src/se
 import { setPaymentProvider, type PaymentProvider, type RefundArgs } from "../../src/payments/provider";
 import { addDays } from "../../src/domain/dates";
 import { guest, inDays, inv, makeHotel } from "../helpers";
+import { terms } from "../../src/legal/texts";
 
 afterAll(closeDb);
 afterEach(() => setPaymentProvider(null));
@@ -129,5 +130,18 @@ describe("Gutschein bei der Online-Buchung", () => {
     expect(r.voucherBackRappen).toBe(10000);
     expect(pay.refunds.map((x) => x.amountRappen)).toEqual([booking.totalRappen - 10000]);
     expect(await remaining(h.voucher.id)).toBe(10000);
+  });
+});
+
+describe("AGB", () => {
+  it("Abschnitt Gutscheine nur bei Hotels mit Gutscheinverkauf, mit eingestellter Gültigkeit", async () => {
+    const plain = await makeHotel();
+    expect(terms(plain.hotel, "de").sections.map((x) => x.h)).not.toContain("8. Gutscheine");
+    const h = await hotelWithVoucher(10000);
+    const de = terms(h.hotel, "de");
+    const sec = de.sections.find((x) => x.h === "8. Gutscheine")!;
+    expect(sec.p.join(" ")).toContain("3 Jahr(e) ab Kauf");
+    expect(de.sections.at(-1)!.h).toBe("9. Anwendbares Recht und Gerichtsstand");
+    expect(terms(h.hotel, "fr").sections.map((x) => x.h)).toContain("8. Gift vouchers");
   });
 });
