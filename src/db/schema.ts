@@ -213,6 +213,9 @@ export const bookings = pgTable("bookings", {
   touristTaxRappen: integer("tourist_tax_rappen").notNull().default(0),
   totalRappen: integer("total_rappen").notNull().default(0),
   platformFeeRappen: integer("platform_fee_rappen").notNull().default(0),
+  /** Gutschein bei der Online-Buchung: angerechneter Betrag (wird beim Hold abgezogen) */
+  voucherId: uuid("voucher_id"),
+  voucherRappen: integer("voucher_rappen").notNull().default(0),
   holdExpiresAt: ts("hold_expires_at"),
   confirmedAt: ts("confirmed_at"),
   cancelledAt: ts("cancelled_at"),
@@ -403,7 +406,9 @@ export const voucherRedemptions = pgTable("voucher_redemptions", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   voucherId: uuid("voucher_id").notNull(),
   hotelId: uuid("hotel_id").notNull(),
+  /** positiv = eingelöst, negativ = Gutschrift (Buchung abgelaufen oder storniert) */
   amountRappen: integer("amount_rappen").notNull(),
+  bookingId: uuid("booking_id"),
   note: text("note").notNull().default(""),
   actor: text("actor").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),

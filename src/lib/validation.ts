@@ -24,6 +24,7 @@ export const createBookingSchema = z
       marketing_consent: z.boolean().default(false),
     }),
     terms_accepted: z.literal(true),
+    voucher_code: z.string().trim().max(40).optional().nullable(),
   })
   .refine((v) => v.children_ages.length === 0 || v.children_ages.length === v.children, {
     message: "children_ages muss pro Kind ein Alter enthalten",

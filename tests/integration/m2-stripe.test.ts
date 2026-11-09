@@ -185,7 +185,7 @@ describe("M2 Stripe Connect", () => {
     const b = await book(h, inDays(1)); // Flexibel, 48 h → Frist vorbei
     await send(event("checkout.session.completed", h.acct, completed(await sessionOf(b.id), b)));
     const r = await cancelBooking(b.id, { by: "guest", actor: "guest" });
-    expect(r).toEqual({ refundRappen: b.touristTaxRappen, feeRappen: b.roomsTotalRappen });
+    expect(r).toEqual({ refundRappen: b.touristTaxRappen, voucherBackRappen: 0, feeRappen: b.roomsTotalRappen });
     expect(refunds[0].params.amount).toBe(b.touristTaxRappen);
     const [p] = await db().select().from(payments).where(eq(payments.bookingId, b.id));
     expect(p.status).toBe("partially_refunded");

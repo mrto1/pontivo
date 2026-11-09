@@ -13,6 +13,8 @@ export function BookingForm(props: {
   children: number;
   ages: number[];
   base: string;
+  /** Hotel verkauft Gutscheine → Feld «Gutschein einlösen» anzeigen */
+  vouchers?: boolean;
 }) {
   const d = t(props.locale);
   const [busy, setBusy] = useState(false);
@@ -48,6 +50,7 @@ export function BookingForm(props: {
           marketing_consent: f.get("marketing") === "on",
         },
         terms_accepted: f.get("terms") === "on",
+        voucher_code: String(f.get("voucher") ?? "").trim() || null,
       }),
     }).catch(() => null);
     if (res?.ok) {
@@ -56,7 +59,8 @@ export function BookingForm(props: {
       return;
     }
     setBusy(false);
-    setError(res?.status === 409 ? d.soldOut : d.error);
+    const code = res ? ((await res.json().catch(() => ({}))) as { error?: string }).error : undefined;
+    setError(res?.status === 409 ? d.soldOut : code === "voucher_invalid" || code === "voucher_expired" || code === "voucher_empty" ? d[code] : d.error);
   }
 
   return (
@@ -69,6 +73,16 @@ export function BookingForm(props: {
         <div><label>{d.phone}</label><input name="phone" type="tel" autoComplete="tel" /></div>
       </div>
       <div style={{ marginTop: 12 }}><label>{d.notes}</label><textarea name="notes" rows={2} /></div>
+      {props.vouchers ? (
+        <details className="voucher-redeem" style={{ marginTop: 12 }}>
+          <summary className="small">{d.voucherHave}</summary>
+          <div style={{ marginTop: 8, maxWidth: 320 }}>
+            <label>{d.voucherCodeLabel}</label>
+            <input name="voucher" placeholder="GS-XXXX-XXXX" autoComplete="off" style={{ textTransform: "uppercase" }} />
+            <p className="small muted">{d.voucherHint}</p>
+          </div>
+        </details>
+      ) : null}
       <label className="check" style={{ marginTop: 12 }}><input type="checkbox" name="marketing" />{d.marketing}</label>
       <label className="check">
         <input type="checkbox" name="terms" required />

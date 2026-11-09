@@ -1,3 +1,4 @@
+import { chargeVoucher, creditVoucher, takeVoucherForBooking, VoucherError } from "./vouchers";
 import { t, type Locale } from "../i18n/dict";
 import { and, eq, lt, sql } from "drizzle-orm";
 import { db, rows, type Executor, type Tx } from "../db/client";
@@ -42,6 +43,8 @@ export type GuestInput = {
 };
 
 export type CreateBookingInput = {
+  /** Gutschein-Code (optional): Betrag wird angerechnet, Rest per Karte/TWINT */
+  voucherCode?: string | null;
   roomTypeId: string;
   ratePlanId: string;
   checkin: string;
@@ -102,8 +105,8 @@ export async function createDirectBooking(
     if (!reason) throw new BookingError("offer_not_found", 404);
     throw new BookingError(reason, 400);
   }
-  const fee = platformFee(offer.totalRappen, hotel.platformFeeBps);
   const now = opts.now ?? new Date();
+  const today = todayIn(hotel.timezone, now);
   const holdExpiresAt = new Date(now.getTime() + HOLD_MINUTES * 60_000);
 
   let booking: Booking | null = null;
@@ -112,6 +115,11 @@ export async function createDirectBooking(
       booking = await db().transaction(async (tx) => {
         const ok = await reserveNights(tx, input.roomTypeId, input.checkin, input.checkout);
         if (!ok) throw new RollbackSoldOut();
+        // Gutschein sperren und anrechnen; 1 % Plattformgebühr nur auf den Teil, der per Karte/TWINT bezahlt wird
+        // (am Gutschein hat Pontivo beim Verkauf schon verdient)
+        const vt = input.voucherCode?.trim() ? await takeVoucherForBooking(tx, hotel, input.voucherCode, offer.totalRappen, today) : null;
+        const voucherRappen = vt?.amountRappen ?? 0;
+        const fee = platformFee(offer.totalRappen - voucherRappen, hotel.platformFeeBps);
         const [g] = await tx
           .insert(guests)
           .values({
@@ -144,6 +152,8 @@ export async function createDirectBooking(
             touristTaxRappen: offer.touristTaxRappen,
             totalRappen: offer.totalRappen,
             platformFeeRappen: fee,
+            voucherId: vt?.voucher.id ?? null,
+            voucherRappen,
             holdExpiresAt,
             guestNotes: input.guest.notes ?? null,
           })
@@ -158,15 +168,17 @@ export async function createDirectBooking(
           nightlyPrices: offer.nightlyPrices,
           amountRappen: offer.roomsTotalRappen,
         });
+        if (vt) await chargeVoucher(tx, vt.voucher, b.id, voucherRappen, `Buchung ${b.reference}`, "guest");
         await enqueueAvailability(tx, hotel.id, input.roomTypeId, input.checkin, addDays(input.checkout, -1));
         await audit(tx, {
           hotelId: hotel.id, actor: "guest", action: "booking.hold", entity: "booking", entityId: b.id,
-          details: { total: offer.totalRappen, fee, ip: opts.ip ?? null },
+          details: { total: offer.totalRappen, fee, voucher: voucherRappen, ip: opts.ip ?? null },
         });
         return b;
       });
     } catch (e) {
       if (e instanceof RollbackSoldOut) throw new BookingError("sold_out", 409);
+      if (e instanceof VoucherError) throw new BookingError(e.message, 400);
       // Referenz-Kollision (sehr selten) → neu versuchen
       if (String((e as { code?: string }).code) === "23505" && attempt < 2) continue;
       throw e;
@@ -176,6 +188,11 @@ export async function createDirectBooking(
 
   const base = env().APP_BASE_URL;
   const lang = input.guest.language;
+  const cardRappen = booking.totalRappen - booking.voucherRappen;
+  if (cardRappen <= 0) {
+    await confirmBooking(booking.id, { method: "voucher", actor: "guest" });
+    return { booking, checkoutUrl: `${base}/b/${booking.publicToken}?paid=1` };
+  }
   let checkout: { url: string; sessionId: string };
   try {
     checkout = await provider.createCheckout({
@@ -196,7 +213,7 @@ export async function createDirectBooking(
     hotelId: hotel.id,
     bookingId: booking.id,
     stripeCheckoutSessionId: checkout.sessionId,
-    amountRappen: booking.totalRappen,
+    amountRappen: cardRappen,
     applicationFeeRappen: booking.platformFeeRappen,
     status: "pending",
   });
@@ -241,6 +258,14 @@ export async function confirmBooking(
       try {
         await tx.transaction(async (sp) => {
           if (!(await reserveNights(sp, room.roomTypeId, booking.checkin, booking.checkout))) throw new RollbackSoldOut();
+          if (booking.voucherId && booking.voucherRappen > 0) {
+            try {
+              await chargeVoucher(sp, { id: booking.voucherId, hotelId: booking.hotelId }, booking.id, booking.voucherRappen, `Buchung ${booking.reference} (späte Zahlung)`, pay.actor);
+            } catch (e) {
+              if (e instanceof VoucherError) throw new RollbackSoldOut();
+              throw e;
+            }
+          }
         });
       } catch (e) {
         if (!(e instanceof RollbackSoldOut)) throw e;
@@ -332,6 +357,9 @@ export async function releaseHold(
     await releaseNights(tx, booking.hotelId, room.roomTypeId, booking.checkin, booking.checkout);
     assertTransition("hold", "expired");
     await tx.update(bookings).set({ status: "expired", holdExpiresAt: null, updatedAt: now }).where(eq(bookings.id, bookingId));
+    if (booking.voucherId && booking.voucherRappen > 0) {
+      await creditVoucher(tx, booking.voucherId, booking.hotelId, booking.id, booking.voucherRappen, `Reservierung ${booking.reference} nicht bezahlt`, opts.actor);
+    }
     if (opts.paymentFailed) {
       await tx.update(payments).set({ status: "failed", updatedAt: now }).where(and(eq(payments.bookingId, bookingId), eq(payments.status, "pending")));
     }
@@ -391,18 +419,22 @@ export async function cancellationPreview(
 export async function cancelBooking(
   bookingId: string,
   opts: { by: "guest" | "hotel"; actor: string; hotelId?: string; reason?: string; now?: Date },
-): Promise<{ refundRappen: number; feeRappen: number }> {
+): Promise<{ refundRappen: number; voucherBackRappen: number; feeRappen: number }> {
   const now = opts.now ?? new Date();
   const preview = await cancellationPreview(bookingId, { by: opts.by, hotelId: opts.hotelId, now });
   if (!preview.cancellable) throw new BookingError(preview.reason ?? "not_cancellable", 409);
   const { booking, hotel, room, payment } = await loadForCancel(db(), bookingId, opts.hotelId);
 
+  // Mit Gutschein bezahlt: Rückerstattung anteilig auf Gutschein und Karte
+  const voucherBack = booking.voucherRappen > 0 ? Math.round((preview.refundRappen * booking.voucherRappen) / booking.totalRappen) : 0;
+  const cardBack = Math.min(preview.refundRappen - voucherBack, payment ? payment.amountRappen - payment.refundedRappen : 0);
+
   // 1. Rückerstattung beim Zahlungsanbieter (vor der DB-Änderung, SPEC 5.7)
   let refunded = 0;
-  if (payment && preview.refundRappen > 0) {
+  if (payment && cardBack > 0) {
     const provider = await getPaymentProvider();
-    await provider.refund({ hotel, booking, paymentIntentId: payment.stripePaymentIntentId, amountRappen: preview.refundRappen });
-    refunded = preview.refundRappen;
+    await provider.refund({ hotel, booking, paymentIntentId: payment.stripePaymentIntentId, amountRappen: cardBack });
+    refunded = cardBack;
   }
 
   // 2. Nächte freigeben, Status, Outbox, E-Mails
@@ -422,15 +454,18 @@ export async function cancelBooking(
         .set({ refundedRappen: total, status: total >= payment.amountRappen ? "refunded" : "partially_refunded", updatedAt: now })
         .where(eq(payments.id, payment.id));
     }
+    if (booking.voucherId && voucherBack > 0) {
+      await creditVoucher(tx, booking.voucherId, booking.hotelId, booking.id, voucherBack, `Storno ${booking.reference}`, opts.actor);
+    }
     // Ausstehende Erinnerungen nicht mehr senden
     await tx.execute(sql`UPDATE email_outbox SET status = 'cancelled' WHERE booking_id = ${bookingId} AND status = 'pending' AND template IN ('pre_arrival','post_stay','checkin_link')`);
     const [guest] = booking.guestId ? await tx.select().from(guests).where(eq(guests.id, booking.guestId)) : [];
-    const data = { bookingId, refundRappen: refunded, feeRappen: preview.feeRappen };
+    const data = { bookingId, refundRappen: refunded, voucherBackRappen: voucherBack, feeRappen: preview.feeRappen };
     if (guest) await enqueueEmail(tx, { hotelId: hotel.id, bookingId, template: "booking_cancelled", to: guest.email, language: booking.language, data });
     await enqueueEmail(tx, { hotelId: hotel.id, bookingId, template: "booking_cancelled", to: hotel.contactEmail, language: hotel.defaultLanguage, data });
-    await audit(tx, { hotelId: hotel.id, actor: opts.actor, action: "booking.cancel", entity: "booking", entityId: bookingId, details: { by: opts.by, refund: refunded, fee: preview.feeRappen } });
+    await audit(tx, { hotelId: hotel.id, actor: opts.actor, action: "booking.cancel", entity: "booking", entityId: bookingId, details: { by: opts.by, refund: refunded, voucherBack, fee: preview.feeRappen } });
   });
-  return { refundRappen: refunded, feeRappen: preview.feeRappen };
+  return { refundRappen: refunded, voucherBackRappen: voucherBack, feeRappen: preview.feeRappen };
 }
 
 // ---------------------------------------------------------------- No-Show (5.8)

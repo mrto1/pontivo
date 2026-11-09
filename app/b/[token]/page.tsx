@@ -43,6 +43,10 @@ export default async function BookingView({ params, searchParams }: { params: Pr
               <tr><td>{d.roomPrice}</td><td>{formatChf(booking.roomsTotalRappen)}</td></tr>
               <tr><td>{d.touristTax}</td><td>{hotel.touristTaxIncludedInPrice ? d.included : formatChf(booking.touristTaxRappen)}</td></tr>
               <tr><td><strong>{d.total}</strong></td><td><strong>{formatChf(booking.totalRappen)}</strong></td></tr>
+              {booking.voucherRappen > 0 ? (<>
+                <tr><td>{d.voucherPaid}</td><td>− {formatChf(booking.voucherRappen)}</td></tr>
+                <tr><td>{d.cardPaid}</td><td>{formatChf(booking.totalRappen - booking.voucherRappen)}</td></tr>
+              </>) : null}
             </tbody>
           </table>
           {plan ? (<><h3 style={{ marginTop: 20 }}>{d.cancellation}</h3><p className="small muted">{cancellationPolicyText(plan, locale)}</p></>) : null}

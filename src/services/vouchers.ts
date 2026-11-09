@@ -143,3 +143,33 @@ export async function redeemVoucher(hotel: Hotel, code: string, amountRappen: nu
     return { ...v, remainingRappen: v.remainingRappen - amountRappen };
   });
 }
+
+// ---------------------------------------------------------------- Einlösen bei der Online-Buchung
+
+type Tx = Parameters<Parameters<ReturnType<typeof db>["transaction"]>[0]>[0];
+
+/**
+ * Gutschein für eine Reservierung sperren und anrechnen (in der Hold-Transaktion).
+ * Angerechnet wird höchstens der Restwert. Gültig ist der Gutschein, wenn er am Buchungstag nicht abgelaufen ist.
+ */
+export async function takeVoucherForBooking(tx: Tx, hotel: Hotel, code: string, totalRappen: number, today: string): Promise<{ voucher: Voucher; amountRappen: number }> {
+  const [v] = await tx.select().from(vouchers).where(and(eq(vouchers.hotelId, hotel.id), eq(vouchers.code, code.trim().toUpperCase()))).for("update");
+  if (!v || v.status !== "paid") throw new VoucherError("voucher_invalid");
+  if (v.validUntil < today) throw new VoucherError("voucher_expired");
+  if (v.remainingRappen <= 0) throw new VoucherError("voucher_empty");
+  return { voucher: v, amountRappen: Math.min(v.remainingRappen, totalRappen) };
+}
+
+/** Betrag vom Gutschein abziehen und als Einlösung zur Buchung festhalten */
+export async function chargeVoucher(tx: Tx, v: { id: string; hotelId: string }, bookingId: string, amountRappen: number, note: string, actor: string) {
+  const r = await tx.execute(sql`UPDATE vouchers SET remaining_rappen = remaining_rappen - ${amountRappen} WHERE id = ${v.id} AND remaining_rappen >= ${amountRappen} AND status = 'paid' RETURNING id`);
+  if (!r.rows.length) throw new VoucherError("voucher_empty");
+  await tx.insert(voucherRedemptions).values({ voucherId: v.id, hotelId: v.hotelId, bookingId, amountRappen, note, actor });
+}
+
+/** Betrag wieder auf den Gutschein gutschreiben (Reservierung abgelaufen, Buchung storniert) */
+export async function creditVoucher(tx: Tx, voucherId: string, hotelId: string, bookingId: string, amountRappen: number, note: string, actor: string) {
+  if (amountRappen <= 0) return;
+  await tx.execute(sql`UPDATE vouchers SET remaining_rappen = LEAST(amount_rappen, remaining_rappen + ${amountRappen}) WHERE id = ${voucherId}`);
+  await tx.insert(voucherRedemptions).values({ voucherId, hotelId, bookingId, amountRappen: -amountRappen, note, actor });
+}

@@ -65,6 +65,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
         <span className="muted">Zimmer total</span><span>{formatChf(b.roomsTotalRappen)}</span>
         <span className="muted">Kurtaxe</span><span>{formatChf(b.touristTaxRappen)}{hotel.touristTaxIncludedInPrice ? " (im Preis inbegriffen)" : ""}</span>
         <span className="muted">Total</span><span><strong>{formatChf(b.totalRappen)}</strong></span>
+        {b.voucherRappen > 0 ? (<><span className="muted">davon Gutschein</span><span>{formatChf(b.voucherRappen)} · per Karte/TWINT {formatChf(b.totalRappen - b.voucherRappen)}</span></>) : null}
         <span className="muted">Plattformgebühr</span><span>{formatChf(b.platformFeeRappen)}</span>
         <span className="muted">Bemerkung Gast</span><span>{b.guestNotes ?? "–"}</span>
       </div>

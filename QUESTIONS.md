@@ -19,7 +19,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Übersetzungen der festen Texte (Buchungsstrecke, Mails, Storno) FR/IT/NL von Muttersprachlern gegenlesen lassen.
 - [ ] AGB und Datenschutz auf FR/IT/NL übersetzen und prüfen lassen.
 
-- [ ] Gutscheine: Gültigkeitsdauer und Bedingungen in den AGB rechtlich prüfen lassen; Einlösung bei der Online-Buchung später.
+- [ ] Gutscheine: Gültigkeitsdauer und Bedingungen in den AGB rechtlich prüfen lassen (auch: gilt der Gutschein, wenn am Buchungstag gültig, der Aufenthalt aber danach liegt?).
 - [ ] Gutscheine: Mehrwertsteuer-Behandlung (Wertgutschein, MWST erst bei Einlösung) mit Treuhand klären.
 
 ## Getroffene Annahmen (v1)
@@ -51,7 +51,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 | Sprachen | Deutsch ist immer Ausgangssprache und immer angeboten; Rückfall fehlender Texte: gewünschte Sprache → EN → DE; Sprachen, die ein Hotel nicht anbietet, ergeben 404; Hotel-interne Mails bleiben DE/EN | `src/i18n/dict.ts` |
 | Rechtstexte FR/IT/NL | AGB und Datenschutz nur DE/EN; FR/IT/NL zeigen Englisch mit Hinweis, bis übersetzte Texte juristisch geprüft sind | `src/legal/texts.ts` |
 | Automatische Übersetzung | Claude API (Messages), Modell `claude-sonnet-5-5`, ein Aufruf pro Seite bzw. Zimmerliste; zählt nur bei Erfolg; Pontivo trägt die Kosten; Limit 50 pro Hotel und Monat | `src/services/translate.ts` |
-| Gutscheine | Wertgutscheine, Kauf wie Buchung (Direct Charge, 1 %), Code GS-XXXX-XXXX, Einlösung nur im Admin (nicht bei der Online-Buchung), Gültigkeit Standard 3 Jahre | `src/services/vouchers.ts` |
+| Gutscheine | Wertgutscheine, Kauf wie Buchung (Direct Charge, 1 %), Code GS-XXXX-XXXX, Gültigkeit Standard 3 Jahre. Einlösen im Admin oder bei der Online-Buchung: Betrag wird beim Hold gesperrt, bei Ablauf gutgeschrieben, Storno anteilig auf Gutschein und Karte; 1 % Gebühr nur auf den Kartenteil; gültig, wenn am Buchungstag nicht abgelaufen | `src/services/vouchers.ts` |
 | Anfragen | HTML-Formular ohne JavaScript, Spam-Schutz mit verstecktem Feld und 5 Anfragen pro Minute und IP, keine Speicherung über die Anfrage hinaus | `app/api/inquiry/route.ts` |
 | Pakete | Ein Paket ist ein Tarif mit Mindestaufenthalt (`rate_plans.min_nights`), gilt zusätzlich zu den Tagesregeln und wird an Channex als min_stay_arrival gesendet | `src/services/search.ts` |
 | Gästestimmen | Werden nicht als Review-Markup ausgezeichnet (Google wertet selbst veröffentlichte Bewertungen nicht) | `src/lib/structured-data.ts` |

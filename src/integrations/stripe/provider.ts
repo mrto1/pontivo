@@ -13,7 +13,9 @@ export class StripePaymentProvider implements PaymentProvider {
     const { hotel, booking } = a;
     if (!hotel.stripeAccountId) throw new Error("Hotel hat kein Stripe-Konto");
     if (!booking.holdExpiresAt) throw new Error("Buchung ohne Hold-Ablauf");
-    const twintAllowed = hotel.stripeTwintActive && booking.totalRappen <= TWINT_MAX_RAPPEN;
+    // Mit Gutschein: nur der Restbetrag wird per Karte/TWINT bezahlt
+    const amount = booking.totalRappen - booking.voucherRappen;
+    const twintAllowed = hotel.stripeTwintActive && amount <= TWINT_MAX_RAPPEN;
     const metadata = { booking_id: booking.id, hotel_id: hotel.id };
     const session = await stripe().checkout.sessions.create(
       {
@@ -24,7 +26,7 @@ export class StripePaymentProvider implements PaymentProvider {
             quantity: 1,
             price_data: {
               currency: "chf",
-              unit_amount: booking.totalRappen,
+              unit_amount: amount,
               product_data: { name: a.description },
             },
           },

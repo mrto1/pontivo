@@ -10,6 +10,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import { ratePlans } from "@/src/db/schema";
 import { planName } from "@/src/domain/i18n-names";
+import { voucherSettings } from "@/src/services/vouchers";
 import { Shell } from "./Shell";
 import { SearchBar } from "./SearchBar";
 import { BookingForm } from "./BookingForm";
@@ -89,6 +90,7 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
                   children={q.children}
                   ages={q.ages}
                   base={base}
+                  vouchers={voucherSettings(hotel).enabled}
                 />
               </details>
             </article>
