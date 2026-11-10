@@ -55,11 +55,19 @@ export default async function Embed({ params, searchParams }: { params: Promise<
       {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") || sp.msg.startsWith("Logo:") ? "warn" : ""}`}>{sp.msg}</p> : null}
 
       <section className="card stack">
-        <h2>Wie nutzt das Hotel {env().PLATFORM_NAME}?</h2>
+        <h2>Wie nutzen Sie {env().PLATFORM_NAME}?</h2>
         <form action={saveBrand} className="stack">
           {hidden}
-          <label className="check"><input type="radio" name="mode" value="booking_only" defaultChecked={brand.mode === "booking_only"} disabled={!canEdit} /><span><strong>Wir behalten unsere Website</strong> – {env().PLATFORM_NAME} übernimmt nur die Buchung. Der Gast kommt über einen Knopf auf unserer Website zur Buchungsseite.</span></label>
-          <label className="check"><input type="radio" name="mode" value="website" defaultChecked={brand.mode !== "booking_only"} disabled={!canEdit} /><span><strong>{env().PLATFORM_NAME} ist unsere Website</strong> – Startseite, Zimmer und Buchung unter unserer Domain.</span></label>
+          <div className="mode-pick">
+            <label>
+              <input type="radio" name="mode" value="booking_only" defaultChecked={brand.mode === "booking_only"} disabled={!canEdit} />
+              <span><strong>Wir behalten unsere Website</strong><span className="muted small">{env().PLATFORM_NAME} übernimmt nur die Buchung. Der Gast kommt über einen Knopf auf unserer Website zur Buchungsseite.</span></span>
+            </label>
+            <label>
+              <input type="radio" name="mode" value="website" defaultChecked={brand.mode !== "booking_only"} disabled={!canEdit} />
+              <span><strong>{env().PLATFORM_NAME} ist unsere Website</strong><span className="muted small">Startseite, Zimmer und Buchung unter unserer eigenen Domain.</span></span>
+            </label>
+          </div>
           <div className="form-grid">
             <div><label>Adresse der eigenen Website</label><input name="websiteUrl" type="url" placeholder="https://www.hotel.ch" defaultValue={brand.websiteUrl ?? ""} disabled={!canEdit} /></div>
             <div>
