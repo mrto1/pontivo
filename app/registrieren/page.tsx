@@ -21,7 +21,8 @@ async function register(f: FormData) {
   try {
     const r = await registerHost({
       propertyType: s(f, "propertyType") as never, name: s(f, "name"), contactName: s(f, "contactName"), email: s(f, "email"),
-      canton: s(f, "canton") as never, municipality: s(f, "municipality"), acceptTerms: f.get("terms") === "on" ? true : (false as never),
+      canton: s(f, "canton") as never, municipality: s(f, "municipality"),
+      mode: s(f, "mode") === "booking_only" ? "booking_only" : "website", websiteUrl: s(f, "websiteUrl"), acceptTerms: f.get("terms") === "on" ? true : (false as never),
     });
     link = r.loginLink;
   } catch (e) {
@@ -42,15 +43,15 @@ export default async function Register({ searchParams }: { searchParams: Promise
       <div className="register-grid">
         <section>
           <h1>Direktbuchung für Ihren Betrieb – in 20 Minuten eingerichtet</h1>
-          <p className="muted">Website mit Online-Buchung, TWINT und Kartenzahlung für Hotels, B&amp;Bs, Ferienwohnungen und Chalets in der Schweiz.</p>
+          <p className="muted">Online-Buchung mit TWINT und Kartenzahlung für Hotels, B&amp;Bs, Ferienwohnungen und Chalets in der Schweiz – mit neuer Website oder eingebaut in Ihre bestehende.</p>
           <ol className="register-steps">
             <li><strong>Registrieren</strong> – Sie erhalten einen Login-Link per E-Mail.</li>
             <li><strong>Einrichten</strong> – der Assistent fragt Angaben, Kurtaxe, Preise und Fotos ab. Unterbrechen jederzeit möglich.</li>
             <li><strong>Zahlungen aktivieren</strong> – Konto bei Stripe eröffnen, Geld geht direkt an Sie.</li>
-            <li><strong>Online gehen</strong> – Ihre Website ist sofort buchbar.</li>
+            <li><strong>Online gehen</strong> – sofort buchbar. Mit eigener Website: Link oder Knopf «Buchen» einbauen, wir zeigen wie.</li>
           </ol>
           <div className="card small">
-            <strong>Preis:</strong> 1 % pro Direktbuchung, mindestens CHF 19 pro Monat (ab dem ersten vollen Monat nach dem Live-Gang). Liegen die 1 % darunter, wird nur die Differenz belastet. Keine Einrichtungsgebühr, monatlich kündbar.
+            <strong>Preis, mit oder ohne Website gleich:</strong> 1 % pro Direktbuchung, mindestens CHF 19 pro Monat (ab dem ersten vollen Monat nach dem Live-Gang). Liegen die 1 % darunter, wird nur die Differenz belastet. Keine Einrichtungsgebühr, monatlich kündbar.
           </div>
         </section>
         <form action={register} className="card stack">
@@ -62,6 +63,13 @@ export default async function Register({ searchParams }: { searchParams: Promise
                 <label key={t}><input type="radio" name="propertyType" value={t} defaultChecked={i === 0} required />{PROPERTY_LABEL[t]}</label>
               ))}
             </div>
+          </fieldset>
+          <fieldset className="plain"><legend className="small muted">Brauchen Sie eine Website?</legend>
+            <div className="mode-pick">
+              <label><input type="radio" name="mode" value="website" defaultChecked /><span><strong>Ja, Website mit Buchung</strong><span className="small muted">Wir erstellen Ihre Website, Sie gestalten sie im Baukasten.</span></span></label>
+              <label><input type="radio" name="mode" value="booking_only" /><span><strong>Nein, nur das Buchungssystem</strong><span className="small muted">Sie behalten Ihre Website und bauen einen Link oder Knopf «Buchen» ein.</span></span></label>
+            </div>
+            <div className="mode-url"><label htmlFor="websiteUrl">Adresse Ihrer Website</label><input id="websiteUrl" name="websiteUrl" maxLength={300} placeholder="www.chalet-edelweiss.ch" inputMode="url" /></div>
           </fieldset>
           <div><label htmlFor="name">Name des Betriebs</label><input id="name" name="name" required maxLength={120} placeholder="z. B. Chalet Edelweiss" /></div>
           <div className="form-grid" style={{ marginTop: 0 }}>

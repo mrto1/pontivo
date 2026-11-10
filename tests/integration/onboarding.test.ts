@@ -2,7 +2,7 @@ import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { db, closeDb } from "../../src/db/client";
 import { auditLog, bookings, emailOutbox, hotelMembers, hotels, platformCharges, users } from "../../src/db/schema";
-import { addUnit, goLiveFromWizard, onboardingReminders, onboardingSteps, OnboardingError, registerHost, setArrivalInfo, updateBasics } from "../../src/services/onboarding";
+import { addUnit, detectEmbed, goLiveFromWizard, markEmbedded, nextOpenStep, onboardingReminders, onboardingSteps, OnboardingError, registerHost, setArrivalInfo, updateBasics } from "../../src/services/onboarding";
 import { confirmTouristTax } from "../../src/services/settings";
 import { searchOffers } from "../../src/services/search";
 import { finishCardSetup, processCharges, runMonthlyMinimum, startCardSetup } from "../../src/services/billing";
@@ -113,6 +113,41 @@ describe("Selbst-Registrierung und Einrichtung", () => {
     expect(alert.toEmail).toBe("alarm@example.ch");
     await onboardingReminders(new Date(t0.getTime() + 30 * 864e5));
     expect(await mails(hotel.id, "host_onboarding_reminder")).toHaveLength(2);
+  });
+});
+
+describe("Nur Buchungssystem (eigene Website behalten)", () => {
+  it("Registrierung mit eigener Website, Schritt «Einbauen» nach dem Live-Gang, Prüfung der Website", async () => {
+    await expect(register({ mode: "booking_only" })).rejects.toThrow(/Adresse Ihrer Website/);
+    await expect(register({ mode: "booking_only", websiteUrl: "keine adresse" })).rejects.toThrow();
+    const { hotel } = await register({ mode: "booking_only", websiteUrl: "www.chalet-edelweiss.ch" });
+    expect(hotel.content.brand).toEqual({ mode: "booking_only", websiteUrl: "https://www.chalet-edelweiss.ch" });
+    const plain = (await register({ mode: "website", websiteUrl: "www.egal.ch" })).hotel;
+    expect(plain.content.brand).toEqual({ mode: "website" });
+    expect((await onboardingSteps(plain)).some((s) => s.key === "einbinden")).toBe(false);
+
+    let steps = await onboardingSteps(hotel);
+    expect(steps.map((s) => s.key).slice(-2)).toEqual(["live", "einbinden"]);
+    // vor dem Live-Gang führt der Assistent nicht zum Einbau
+    expect(nextOpenStep(steps.map((s) => (s.required && s.key !== "live" ? { ...s, done: true } : s)))).toBe("live");
+    await db().update(hotels).set({ status: "live" }).where(eq(hotels.id, hotel.id));
+    steps = await onboardingSteps(await fresh(hotel.id));
+    expect(nextOpenStep(steps.map((s) => (s.required ? { ...s, done: true } : s)))).toBe("einbinden");
+
+    const page = (html: string, status = 200) => (async () => new Response(html, { status })) as unknown as typeof fetch;
+    const h = await fresh(hotel.id);
+    expect(await detectEmbed(h, page("<html><a href='/kontakt'>Kontakt</a></html>"))).toBe(false);
+    expect(await detectEmbed(h, page(`<a href="https://pontivo.ch/h/${h.slug}/de">Buchen</a>`))).toBe(true);
+    expect(await detectEmbed(h, page(`<div data-pontivo="${h.slug}" data-mode="button"></div>`))).toBe(true);
+    expect(await detectEmbed(h, page("", 500))).toBe(false);
+    expect(await detectEmbed(h, (async () => { throw new Error("offline"); }) as unknown as typeof fetch)).toBe(false);
+    await markEmbedded(h, "detected", "t");
+    expect((await onboardingSteps(await fresh(h.id))).find((s) => s.key === "einbinden")!.done).toBe(true);
+
+    // Live-Mail mit Hinweis zum Einbau
+    const live = render("host_live", "de", { hotel: await fresh(h.id), data: {}, baseUrl: "https://x" });
+    expect(live.text).toContain("Link oder Knopf");
+    expect(live.text).toContain("step=einbinden");
   });
 });
 

@@ -3,7 +3,7 @@ import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import {
-  addUnit, CANCEL_TEMPLATES, goLiveFromWizard, isWholeUnit, nextOpenStep, onboardingSteps, OnboardingError, PROPERTY_LABEL,
+  addUnit, bookingOnly, CANCEL_TEMPLATES, detectEmbed, goLiveFromWizard, markEmbedded, isWholeUnit, nextOpenStep, onboardingSteps, OnboardingError, PROPERTY_LABEL,
   setArrivalInfo, unitWord, updateBasics, type StepKey,
 } from "@/src/services/onboarding";
 import { confirmTouristTax } from "@/src/services/settings";
@@ -15,6 +15,8 @@ import { onboardingLink, refreshAccountStatus } from "@/src/integrations/stripe/
 import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { todayIn } from "@/src/domain/dates";
 import { env } from "@/src/env";
+import { publicBase } from "@/src/services/brand";
+import { CopyBox } from "@/components/admin/CopyBox";
 
 export const dynamic = "force-dynamic";
 
@@ -115,6 +117,18 @@ async function cardStart(f: FormData) {
   redirect(url);
 }
 
+async function embedCheck(f: FormData) {
+  "use server";
+  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "manager");
+  if (s(f, "confirm") === "1") {
+    await markEmbedded(hotel, "confirmed", actor);
+    redirect(`/admin/${hotel.id}/einrichten?step=einbinden`);
+  }
+  const found = await detectEmbed(hotel);
+  if (found) await markEmbedded(hotel, "detected", actor);
+  redirect(`/admin/${hotel.id}/einrichten?step=einbinden&${found ? "msg=" + encodeURIComponent("Gefunden: Ihre Website verweist auf die Buchung.") : "error=" + encodeURIComponent("Auf der Startseite Ihrer Website haben wir noch keinen Link zur Buchung gefunden. Ist die Änderung schon veröffentlicht?")}`);
+}
+
 async function goLive(f: FormData) {
   "use server";
   await step(f, ({ hotel, actor }) => goLiveFromWizard(hotel, actor), "owner");
@@ -130,6 +144,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
   const doneCount = steps.filter((x) => x.done).length;
   const isOwner = atLeast(role, "owner");
   const whole = isWholeUnit(hotel.propertyType);
+  const onlyBooking = bookingOnly(hotel);
   const unit = unitWord(hotel.propertyType);
   const H = (
     <>
@@ -158,7 +173,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             <div><label htmlFor="checkin">Check-in ab</label><input id="checkin" name="checkin" type="time" defaultValue={hotel.checkinTime.slice(0, 5)} required /></div>
             <div><label htmlFor="checkout">Check-out bis</label><input id="checkout" name="checkout" type="time" defaultValue={hotel.checkoutTime.slice(0, 5)} required /></div>
           </div>
-          <div><label htmlFor="intro">Kurzbeschreibung für die Startseite (1–3 Sätze)</label>
+          <div><label htmlFor="intro">{onlyBooking ? "Kurzbeschreibung für die Buchungsseite (1–3 Sätze)" : "Kurzbeschreibung für die Startseite (1–3 Sätze)"}</label>
             <textarea id="intro" name="intro" rows={3} maxLength={1000} defaultValue={hotel.content.de?.intro ?? ""} placeholder={whole ? "z. B. Gemütliche 3½-Zimmer-Wohnung mit Balkon und Bergsicht, 5 Minuten zur Gondelbahn." : "z. B. Familiengeführter Gasthof mit 12 Zimmern und Restaurant, mitten im Dorf."} /></div>
           <div><button className="btn">Speichern und weiter</button></div>
         </form>
@@ -308,7 +323,13 @@ export default async function Wizard({ params, searchParams }: { params: Promise
     case "live": {
       const open = steps.filter((x) => x.required && !x.done && x.key !== "live");
       const preview = `/h/${hotel.slug}/de`;
-      body = hotel.status === "live" ? (
+      body = hotel.status === "live" && onlyBooking ? (
+        <div className="stack">
+          <p className="notice">✓ Die Buchung für {hotel.name} ist online.</p>
+          <p>Letzter Schritt: auf Ihrer Website einen Link oder Knopf einbauen, damit Gäste zur Buchung kommen.</p>
+          <p><a className="btn" href="?step=einbinden">Weiter zum Einbau</a> <a className="btn secondary" href={preview} target="_blank">Buchungsseite ansehen ↗</a></p>
+        </div>
+      ) : hotel.status === "live" ? (
         <div className="stack">
           <p className="notice">✓ {hotel.name} ist online und buchbar.</p>
           <p><a className="btn" href={preview} target="_blank">Website ansehen ↗</a> <a className="btn secondary" href={`/admin/${hotel.id}`}>Zur Übersicht</a></p>
@@ -316,13 +337,40 @@ export default async function Wizard({ params, searchParams }: { params: Promise
         </div>
       ) : (
         <div className="stack">
-          <p>Ihre Website ist vorbereitet. Schauen Sie sie an – danach mit einem Klick online gehen.</p>
-          <p><a className="btn secondary" href={preview} target="_blank">Vorschau ansehen ↗</a></p>
+          <p>{onlyBooking ? "Ihre Buchungsseite ist vorbereitet. Schauen Sie sie an – danach mit einem Klick online gehen. Ihre eigene Website bleibt, wie sie ist." : "Ihre Website ist vorbereitet. Schauen Sie sie an – danach mit einem Klick online gehen."}</p>
+          <p><a className="btn secondary" href={preview} target="_blank">{onlyBooking ? "Buchungsseite ansehen ↗" : "Vorschau ansehen ↗"}</a></p>
           {open.length ? (
             <div className="notice warn">Noch offen: {open.map((x, i) => <span key={x.key}>{i ? ", " : ""}<a href={`?step=${x.key}`}>{x.title}</a></span>)}</div>
           ) : isOwner ? (
             <form action={goLive}>{H}<button className="btn">Jetzt online gehen</button></form>
           ) : <p className="small muted">Online schalten kann die Inhaberin bzw. der Inhaber.</p>}
+        </div>
+      );
+      break;
+    }
+    case "einbinden": {
+      const link = `${publicBase(hotel)}/de`;
+      const script = `${env().APP_BASE_URL}/widget/${hotel.slug}.js`;
+      const button = `<div data-pontivo="${hotel.slug}" data-mode="button"></div>\n<script src="${script}" async></script>`;
+      const own = hotel.content.brand?.websiteUrl ?? "";
+      body = (
+        <div className="stack">
+          {hotel.onboarding.embeddedAt ? <p className="notice">✓ Erledigt. Gäste kommen von {own.replace(/^https?:\/\//, "")} zur Buchung.</p> : null}
+          <p>Ihre Website <a href={own} target="_blank" rel="noreferrer">{own.replace(/^https?:\/\//, "")}</a> bleibt, wie sie ist. Damit Gäste direkt buchen, braucht es dort einen Link oder Knopf. Wählen Sie, was für Sie einfacher ist:</p>
+          <h3>1. Link beim Menüpunkt «Buchen» eintragen (am einfachsten)</h3>
+          <p className="small muted">Funktioniert mit jedem Baukasten (Wix, Jimdo, WordPress, Squarespace …). Falls Ihre Seite schon einen Knopf «Buchen» oder «Anfragen» hat: dort diese Adresse eintragen.</p>
+          <CopyBox text={link} label="Link zur Buchungsseite" />
+          <h3>2. Knopf «Jetzt buchen» einfügen</h3>
+          <p className="small muted">Code in einen «HTML»- oder «Code»-Block einfügen. Weitere Varianten (Suchleiste mit Daten) unter <a href={`/admin/${hotel.id}/embed`}>Einbinden</a>.</p>
+          <CopyBox text={button} label="Code für den Knopf" />
+          <h3>3. Jemand anderes macht Ihre Website?</h3>
+          <p className="small muted">Schicken Sie diese Seite oder den Link oben an Ihre Webagentur – mehr braucht es nicht.</p>
+          {hotel.status !== "live" ? <p className="notice warn small">Noch nicht online: Gäste sehen auf der Buchungsseite einen Hinweis statt Angeboten.</p> : null}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <form action={embedCheck}>{H}<button className="btn">Meine Website prüfen</button></form>
+            {hotel.onboarding.embeddedAt ? null : <form action={embedCheck}>{H}<input type="hidden" name="confirm" value="1" /><button className="btn secondary">Ist eingebaut</button></form>}
+            {hotel.onboarding.embeddedAt ? <a className="btn secondary" href={`/admin/${hotel.id}`}>Zur Übersicht</a> : null}
+          </div>
         </div>
       );
       break;

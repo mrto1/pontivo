@@ -445,3 +445,10 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .wizard-bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
 .wizard-bar span { display: block; height: 100%; background: var(--accent); }
 .wizard-main h1 { margin-bottom: 16px; }
+.mode-pick { display: grid; gap: 8px; }
+.mode-pick > label { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 0; color: var(--ink); cursor: pointer; }
+.mode-pick > label > span { display: flex; flex-direction: column; gap: 2px; }
+.mode-pick input { width: auto; margin-top: 4px; }
+.mode-pick > label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.mode-url { display: none; margin-top: 10px; }
+fieldset:has(input[value="booking_only"]:checked) .mode-url { display: block; }

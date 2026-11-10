@@ -210,7 +210,7 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
     case "host_welcome": {
       const admin = env().APP_BASE_URL;
       return wrap(c, l, de ? `Willkommen bei ${env().PLATFORM_NAME} – so geht es weiter` : `Welcome to ${env().PLATFORM_NAME} – next steps`,
-        de ? [`Guten Tag ${c.data.contactName ?? ""}`.trim() + ",", `schön, dass ${c.hotel.name} dabei ist. Der Einrichtungs-Assistent führt Sie in etwa 20 Minuten durch alles: Angaben, Kurtaxe, ${c.hotel.propertyType === "hotel" || c.hotel.propertyType === "bnb" ? "Zimmer" : "Unterkunft"}, Preise, Fotos und Zahlungen. Sie können jederzeit unterbrechen und später weitermachen.`, "Zum Anmelden erhalten Sie separat einen Login-Link. Später fordern Sie unter dem Link unten jederzeit einen neuen an."]
+        de ? [`Guten Tag ${c.data.contactName ?? ""}`.trim() + ",", `schön, dass ${c.hotel.name} dabei ist. Der Einrichtungs-Assistent führt Sie in etwa 20 Minuten durch alles: Angaben, Kurtaxe, ${c.hotel.propertyType === "hotel" || c.hotel.propertyType === "bnb" ? "Zimmer" : "Unterkunft"}, Preise, Fotos und Zahlungen. Sie können jederzeit unterbrechen und später weitermachen.${c.data.mode === "booking_only" ? " Ihre eigene Website bleibt bestehen – am Schluss zeigen wir Ihnen, wie Sie den Link zur Buchung einbauen." : ""}`, "Zum Anmelden erhalten Sie separat einen Login-Link. Später fordern Sie unter dem Link unten jederzeit einen neuen an."]
           : [`Hello ${c.data.contactName ?? ""}`.trim() + ",", `great to have ${c.hotel.name} on board. The setup assistant guides you through everything in about 20 minutes. You can stop at any time and continue later.`],
         [], { href: `${admin}/admin/login`, label: de ? "Anmelden und einrichten" : "Sign in and set up" });
     }
@@ -222,6 +222,12 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
         [], { href: `${env().APP_BASE_URL}/admin/${c.hotel.id}/einrichten`, label: de ? "Einrichtung fortsetzen" : "Continue setup" });
     }
     case "host_live":
+      if (c.hotel.content.brand?.mode === "booking_only") {
+        return wrap(c, l, de ? `Die Buchung für ${c.hotel.name} ist online` : `Booking for ${c.hotel.name} is live`,
+          de ? ["Gratulation!", "Gäste können jetzt direkt bei Ihnen buchen und mit TWINT oder Karte bezahlen.", "Letzter Schritt: auf Ihrer Website einen Link oder Knopf «Buchen» einbauen. Im Assistenten finden Sie den Link und den Code zum Kopieren – oder schicken Sie ihn an Ihre Webagentur."]
+            : ["Congratulations!", "Guests can now book directly with you. Last step: add a booking link or button to your website."],
+          [], { href: `${env().APP_BASE_URL}/admin/${c.hotel.id}/einrichten?step=einbinden`, label: de ? "Link und Code ansehen" : "Get link and code" });
+      }
       return wrap(c, l, de ? `${c.hotel.name} ist online` : `${c.hotel.name} is online`,
         de ? ["Gratulation!", "Ihre Website mit Online-Buchung ist jetzt erreichbar. Gäste können direkt buchen und mit TWINT oder Karte bezahlen.", "Tipps für die ersten Buchungen: Link auf Ihrer bisherigen Website, im Google-Unternehmensprofil und in Ihrer E-Mail-Signatur einfügen. Stammgäste persönlich auf die Direktbuchung hinweisen."]
           : ["Congratulations!", "Your website with online booking is now live. Guests can book directly and pay by TWINT or card."],

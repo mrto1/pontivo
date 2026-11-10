@@ -40,6 +40,18 @@ export const registerSchema = z.object({
   canton: z.enum(CANTONS, { message: "Kanton wählen" }),
   municipality: z.string().trim().min(2, "Gemeinde fehlt").max(100),
   acceptTerms: z.literal(true, { message: "Bitte die Bedingungen akzeptieren" }),
+  /** «website» = Pontivo ist die Website; «booking_only» = eigene Website behalten, nur Buchungssystem */
+  mode: z.enum(["website", "booking_only"]).default("website"),
+  websiteUrl: z.string().trim().max(300).optional(),
+}).transform((v, ctx) => {
+  if (v.mode !== "booking_only") return { ...v, websiteUrl: undefined };
+  const raw = v.websiteUrl ?? "";
+  const url = raw && !/^https?:\/\//i.test(raw) ? `https://${raw}` : raw;
+  if (!/^https?:\/\/[^\s/]+\.[^\s]+$/i.test(url)) {
+    ctx.addIssue({ code: "custom", path: ["websiteUrl"], message: "Adresse Ihrer Website angeben, z. B. www.chalet-edelweiss.ch" });
+    return z.NEVER;
+  }
+  return { ...v, websiteUrl: url };
 });
 export type RegisterInput = z.input<typeof registerSchema>;
 
@@ -70,13 +82,13 @@ export async function registerHost(input: RegisterInput, now = new Date()) {
       monthlyMinimumRappen: DEFAULT_MONTHLY_MINIMUM_RAPPEN,
       hostTermsVersion: HOST_TERMS_VERSION, hostTermsAcceptedAt: now,
       onboarding: { startedAt: now.toISOString(), reminders: 0 },
-      content: { languages: ["de", "en"] },
+      content: { languages: ["de", "en"], brand: { mode: v.mode, ...(v.websiteUrl ? { websiteUrl: v.websiteUrl } : {}) } },
     }).returning();
     const [u] = await tx.insert(users).values({ email: v.email, name: v.contactName })
       .onConflictDoUpdate({ target: users.email, set: { name: sql`coalesce(${users.name}, ${v.contactName})` } }).returning();
     await tx.insert(hotelMembers).values({ hotelId: h.id, userId: u.id, role: "owner" }).onConflictDoNothing();
     await audit(tx, { hotelId: h.id, actor: `user:${u.id}`, action: "host.register", entity: "hotel", entityId: h.id, details: { propertyType: v.propertyType, terms: HOST_TERMS_VERSION } });
-    await enqueueEmail(tx, { hotelId: h.id, template: "host_welcome", to: v.email, language: "de", data: { contactName: v.contactName, propertyType: v.propertyType } });
+    await enqueueEmail(tx, { hotelId: h.id, template: "host_welcome", to: v.email, language: "de", data: { contactName: v.contactName, propertyType: v.propertyType, mode: v.mode } });
     return h;
   });
   const loginLink = await requestLoginLink(v.email, now);
@@ -85,7 +97,7 @@ export async function registerHost(input: RegisterInput, now = new Date()) {
 
 // ---------------------------------------------------------------- Schritte
 
-export type StepKey = "betrieb" | "kurtaxe" | "unterkunft" | "fotos" | "ankunft" | "zahlungen" | "karte" | "live";
+export type StepKey = "betrieb" | "kurtaxe" | "unterkunft" | "fotos" | "ankunft" | "zahlungen" | "karte" | "live" | "einbinden";
 export type Step = { key: StepKey; title: string; done: boolean; required: boolean };
 
 export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
@@ -103,11 +115,45 @@ export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
     { key: "zahlungen", title: "Zahlungen empfangen", done: !problems.some((p) => p.startsWith("Stripe")), required: true },
     { key: "karte", title: "Karte für die Grundgebühr", done: hotel.monthlyMinimumRappen === 0 || !!hotel.billingPaymentMethodId, required: hotel.monthlyMinimumRappen > 0 },
     { key: "live", title: "Online gehen", done: hotel.status === "live", required: true },
+    // Nur Buchungssystem: Link oder Knopf auf der eigenen Website einbauen
+    ...(bookingOnly(hotel) ? [{ key: "einbinden" as const, title: "Auf Website einbauen", done: !!hotel.onboarding.embeddedAt, required: false }] : []),
   ];
 }
 
+export const bookingOnly = (h: Pick<Hotel, "content">) => h.content.brand?.mode === "booking_only" && !!h.content.brand.websiteUrl;
+
+/** Einbau auf der eigenen Website als erledigt markieren (vom Gastgeber bestätigt oder automatisch gefunden) */
+export async function markEmbedded(hotel: Hotel, how: "confirmed" | "detected", actor: string) {
+  await db().update(hotels).set({ onboarding: { ...hotel.onboarding, embeddedAt: new Date().toISOString() } }).where(eq(hotels.id, hotel.id));
+  await audit(db(), { hotelId: hotel.id, actor, action: "host.embedded", entity: "hotel", entityId: hotel.id, details: { how } });
+}
+
+/**
+ * Prüft, ob die eigene Website des Gastgebers auf die Buchung verweist (Link /h/<slug>, Widget data-pontivo="<slug>" oder eigene Domain).
+ * Nur die Startseite, höchstens 5 Sekunden, keine Weiterleitungen auf fremde Hosts nötig.
+ */
+export async function detectEmbed(hotel: Hotel, fetcher: typeof fetch = fetch): Promise<boolean> {
+  const url = hotel.content.brand?.websiteUrl;
+  if (!url) return false;
+  try {
+    const res = await fetcher(url, { signal: AbortSignal.timeout(5000), redirect: "follow", headers: { "user-agent": "Pontivo-Einbau-Pruefung" } });
+    if (!res.ok) return false;
+    const html = (await res.text()).slice(0, 2_000_000);
+    const marks = [`data-pontivo="${hotel.slug}"`, `/widget/${hotel.slug}.js`, `/h/${hotel.slug}/`, ...(hotel.primaryDomain ? [hotel.primaryDomain] : [])];
+    return marks.some((m) => html.includes(m));
+  } catch {
+    return false;
+  }
+}
+
+/** Nächster sinnvoller Schritt: offene Pflichtschritte, dann Live-Gang, danach Einbau (nur Buchungssystem) */
 export function nextOpenStep(steps: Step[]): StepKey {
-  return (steps.find((s) => !s.done && s.key !== "live") ?? steps[steps.length - 1]).key;
+  const req = steps.find((s) => s.required && !s.done && s.key !== "live");
+  if (req) return req.key;
+  const live = steps.find((s) => s.key === "live")!;
+  if (!live.done) return "live";
+  const embed = steps.find((s) => s.key === "einbinden" && !s.done);
+  return embed ? "einbinden" : "live";
 }
 
 // ---------------------------------------------------------------- Unterkunft mit Preis in einem Schritt

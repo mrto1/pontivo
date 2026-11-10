@@ -46,7 +46,7 @@ export const hotels = pgTable("hotels", {
   billingCustomerId: text("billing_customer_id"),
   billingPaymentMethodId: text("billing_payment_method_id"),
   billingCardLabel: text("billing_card_label"),
-  onboarding: jsonb("onboarding").$type<{ startedAt?: string; completedAt?: string; reminders?: number; alertedAt?: string }>().notNull().default({}),
+  onboarding: jsonb("onboarding").$type<{ startedAt?: string; completedAt?: string; reminders?: number; alertedAt?: string; embeddedAt?: string }>().notNull().default({}),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
