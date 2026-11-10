@@ -37,13 +37,13 @@ Das Webhosting wird danach nicht mehr gebraucht. E-Mail-Adressen wie info@pontiv
 ```bash
 ssh ubuntu@IP-DES-VPS          # Benutzername laut Infomaniak (oft ubuntu)
 sudo -i
-git clone https://github.com/mrto1/hotel.git /opt/pontivo
+git clone https://github.com/mrto1/pontivo.git /opt/pontivo
 bash /opt/pontivo/deploy/setup-server.sh
 ```
 
 Das installiert Docker, schaltet die Firewall ein (nur SSH, HTTP, HTTPS) und aktiviert automatische Sicherheitsupdates.
 Das Repository ist privat? Dann zuerst auf dem Server einen Deploy-Key anlegen (`ssh-keygen -t ed25519`) und den öffentlichen Schlüssel
-in GitHub unter Repository → Settings → Deploy keys eintragen (nur Lesen), danach mit `git clone git@github.com:mrto1/hotel.git /opt/pontivo`.
+in GitHub unter Repository → Settings → Deploy keys eintragen (nur Lesen), danach mit `git clone git@github.com:mrto1/pontivo.git /opt/pontivo`.
 
 ## 4. Einstellungen und Geheimnisse
 

@@ -7,6 +7,8 @@ const schema = z.object({
   PAYMENT_PROVIDER: z.enum(["fake", "stripe"]).default("fake"),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET_CONNECT: z.string().optional(),
+  // Öffentlicher Schlüssel (pk_…) für eingebettete Stripe-Komponenten (Konto eröffnen im Assistenten). Ohne: gehostetes Onboarding.
+  STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   CHANNEX_BASE_URL: z.string().default("https://staging.channex.io/api/v1"),
   CHANNEX_API_KEY: z.string().optional(),
   CHANNEX_WEBHOOK_SECRET: z.string().optional(),

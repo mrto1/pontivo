@@ -17,6 +17,7 @@ import { todayIn } from "@/src/domain/dates";
 import { env } from "@/src/env";
 import { publicBase } from "@/src/services/brand";
 import { CopyBox } from "@/components/admin/CopyBox";
+import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
 
 export const dynamic = "force-dynamic";
 
@@ -300,9 +301,12 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           <p>Gäste bezahlen mit TWINT, Karte, Apple Pay oder Google Pay. Das Geld geht direkt auf Ihr eigenes Konto bei Stripe und wird Ihnen auf Ihr Bankkonto überwiesen. Dafür eröffnen Sie bei Stripe ein Konto (ca. 10 Minuten, Ausweis und IBAN bereithalten).</p>
           {sp.stripe === "return" ? <p className="notice">Zurück von Stripe. Die Prüfung kann einige Minuten dauern.</p> : null}
           <p>Status: {hotel.stripeChargesEnabled ? <span className="badge">✓ Zahlungen möglich</span> : hotel.stripeAccountId ? <span className="badge warn">in Prüfung oder unvollständig</span> : <span className="badge warn">noch kein Konto</span>}</p>
+          {isOwner && !hotel.stripeChargesEnabled && env().STRIPE_PUBLISHABLE_KEY && sp.stripe !== "return" ? (
+            <StripeOnboarding hotelId={hotel.id} publishableKey={env().STRIPE_PUBLISHABLE_KEY!} privacyUrl={`${env().APP_BASE_URL}/datenschutz`} />
+          ) : null}
           {isOwner ? (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {hotel.stripeChargesEnabled ? null : <form action={stripeStart}>{H}<button className="btn">{hotel.stripeAccountId ? "Bei Stripe fortsetzen" : "Konto bei Stripe eröffnen"}</button></form>}
+              {hotel.stripeChargesEnabled ? null : <form action={stripeStart}>{H}<button className={env().STRIPE_PUBLISHABLE_KEY ? "btn secondary small" : "btn"}>{env().STRIPE_PUBLISHABLE_KEY ? "Lieber auf der Stripe-Seite einrichten" : hotel.stripeAccountId ? "Bei Stripe fortsetzen" : "Konto bei Stripe eröffnen"}</button></form>}
               {hotel.stripeAccountId ? <form action={stripeReload}>{H}<input type="hidden" name="stay" value={hotel.stripeChargesEnabled ? "" : "1"} /><button className="btn secondary">Status prüfen</button></form> : null}
             </div>
           ) : <p className="small muted">Das Konto eröffnet die Inhaberin bzw. der Inhaber.</p>}

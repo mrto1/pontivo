@@ -70,7 +70,7 @@ export async function processCharges(now = new Date()): Promise<{ charged: numbe
       ? await provider.chargeSavedCard({
           hotel: h, customerId: h.billingCustomerId, paymentMethodId: h.billingPaymentMethodId, amountRappen: c.chargeRappen,
           description: `${env().PLATFORM_NAME} Mindestgebühr ${c.month} – ${h.name}`, receiptEmail: h.contactEmail,
-          idempotencyKey: `minimum-${h.id}-${c.month}-${attempt}`,
+          idempotencyKey: `minimum-${h.id}-${c.month}-${attempt}-${h.billingPaymentMethodId}`,
         })
       : { ok: false as const, paymentIntentId: null, error: "no_card" };
     await db().transaction(async (tx) => {

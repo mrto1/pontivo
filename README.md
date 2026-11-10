@@ -19,7 +19,7 @@ Auftrag und Details: [`docs/SPEC.md`](docs/SPEC.md) · Offene Fragen und Annahme
 Voraussetzungen: [Node.js 22](https://nodejs.org), [Git](https://git-scm.com), [Docker Desktop](https://www.docker.com/products/docker-desktop/) (für die Datenbank).
 
 ```bash
-git clone https://github.com/mrto1/hotel.git
+git clone https://github.com/mrto1/pontivo.git
 cd hotel
 npm install
 cp .env.example .env.local           # Windows: copy .env.example .env.local

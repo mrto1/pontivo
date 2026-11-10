@@ -452,3 +452,4 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .mode-pick > label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
 .mode-url { display: none; margin-top: 10px; }
 fieldset:has(input[value="booking_only"]:checked) .mode-url { display: block; }
+.stripe-embed { border: 1px solid var(--line); border-radius: 10px; padding: 16px; background: #fff; }
