@@ -17,7 +17,7 @@ export async function POST(req: Request) {
   try {
     await triggerChannexFeed();
   } catch (e) {
-    // Kein Problem: channex-feed läuft ohnehin alle 2 Minuten
+    // Kein Problem: channex-feed läuft ohnehin alle 15 Minuten
     console.error("[channex webhook] Job konnte nicht angestossen werden", e);
   }
   return Response.json({ received: true }, { status: 202 });

@@ -274,7 +274,7 @@ Worker `channex-outbox` (alle 6 Sekunden):
 
 ### 7.3 Buchungen empfangen
 - Webhook `POST /api/webhooks/channex`: HMAC-Signatur aus Header `x-hmac-signature-256` prüfen (HMAC-SHA256 über `{timestamp}.{raw_body}` mit `CHANNEX_WEBHOOK_SECRET`, Zeitstempel aus `x-hmac-timestamp` höchstens 300 s alt, konstantzeitiger Vergleich). Ereignisse: `booking_new`, `booking_modification`, `booking_cancellation`, `booking_unmapped_room`, `booking_unmapped_rate`.
-- Der Webhook stösst nur den Job `channex-feed` an. Zusätzlich läuft `channex-feed` alle 2 Minuten.
+- Der Webhook stösst nur den Job `channex-feed` an. Zusätzlich läuft `channex-feed` alle 15 Minuten als Rückfallebene (Empfehlung Channex: 15–20 Minuten; häufigeres Abfragen gilt bei der Zertifizierung als unnötig).
 - `channex-feed`: `GET /booking_revisions/feed?order[inserted_at]=asc` (paginiert), jede Revision in `inbound_events` (source `channex`, `event_id` = Revisions-ID), verarbeiten nach 5.6, danach `POST /booking_revisions/{id}/ack`. Nur acken, wenn die Verarbeitung erfolgreich war.
 - Reihenfolge pro `booking_id` einhalten (älteste zuerst).
 

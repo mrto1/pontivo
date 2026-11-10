@@ -66,9 +66,9 @@ Abnahmetests (SPEC 12): `tests/unit/pricing.test.ts` (Preis-Testfälle 5.2), `te
 
 1. Konto auf https://staging.channex.io anlegen, API-Schlüssel erzeugen.
 2. `.env.local`: `CHANNEX_BASE_URL=https://staging.channex.io/api/v1`, `CHANNEX_API_KEY=...`
-3. `npm run worker` starten (sendet alle 6 s die Änderungen, holt alle 2 Minuten Buchungen).
+3. `npm run worker` starten (sendet alle 6 s die Änderungen, holt Buchungen sofort per Webhook, zur Sicherheit alle 15 Minuten).
 4. Admin → Channex → „In Channex anlegen“ (oder vorhandene IDs eintragen) → „Abgleich einschalten“.
-5. Optional Webhook in Channex: URL `<APP_BASE_URL>/api/webhooks/channex`, Ereignis `booking`, signiert; den Signaturschlüssel als `CHANNEX_WEBHOOK_SECRET` eintragen. Ohne Webhook kommen Buchungen spätestens nach 2 Minuten.
+5. Webhook in Channex (nötig, sonst kommen Portal-Buchungen erst nach bis zu 15 Minuten): URL `<APP_BASE_URL>/api/webhooks/channex`, Ereignis `booking`, signiert; den Signaturschlüssel als `CHANNEX_WEBHOOK_SECRET` eintragen. Ohne Webhook kommen Buchungen erst nach bis zu 15 Minuten (Überbuchungsgefahr).
 6. In Channex Booking.com verbinden und eine Testbuchung auslösen → erscheint unter Buchungen.
 
 Für die Zertifizierung (SPEC 7.4) zeigt man Channex live: Preisänderung und Sperre im Admin-Kalender, Buchung, Änderung und Storno.

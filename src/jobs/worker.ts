@@ -3,7 +3,7 @@
  * - holds:   abgelaufene Holds freigeben (jede Minute, SPEC 5.5)
  * - emails:  E-Mail-Outbox senden (jede Minute, SPEC 10)
  * - horizon: Verfügbarkeit/Preise auf 18 Monate auffüllen (täglich 03:15, SPEC 4)
- * - channex-feed:   Buchungen aus Channex holen (alle 2 Minuten + sofort per Webhook, SPEC 7.3)
+ * - channex-feed:   Buchungen aus Channex holen (sofort per Webhook, zur Sicherheit alle 15 Minuten, SPEC 7.3)
  * - guests-checkin: Check-in-Links einreihen (Modul Gäste, alle 10 Minuten, SPEC 14.1)
  * - guests-purge:   abgelaufene Meldescheine löschen (täglich 02:30, SPEC 14.6)
  * - onboarding-reminders: Erinnerung an Gastgeber mit offener Einrichtung (täglich 09:20)
@@ -25,7 +25,7 @@ const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
   { name: "emails", cron: "* * * * *", run: () => sendDueEmails() },
   { name: "horizon", cron: "15 3 * * *", run: () => extendHorizon() },
-  { name: "channex-feed", cron: "*/2 * * * *", run: () => pullFeed() },
+  { name: "channex-feed", cron: "*/15 * * * *", run: () => pullFeed() },
   { name: "guests-checkin", cron: "*/10 * * * *", run: () => enqueueCheckinLinks() },
   { name: "guests-purge", cron: "30 2 * * *", run: () => purgeExpiredRegistrations() },
   { name: "onboarding-reminders", cron: "20 9 * * *", run: () => onboardingReminders() },
