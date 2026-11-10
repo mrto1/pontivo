@@ -21,6 +21,10 @@ export type HotelKnowledge = {
   facts: { label: string; value: string }[];
   arrival: string[];
   offers: { title: string; text: string; price: string; minNights: number }[];
+  /** Speisekarte (Preise in CHF) */
+  menu: { section: string; name: string; text: string; priceChf: string | null; diet: string; glutenFree: boolean }[];
+  /** Öffnungszeiten (Restaurant, Rezeption …): Tag 0 = Montag, leere Liste = geschlossen */
+  hours: { place: string; title: string; days: { from: string; to: string }[][]; closures: { from: string; to: string; label: string }[] }[];
 };
 
 export async function hotelKnowledge(hotel: Hotel, lang: Locale): Promise<HotelKnowledge> {
@@ -44,6 +48,8 @@ export async function hotelKnowledge(hotel: Hotel, lang: Locale): Promise<HotelK
     tips: blocks.flatMap((b) => (b.type === "tips" ? b.items : [])).map((x) => ({ title: T(x.title), text: T(x.text), category: x.category, season: x.season, distance: T(x.distance), url: x.url })).filter((x) => x.title),
     facts: blocks.flatMap((b) => (b.type === "facts" ? b.items : [])).map((x) => ({ label: T(x.label), value: T(x.value) })).filter((x) => x.label),
     arrival: blocks.flatMap((b) => (b.type === "location" ? [T(b.body)] : [])).filter(Boolean),
+    menu: blocks.flatMap((b) => (b.type === "menu" ? b.items : [])).map((x) => ({ section: T(x.section), name: T(x.name), text: T(x.text), priceChf: x.priceRappen === null ? null : (x.priceRappen / 100).toFixed(2), diet: x.diet, glutenFree: x.glutenFree })).filter((x) => x.name),
+    hours: blocks.flatMap((b) => (b.type === "hours" ? [{ place: b.place, title: T(b.heading), days: b.days, closures: b.closures.map((c) => ({ from: c.from, to: c.to, label: T(c.label) })) }] : [])),
     offers: blocks.flatMap((b) => (b.type === "offers" ? b.items : [])).map((x) => ({ title: T(x.title), text: T(x.text), price: T(x.price), minNights: x.ratePlanId ? planMin.get(x.ratePlanId) ?? x.nights : x.nights })).filter((x) => x.title),
   };
 }

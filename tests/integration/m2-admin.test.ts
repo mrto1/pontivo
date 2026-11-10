@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, closeDb } from "../../src/db/client";
 import { emailOutbox, hotels } from "../../src/db/schema";
 import { atLeast, consumeLoginToken, createSessionValue, hotelsForUser, readSessionValue, requestLoginLink, roleIn } from "../../src/auth/session";
@@ -105,16 +105,19 @@ describe("E-Mail-Outbox", () => {
   it("sendet fällige E-Mails einmal, wiederholt Fehler bis 3×", async () => {
     const h = await makeHotel();
     const d = inDays(25);
-    await createDirectBooking(h.hotel, { roomTypeId: h.rooms[0].roomType.id, ratePlanId: h.rooms[0].plans[0].id, checkin: d, checkout: addDays(d, 2), adults: 2, children: 0, childrenAges: [], guest: { ...guest, email: `mail-${uid()}@example.ch` } });
+    const email = `mail-${uid()}@example.ch`;
+    await createDirectBooking(h.hotel, { roomTypeId: h.rooms[0].roomType.id, ratePlanId: h.rooms[0].plans[0].id, checkin: d, checkout: addDays(d, 2), adults: 2, children: 0, childrenAges: [], guest: { ...guest, email } });
     const sent: { to: string; subject: string; text: string }[] = [];
     setMailer(async (m) => { sent.push(m); });
     // hohes Limit: die Test-Datenbank enthält auch Mails anderer Tests
     await sendDueEmails(new Date(), 100_000);
-    const subjects = sent.map((m) => m.subject);
+    // nur Mails dieses Tests (an den Gast oder ans Hotel)
+    const mine = sent.filter((m) => m.to === email || m.to === h.hotel.contactEmail);
+    const subjects = mine.map((m) => m.subject);
     expect(subjects.some((s) => s.startsWith("Buchungsbestätigung"))).toBe(true);
     expect(subjects.some((s) => s.startsWith("Neue Buchung"))).toBe(true);
     expect(subjects.some((s) => s.startsWith("Bald ist es so weit"))).toBe(false); // pre_arrival erst 3 Tage vorher
-    const confirm = sent.find((m) => m.subject.startsWith("Buchungsbestätigung"))!;
+    const confirm = mine.find((m) => m.subject.startsWith("Buchungsbestätigung"))!;
     expect(confirm.text).toContain("Kurtaxe");
     expect(confirm.text).toContain("/b/");
     const n = sent.length;
@@ -124,10 +127,11 @@ describe("E-Mail-Outbox", () => {
     // Fehler: 3 Versuche, dann failed
     const preArrival = new Date(Date.now() + 30 * 86400_000);
     setMailer(async () => { throw new Error("SMTP kaputt"); });
-    let r = await sendDueEmails(preArrival);
+    let r = await sendDueEmails(preArrival, 100_000);
     expect(r.failed).toBeGreaterThan(0);
-    for (let i = 0; i < 3; i++) r = await sendDueEmails(new Date(preArrival.getTime() + (i + 1) * 3600_000));
-    const failed = await db().select().from(emailOutbox).where(eq(emailOutbox.status, "failed"));
+    for (let i = 0; i < 3; i++) r = await sendDueEmails(new Date(preArrival.getTime() + (i + 1) * 3600_000), 100_000);
+    // nur Mails dieses Tests prüfen (die Test-Datenbank enthält auch Mails anderer Tests)
+    const failed = await db().select().from(emailOutbox).where(and(eq(emailOutbox.status, "failed"), eq(emailOutbox.hotelId, h.hotel.id)));
     expect(failed.length).toBeGreaterThan(0);
     expect(failed.every((f) => f.attempts === 3)).toBe(true);
   });

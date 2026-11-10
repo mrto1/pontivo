@@ -114,20 +114,21 @@ ${link ? `<p style="margin-top:24px"><a href="${esc(link.href)}" style="backgrou
 const X: Record<Locale, {
   vSubject: (h: string) => string; vText: (amount: string, until: string) => string; vOpen: string;
   iSubject: (h: string) => string; iText: string;
+  tSubject: (h: string) => string; tText: string; tDate: string; tTime: string; tPersons: string;
 }> = {
   de: { vSubject: (h) => `Ihr Gutschein – ${h}`, vText: (a, u) => `vielen Dank für Ihren Gutschein über ${a}. Er ist gültig bis ${u}. Über den Link können Sie ihn ansehen und ausdrucken.`, vOpen: "Gutschein ansehen und drucken",
-    iSubject: (h) => `Ihre Anfrage – ${h}`, iText: "vielen Dank für Ihre Anfrage. Sie ist bei uns angekommen, wir melden uns so rasch wie möglich." },
+    iSubject: (h) => `Ihre Anfrage – ${h}`, iText: "vielen Dank für Ihre Anfrage. Sie ist bei uns angekommen, wir melden uns so rasch wie möglich.", tSubject: (h) => `Ihre Tischreservation – ${h}`, tText: "vielen Dank für Ihre Reservationsanfrage. Sie gilt, sobald wir sie bestätigt haben – wir melden uns so rasch wie möglich.", tDate: "Datum", tTime: "Uhrzeit", tPersons: "Personen" },
   en: { vSubject: (h) => `Your gift voucher – ${h}`, vText: (a, u) => `thank you for your gift voucher worth ${a}. It is valid until ${u}. Use the link to view and print it.`, vOpen: "View and print voucher",
-    iSubject: (h) => `Your request – ${h}`, iText: "thank you for your request. We have received it and will get back to you as soon as possible." },
+    iSubject: (h) => `Your request – ${h}`, iText: "thank you for your request. We have received it and will get back to you as soon as possible.", tSubject: (h) => `Your table reservation – ${h}`, tText: "thank you for your reservation request. It is valid once we have confirmed it – we will get back to you as soon as possible.", tDate: "Date", tTime: "Time", tPersons: "Guests" },
   fr: { vSubject: (h) => `Votre bon cadeau – ${h}`, vText: (a, u) => `merci pour votre bon cadeau d'une valeur de ${a}. Il est valable jusqu'au ${u}. Le lien vous permet de le consulter et de l'imprimer.`, vOpen: "Voir et imprimer le bon",
-    iSubject: (h) => `Votre demande – ${h}`, iText: "merci pour votre demande. Elle nous est bien parvenue, nous vous répondrons dès que possible." },
+    iSubject: (h) => `Votre demande – ${h}`, iText: "merci pour votre demande. Elle nous est bien parvenue, nous vous répondrons dès que possible.", tSubject: (h) => `Votre réservation de table – ${h}`, tText: "merci pour votre demande de réservation. Elle est valable dès que nous l'avons confirmée – nous vous répondrons dès que possible.", tDate: "Date", tTime: "Heure", tPersons: "Personnes" },
   it: { vSubject: (h) => `Il vostro buono regalo – ${h}`, vText: (a, u) => `grazie per il buono regalo di ${a}. È valido fino al ${u}. Con il link potete vederlo e stamparlo.`, vOpen: "Vedi e stampa il buono",
-    iSubject: (h) => `La vostra richiesta – ${h}`, iText: "grazie per la vostra richiesta. È arrivata, vi risponderemo il prima possibile." },
+    iSubject: (h) => `La vostra richiesta – ${h}`, iText: "grazie per la vostra richiesta. È arrivata, vi risponderemo il prima possibile.", tSubject: (h) => `La vostra prenotazione del tavolo – ${h}`, tText: "grazie per la richiesta di prenotazione. È valida non appena l'abbiamo confermata – vi risponderemo il prima possibile.", tDate: "Data", tTime: "Ora", tPersons: "Persone" },
   nl: { vSubject: (h) => `Uw cadeaubon – ${h}`, vText: (a, u) => `hartelijk dank voor uw cadeaubon van ${a}. Hij is geldig tot ${u}. Via de link kunt u hem bekijken en afdrukken.`, vOpen: "Bon bekijken en afdrukken",
-    iSubject: (h) => `Uw aanvraag – ${h}`, iText: "hartelijk dank voor uw aanvraag. We hebben hem ontvangen en nemen zo snel mogelijk contact op." },
+    iSubject: (h) => `Uw aanvraag – ${h}`, iText: "hartelijk dank voor uw aanvraag. We hebben hem ontvangen en nemen zo snel mogelijk contact op.", tSubject: (h) => `Uw tafelreservering – ${h}`, tText: "hartelijk dank voor uw reserveringsaanvraag. Die is geldig zodra wij hem hebben bevestigd – we nemen zo snel mogelijk contact op.", tDate: "Datum", tTime: "Tijd", tPersons: "Personen" },
 };
 
-const KIND_DE: Record<string, string> = { group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
+const KIND_DE: Record<string, string> = { table: "Tisch reservieren", group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
 
 export function render(template: string, lang: string, c: EmailContext): Rendered {
   // Gäste-Mails in jeder Website-Sprache; Hotel-interne Mails nur DE/EN
@@ -188,10 +189,14 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
       return wrap(c, l, `${de ? "Neue Anfrage" : "New request"}: ${KIND_DE[String(d.kind)] ?? d.kind} – ${d.name}`,
         [de ? "Über die Website ist eine Anfrage eingegangen. Antworten Sie direkt an die E-Mail-Adresse des Gastes." : "A request came in through the website. Reply directly to the guest's email address.", String(d.message ?? "")],
         [`${de ? "Anlass" : "Occasion"}: ${KIND_DE[String(d.kind)] ?? d.kind}`, `${de ? "Name" : "Name"}: ${d.name}`, `E-Mail: ${d.email}`, ...(d.phone ? [`${de ? "Telefon" : "Phone"}: ${d.phone}`] : []),
-          ...(d.dateFrom ? [`${de ? "Datum" : "Date"}: ${formatDay(String(d.dateFrom), l)}${d.dateTo ? ` – ${formatDay(String(d.dateTo), l)}` : ""}`] : []), ...(d.persons ? [`${de ? "Personen" : "Guests"}: ${d.persons}`] : [])]);
+          ...(d.dateFrom ? [`${de ? "Datum" : "Date"}: ${formatDay(String(d.dateFrom), l)}${d.dateTo ? ` – ${formatDay(String(d.dateTo), l)}` : ""}`] : []), ...(d.timeOfDay ? [`${de ? "Uhrzeit" : "Time"}: ${d.timeOfDay}`] : []), ...(d.persons ? [`${de ? "Personen" : "Guests"}: ${d.persons}`] : [])]);
     }
     case "inquiry_confirmation": {
       const x = X[gl];
+      if (c.data.kind === "table") {
+        return wrap(c, gl, x.tSubject(c.hotel.name), [m.hi(String(c.data.name ?? "")) + ",", x.tText, String(c.data.message ?? "")],
+          [`${x.tDate}: ${formatDay(String(c.data.dateFrom), gl)}`, `${x.tTime}: ${c.data.timeOfDay}`, `${x.tPersons}: ${c.data.persons}`]);
+      }
       return wrap(c, gl, x.iSubject(c.hotel.name), [m.hi(String(c.data.name ?? "")) + ",", x.iText, String(c.data.message ?? "")]);
     }
     case "channex_alert":

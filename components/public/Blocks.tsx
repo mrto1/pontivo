@@ -1,7 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import { roomTypes, type Hotel } from "@/src/db/schema";
-import { lookClass, tr, type Block } from "@/src/domain/blocks";
+import { groupDays, lookClass, menuSections, tr, type Block } from "@/src/domain/blocks";
 import { RichText } from "./RichText";
 import { MapEmbed } from "./MapEmbed";
 import { fill } from "@/src/i18n/dict";
@@ -9,7 +9,7 @@ import { voucherSettings, vouchersAvailable } from "@/src/services/vouchers";
 import { formatChf } from "@/src/domain/money";
 import { roomDescription, roomName } from "@/src/domain/i18n-names";
 import { addDays, todayIn } from "@/src/domain/dates";
-import { t, type Locale } from "@/src/i18n/dict";
+import { LOCALE_TAGS, t, type Locale } from "@/src/i18n/dict";
 import { SearchBar } from "./SearchBar";
 
 function Paras({ text }: { text: string }) {
@@ -19,6 +19,11 @@ function Paras({ text }: { text: string }) {
 function fileSize(bytes: number): string {
   return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1).replace(".0", "")} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
+
+/** Wochentag kurz in der Sprache (0 = Montag; 1.1.2024 war ein Montag) */
+const weekdayName = (i: number, lang: Locale) => new Date(Date.UTC(2024, 0, 1 + i)).toLocaleDateString(LOCALE_TAGS[lang], { weekday: "short", timeZone: "UTC" });
+const shortDate = (day: string, lang: Locale) => new Date(day + "T12:00:00Z").toLocaleDateString(LOCALE_TAGS[lang], { day: "numeric", month: "numeric", year: "numeric", timeZone: "UTC" });
+const menuPrice = (r: number) => (r / 100).toFixed(2);
 
 function DownloadsBlock({ files, hotel, lang }: { files: string[]; hotel: Hotel; lang: Locale }) {
   const lib = new Map((hotel.content.documents ?? []).map((d) => [d.url, d]));
@@ -219,7 +224,8 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
           </section>,
         );
         break;
-      case "inquiry":
+      case "inquiry": {
+        const tableOnly = b.kinds.length === 1 && b.kinds[0] === "table";
         out.push(
           <section key={b.id} id={`b-${b.id}`} className="blk blk-inquiry">
             <Heading text={tr(b.heading, lang)} />
@@ -232,21 +238,25 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
               <input type="hidden" name="page" value={pageSlug} />
               <input type="hidden" name="back" value={here} />
               <div className="hp" aria-hidden="true"><label>Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
-              <div><label htmlFor={`k-${b.id}`}>{d.inqKind}</label>
-                <select id={`k-${b.id}`} name="kind" required defaultValue={b.kinds[0]}>{b.kinds.map((k) => <option key={k} value={k}>{d[`kind_${k}` as keyof typeof d]}</option>)}</select>
-              </div>
+              {b.kinds.length === 1 ? <input type="hidden" name="kind" value={b.kinds[0]} /> : (
+                <div><label htmlFor={`k-${b.id}`}>{d.inqKind}</label>
+                  <select id={`k-${b.id}`} name="kind" required defaultValue={b.kinds[0]}>{b.kinds.map((k) => <option key={k} value={k}>{d[`kind_${k}` as keyof typeof d]}</option>)}</select>
+                </div>
+              )}
               <div><label htmlFor={`n-${b.id}`}>{d.inqName}</label><input id={`n-${b.id}`} name="name" required maxLength={120} autoComplete="name" /></div>
               <div><label htmlFor={`e-${b.id}`}>{d.email}</label><input id={`e-${b.id}`} name="email" type="email" required maxLength={200} autoComplete="email" /></div>
               <div><label htmlFor={`p-${b.id}`}>{d.phone}</label><input id={`p-${b.id}`} name="phone" type="tel" maxLength={40} autoComplete="tel" /></div>
-              <div><label htmlFor={`f-${b.id}`}>{d.inqDateFrom}</label><input id={`f-${b.id}`} name="dateFrom" type="date" /></div>
-              <div><label htmlFor={`t-${b.id}`}>{d.inqDateTo}</label><input id={`t-${b.id}`} name="dateTo" type="date" /></div>
-              <div><label htmlFor={`c-${b.id}`}>{d.inqPersons}</label><input id={`c-${b.id}`} name="persons" type="number" min={1} max={2000} /></div>
+              <div><label htmlFor={`f-${b.id}`}>{tableOnly ? d.inqDate : d.inqDateFrom}</label><input id={`f-${b.id}`} name="dateFrom" type="date" required={tableOnly} min={todayIn(hotel.timezone)} /></div>
+              {tableOnly ? null : <div><label htmlFor={`t-${b.id}`}>{d.inqDateTo}</label><input id={`t-${b.id}`} name="dateTo" type="date" /></div>}
+              {b.kinds.includes("table") ? <div><label htmlFor={`h-${b.id}`}>{d.inqTime}{tableOnly ? "" : ` (${d.kind_table})`}</label><input id={`h-${b.id}`} name="time" type="time" required={tableOnly} step={900} /></div> : null}
+              <div><label htmlFor={`c-${b.id}`}>{d.inqPersons}</label><input id={`c-${b.id}`} name="persons" type="number" min={1} max={2000} required={tableOnly} /></div>
               <div style={{ gridColumn: "1 / -1" }}><label htmlFor={`m-${b.id}`}>{d.inqMessage}</label><textarea id={`m-${b.id}`} name="message" rows={4} maxLength={4000} /></div>
-              <div style={{ gridColumn: "1 / -1" }}><p className="small muted">{d.inqPrivacy}</p><button className="btn">{d.inqSend}</button></div>
+              <div style={{ gridColumn: "1 / -1" }}><p className="small muted">{b.kinds.includes("table") ? `${d.inqTableHint} ` : ""}{d.inqPrivacy}</p><button className="btn">{d.inqSend}</button></div>
             </form>
           </section>,
         );
         break;
+      }
       case "voucher": {
         const set = voucherSettings(hotel);
         const ok = vouchersAvailable(hotel);
@@ -278,6 +288,72 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
                 <div style={{ gridColumn: "1 / -1" }}><p className="small muted">{d.vRedeem}</p><button className="btn">{d.vBuy}</button> <span className="small muted">{d.payMethods}</span></div>
               </form>
             ) : <p className="muted">{d.vUnavailable}</p>}
+          </section>,
+        );
+        break;
+      }
+      case "menu": {
+        const items = b.items.filter((it) => tr(it.name, lang));
+        out.push(
+          <section key={b.id} id={`b-${b.id}`} className="blk blk-menu">
+            <Heading text={tr(b.heading, lang)} />
+            {tr(b.intro, lang) ? <RichText text={tr(b.intro, lang)} /> : null}
+            {menuSections(items).map((sec, si) => (
+              <div key={si} className="menu-section">
+                {tr(sec.section, lang) ? <h3>{tr(sec.section, lang)}</h3> : null}
+                <ul className="menu-list">
+                  {sec.items.map((it, i) => (
+                    <li key={i}>
+                      <div className="menu-line">
+                        <span className="menu-name">{tr(it.name, lang)}</span>
+                        <span className="menu-dots" aria-hidden="true" />
+                        {it.priceRappen !== null ? <span className="menu-price">{menuPrice(it.priceRappen)}</span> : null}
+                      </div>
+                      {tr(it.text, lang) || it.diet || it.glutenFree ? (
+                        <p className="small muted">
+                          {tr(it.text, lang)}
+                          {it.diet || it.glutenFree ? (
+                            <span className="menu-tags">
+                              {it.diet === "vegan" ? <span className="badge">{d.menuVegan}</span> : it.diet === "vegetarian" ? <span className="badge">{d.menuVegetarian}</span> : null}
+                              {it.glutenFree ? <span className="badge">{d.menuGlutenFree}</span> : null}
+                            </span>
+                          ) : null}
+                        </p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            {tr(b.note, lang) ? <div className="small muted"><RichText text={tr(b.note, lang)} /></div> : null}
+            {items.some((it) => it.priceRappen !== null) ? <p className="small muted">{d.menuPrices}</p> : null}
+          </section>,
+        );
+        break;
+      }
+      case "hours": {
+        const today = todayIn(hotel.timezone);
+        const closures = b.closures.filter((c) => c.to >= today);
+        out.push(
+          <section key={b.id} id={`b-${b.id}`} className="blk blk-hours">
+            <Heading text={tr(b.heading, lang)} />
+            <table className="hours">
+              <tbody>
+                {groupDays(b.days).map((g) => (
+                  <tr key={g.first}>
+                    <th scope="row">{weekdayName(g.first, lang)}{g.last > g.first ? `${g.last === g.first + 1 ? ", " : "–"}${weekdayName(g.last, lang)}` : ""}</th>
+                    <td>{g.ranges.length ? g.ranges.map((r) => `${r.from}–${r.to}`).join(", ") : <span className="muted">{d.hoursClosed}</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {closures.length ? (
+              <div className="notice">
+                <strong>{d.hoursHolidays}</strong>
+                <ul>{closures.map((c, i) => <li key={i}>{shortDate(c.from, lang)}{c.to !== c.from ? ` – ${shortDate(c.to, lang)}` : ""}{tr(c.label, lang) ? ` · ${tr(c.label, lang)}` : ""}</li>)}</ul>
+              </div>
+            ) : null}
+            {tr(b.note, lang) ? <RichText text={tr(b.note, lang)} /> : null}
           </section>,
         );
         break;

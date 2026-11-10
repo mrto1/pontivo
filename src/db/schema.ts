@@ -408,6 +408,7 @@ export const inquiries = pgTable("inquiries", {
   dateFrom: date("date_from", { mode: "string" }),
   dateTo: date("date_to", { mode: "string" }),
   persons: integer("persons"),
+  timeOfDay: text("time_of_day"),
   message: text("message").notNull().default(""),
   language: text("language").notNull().default("de"),
   pageSlug: text("page_slug").notNull().default(""),

@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   try {
     await createInquiry(hotel, {
       kind: s("kind") as never, name: s("name"), email: s("email"), phone: s("phone") || null,
-      dateFrom: s("dateFrom") || null, dateTo: s("dateTo") || null, persons: s("persons") ? Number(s("persons")) : null,
+      dateFrom: s("dateFrom") || null, dateTo: s("dateTo") || null, persons: s("persons") ? Number(s("persons")) : null, timeOfDay: s("time") || null,
       message: s("message"), language: s("lang") || "de", pageSlug: s("page"),
     });
     return go("anfrage-gesendet");

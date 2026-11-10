@@ -7,7 +7,8 @@ import { RichTextarea } from "@/components/admin/RichTextarea";
 import { hotelLocales, isLocale, LOCALE_NAMES, LOCALES, type Locale } from "@/src/i18n/dict";
 import { translatePage, translationEnabled, translationsLeft, TranslateError } from "@/src/services/translate";
 import { publicBase } from "@/src/services/brand";
-import { BLOCK_TYPES, INQUIRY_KINDS, TIP_CATEGORIES, type Block, type BlockType, type L } from "@/src/domain/blocks";
+import { BLOCK_TYPES, HOURS_PLACES, INQUIRY_KINDS, TIME_RE, TIP_CATEGORIES, type Block, type BlockType, type L } from "@/src/domain/blocks";
+import { decimalToRappen } from "@/src/domain/money";
 import { listRooms } from "@/src/services/rooms";
 
 export const dynamic = "force-dynamic";
@@ -55,13 +56,41 @@ async function saveMeta(f: FormData) {
 function rows(f: FormData, read: (k: string) => unknown): unknown[] {
   const out: unknown[] = [];
   const keys = [...f.keys()];
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 80; i++) {
     const k = `it${i}`;
     if (!keys.some((x) => x.startsWith(`${k}.`))) continue;
     const v = read(k);
     if (v) out.push(v);
   }
   return out;
+}
+
+/** Preis wie «28.50», «28.–», «28,50» → Rappen; leer = kein Preis */
+function priceFrom(v: string): number | null {
+  const x = v.replace(/CHF/i, "").replace(/[\s']/g, "").replace(",", ".").replace(/\.?[–-]+$/, "");
+  if (!x) return null;
+  if (!/^\d{1,5}(\.\d{1,2})?$/.test(x)) throw new SiteError(`Preis «${v}» nicht lesbar (z. B. 28.50)`);
+  return decimalToRappen(x);
+}
+
+/** Öffnungszeiten aus dem Formular: d{tag}.{fenster}.from/to */
+function hoursFrom(f: FormData) {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const out: { from: string; to: string }[] = [];
+    for (let j = 0; j < 3; j++) {
+      const from = s(f, `d${i}.${j}.from`), to = s(f, `d${i}.${j}.to`);
+      if (!from && !to) continue;
+      if (!TIME_RE.test(from) || !TIME_RE.test(to)) throw new SiteError("Öffnungszeiten: bitte bei jedem Zeitfenster Beginn und Ende angeben");
+      out.push({ from, to });
+    }
+    return out.sort((a, b) => a.from.localeCompare(b.from));
+  });
+  const closures = [];
+  for (let i = 0; i < 10; i++) {
+    const from = s(f, `c${i}.from`), to = s(f, `c${i}.to`) || from;
+    if (from) closures.push({ from, to, label: l10n(f, `c${i}.label`) });
+  }
+  return { days, closures };
 }
 
 const lookFrom = (f: FormData) => ({ align: s(f, "align") || "auto", size: s(f, "size") || "normal" });
@@ -112,6 +141,14 @@ function blockFromForm(f: FormData, type: BlockType, id: string, alts: Map<strin
     }) };
     case "inquiry": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro"), kinds: f.getAll("kinds").map(String) };
     case "voucher": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro") };
+    case "menu": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro"), note: l10n(f, "note"), items: rows(f, (k) => {
+      const name = l10n(f, `${k}.name`);
+      if (!Object.values(name).some(Boolean)) return null;
+      const diet = s(f, `${k}.diet`);
+      return { section: l10n(f, `${k}.section`), name, text: l10n(f, `${k}.text`), priceRappen: priceFrom(s(f, `${k}.price`)),
+        diet: diet === "vegan" || diet === "vegetarian" ? diet : "", glutenFree: f.get(`${k}.gf`) === "on" };
+    }) };
+    case "hours": return { id, type, heading: l10n(f, "heading"), place: s(f, "place") || "restaurant", note: l10n(f, "note"), ...hoursFrom(f) };
   }
 }
 
@@ -238,12 +275,16 @@ function Look({ b }: { b: { align: string; size: string } }) {
 
 /** Wiederholte Einträge im Editor (it0, it1, …) */
 function Items(n: number, render: (i: number, key: string) => React.ReactNode) {
-  return Array.from({ length: Math.min(n, 40) }, (_, i) => (
+  return Array.from({ length: Math.min(n, 80) }, (_, i) => (
     <fieldset key={i} className="item-group"><div className="stack">{render(i, `it${i}`)}</div></fieldset>
   ));
 }
+const WEEKDAYS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
+const PLACE_LABEL: Record<string, string> = { restaurant: "Restaurant (für Google als Restaurant-Öffnungszeiten)", reception: "Rezeption", other: "Anderes (Bar, Spa, Laden …)" };
+const chf = (r: number | null | undefined) => (r == null ? "" : (r / 100).toFixed(2));
+
 const TIP_LABEL: Record<string, string> = { wandern: "Wandern", ausflug: "Ausflug", kultur: "Kultur", essen: "Essen & Trinken", winter: "Winter", familie: "Familie", see: "See & Wasser" };
-const KIND_LABEL: Record<string, string> = { group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
+const KIND_LABEL: Record<string, string> = { table: "Tisch reservieren", group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
 
 function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: Block; lib: Lib; docs: Docs; hotelId: string; langs: Langs; plans: { id: string; label: string }[]; hotelEmail: string }) {
   switch (b.type) {
@@ -383,6 +424,64 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
           <div className="weekdays">{INQUIRY_KINDS.map((k) => <label key={k}><input type="checkbox" name="kinds" value={k} defaultChecked={b.kinds.includes(k)} />{KIND_LABEL[k]}</label>)}</div>
         </fieldset>
         <p className="muted small">Anfragen kommen per E-Mail an {hotelEmail} und stehen unter <a href={`/admin/${hotelId}/inquiries`}>Anfragen</a>.</p>
+      </>);
+    case "menu":
+      return (<>
+        <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
+        <LField name="intro" label="Einleitung (optional)" value={b.intro} rows={2} max={1000} langs={langs} />
+        <p className="muted small">Gerichte mit gleicher Rubrik hintereinander erscheinen als ein Abschnitt (z. B. «Vorspeisen», «Hauptgänge»). Preis wie 28.50 oder leer lassen. Nach dem Speichern erscheinen drei neue leere Zeilen.</p>
+        {Items(b.items.length + 3, (i, k) => {
+          const it = b.items[i];
+          const prevSection = it?.section ?? b.items[b.items.length - 1]?.section;
+          return (<>
+            <div className="form-grid">
+              <LField name={`${k}.section`} label="Rubrik" value={prevSection} max={80} langs={langs} />
+              <div><label>Preis CHF</label><input name={`${k}.price`} defaultValue={chf(it?.priceRappen)} inputMode="decimal" placeholder="28.50" style={{ maxWidth: 140 }} /></div>
+            </div>
+            <LField name={`${k}.name`} label={`Gericht ${i + 1}`} value={it?.name} max={160} langs={langs} />
+            <LField name={`${k}.text`} label="Beschreibung (optional)" value={it?.text} max={500} langs={langs} />
+            <div className="weekdays">
+              <label><input type="radio" name={`${k}.diet`} value="" defaultChecked={!it?.diet} />–</label>
+              <label><input type="radio" name={`${k}.diet`} value="vegetarian" defaultChecked={it?.diet === "vegetarian"} />vegetarisch</label>
+              <label><input type="radio" name={`${k}.diet`} value="vegan" defaultChecked={it?.diet === "vegan"} />vegan</label>
+              <label><input type="checkbox" name={`${k}.gf`} defaultChecked={it?.glutenFree} />glutenfrei</label>
+            </div>
+          </>);
+        })}
+        <LField name="note" label="Hinweise unter der Karte" value={b.note} rows={3} max={1000} langs={langs} />
+        <p className="muted small">In der Schweiz muss die <strong>Herkunft von Fleisch und Fisch</strong> schriftlich angegeben werden, z. B. «Rind: Schweiz, Lachs: Norwegen (Zucht)». Zu Allergenen genügt der Hinweis «Auskunft über Allergene gibt Ihnen gerne unser Personal». Bitte im Zweifel beim kantonalen Lebensmittelinspektorat nachfragen.</p>
+      </>);
+    case "hours":
+      return (<>
+        <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
+        <div><label>Öffnungszeiten von</label><select name="place" defaultValue={b.place}>{HOURS_PLACES.map((p) => <option key={p} value={p}>{PLACE_LABEL[p]}</option>)}</select></div>
+        <table className="table small">
+          <thead><tr><th>Tag</th><th>1. Zeitfenster</th><th>2. Zeitfenster</th><th>3. Zeitfenster</th></tr></thead>
+          <tbody>
+            {WEEKDAYS.map((w, i) => (
+              <tr key={w}>
+                <td>{w}</td>
+                {[0, 1, 2].map((j) => (
+                  <td key={j} style={{ whiteSpace: "nowrap" }}>
+                    <input type="time" name={`d${i}.${j}.from`} defaultValue={b.days[i]?.[j]?.from ?? ""} step={900} style={{ width: 110 }} aria-label={`${w} ${j + 1}. von`} /> –{" "}
+                    <input type="time" name={`d${i}.${j}.to`} defaultValue={b.days[i]?.[j]?.to ?? ""} step={900} style={{ width: 110 }} aria-label={`${w} ${j + 1}. bis`} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="muted small">Tag ohne Zeiten = geschlossen (Ruhetag). Gleiche Tage hintereinander werden zusammengefasst, z. B. «Mo–Fr». Bis nach Mitternacht: z. B. 18:00 – 00:30.</p>
+        <fieldset className="plain"><legend className="small muted">Betriebsferien (vergangene werden automatisch ausgeblendet)</legend>
+          {Array.from({ length: Math.min(10, b.closures.length + 2) }, (_, i) => (
+            <div key={i} className="form-grid">
+              <div><label>von</label><input type="date" name={`c${i}.from`} defaultValue={b.closures[i]?.from ?? ""} /></div>
+              <div><label>bis</label><input type="date" name={`c${i}.to`} defaultValue={b.closures[i]?.to ?? ""} /></div>
+              <LField name={`c${i}.label`} label="Bemerkung (optional)" value={b.closures[i]?.label} max={120} langs={langs} />
+            </div>
+          ))}
+        </fieldset>
+        <LField name="note" label="Hinweis (optional)" value={b.note} rows={2} max={1000} langs={langs} />
       </>);
     case "voucher":
       return (<>

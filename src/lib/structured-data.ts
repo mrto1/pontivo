@@ -3,7 +3,7 @@ import { db } from "../db/client";
 import { ratePlans, ratesDays, type Hotel, type SitePage } from "../db/schema";
 import { addDays, todayIn } from "../domain/dates";
 import { plainText } from "../domain/richtext";
-import { tr, type Block } from "../domain/blocks";
+import { menuSections, tr, type Block } from "../domain/blocks";
 import { hotelLocales, LOCALE_TAGS, type Locale } from "../i18n/dict";
 
 /**
@@ -59,6 +59,57 @@ export function faqJsonLd(blocks: Block[], locale: Locale) {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     mainEntity: items.map((x) => ({ "@type": "Question", name: x.q, acceptedAnswer: { "@type": "Answer", text: x.a } })),
+  };
+}
+
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+/**
+ * Restaurant (schema.org/Restaurant) für Seiten mit Speisekarte oder Restaurant-Öffnungszeiten:
+ * Öffnungszeiten, Betriebsferien (specialOpeningHoursSpecification, geschlossen = 00:00–00:00), Speisekarte mit Preisen.
+ */
+export function restaurantJsonLd(hotel: Hotel, blocks: Block[], locale: Locale, url: string) {
+  const hours = blocks.find((b): b is Extract<Block, { type: "hours" }> => b.type === "hours" && b.place === "restaurant");
+  const menus = blocks.filter((b): b is Extract<Block, { type: "menu" }> => b.type === "menu");
+  if (!hours && !menus.length) return null;
+  const today = todayIn(hotel.timezone);
+  const T = (v: Parameters<typeof tr>[0]) => plainText(tr(v, locale));
+  const sections = menus.flatMap((m) => menuSections(m.items.filter((it) => T(it.name))));
+  return {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    name: hotel.name,
+    url,
+    ...(hotel.contactPhone ? { telephone: hotel.contactPhone } : {}),
+    address: {
+      "@type": "PostalAddress",
+      ...(hotel.addressLine ? { streetAddress: hotel.addressLine } : {}),
+      ...(hotel.postalCode ? { postalCode: hotel.postalCode } : {}),
+      ...(hotel.city ? { addressLocality: hotel.city } : {}),
+      addressCountry: "CH",
+    },
+    currenciesAccepted: "CHF",
+    ...(hours ? {
+      openingHoursSpecification: hours.days.flatMap((ranges, i) => ranges.map((r) => ({ "@type": "OpeningHoursSpecification", dayOfWeek: `https://schema.org/${DAYS[i]}`, opens: r.from, closes: r.to }))),
+      specialOpeningHoursSpecification: hours.closures.filter((c) => c.to >= today).map((c) => ({ "@type": "OpeningHoursSpecification", opens: "00:00", closes: "00:00", validFrom: c.from, validThrough: c.to })),
+    } : {}),
+    ...(sections.length ? {
+      hasMenu: {
+        "@type": "Menu",
+        inLanguage: LOCALE_TAGS[locale],
+        hasMenuSection: sections.map((sec) => ({
+          "@type": "MenuSection",
+          ...(T(sec.section) ? { name: T(sec.section) } : {}),
+          hasMenuItem: sec.items.map((it) => ({
+            "@type": "MenuItem",
+            name: T(it.name),
+            ...(T(it.text) ? { description: T(it.text) } : {}),
+            ...(it.priceRappen !== null ? { offers: { "@type": "Offer", price: (it.priceRappen / 100).toFixed(2), priceCurrency: "CHF" } } : {}),
+            ...(it.diet === "vegan" ? { suitableForDiet: "https://schema.org/VeganDiet" } : it.diet === "vegetarian" ? { suitableForDiet: "https://schema.org/VegetarianDiet" } : it.glutenFree ? { suitableForDiet: "https://schema.org/GlutenFreeDiet" } : {}),
+          })),
+        })),
+      },
+    } : {}),
   };
 }
 

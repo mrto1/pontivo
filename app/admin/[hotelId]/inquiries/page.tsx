@@ -6,7 +6,7 @@ import { formatDay } from "@/src/i18n/dict";
 
 export const dynamic = "force-dynamic";
 
-const KIND: Record<string, string> = { group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
+const KIND: Record<string, string> = { table: "Tisch reservieren", group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
 
 async function toggle(f: FormData) {
   "use server";
@@ -36,7 +36,7 @@ export default async function Inquiries({ params }: { params: Promise<{ hotelId:
               <div className="kv small">
                 <span className="muted">E-Mail</span><a href={`mailto:${q.email}?subject=${encodeURIComponent(`Ihre Anfrage – ${hotel.name}`)}`}>{q.email}</a>
                 {q.phone ? (<><span className="muted">Telefon</span><a href={`tel:${q.phone.replace(/\s/g, "")}`}>{q.phone}</a></>) : null}
-                {q.dateFrom ? (<><span className="muted">Datum</span><span>{formatDay(q.dateFrom, "de")}{q.dateTo ? ` – ${formatDay(q.dateTo, "de")}` : ""}</span></>) : null}
+                {q.dateFrom ? (<><span className="muted">Datum</span><span>{formatDay(q.dateFrom, "de")}{q.dateTo ? ` – ${formatDay(q.dateTo, "de")}` : ""}{q.timeOfDay ? `, ${q.timeOfDay} Uhr` : ""}</span></>) : null}
                 {q.persons ? (<><span className="muted">Personen</span><span>{q.persons}</span></>) : null}
               </div>
               {q.message ? <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{q.message}</p> : null}
