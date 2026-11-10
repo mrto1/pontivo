@@ -28,6 +28,10 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Modul Gäste: Kurtaxe-Liste – verlangen die Gemeinden ein bestimmtes Format (AVS, Excel-Vorlage)? Heute CSV und Druck.
 - [ ] Übersicht «Ihr Nutzen»: Provision der Portale je Hotel unterschiedlich (Standard 15 %, im Admin änderbar). Prüfen, ob die Darstellung als «gespart» rechtlich und gegenüber Hotels unbedenklich ist (Kartengebühren nicht abgezogen).
 - [ ] Zusatzleistungen: Obligatorische Gebühren (z. B. Endreinigung) werden nicht an Channex übertragen – Hotel muss sie im Portal selbst erfassen. Klären, ob Channex dafür ein Feld hat.
+- [ ] Bedingungen für Gastgeber (`src/legal/host-terms.ts`, Seite /gastgeber-bedingungen): Entwurf juristisch prüfen lassen, inkl. Auftragsbearbeitung; FR/IT-Fassung.
+- [ ] Mindestgebühr CHF 19/Monat: MWST-Pflicht von Pontivo klären (Preise heute «ohne MWST, sofern geschuldet»).
+- [ ] Kurtaxe-Kategorie für Ferienwohnungen: heute «group» (Parahotellerie) – pro Gemeinde prüfen, ob es eine eigene Kategorie oder Pauschalen pro Wohnung gibt (häufig bei Zweitwohnungen).
+- [ ] Mindestgebühr gilt heute für alle selbst registrierten Betriebe, von Hand angelegte Hotels ohne Minimum. Bestätigen; Änderung pro Betrieb heute nur direkt in der Datenbank (`hotels.monthly_minimum_rappen`).
 
 ## Getroffene Annahmen (v1)
 
@@ -70,3 +74,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 | Kurtaxe-Liste | Nächte im Monat; Alter laut Meldeschein, sonst Erwachsene laut Buchung und Kinder nach angegebenem Alter | `src/services/guests.ts` |
 | Zusatzleistungen | Pro Aufenthalt, pro Nacht, pro Person, pro Person und Nacht; obligatorische im angezeigten Gesamtpreis (PBV); Name und Preis bei der Buchung eingefroren; Stornogebühr nur auf den Zimmerpreis, Zusatzleistungen werden immer erstattet; 1 % Gebühr auch auf Zusatzleistungen; Portal-Buchungen ohne Zusatzleistungen | `src/domain/extras.ts`, `src/services/bookings.ts` |
 | Restaurant | Speisekarte mit Preisen in Rappen, Öffnungszeiten Mo–So mit bis zu 3 Fenstern, Tischreservation ist eine Anfrage (keine Tischverwaltung) | `src/domain/blocks.ts` |
+| Selbst-Registrierung | Jeder kann sich registrieren (Spam-Schutz: verstecktes Feld, 3 Versuche pro Minute und IP); Betrieb startet als Entwurf und ist erst nach dem Assistenten buchbar; Fortschritt wird aus den Daten abgeleitet | `src/services/onboarding.ts` |
+| Mindestgebühr | Ab dem ersten vollen Monat nach dem Live-Gang, auch in pausierten Monaten; Differenz zu den 1 % (Buchungen netto + Gutscheine) wird Anfang Folgemonat der Karte belastet; 3 Versuche im Abstand von 3 Tagen; Karte über Stripe Checkout (setup) auf dem Plattform-Konto, ohne Webhook (Rückkehrseite liest die Session) | `src/services/billing.ts` |
+| Fester Anreisetag | `rate_plans.arrival_weekdays`; an Channex als closed_to_arrival übertragen | `src/services/search.ts` |
+| Stripe-Konto Privatvermieter | Rechtsform wird nur bei Hotels als Firma vorgegeben, sonst wählt der Gastgeber im Stripe-Onboarding | `src/integrations/stripe/onboarding.ts` |

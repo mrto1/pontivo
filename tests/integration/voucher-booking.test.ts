@@ -6,7 +6,7 @@ import { BookingError, cancelBooking, confirmBooking, createDirectBooking, relea
 import { buyVoucher, markVoucherPaid, updateVoucherSettings } from "../../src/services/vouchers";
 import { setPaymentProvider, type PaymentProvider, type RefundArgs } from "../../src/payments/provider";
 import { addDays } from "../../src/domain/dates";
-import { guest, inDays, inv, makeHotel } from "../helpers";
+import { guest, inDays, inv, makeHotel, cardStubs } from "../helpers";
 import { terms } from "../../src/legal/texts";
 
 afterAll(closeDb);
@@ -18,7 +18,7 @@ function stripeLike() {
   const refunds: RefundArgs[] = [];
   const p: PaymentProvider = {
     name: "fake",
-    confirmsImmediately: false,
+    confirmsImmediately: false, ...cardStubs,
     async createCheckout(a) {
       checkouts.push({ amount: a.booking.totalRappen - a.booking.voucherRappen, fee: a.booking.platformFeeRappen });
       return { url: "https://checkout.test/" + a.booking.id, sessionId: "cs_" + a.booking.id };

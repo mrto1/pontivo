@@ -15,7 +15,8 @@ export async function ensureConnectedAccount(hotel: Hotel, actor: string): Promi
     {
       country: "CH",
       email: hotel.contactEmail,
-      business_type: "company",
+      // ASSUMPTION: Hotels sind Firmen; B&Bs, Ferienwohnungen, Chalets oft Privatpersonen → Rechtsform wählt der Gastgeber im Stripe-Onboarding
+      ...(hotel.propertyType === "hotel" ? { business_type: "company" as const } : {}),
       // ASSUMPTION: Kein MCC vorgeben – das Hotel wählt die Branche im Onboarding (TWINT ist für einzelne Branchencodes eingeschränkt, siehe QUESTIONS.md).
       business_profile: { name: hotel.name },
       controller: {
@@ -38,14 +39,15 @@ export async function ensureConnectedAccount(hotel: Hotel, actor: string): Promi
 }
 
 /** Account Link (type=account_onboarding) für den Button im Admin */
-export async function onboardingLink(hotel: Hotel, actor: string): Promise<string> {
+export async function onboardingLink(hotel: Hotel, actor: string, returnPath = `/admin/${hotel.id}/settings`): Promise<string> {
   const accountId = await ensureConnectedAccount(hotel, actor);
   const base = env().APP_BASE_URL;
+  const sep = returnPath.includes("?") ? "&" : "?";
   const link = await stripe().accountLinks.create({
     account: accountId,
     type: "account_onboarding",
-    refresh_url: `${base}/admin/${hotel.id}/settings?stripe=refresh`,
-    return_url: `${base}/admin/${hotel.id}/settings?stripe=return`,
+    refresh_url: `${base}${returnPath}${sep}stripe=refresh`,
+    return_url: `${base}${returnPath}${sep}stripe=return`,
   });
   return link.url;
 }

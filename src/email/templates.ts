@@ -4,6 +4,7 @@ import { formatDay, isLocale, t, type Locale } from "../i18n/dict";
 import type { Booking, Hotel, RatePlan, RoomType } from "../db/schema";
 import { planName, roomName } from "../domain/i18n-names";
 import { CI } from "../i18n/checkin";
+import { env } from "../env";
 import { tr } from "../domain/blocks";
 
 /**
@@ -157,8 +158,11 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
     case "booking_cancelled":
       return wrap(c, gl, m.cancelledSubject(ref), [hi + ",", m.cancelledText(ref, money("refundRappen"))],
         [...(Number(c.data.voucherBackRappen ?? 0) > 0 ? [`${t(gl).voucherPaid} (+): ${money("voucherBackRappen")}`] : []), ...summary(c, gl)], link);
-    case "pre_arrival":
-      return wrap(c, gl, m.preSubject(c.hotel.name), [hi + ",", m.preText(c.hotel.checkinTime.slice(0, 5))], summary(c, gl), link);
+    case "pre_arrival": {
+      // Infos zur Ankunft (Schlüssel, Code, WLAN …) aus dem Einrichtungs-Assistenten
+      const arrival = tr(c.hotel.content.arrivalInfo, gl);
+      return wrap(c, gl, m.preSubject(c.hotel.name), [hi + ",", m.preText(c.hotel.checkinTime.slice(0, 5)), ...(arrival ? arrival.split(/\n\s*\n/) : [])], summary(c, gl), link);
+    }
     case "checkin_link": {
       const ci = CI[gl];
       return wrap(c, gl, `${ci.title} – ${c.hotel.name}`, [hi + ",", ci.linkText], summary(c, gl),
@@ -202,6 +206,45 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
           [`${x.tDate}: ${formatDay(String(c.data.dateFrom), gl)}`, `${x.tTime}: ${c.data.timeOfDay}`, `${x.tPersons}: ${c.data.persons}`]);
       }
       return wrap(c, gl, x.iSubject(c.hotel.name), [m.hi(String(c.data.name ?? "")) + ",", x.iText, String(c.data.message ?? "")]);
+    }
+    case "host_welcome": {
+      const admin = env().APP_BASE_URL;
+      return wrap(c, l, de ? `Willkommen bei ${env().PLATFORM_NAME} – so geht es weiter` : `Welcome to ${env().PLATFORM_NAME} – next steps`,
+        de ? [`Guten Tag ${c.data.contactName ?? ""}`.trim() + ",", `schön, dass ${c.hotel.name} dabei ist. Der Einrichtungs-Assistent führt Sie in etwa 20 Minuten durch alles: Angaben, Kurtaxe, ${c.hotel.propertyType === "hotel" || c.hotel.propertyType === "bnb" ? "Zimmer" : "Unterkunft"}, Preise, Fotos und Zahlungen. Sie können jederzeit unterbrechen und später weitermachen.`, "Zum Anmelden erhalten Sie separat einen Login-Link. Später fordern Sie unter dem Link unten jederzeit einen neuen an."]
+          : [`Hello ${c.data.contactName ?? ""}`.trim() + ",", `great to have ${c.hotel.name} on board. The setup assistant guides you through everything in about 20 minutes. You can stop at any time and continue later.`],
+        [], { href: `${admin}/admin/login`, label: de ? "Anmelden und einrichten" : "Sign in and set up" });
+    }
+    case "host_onboarding_reminder": {
+      const open = (c.data.openSteps as string[] | undefined) ?? [];
+      return wrap(c, l, de ? `${c.hotel.name}: Ihre Einrichtung ist fast fertig` : `${c.hotel.name}: your setup is almost done`,
+        de ? ["Guten Tag,", `Ihre Einrichtung bei ${env().PLATFORM_NAME} ist noch nicht abgeschlossen. Es fehlen noch: ${open.join(", ") || "nur noch das Live-Schalten"}.`, "Bei Fragen antworten Sie einfach auf diese E-Mail."]
+          : ["Hello,", `your setup is not finished yet. Still open: ${open.join(", ") || "going live"}.`, "Just reply to this email if you have questions."],
+        [], { href: `${env().APP_BASE_URL}/admin/${c.hotel.id}/einrichten`, label: de ? "Einrichtung fortsetzen" : "Continue setup" });
+    }
+    case "host_live":
+      return wrap(c, l, de ? `${c.hotel.name} ist online` : `${c.hotel.name} is online`,
+        de ? ["Gratulation!", "Ihre Website mit Online-Buchung ist jetzt erreichbar. Gäste können direkt buchen und mit TWINT oder Karte bezahlen.", "Tipps für die ersten Buchungen: Link auf Ihrer bisherigen Website, im Google-Unternehmensprofil und in Ihrer E-Mail-Signatur einfügen. Stammgäste persönlich auf die Direktbuchung hinweisen."]
+          : ["Congratulations!", "Your website with online booking is now live. Guests can book directly and pay by TWINT or card."],
+        [], { href: c.hotel.primaryDomain ? `https://${c.hotel.primaryDomain}` : `${env().APP_BASE_URL}/h/${c.hotel.slug}/de`, label: de ? "Website ansehen" : "View website" });
+    case "host_minimum_charged": {
+      const d = c.data as Record<string, string>;
+      return wrap(c, l, de ? `${env().PLATFORM_NAME}: Abrechnung ${d.month}` : `${env().PLATFORM_NAME}: statement ${d.month}`,
+        de ? ["Guten Tag,", `im ${d.month} sind 1 % von Direktbuchungen und Gutscheinen von ${d.fees} angefallen. Bis zur Mindestgebühr von ${d.minimum} fehlten ${d.amount}; dieser Betrag wurde Ihrer Karte ${d.card} belastet.`]
+          : ["Hello,", `in ${d.month} the 1 % fees amounted to ${d.fees}. The difference to the minimum of ${d.minimum}, ${d.amount}, was charged to your card ${d.card}.`],
+        [`${de ? "Monat" : "Month"}: ${d.month}`, `1 %: ${d.fees}`, `Minimum: ${d.minimum}`, `${de ? "Belastet" : "Charged"}: ${d.amount}`]);
+    }
+    case "host_charge_failed": {
+      const d = c.data as Record<string, string | boolean>;
+      return wrap(c, l, de ? `${env().PLATFORM_NAME}: Zahlung fehlgeschlagen` : `${env().PLATFORM_NAME}: payment failed`,
+        de ? ["Guten Tag,", `die Mindestgebühr für ${d.month} (${d.amount}) konnte nicht von Ihrer Karte abgebucht werden. ${d.last ? "Das war der letzte automatische Versuch." : "Wir versuchen es in drei Tagen erneut."} Bitte hinterlegen Sie im Admin eine gültige Karte.`]
+          : ["Hello,", `the minimum fee for ${d.month} (${d.amount}) could not be charged to your card. Please add a valid card in the admin.`],
+        [], { href: `${env().APP_BASE_URL}/admin/${c.hotel.id}/settings#karte`, label: de ? "Karte erneuern" : "Update card" });
+    }
+    case "platform_onboarding_alert": {
+      const d = c.data as Record<string, unknown>;
+      return wrap(c, "de", `[Pontivo] Nachfassen: ${d.hotel}`,
+        [`${d.hotel} (${d.propertyType}, ${d.email}) braucht Unterstützung${Number(d.days) ? ` – Einrichtung seit ${d.days} Tagen offen` : ""}.`, `Offen: ${((d.openSteps as string[]) ?? []).join(", ")}`],
+        [], { href: `${env().APP_BASE_URL}/admin/${c.hotel.id}/einrichten`, label: "Im Admin ansehen" });
     }
     case "channex_alert":
       return wrap(c, l, `[Channex] ${String(c.data.subject)}${c.data.hotel ? ` – ${c.data.hotel}` : ""}`,

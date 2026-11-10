@@ -42,7 +42,8 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
             <a href="#rechner">Rechner</a>
             <a href="#preis">Preis</a>
             <a href="#fragen">Fragen</a>
-            <a className={s.btn} href={mail}>Kontakt</a>
+            <a href={mail}>Kontakt</a>
+            <a className={s.btn} href="/registrieren">Registrieren</a>
           </nav>
         </header>
 
@@ -50,10 +51,11 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
           <div>
             <h1 className={s.heroTitle}>Ihre Gäste buchen direkt bei Ihnen. Die Provision bleibt im Haus.</h1>
             <p className={s.heroLead}>
-              {contact.name} bringt Online-Buchung mit TWINT und Kartenzahlung auf Ihre bestehende Website – oder gibt Ihnen eine neue. Booking.com läuft weiter und wird automatisch abgeglichen. Sie zahlen {FEE_PERCENT} % pro Direktbuchung, sonst nichts.
+              {contact.name} bringt Online-Buchung mit TWINT und Kartenzahlung auf Ihre bestehende Website – oder gibt Ihnen eine neue. Booking.com läuft weiter und wird automatisch abgeglichen. Sie zahlen {FEE_PERCENT} % pro Direktbuchung, mindestens CHF 19 im Monat – sonst nichts.
             </p>
             <div className={s.heroActions}>
-              <a className={s.btn} href={mail}>Gespräch vereinbaren</a>
+              <a className={s.btn} href="/registrieren">Jetzt selbst einrichten</a>
+              <a className={s.btnGhost} href={mail}>Gespräch vereinbaren</a>
               {contact.demoUrl ? <a className={s.btnGhost} href={contact.demoUrl}>Demo-Hotel ansehen</a> : null}
             </div>
           </div>
@@ -155,7 +157,8 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
               <h2 className={s.h2}>Sie zahlen nur, wenn Gäste direkt buchen</h2>
               <ul className={s.priceList}>
                 <li>{FEE_PERCENT} % pro Direktbuchung, automatisch bei der Zahlung abgezogen</li>
-                <li>Keine Grundgebühr, keine Einrichtungsgebühr</li>
+                <li>Mindestens CHF 19 pro Monat: Liegen die {FEE_PERCENT} % darunter, wird nur die Differenz belastet</li>
+                <li>Keine Einrichtungsgebühr, monatlich kündbar</li>
                 <li>Bei Stornierung wird die Gebühr anteilig zurückerstattet</li>
                 <li>Buchungen über Booking.com &amp; Co. kosten bei uns nichts</li>
                 <li>Zahlungsgebühren von Stripe gehen wie bei jedem Kartenterminal zu Ihren Lasten</li>

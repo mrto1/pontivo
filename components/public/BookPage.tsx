@@ -5,7 +5,7 @@ import { isBookable } from "@/src/services/hotels";
 import { env } from "@/src/env";
 import { addDays, diffDays, todayIn } from "@/src/domain/dates";
 import { formatChf } from "@/src/domain/money";
-import { fill, formatDay, t, type Locale } from "@/src/i18n/dict";
+import { fill, formatDay, LOCALE_TAGS, t, type Locale } from "@/src/i18n/dict";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import { extras as extrasTable, ratePlans } from "@/src/db/schema";
@@ -49,7 +49,12 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
         </p>
       );
     } else if (res.offers.length === 0) {
-      body = <p className="notice">{d.noOffers}</p>;
+      // Fester Anreisetag (z. B. Samstag): Gast sagen, an welchen Tagen er anreisen kann
+      const days = res.rejected.length && res.rejected.every((r) => r.reason === "closed_to_arrival")
+        ? [...new Set((await db().select({ w: ratePlans.arrivalWeekdays }).from(ratePlans).where(and(eq(ratePlans.hotelId, hotel.id), eq(ratePlans.active, true)))).flatMap((r) => r.w))].sort()
+        : [];
+      const names = days.map((w) => new Date(Date.UTC(2024, 0, 7 + w)).toLocaleDateString(LOCALE_TAGS[locale], { weekday: "long", timeZone: "UTC" }));
+      body = <p className="notice">{names.length ? fill(d.arrivalOnly, { days: names.join(" / ") }) : d.noOffers}</p>;
     } else {
       const n = diffDays(q.checkin, q.checkout);
       const optional = (await db().select().from(extrasTable).where(and(eq(extrasTable.hotelId, hotel.id), eq(extrasTable.active, true), eq(extrasTable.mandatory, false))).orderBy(asc(extrasTable.sortOrder), asc(extrasTable.createdAt)))

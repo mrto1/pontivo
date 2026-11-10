@@ -1,7 +1,7 @@
 import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import { db } from "../../db/client";
 import { channexOutbox, hotels, inventoryDays, ratePlans, ratesDays, roomTypes, type Hotel } from "../../db/schema";
-import { addDays, nightsOf, todayIn } from "../../domain/dates";
+import { addDays, nightsOf, todayIn, weekday } from "../../domain/dates";
 import { rappenToDecimal } from "../../domain/money";
 import { occupancyPrices } from "../../domain/pricing";
 import { audit } from "../../services/audit";
@@ -129,7 +129,7 @@ async function buildRestrictions(hotel: Hotel, entries: Entry[], today: string):
             : null,
           min: Math.max(r.minStayArrival, rp.minNights),
           max: r.maxStay ?? 0,
-          cta: r.closedToArrival,
+          cta: r.closedToArrival || (rp.arrivalWeekdays.length > 0 && !rp.arrivalWeekdays.includes(weekday(d))),
           ctd: r.closedToDeparture,
           ss: r.stopSell || !rp.active,
         };

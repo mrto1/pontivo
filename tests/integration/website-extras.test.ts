@@ -15,7 +15,7 @@ import { faqJsonLd, hotelJsonLd, ldJson } from "../../src/lib/structured-data";
 import { setPaymentProvider, type PaymentProvider } from "../../src/payments/provider";
 import { safeBack } from "../../src/lib/back";
 import { blockSchema } from "../../src/domain/blocks";
-import { inDays, makeHotel } from "../helpers";
+import { inDays, makeHotel, cardStubs } from "../helpers";
 
 afterAll(closeDb);
 afterEach(() => {
@@ -97,7 +97,7 @@ describe("Gutscheine", () => {
 
   it("Stripe-artige Zahlung: bis zur Bestätigung ausstehend und nicht einlösbar", async () => {
     const pending: PaymentProvider = {
-      name: "fake", confirmsImmediately: false,
+      name: "fake", confirmsImmediately: false, ...cardStubs,
       async createCheckout() { throw new Error("nicht benutzt"); },
       async createPaymentCheckout(a) { expect(a.feeRappen).toBe(200); expect(a.metadata.voucher_id).toBeTruthy(); return { url: "https://checkout.test/x", sessionId: "cs_test" }; },
       async refund() { return { refundId: "re" }; },

@@ -36,6 +36,17 @@ export const hotels = pgTable("hotels", {
   channexEnabled: boolean("channex_enabled").notNull().default(false),
   status: text("status").notNull().default("draft"),
   content: jsonb("content").$type<HotelContent>().notNull().default({}),
+  /** Objektart (Migration 0011): steuert Texte und Schritte im Einrichtungs-Assistenten */
+  propertyType: text("property_type").$type<"hotel" | "bnb" | "apartment" | "chalet" | "group_house">().notNull().default("hotel"),
+  /** Mindestgebühr pro Monat (0 = keine); Differenz zu den 1 % wird monatlich der Karte belastet */
+  monthlyMinimumRappen: integer("monthly_minimum_rappen").notNull().default(0),
+  hostTermsVersion: text("host_terms_version"),
+  hostTermsAcceptedAt: ts("host_terms_accepted_at"),
+  liveSince: ts("live_since"),
+  billingCustomerId: text("billing_customer_id"),
+  billingPaymentMethodId: text("billing_payment_method_id"),
+  billingCardLabel: text("billing_card_label"),
+  onboarding: jsonb("onboarding").$type<{ startedAt?: string; completedAt?: string; reminders?: number; alertedAt?: string }>().notNull().default({}),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
@@ -56,6 +67,8 @@ export type HotelContent = {
   vouchers?: { enabled?: boolean; amounts?: number[]; minRappen?: number; maxRappen?: number; validityYears?: number };
   /** Provision der Buchungsportale in Basispunkten (1500 = 15 %), für die Übersicht «Ihr Nutzen» */
   otaCommissionBps?: number;
+  /** Infos zur Ankunft (Schlüssel, Code, WLAN, Parkplatz), gehen mit der Mail vor der Anreise an den Gast */
+  arrivalInfo?: Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>;
   /** Dokumente (PDF) für den Baustein «Downloads», z. B. Speisekarte, Preisliste */
   documents?: HotelDocument[];
   /** Erscheinungsbild der Buchungsseite */
@@ -146,6 +159,8 @@ export const ratePlans = pgTable("rate_plans", {
   channexRatePlanId: uuid("channex_rate_plan_id").unique(),
   /** Mindestaufenthalt dieses Tarifs (z. B. Paket «3 Nächte»), zusätzlich zu den Tagesregeln im Kalender */
   minNights: integer("min_nights").notNull().default(1),
+  /** fester Anreisetag: leer = jeder Tag, sonst Wochentage 0 (So) … 6 (Sa) */
+  arrivalWeekdays: integer("arrival_weekdays").array().notNull().default([]),
   /** Tarif ist in Channex als sell_mode "per_person" angelegt → Preise je Belegung senden */
   channexPerPerson: boolean("channex_per_person").notNull().default(false),
   active: boolean("active").notNull().default(true),
@@ -483,3 +498,19 @@ export const voucherRedemptions = pgTable("voucher_redemptions", {
   actor: text("actor").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+export const platformCharges = pgTable("platform_charges", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  month: text("month").notNull(),
+  feesRappen: integer("fees_rappen").notNull(),
+  minimumRappen: integer("minimum_rappen").notNull(),
+  chargeRappen: integer("charge_rappen").notNull(),
+  status: text("status").$type<"none" | "pending" | "succeeded" | "failed">().notNull(),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  error: text("error"),
+  attempts: integer("attempts").notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+export type PlatformCharge = typeof platformCharges.$inferSelect;

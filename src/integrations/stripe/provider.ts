@@ -1,5 +1,6 @@
-import type { CheckoutArgs, PaymentCheckoutArgs, PaymentProvider, RefundArgs } from "../../payments/provider";
-import { stripe } from "./client";
+import type { CardSetupArgs, ChargeSavedCardArgs, ChargeResult, CheckoutArgs, PaymentCheckoutArgs, PaymentProvider, RefundArgs } from "../../payments/provider";
+import type { Hotel } from "../../db/schema";
+import { stripe, type Stripe } from "./client";
 
 /** TWINT-Limit pro Zahlung (Stripe): CHF 5'000 */
 export const TWINT_MAX_RAPPEN = 500_000;
@@ -85,5 +86,63 @@ export class StripePaymentProvider implements PaymentProvider {
       { stripeAccount: a.hotel.stripeAccountId, idempotencyKey: `refund-${a.booking.id}-${a.amountRappen}` },
     );
     return { refundId: r.id };
+  }
+
+  /**
+   * Mindestgebühr: Kunde auf dem PLATTFORM-Konto (kein stripeAccount-Header), Checkout im Modus setup.
+   * Kartendaten liegen nur bei Stripe; Pontivo speichert Kunde, Zahlungsmittel-ID und «Marke •••• letzte 4».
+   */
+  async createCardSetup(a: CardSetupArgs) {
+    const customerId = a.hotel.billingCustomerId ?? (await stripe().customers.create(
+      { email: a.email, name: a.hotel.legalName ?? a.hotel.name, metadata: { hotel_id: a.hotel.id } },
+      { idempotencyKey: `billing-customer-${a.hotel.id}` },
+    )).id;
+    const session = await stripe().checkout.sessions.create({
+      mode: "setup",
+      customer: customerId,
+      currency: "chf",
+      allowed_payment_method_types: ["card"],
+      success_url: a.successUrl,
+      cancel_url: a.cancelUrl,
+      metadata: { hotel_id: a.hotel.id, purpose: "platform_minimum" },
+    });
+    if (!session.url) throw new Error("Stripe lieferte keine Checkout-URL");
+    return { url: session.url, sessionId: session.id };
+  }
+
+  async finishCardSetup(hotel: Hotel, sessionId: string) {
+    const session = await stripe().checkout.sessions.retrieve(sessionId, { expand: ["setup_intent.payment_method"] });
+    if (session.metadata?.hotel_id !== hotel.id) throw new Error("Setup-Session gehört nicht zu diesem Betrieb");
+    if (session.status !== "complete") throw new Error("Karte wurde nicht hinterlegt");
+    const si = session.setup_intent as Stripe.SetupIntent | null;
+    const pm = si?.payment_method as Stripe.PaymentMethod | null;
+    if (!pm || typeof session.customer !== "string") throw new Error("Kein Zahlungsmittel in der Session");
+    const label = pm.card ? `${pm.card.brand.charAt(0).toUpperCase()}${pm.card.brand.slice(1)} •••• ${pm.card.last4}` : pm.type;
+    return { customerId: session.customer, paymentMethodId: pm.id, label };
+  }
+
+  async chargeSavedCard(a: ChargeSavedCardArgs): Promise<ChargeResult> {
+    try {
+      const pi = await stripe().paymentIntents.create(
+        {
+          amount: a.amountRappen,
+          currency: "chf",
+          customer: a.customerId,
+          payment_method: a.paymentMethodId,
+          off_session: true,
+          confirm: true,
+          description: a.description,
+          receipt_email: a.receiptEmail,
+          metadata: { hotel_id: a.hotel.id, purpose: "platform_minimum" },
+        },
+        { idempotencyKey: a.idempotencyKey },
+      );
+      if (pi.status === "succeeded") return { ok: true, paymentIntentId: pi.id };
+      return { ok: false, paymentIntentId: pi.id, error: `Status ${pi.status}` };
+    } catch (e) {
+      // z. B. card_declined oder authentication_required: Gastgeber muss die Karte erneuern
+      const err = e as { code?: string; message?: string; raw?: { payment_intent?: { id?: string } } };
+      return { ok: false, paymentIntentId: err.raw?.payment_intent?.id ?? null, error: err.code ?? err.message ?? "Fehler" };
+    }
   }
 }

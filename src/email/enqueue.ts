@@ -2,6 +2,12 @@ import type { Executor } from "../db/client";
 import { emailOutbox } from "../db/schema";
 
 export type TemplateName =
+  | "host_welcome"
+  | "host_onboarding_reminder"
+  | "host_live"
+  | "host_minimum_charged"
+  | "host_charge_failed"
+  | "platform_onboarding_alert"
   | "voucher_purchased"
   | "hotel_voucher_sold"
   | "inquiry_received"

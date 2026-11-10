@@ -4,6 +4,7 @@ import { atLeast } from "@/src/auth/session";
 import { taxRuleFor } from "@/src/services/hotels";
 import { addMember, confirmTouristTax, goLiveProblems, listMembers, removeMember, setHotelStatus, updateHotelSettings } from "@/src/services/settings";
 import { onboardingLink, refreshAccountStatus } from "@/src/integrations/stripe/onboarding";
+import { chargesOf, startCardSetup } from "@/src/services/billing";
 import { todayIn } from "@/src/domain/dates";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { env } from "@/src/env";
@@ -55,6 +56,18 @@ async function stripeOnboarding(f: FormData) {
   } catch (e) {
     back(hotel.id, `Stripe: ${(e as Error).message}`);
     return;
+  }
+  redirect(url);
+}
+
+async function cardSetup(f: FormData) {
+  "use server";
+  const { hotel } = await requireHotel(s(f, "hotelId"), "owner");
+  let url = "";
+  try {
+    url = await startCardSetup(hotel, `/admin/${hotel.id}/settings`);
+  } catch (e) {
+    back(hotel.id, `Karte: ${(e as Error).message}`);
   }
   redirect(url);
 }
@@ -112,6 +125,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
   const members = isOwner ? await listMembers(hotel.id) : [];
   const provider = env().PAYMENT_PROVIDER;
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
+  const charges = hotel.monthlyMinimumRappen > 0 ? await chargesOf(hotel.id) : [];
 
   return (
     <div className="stack">
@@ -147,6 +161,27 @@ export default async function Settings({ params, searchParams }: { params: Promi
           </div>
         ) : <p className="muted small">Nur Inhaber können Stripe einrichten.</p>}
       </section>
+
+      {hotel.monthlyMinimumRappen > 0 ? (
+        <section className="card stack" id="karte">
+          <h2>Grundgebühr und Karte</h2>
+          <p className="small">{hotel.platformFeeBps / 100} % pro Direktbuchung, mindestens {formatChf(hotel.monthlyMinimumRappen)} pro Monat. Liegen die {hotel.platformFeeBps / 100} % darunter, wird Anfang des Folgemonats die Differenz der Karte belastet{hotel.liveSince ? "" : " (ab dem ersten vollen Monat nach dem Live-Gang)"}.</p>
+          <div className="kv">
+            <span className="muted">Karte</span><span>{hotel.billingCardLabel ?? <span className="badge warn">keine hinterlegt</span>}</span>
+            <span className="muted">Bedingungen</span><span><a href="/gastgeber-bedingungen" target="_blank">Version {hotel.hostTermsVersion ?? "–"}</a>{hotel.hostTermsAcceptedAt ? `, akzeptiert am ${hotel.hostTermsAcceptedAt.toISOString().slice(0, 10)}` : ""}</span>
+          </div>
+          {isOwner ? <form action={cardSetup}>{hidden}<button className="btn secondary">{hotel.billingCardLabel ? "Andere Karte hinterlegen" : "Karte hinterlegen"}</button></form> : null}
+          {charges.length ? (
+            <table className="table small">
+              <thead><tr><th>Monat</th><th>1 %</th><th>Minimum</th><th>Belastet</th><th>Status</th></tr></thead>
+              <tbody>{charges.map((c) => (
+                <tr key={c.id}><td>{c.month}</td><td>{formatChf(c.feesRappen)}</td><td>{formatChf(c.minimumRappen)}</td><td>{formatChf(c.chargeRappen)}</td>
+                  <td>{c.status === "succeeded" ? "bezahlt" : c.status === "none" ? "nichts fällig" : c.status === "pending" ? "offen" : <span className="badge warn">fehlgeschlagen ({c.attempts}×)</span>}</td></tr>
+              ))}</tbody>
+            </table>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="card stack">
         <h2>Kurtaxe</h2>

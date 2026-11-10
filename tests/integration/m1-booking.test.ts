@@ -7,7 +7,7 @@ import { expireHolds, createDirectBooking, BookingError, releaseHold } from "../
 import { searchOffers } from "../../src/services/search";
 import { setPaymentProvider, type PaymentProvider } from "../../src/payments/provider";
 import { addDays, nightsOf } from "../../src/domain/dates";
-import { guest, inDays, inv, makeHotel } from "../helpers";
+import { guest, inDays, inv, makeHotel, cardStubs } from "../helpers";
 
 afterAll(async () => {
   setPaymentProvider(null);
@@ -33,7 +33,7 @@ function body(roomTypeId: string, ratePlanId: string, checkin: string, checkout:
 /** Provider, der nicht sofort bestätigt (Hold bleibt bestehen) */
 const holdOnly: PaymentProvider = {
   name: "fake",
-  confirmsImmediately: false,
+  confirmsImmediately: false, ...cardStubs,
   async createCheckout(a) { return { url: "https://checkout.test/" + a.booking.id, sessionId: "cs_" + a.booking.id }; },
   async createPaymentCheckout(a) { return { url: "https://checkout.test/" + a.idempotencyKey, sessionId: "cs_" + a.idempotencyKey }; },
   async refund() { return { refundId: "re_1" }; },

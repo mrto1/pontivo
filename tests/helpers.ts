@@ -47,3 +47,10 @@ export const guest = {
   notes: null,
   marketingConsent: false,
 };
+
+/** Für eigene Test-Zahlungsanbieter: Karten-Methoden der Mindestgebühr (nicht benutzt) */
+export const cardStubs = {
+  async createCardSetup(): Promise<{ url: string; sessionId: string }> { throw new Error("nicht im Test"); },
+  async finishCardSetup(): Promise<{ customerId: string; paymentMethodId: string; label: string }> { throw new Error("nicht im Test"); },
+  async chargeSavedCard(): Promise<{ ok: false; paymentIntentId: null; error: string }> { return { ok: false, paymentIntentId: null, error: "nicht im Test" }; },
+};

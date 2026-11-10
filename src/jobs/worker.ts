@@ -6,6 +6,8 @@
  * - channex-feed:   Buchungen aus Channex holen (alle 2 Minuten + sofort per Webhook, SPEC 7.3)
  * - guests-checkin: Check-in-Links einreihen (Modul Gäste, alle 10 Minuten, SPEC 14.1)
  * - guests-purge:   abgelaufene Meldescheine löschen (täglich 02:30, SPEC 14.6)
+ * - onboarding-reminders: Erinnerung an Gastgeber mit offener Einrichtung (täglich 09:20)
+ * - billing-minimum: Mindestgebühr des Vormonats abrechnen und Fehlversuche wiederholen (täglich 07:10)
  * - channex-outbox: ARI an Channex senden (Schleife alle 6 Sekunden, SPEC 7.2)
  */
 import { PgBoss } from "pg-boss";
@@ -16,6 +18,8 @@ import { extendHorizon } from "../services/inventory";
 import { OutboxState, runOutboxOnce } from "../integrations/channex/outbox-worker";
 import { pullFeed } from "../integrations/channex/feed";
 import { enqueueCheckinLinks, purgeExpiredRegistrations } from "../services/guests";
+import { onboardingReminders } from "../services/onboarding";
+import { runMonthlyMinimum } from "../services/billing";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
@@ -24,6 +28,8 @@ const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "channex-feed", cron: "*/2 * * * *", run: () => pullFeed() },
   { name: "guests-checkin", cron: "*/10 * * * *", run: () => enqueueCheckinLinks() },
   { name: "guests-purge", cron: "30 2 * * *", run: () => purgeExpiredRegistrations() },
+  { name: "onboarding-reminders", cron: "20 9 * * *", run: () => onboardingReminders() },
+  { name: "billing-minimum", cron: "10 7 * * *", run: () => runMonthlyMinimum() },
 ];
 
 /** channex-outbox: pg-boss kennt nur Minuten-Cron, darum eigene Schleife (nie zwei Durchläufe gleichzeitig) */

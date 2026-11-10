@@ -55,6 +55,7 @@ function planInput(f: FormData): RatePlanInput {
     extraAdultRappen: chf(f, "extraAdult"),
     singleDiscountRappen: chf(f, "singleDiscount"),
     minNights: Math.max(1, n(f, "minNights") || 1),
+    arrivalWeekdays: f.getAll("arrivalWeekdays").map(Number),
     active: f.get("active") === "on",
     i18n: Object.fromEntries(EXTRA.map((l) => [l, { name: s(f, `name.${l}`) || undefined }])),
   };
@@ -225,6 +226,9 @@ function PlanForm({ hotelId, roomTypeId, p, canEdit, langs }: { hotelId: string;
         <div><label>Rabatt bei 1 Person CHF</label><input name="singleDiscount" inputMode="decimal" defaultValue={p ? rappenToDecimal(p.singleDiscountRappen) : "0"} disabled={!canEdit} /></div>
         <div><label>Mindestaufenthalt (Nächte)</label><input name="minNights" type="number" min={1} max={60} defaultValue={p?.minNights ?? 1} disabled={!canEdit} title="Für Pakete wie «3 Nächte mit Halbpension». Gilt immer, zusätzlich zu den Regeln im Kalender." /></div>
       </div>
+      <fieldset className="plain"><legend className="small muted">Anreise nur an (keiner gewählt = jeder Tag; z. B. Ferienwohnung nur Samstag)</legend>
+        <div className="weekdays">{[1, 2, 3, 4, 5, 6, 0].map((w) => <label key={w}><input type="checkbox" name="arrivalWeekdays" value={w} defaultChecked={p?.arrivalWeekdays.includes(w)} disabled={!canEdit} />{["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][w]}</label>)}</div>
+      </fieldset>
       <div className="form-grid">
         <div>
           <label>Stornierung</label>

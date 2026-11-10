@@ -38,6 +38,7 @@ export const ratePlanSchema = z.object({
   extraAdultRappen: z.number().int().min(0).max(10_000_000),
   singleDiscountRappen: z.number().int().min(0).max(10_000_000),
   minNights: z.number().int().min(1, "Mindestens 1 Nacht").max(60).default(1),
+  arrivalWeekdays: z.array(z.number().int().min(0).max(6)).max(7).default([]).transform((a) => [...new Set(a)].sort()),
   active: z.boolean(),
   i18n: z.object(Object.fromEntries(["en", "fr", "it", "nl"].map((l) => [l, z.object({ name: z.string().trim().max(120).optional() }).optional()])) as Record<"en" | "fr" | "it" | "nl", z.ZodOptional<z.ZodObject<{ name: z.ZodOptional<z.ZodString> }>>>).default({}),
 });
@@ -138,7 +139,7 @@ export async function updateRatePlan(hotelId: string, ratePlanId: string, input:
     const [rp] = await tx.update(ratePlans).set(v).where(eq(ratePlans.id, ratePlanId)).returning();
     // aktiv/inaktiv wirkt bei Channex als Verkaufsstopp; Belegung/Zuschläge ändern die Preise je Belegung → neu senden
     const pricingChanged =
-      old.baseOccupancy !== rp.baseOccupancy || old.extraAdultRappen !== rp.extraAdultRappen || old.singleDiscountRappen !== rp.singleDiscountRappen || old.minNights !== rp.minNights;
+      old.baseOccupancy !== rp.baseOccupancy || old.extraAdultRappen !== rp.extraAdultRappen || old.singleDiscountRappen !== rp.singleDiscountRappen || old.minNights !== rp.minNights || old.arrivalWeekdays.join() !== rp.arrivalWeekdays.join();
     if (old.active !== v.active || pricingChanged) await enqueueRestrictions(tx, hotelId, ratePlanId, today, addDays(today, HORIZON_DAYS - 1));
     await audit(tx, { hotelId, actor, action: "rate_plan.update", entity: "rate_plan", entityId: ratePlanId, details: v });
     return rp;

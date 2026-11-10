@@ -21,6 +21,8 @@ export default async function Overview({ params, searchParams }: { params: Promi
   const { hotelId } = await params;
   const sp = await searchParams;
   const { hotel, role } = await requireHotel(hotelId);
+  // Einrichtung begonnen, noch nicht abgeschlossen → Assistent
+  if (hotel.onboarding.startedAt && !hotel.onboarding.completedAt && atLeast(role, "manager")) redirect(`/admin/${hotel.id}/einrichten`);
   // Zahlen zu Umsatz und Gebühren nur für Inhaber und Geschäftsführung (wie die Abrechnung)
   if (!atLeast(role, "manager")) redirect(`/admin/${hotel.id}/bookings`);
   const period: Period = (PERIODS as readonly string[]).includes(sp.period ?? "") ? (sp.period as Period) : "month";

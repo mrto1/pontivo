@@ -12,8 +12,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ hotelId: strin
   const { hotelId } = await ctx.params;
   const userId = readSessionValue((await cookies()).get(SESSION_COOKIE)?.value);
   if (!userId || !atLeast(await roleIn(userId, hotelId), "manager")) return new Response("Not found", { status: 404 });
+  const fromWizard = new URL(req.url).searchParams.get("from") === "wizard";
   const back = (msg: string, anchor = "") =>
-    Response.redirect(`${env().APP_BASE_URL}/admin/${hotelId}/rooms?msg=${encodeURIComponent(msg)}${anchor}`, 303);
+    Response.redirect(fromWizard
+      ? `${env().APP_BASE_URL}/admin/${hotelId}/einrichten?step=fotos&msg=${encodeURIComponent(msg)}`
+      : `${env().APP_BASE_URL}/admin/${hotelId}/rooms?msg=${encodeURIComponent(msg)}${anchor}`, 303);
 
   const len = Number(req.headers.get("content-length") ?? 0);
   if (len > MAX_UPLOAD_BYTES * 3 + 100_000) return back("Zu grosse Datei(en)");

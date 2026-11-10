@@ -4,7 +4,7 @@ import { db, type Executor } from "../db/client";
 import { extras, inventoryDays, ratePlans, ratesDays, roomTypes, type Hotel, type RatePlan, type RoomType } from "../db/schema";
 import { resolveExtras } from "../domain/extras";
 import { tr } from "../domain/blocks";
-import { addDays, nightsOf, todayIn, type Day } from "../domain/dates";
+import { addDays, nightsOf, todayIn, weekday, type Day } from "../domain/dates";
 import { evaluateOffer, validateStay, type Rejection, type StayQuery } from "../domain/availability";
 import { grandTotal, priceStay, type NightlyPrice } from "../domain/pricing";
 import { computeTouristTax, needsChildAges, TouristTaxUnconfirmedError } from "../domain/tourist-tax";
@@ -104,6 +104,11 @@ export async function searchOffers(
   for (const rt of rts) {
     const rtInv = inv.filter((i) => i.roomTypeId === rt.id);
     for (const rp of rps.filter((p) => p.roomTypeId === rt.id)) {
+      // fester Anreisetag (z. B. nur Samstag)
+      if (rp.arrivalWeekdays.length && !rp.arrivalWeekdays.includes(weekday(input.checkin))) {
+        rejected.push({ roomTypeId: rt.id, ratePlanId: rp.id, reason: "closed_to_arrival" });
+        continue;
+      }
       if (nights.length < rp.minNights) {
         rejected.push({ roomTypeId: rt.id, ratePlanId: rp.id, reason: "min_stay" });
         continue;
