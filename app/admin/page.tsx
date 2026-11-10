@@ -24,7 +24,7 @@ export default async function AdminHome() {
           ))}
         </tbody>
       </table>
-      {list.length === 0 ? <p className="muted">Kein Hotel zugeordnet.</p> : null}
+      {list.length === 0 ? <p className="muted">Noch kein Betrieb. Neue Betriebe registrieren sich unter <a href="/registrieren">/registrieren</a>.</p> : null}
       <form action="/api/auth/logout" method="post" style={{ marginTop: 24 }}><button className="btn secondary small">Abmelden</button></form>
     </main>
   );
