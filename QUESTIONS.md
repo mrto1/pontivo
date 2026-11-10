@@ -11,6 +11,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Hotels mit eigenem Channel-Manager (z. B. Hotel-Spider) statt Channex.
 - [ ] Rechtstexte: AGB und Datenschutzerklärung für Gäste liegen als Entwurf vor (`src/legal/texts.ts`) – juristisch prüfen lassen. Es fehlt noch der Vertrag mit dem Hotel inkl. Auftragsbearbeitungsvereinbarung. Betreiberangaben in `PLATFORM_*` setzen.
 - [ ] Channex-Feed: Namen der Paginierungsparameter (Doku nennt sie nicht).
+- [x] Channex-Webhook signiert (HMAC) gegen Staging getestet, 10.11.2026: Buchung neu und Storno kommen in Sekunden an.
 - [x] Channex: Zuschläge pro Person (extra_adult, Einzelrabatt) werden übertragen – Tarife mit Zuschlag/Rabatt als `per_person` mit Preis je Belegung (gegen Channex-Staging geprüft, 8.11.2026).
 - [ ] Channex: Wird bei einem verbundenen `per_room`-Tarif später ein Zuschlag/Einzelrabatt eingetragen, bleibt der Tarif in Channex `per_room` (nur Basispreis). Lösung offen: Tarif in Channex umstellen oder neu verbinden.
 - [ ] Channex lehnt zwei Tarife mit gleichem Namen im selben Zimmertyp ab ("Duplication in Rate Plan title"). Pontivo prüft das beim Anlegen noch nicht.

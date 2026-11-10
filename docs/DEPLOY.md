@@ -102,7 +102,12 @@ Dann auf https://pontivo.ch/admin/login anmelden (Login-Link per E-Mail, dafür 
   URL `https://pontivo.ch/api/webhooks/stripe`, Ereignisse: `checkout.session.completed`, `checkout.session.expired`,
   `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `account.updated`, `charge.refunded`, `charge.dispute.created`.
   Signing secret → `STRIPE_WEBHOOK_SECRET_CONNECT`. Zusätzlich in Stripe Connect die Plattform-Einstellungen (Name, Logo, Branding) ausfüllen.
-- **Channex**: Webhook-URL `https://pontivo.ch/api/webhooks/channex`, Secret → `CHANNEX_WEBHOOK_SECRET`. Den Staging-API-Key vorher **neu erzeugen** (er stand im Chat).
+- **Channex**: Den Staging-API-Key vorher **neu erzeugen** (er stand im Chat) und als `CHANNEX_API_KEY` eintragen, `./deploy.sh`. Dann den Webhook mit einem Befehl einrichten:
+  ```bash
+  docker compose --env-file .env.production -f docker-compose.prod.yml exec app node --import tsx scripts/channex-webhook.ts --new-key
+  ```
+  Das legt einen Signierschlüssel und einen signierten Webhook auf `https://pontivo.ch/api/webhooks/channex` an. Die ausgegebene Zeile
+  `CHANNEX_WEBHOOK_SECRET=…` in `.env.production` eintragen und nochmals `./deploy.sh`. Ohne Webhook kommen Portal-Buchungen erst nach bis zu 15 Minuten.
 
 Nach jeder Änderung an `.env.production`: `./deploy.sh`.
 
