@@ -3,6 +3,7 @@ import { cancellationPolicyText } from "../domain/cancellation";
 import { formatDay, isLocale, t, type Locale } from "../i18n/dict";
 import type { Booking, Hotel, RatePlan, RoomType } from "../db/schema";
 import { planName, roomName } from "../domain/i18n-names";
+import { CI } from "../i18n/checkin";
 
 /**
  * E-Mail-Texte (SPEC 10): an Gäste in allen Website-Sprachen, an das Hotel DE/EN.
@@ -153,6 +154,11 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
         [...(Number(c.data.voucherBackRappen ?? 0) > 0 ? [`${t(gl).voucherPaid} (+): ${money("voucherBackRappen")}`] : []), ...summary(c, gl)], link);
     case "pre_arrival":
       return wrap(c, gl, m.preSubject(c.hotel.name), [hi + ",", m.preText(c.hotel.checkinTime.slice(0, 5))], summary(c, gl), link);
+    case "checkin_link": {
+      const ci = CI[gl];
+      return wrap(c, gl, `${ci.title} – ${c.hotel.name}`, [hi + ",", ci.linkText], summary(c, gl),
+        b ? { href: `${c.baseUrl}/b/${b.publicToken}/checkin`, label: ci.linkButton } : undefined);
+    }
     case "post_stay":
       return wrap(c, gl, m.postSubject(c.hotel.name), [hi + ",", m.postText], [], { href: c.baseUrl, label: m.bookAgain });
     case "overbooking_alert":

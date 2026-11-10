@@ -8,6 +8,8 @@ import { Shell } from "@/components/public/Shell";
 import { planName, roomName } from "@/src/domain/i18n-names";
 import { CancelBox } from "@/components/public/CancelBox";
 import { AutoRefresh } from "@/components/public/AutoRefresh";
+import { checkinContext } from "@/src/services/guests";
+import { CI } from "@/src/i18n/checkin";
 
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false } };
@@ -23,6 +25,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
   const n = diffDays(booking.checkin, booking.checkout);
   const preview = booking.status === "confirmed" ? await cancellationPreview(booking.id, { by: "guest" }) : null;
   const base = hotel.primaryDomain ? "" : `/h/${hotel.slug}`;
+  const ci = await checkinContext(token);
 
   return (
     <Shell hotel={hotel} locale={locale} base={base}>
@@ -52,6 +55,13 @@ export default async function BookingView({ params, searchParams }: { params: Pr
           {plan ? (<><h3 style={{ marginTop: 20 }}>{d.cancellation}</h3><p className="small muted">{cancellationPolicyText(plan, locale)}</p></>) : null}
           {preview?.cancellable ? <CancelBox token={token} locale={locale} /> : null}
         </div>
+        {ci?.open ? (
+          <div className="card" style={{ marginTop: 16 }}>
+            <h3>{CI[locale].linkTitle}</h3>
+            {ci.submitted ? <p>✓ {CI[locale].linkDone}</p> : <p>{CI[locale].linkText}</p>}
+            {ci.verified ? null : <a className={`btn${ci.submitted ? " secondary small" : ""}`} href={`/b/${token}/checkin?lang=${locale}`}>{ci.submitted ? CI[locale].correct : CI[locale].linkButton}</a>}
+          </div>
+        ) : null}
       </section>
     </Shell>
   );

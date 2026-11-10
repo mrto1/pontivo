@@ -373,3 +373,27 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .map-off { display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; text-align: center; padding: 16px; }
 .item-group { border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 0; background: var(--bg); }
 .offer-card .badge, .tip-tags .badge { align-self: flex-start; }
+
+/* Admin-Übersicht «Ihr Nutzen» */
+:root { --viz-direct: #2a78d6; --viz-portal: #eb6834; }
+@media (prefers-color-scheme: dark) { :root { --viz-direct: #3987e5; --viz-portal: #d95926; } }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; flex-wrap: wrap; }
+.seg a { padding: 6px 12px; font-size: .9rem; color: var(--muted); text-decoration: none; }
+.seg a[aria-current="true"] { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.hero-stat .hero-num { font-family: var(--serif); font-size: clamp(2.2rem, 6vw, 3.2rem); font-weight: 600; margin: 4px 0 6px; line-height: 1.1; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.tile { display: flex; flex-direction: column; gap: 2px; padding: 16px; }
+.tile strong { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.viz-legend { display: flex; gap: 16px; font-size: .85rem; color: var(--muted); margin-bottom: 6px; }
+.viz-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.viz-axis { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.viz-group:hover .viz-hit { fill: var(--accent-soft); }
+
+/* Online-Check-in */
+.checkin-form fieldset { margin: 0; }
+.checkin-form legend { font-weight: 600; padding: 0 6px; }
+.checkin-form .invalid, .checkin-form [aria-invalid="true"] { border-color: var(--danger); outline: 1px solid var(--danger); }
+.sig-pad { display: block; width: 100%; height: 160px; background: #fff; border: 1px dashed var(--line); border-radius: 8px; touch-action: none; margin-bottom: 6px; }
+.sig-pad.invalid { border: 2px solid var(--danger); }
+.participant-row { display: grid; grid-template-columns: 1fr 1fr 150px 1fr auto; gap: 8px; margin-bottom: 8px; }
+@media (max-width: 700px) { .participant-row { grid-template-columns: 1fr 1fr; } }

@@ -22,6 +22,12 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Gutscheine: Gültigkeitsdauer und Bedingungen in den AGB rechtlich prüfen lassen (auch: gilt der Gutschein, wenn am Buchungstag gültig, der Aufenthalt aber danach liegt?).
 - [ ] Gutscheine: Mehrwertsteuer-Behandlung (Wertgutschein, MWST erst bei Einlösung) mit Treuhand klären.
 
+- [ ] Modul Gäste: Müssen Kinder ohne eigenen Ausweis einen Ausweistyp/-nummer angeben? Heute Pflicht ab 18, für Kinder freiwillig.
+- [ ] Modul Gäste: Genügt in GL die Unterschrift der Kontaktperson für alle Mitreisenden derselben Buchung, oder muss jede erwachsene Person unterschreiben?
+- [ ] Modul Gäste: Teilnehmerliste für Gruppen ist nur für SG belegt; gilt sie auch in TG/AR/GL? (`canton_rules.group_list_allowed`)
+- [ ] Modul Gäste: Kurtaxe-Liste – verlangen die Gemeinden ein bestimmtes Format (AVS, Excel-Vorlage)? Heute CSV und Druck.
+- [ ] Übersicht «Ihr Nutzen»: Provision der Portale je Hotel unterschiedlich (Standard 15 %, im Admin änderbar). Prüfen, ob die Darstellung als «gespart» rechtlich und gegenüber Hotels unbedenklich ist (Kartengebühren nicht abgezogen).
+
 ## Getroffene Annahmen (v1)
 
 | Thema | Annahme | Ort |
@@ -56,3 +62,8 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 | Pakete | Ein Paket ist ein Tarif mit Mindestaufenthalt (`rate_plans.min_nights`), gilt zusätzlich zu den Tagesregeln und wird an Channex als min_stay_arrival gesendet | `src/services/search.ts` |
 | Gästestimmen | Werden nicht als Review-Markup ausgezeichnet (Google wertet selbst veröffentlichte Bewertungen nicht) | `src/lib/structured-data.ts` |
 | Dokumente | PDFs im selben Ordner wie Fotos, an den Bytes erkannt (`%PDF-`), max. 15 MB, höchstens 30 pro Hotel; gelöschte Dokumente verschwinden aus Downloads-Bausteinen | `src/lib/storage.ts`, `src/services/site.ts` |
+| Übersicht «Ihr Nutzen» | Ersparnis = Zimmerumsatz der Direktbuchungen × Portal-Provision − Pontivo-Gebühr netto; bestätigte Buchungen im Bestätigungsmonat, ohne Stornos, ohne Kartengebühren | `src/services/overview.ts` |
+| Gästedaten verschlüsselt | Geburtsdatum, Ausweisnummer, Unterschrift mit AES-256-GCM (`GUEST_DATA_KEY`), Unterschrift als verschlüsselte PNG-data-URL in der Datenbank statt als Datei; Alter bei Anreise unverschlüsselt für die Kurtaxe-Liste | `src/lib/guest-crypto.ts`, `src/services/guests.ts` |
+| Check-in-Link | Job alle 10 Minuten reiht den Link für bestätigte Buchungen (auch Portale, wenn E-Mail bekannt) 7 Tage vor Anreise um 10:00 ein, bei späterer Buchung sofort | `src/services/guests.ts` |
+| Meldeschein | Korrektur durch den Gast möglich, bis das Personal «Ausweis gesehen» bestätigt; Unterschrift nur von Person 1; Löschung am Tag nach `retention_until` | `src/services/guests.ts` |
+| Kurtaxe-Liste | Nächte im Monat; Alter laut Meldeschein, sonst Erwachsene laut Buchung und Kinder nach angegebenem Alter | `src/services/guests.ts` |

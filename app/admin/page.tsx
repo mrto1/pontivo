@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminHome() {
   const user = await requireUser();
   const list = await hotelsForUser(user.id);
-  if (list.length === 1 && !user.isPlatformAdmin) redirect(`/admin/${list[0].hotel.id}/bookings`);
+  if (list.length === 1 && !user.isPlatformAdmin) redirect(`/admin/${list[0].hotel.id}`);
   return (
     <main className="wrap admin-main">
       <h1>Hotels</h1>
@@ -16,7 +16,7 @@ export default async function AdminHome() {
         <tbody>
           {list.map(({ hotel, role }) => (
             <tr key={hotel.id}>
-              <td><a href={`/admin/${hotel.id}/bookings`}>{hotel.name}</a></td>
+              <td><a href={`/admin/${hotel.id}`}>{hotel.name}</a></td>
               <td>{hotel.status}</td>
               <td>{hotel.primaryDomain ?? "–"}</td>
               <td>{role}</td>

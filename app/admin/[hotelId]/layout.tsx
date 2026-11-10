@@ -9,10 +9,12 @@ export default async function HotelAdminLayout({ children, params }: { children:
         <div className="wrap">
           <a href="/admin" className="brand" style={{ fontSize: "1.05rem" }}>{hotel.name}</a>
           <nav>
+            <a href={`/admin/${hotel.id}`}>Übersicht</a>
             <a href={`/admin/${hotel.id}/calendar`}>Kalender</a>
             <a href={`/admin/${hotel.id}/rooms`}>Zimmer</a>
             <a href={`/admin/${hotel.id}/site`}>Website</a>
             <a href={`/admin/${hotel.id}/bookings`}>Buchungen</a>
+            <a href={`/admin/${hotel.id}/guests`}>Gäste</a>
             <a href={`/admin/${hotel.id}/inquiries`}>Anfragen</a>
             <a href={`/admin/${hotel.id}/vouchers`}>Gutscheine</a>
             <a href={`/admin/${hotel.id}/report`}>Abrechnung</a>

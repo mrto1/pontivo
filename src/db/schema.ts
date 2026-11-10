@@ -54,6 +54,8 @@ export type HotelContent = {
   translations?: Record<string, number>;
   /** Gutscheine: Verkauf an/aus, Beträge, Gültigkeit (src/services/vouchers.ts) */
   vouchers?: { enabled?: boolean; amounts?: number[]; minRappen?: number; maxRappen?: number; validityYears?: number };
+  /** Provision der Buchungsportale in Basispunkten (1500 = 15 %), für die Übersicht «Ihr Nutzen» */
+  otaCommissionBps?: number;
   /** Dokumente (PDF) für den Baustein «Downloads», z. B. Speisekarte, Preisliste */
   documents?: HotelDocument[];
   /** Erscheinungsbild der Buchungsseite */
@@ -336,7 +338,41 @@ export const cantonRules = pgTable("canton_rules", {
   onlineReporting: text("online_reporting").notNull().default("none"),
   notes: text("notes"),
   sourceUrl: text("source_url"),
+  groupListAllowed: boolean("group_list_allowed").notNull().default(false),
 });
+
+/** Gästeregister (SPEC 14, Migration 0008): *Enc-Felder sind mit src/lib/guest-crypto.ts verschlüsselt */
+export const guestRegistrations = pgTable("guest_registrations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  bookingId: uuid("booking_id").notNull(),
+  isPrimary: boolean("is_primary").notNull().default(false),
+  listOnly: boolean("list_only").notNull().default(false),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  sex: text("sex"),
+  birthDateEnc: text("birth_date_enc"),
+  ageAtArrival: integer("age_at_arrival"),
+  nationality: char("nationality", { length: 2 }),
+  street: text("street"),
+  postalCode: text("postal_code"),
+  city: text("city"),
+  country: char("country", { length: 2 }),
+  idDocumentType: text("id_document_type"),
+  idDocumentNumberEnc: text("id_document_number_enc"),
+  vehiclePlate: text("vehicle_plate"),
+  arrivalDate: date("arrival_date", { mode: "string" }).notNull(),
+  departureDate: date("departure_date", { mode: "string" }).notNull(),
+  roomLabel: text("room_label"),
+  touristTaxLiable: boolean("tourist_tax_liable").notNull().default(true),
+  signaturePngEnc: text("signature_png_enc"),
+  confirmedByGuestAt: ts("confirmed_by_guest_at"),
+  verifiedByStaffAt: ts("verified_by_staff_at"),
+  retentionUntil: date("retention_until", { mode: "string" }).notNull(),
+  exportedAt: ts("exported_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type GuestRegistration = typeof guestRegistrations.$inferSelect;
 
 export type L10n = Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>;
 

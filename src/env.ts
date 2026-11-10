@@ -25,6 +25,8 @@ const schema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   TRANSLATE_MODEL: z.string().default("claude-sonnet-5-5"),
   TRANSLATIONS_PER_MONTH: z.coerce.number().int().min(0).default(50),
+  // Modul Gäste: Schlüssel für Geburtsdatum/Ausweisnummer/Unterschrift (32 Byte base64: openssl rand -base64 32)
+  GUEST_DATA_KEY: z.string().optional(),
   HOSTING_PROVIDER: z.string().optional(),
   // Fotos: Ordner auf dem Server (Docker: als Volume einbinden)
   UPLOAD_DIR: z.string().default("./data/uploads"), // z. B. "Infomaniak Network SA, Genf (Schweiz)"
