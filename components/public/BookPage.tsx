@@ -8,7 +8,10 @@ import { formatChf } from "@/src/domain/money";
 import { fill, formatDay, t, type Locale } from "@/src/i18n/dict";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/src/db/client";
-import { ratePlans } from "@/src/db/schema";
+import { extras as extrasTable, ratePlans } from "@/src/db/schema";
+import { extraApplies } from "@/src/domain/extras";
+import { tr } from "@/src/domain/blocks";
+import { asc } from "drizzle-orm";
 import { planName } from "@/src/domain/i18n-names";
 import { voucherSettings } from "@/src/services/vouchers";
 import { Shell } from "./Shell";
@@ -49,6 +52,8 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
       body = <p className="notice">{d.noOffers}</p>;
     } else {
       const n = diffDays(q.checkin, q.checkout);
+      const optional = (await db().select().from(extrasTable).where(and(eq(extrasTable.hotelId, hotel.id), eq(extrasTable.active, true), eq(extrasTable.mandatory, false))).orderBy(asc(extrasTable.sortOrder), asc(extrasTable.createdAt)))
+        .map((e) => ({ id: e.id, name: tr(e.name, locale), description: tr(e.description, locale), priceRappen: e.priceRappen, unit: e.unit, maxQuantity: e.maxQuantity, mandatory: false, active: true, roomTypeIds: e.roomTypeIds }));
       body = (
         <>
           <h2>{d.offers}</h2>
@@ -68,6 +73,7 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
                 <table className="rows small">
                   <tbody>
                     <tr><td>{d.roomPrice} ({n} {n === 1 ? d.night : d.nights})</td><td>{formatChf(o.roomsTotalRappen)}</td></tr>
+                    {o.mandatoryExtras.map((x) => <tr key={x.name}><td>{x.name}</td><td>{formatChf(x.amountRappen)}</td></tr>)}
                     <tr><td>{d.touristTax}</td><td>{o.touristTaxIncluded ? d.included : formatChf(o.touristTaxRappen)}</td></tr>
                   </tbody>
                 </table>
@@ -91,6 +97,9 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
                   ages={q.ages}
                   base={base}
                   vouchers={voucherSettings(hotel).enabled}
+                  extras={optional.filter((e) => extraApplies(e, o.roomType.id))}
+                  nights={n}
+                  baseTotalRappen={o.totalRappen}
                 />
               </details>
             </article>

@@ -212,6 +212,8 @@ export const bookings = pgTable("bookings", {
   language: text("language").notNull().default("de"),
   guestId: uuid("guest_id"),
   roomsTotalRappen: integer("rooms_total_rappen").notNull().default(0),
+  /** Zusatzleistungen (booking_extras), im total enthalten */
+  extrasRappen: integer("extras_rappen").notNull().default(0),
   touristTaxRappen: integer("tourist_tax_rappen").notNull().default(0),
   totalRappen: integer("total_rappen").notNull().default(0),
   platformFeeRappen: integer("platform_fee_rappen").notNull().default(0),
@@ -231,6 +233,37 @@ export const bookings = pgTable("bookings", {
 });
 
 export type NightlyPrice = { night: string; price_rappen: number };
+
+/** Zusatzleistungen des Hotels (Migration 0010) */
+export const extras = pgTable("extras", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: jsonb("name").$type<L10n>().notNull().default({}),
+  description: jsonb("description").$type<L10n>().notNull().default({}),
+  priceRappen: integer("price_rappen").notNull(),
+  unit: text("unit").$type<"per_booking" | "per_night" | "per_person" | "per_person_night">().notNull(),
+  maxQuantity: integer("max_quantity").notNull().default(1),
+  mandatory: boolean("mandatory").notNull().default(false),
+  active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  roomTypeIds: uuid("room_type_ids").array().notNull().default([]),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type Extra = typeof extras.$inferSelect;
+
+export const bookingExtras = pgTable("booking_extras", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  bookingId: uuid("booking_id").notNull(),
+  hotelId: uuid("hotel_id").notNull(),
+  extraId: uuid("extra_id"),
+  name: jsonb("name").$type<L10n>().notNull(),
+  unit: text("unit").notNull(),
+  unitPriceRappen: integer("unit_price_rappen").notNull(),
+  quantity: integer("quantity").notNull(),
+  amountRappen: integer("amount_rappen").notNull(),
+  position: integer("position").notNull().default(0),
+});
+export type BookingExtra = typeof bookingExtras.$inferSelect;
 
 export const bookingRooms = pgTable("booking_rooms", {
   id: uuid("id").primaryKey().defaultRandom(),

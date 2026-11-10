@@ -1,7 +1,9 @@
 import type { Locale } from "../i18n/dict";
 import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
 import { db, type Executor } from "../db/client";
-import { inventoryDays, ratePlans, ratesDays, roomTypes, type Hotel, type RatePlan, type RoomType } from "../db/schema";
+import { extras, inventoryDays, ratePlans, ratesDays, roomTypes, type Hotel, type RatePlan, type RoomType } from "../db/schema";
+import { resolveExtras } from "../domain/extras";
+import { tr } from "../domain/blocks";
 import { addDays, nightsOf, todayIn, type Day } from "../domain/dates";
 import { evaluateOffer, validateStay, type Rejection, type StayQuery } from "../domain/availability";
 import { grandTotal, priceStay, type NightlyPrice } from "../domain/pricing";
@@ -19,6 +21,9 @@ export type Offer = {
   roomsTotalRappen: number;
   touristTaxRappen: number;
   touristTaxIncluded: boolean;
+  /** obligatorische Zusatzleistungen (z. B. Endreinigung), im total enthalten */
+  extrasRappen: number;
+  mandatoryExtras: { name: string; amountRappen: number }[];
   totalRappen: number;
   cancellationPolicy: string;
 };
@@ -91,6 +96,9 @@ export async function searchOffers(
         )
     : [];
 
+  const extraDefs = await ex.select().from(extras).where(and(eq(extras.hotelId, hotel.id), eq(extras.active, true), eq(extras.mandatory, true))).orderBy(asc(extras.sortOrder), asc(extras.createdAt));
+  const persons = input.adults + input.children;
+
   const offers: Offer[] = [];
   const rejected: { roomTypeId: string; ratePlanId: string; reason: Rejection }[] = [];
   for (const rt of rts) {
@@ -106,6 +114,7 @@ export async function searchOffers(
         continue;
       }
       const priced = priceStay(res.rates, rp, input.adults, input.children);
+      const mand = resolveExtras(extraDefs, [], { roomTypeId: rt.id, nights: nights.length, persons });
       offers.push({
         roomType: { id: rt.id, name: roomName(rt, lang), description: roomDescription(rt, lang), photos: rt.photos, maxOccupancy: rt.maxOccupancy },
         ratePlan: {
@@ -119,7 +128,9 @@ export async function searchOffers(
         roomsTotalRappen: priced.roomsTotalRappen,
         touristTaxRappen: touristTax,
         touristTaxIncluded: hotel.touristTaxIncludedInPrice,
-        totalRappen: grandTotal(priced.roomsTotalRappen, touristTax, hotel.touristTaxIncludedInPrice),
+        extrasRappen: mand.totalRappen,
+        mandatoryExtras: mand.lines.map((l) => ({ name: tr(l.extra.name, lang), amountRappen: l.amountRappen })),
+        totalRappen: grandTotal(priced.roomsTotalRappen, touristTax, hotel.touristTaxIncludedInPrice) + mand.totalRappen,
         cancellationPolicy: cancellationPolicyText(rp, lang),
       });
     }

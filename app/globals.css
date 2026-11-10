@@ -414,3 +414,10 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .hours th, .hours td { text-align: left; padding: 6px 24px 6px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; vertical-align: top; }
 .hours th { font-weight: 600; white-space: nowrap; }
 .blk-hours .notice ul { margin: 4px 0 0; padding-left: 18px; }
+
+/* Zusatzleistungen in der Buchung */
+.extras-pick { border-top: 1px solid var(--line); padding-top: 8px; }
+.extra-row { display: grid; grid-template-columns: 1fr auto 100px; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.extra-amount { text-align: right; font-variant-numeric: tabular-nums; }
+.extra-total { display: flex; justify-content: space-between; font-size: 1.05rem; margin: 10px 0 0; }
+.extra-total strong { font-variant-numeric: tabular-nums; }

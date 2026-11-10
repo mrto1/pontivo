@@ -27,6 +27,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Modul Gäste: Teilnehmerliste für Gruppen ist nur für SG belegt; gilt sie auch in TG/AR/GL? (`canton_rules.group_list_allowed`)
 - [ ] Modul Gäste: Kurtaxe-Liste – verlangen die Gemeinden ein bestimmtes Format (AVS, Excel-Vorlage)? Heute CSV und Druck.
 - [ ] Übersicht «Ihr Nutzen»: Provision der Portale je Hotel unterschiedlich (Standard 15 %, im Admin änderbar). Prüfen, ob die Darstellung als «gespart» rechtlich und gegenüber Hotels unbedenklich ist (Kartengebühren nicht abgezogen).
+- [ ] Zusatzleistungen: Obligatorische Gebühren (z. B. Endreinigung) werden nicht an Channex übertragen – Hotel muss sie im Portal selbst erfassen. Klären, ob Channex dafür ein Feld hat.
 
 ## Getroffene Annahmen (v1)
 
@@ -67,3 +68,5 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 | Check-in-Link | Job alle 10 Minuten reiht den Link für bestätigte Buchungen (auch Portale, wenn E-Mail bekannt) 7 Tage vor Anreise um 10:00 ein, bei späterer Buchung sofort | `src/services/guests.ts` |
 | Meldeschein | Korrektur durch den Gast möglich, bis das Personal «Ausweis gesehen» bestätigt; Unterschrift nur von Person 1; Löschung am Tag nach `retention_until` | `src/services/guests.ts` |
 | Kurtaxe-Liste | Nächte im Monat; Alter laut Meldeschein, sonst Erwachsene laut Buchung und Kinder nach angegebenem Alter | `src/services/guests.ts` |
+| Zusatzleistungen | Pro Aufenthalt, pro Nacht, pro Person, pro Person und Nacht; obligatorische im angezeigten Gesamtpreis (PBV); Name und Preis bei der Buchung eingefroren; Stornogebühr nur auf den Zimmerpreis, Zusatzleistungen werden immer erstattet; 1 % Gebühr auch auf Zusatzleistungen; Portal-Buchungen ohne Zusatzleistungen | `src/domain/extras.ts`, `src/services/bookings.ts` |
+| Restaurant | Speisekarte mit Preisen in Rappen, Öffnungszeiten Mo–So mit bis zu 3 Fenstern, Tischreservation ist eine Anfrage (keine Tischverwaltung) | `src/domain/blocks.ts` |

@@ -1,6 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { t, type Locale } from "@/src/i18n/dict";
+import { extraAmount, extraMaxQuantity, perPerson, type ExtraUnit } from "@/src/domain/extras";
+import { formatChf } from "@/src/domain/money";
+
+export type FormExtra = { id: string; name: string; description: string; priceRappen: number; unit: ExtraUnit; maxQuantity: number; mandatory: boolean; active: boolean; roomTypeIds: string[] };
 
 export function BookingForm(props: {
   locale: Locale;
@@ -15,12 +19,20 @@ export function BookingForm(props: {
   base: string;
   /** Hotel verkauft Gutscheine → Feld «Gutschein einlösen» anzeigen */
   vouchers?: boolean;
+  /** wählbare Zusatzleistungen (obligatorische sind schon im Preis) */
+  extras?: FormExtra[];
+  nights?: number;
+  baseTotalRappen?: number;
 }) {
   const d = t(props.locale);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Absenden erst nach der Hydrierung (sonst würde der Browser die Daten per GET an die URL hängen)
   const [ready, setReady] = useState(false);
+  const extras = props.extras ?? [];
+  const persons = props.adults + props.children;
+  const [qty, setQty] = useState<Record<string, number>>({});
+  const extrasTotal = extras.reduce((sum, e) => sum + extraAmount(e, qty[e.id] ?? 0, props.nights ?? 1), 0);
   useEffect(() => setReady(true), []);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -51,6 +63,7 @@ export function BookingForm(props: {
         },
         terms_accepted: f.get("terms") === "on",
         voucher_code: String(f.get("voucher") ?? "").trim() || null,
+        extras: Object.entries(qty).filter(([, q]) => q > 0).map(([id, quantity]) => ({ id, quantity })),
       }),
     }).catch(() => null);
     if (res?.ok) {
@@ -65,6 +78,32 @@ export function BookingForm(props: {
 
   return (
     <form onSubmit={submit}>
+      {extras.length ? (
+        <fieldset className="plain extras-pick" style={{ marginTop: 16 }}>
+          <legend><h3 style={{ margin: 0 }}>{d.extras}</h3></legend>
+          {extras.map((e) => {
+            const max = extraMaxQuantity(e, persons);
+            const q = qty[e.id] ?? 0;
+            return (
+              <div key={e.id} className="extra-row">
+                <div>
+                  <strong>{e.name}</strong> <span className="muted small">{formatChf(e.priceRappen)} {d[`unit_${e.unit}`]}</span>
+                  {e.description ? <div className="small muted">{e.description}</div> : null}
+                </div>
+                {max === 1 ? (
+                  <label className="check" style={{ margin: 0 }}><input type="checkbox" checked={q === 1} onChange={(ev) => setQty({ ...qty, [e.id]: ev.target.checked ? 1 : 0 })} aria-label={e.name} /></label>
+                ) : (
+                  <select value={q} onChange={(ev) => setQty({ ...qty, [e.id]: Number(ev.target.value) })} aria-label={`${e.name}: ${perPerson(e.unit) ? d.extrasPersons : d.extrasQty}`} style={{ width: 130 }}>
+                    {Array.from({ length: max + 1 }, (_, i) => <option key={i} value={i}>{i}{perPerson(e.unit) && i ? ` ${d.extrasPersons}` : ""}</option>)}
+                  </select>
+                )}
+                <span className="extra-amount">{q ? formatChf(extraAmount(e, q, props.nights ?? 1)) : ""}</span>
+              </div>
+            );
+          })}
+          {props.baseTotalRappen !== undefined ? <p className="extra-total"><span>{d.total}</span><strong>{formatChf(props.baseTotalRappen + extrasTotal)}</strong></p> : null}
+        </fieldset>
+      ) : null}
       <h3 style={{ marginTop: 16 }}>{d.yourDetails}</h3>
       <div className="form-grid">
         <div><label>{d.firstName}</label><input name="first_name" required autoComplete="given-name" /></div>

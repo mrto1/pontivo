@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db/client";
-import { hotels, ratePlans, roomTypes, sitePages, type Hotel } from "../db/schema";
+import { extras, hotels, ratePlans, roomTypes, sitePages, type Hotel } from "../db/schema";
 import { blockSchema, type Block, type L } from "../domain/blocks";
 import { hotelLocales, LOCALE_NAMES, LOCALES, type Locale } from "../i18n/dict";
 import { env } from "../env";
@@ -198,6 +198,11 @@ export async function translateRooms(hotel: Hotel, actor: string): Promise<numbe
     if (r.description && targets.some((l) => !r.i18n?.[l as "en"]?.description)) texts[`rt.${r.id}.description`] = r.description;
   }
   for (const p of rps) if (targets.some((l) => !p.i18n?.[l as "en"]?.name)) texts[`rp.${p.id}.name`] = p.name;
+  // Zusatzleistungen (Name, Beschreibung)
+  const exs = await db().select().from(extras).where(eq(extras.hotelId, hotel.id));
+  for (const e of exs) for (const f of ["name", "description"] as const) {
+    if (e[f].de && targets.some((l) => !e[f][l])) texts[`ex.${e.id}.${f}`] = e[f].de!;
+  }
   if (!Object.keys(texts).length) return 0;
   const n = await withQuota(hotel, async () => {
     const res = await translateTexts(texts, targets, hotel.name);
@@ -218,6 +223,14 @@ export async function translateRooms(hotel: Hotel, actor: string): Promise<numbe
           if (t && !i18n[l]?.name) { i18n[l] = { ...(i18n[l] ?? {}), name: t }; count++; }
         }
         await tx.update(ratePlans).set({ i18n }).where(eq(ratePlans.id, p.id));
+      }
+      for (const e of exs) {
+        const next = { name: { ...e.name }, description: { ...e.description } };
+        for (const l of targets) for (const f of ["name", "description"] as const) {
+          const t = res[l]?.[`ex.${e.id}.${f}`];
+          if (t && !next[f][l]) { next[f][l] = t; count++; }
+        }
+        await tx.update(extras).set(next).where(eq(extras.id, e.id));
       }
     });
     return count;

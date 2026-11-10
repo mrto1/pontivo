@@ -5,6 +5,7 @@ import { bookingDetail } from "@/src/services/admin-bookings";
 import { BookingError, cancelBooking, cancellationPreview, markNoShow } from "@/src/services/bookings";
 import { formatChf } from "@/src/domain/money";
 import { todayIn } from "@/src/domain/dates";
+import { bookingExtrasOf } from "@/src/services/extras";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
   const d = await bookingDetail(hotel.id, bookingId);
   if (!d) notFound();
   const { booking: b, guest: g } = d;
+  const extras = await bookingExtrasOf(b.id);
   const isOta = b.source !== "direct" && b.source !== "admin";
   const preview = b.status === "confirmed" && !isOta ? await cancellationPreview(b.id, { by: "hotel", hotelId: hotel.id }) : null;
   const guestQuote = b.status === "confirmed" && !isOta ? await cancellationPreview(b.id, { by: "guest", hotelId: hotel.id }) : null;
@@ -63,6 +65,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
         <span className="muted">Zimmer</span><span>{d.roomType?.name ?? "–"} · {d.ratePlan?.name ?? "–"}</span>
         <span className="muted">Preise pro Nacht</span><span>{d.room?.nightlyPrices.map((n) => `${n.night}: ${formatChf(n.price_rappen)}`).join(" · ")}</span>
         <span className="muted">Zimmer total</span><span>{formatChf(b.roomsTotalRappen)}</span>
+        {extras.length ? (<><span className="muted">Zusatzleistungen</span><span>{extras.map((x) => `${x.name.de ?? ""}${x.quantity > 1 ? ` × ${x.quantity}` : ""} ${formatChf(x.amountRappen)}`).join(" · ")}</span></>) : null}
         <span className="muted">Kurtaxe</span><span>{formatChf(b.touristTaxRappen)}{hotel.touristTaxIncludedInPrice ? " (im Preis inbegriffen)" : ""}</span>
         <span className="muted">Total</span><span><strong>{formatChf(b.totalRappen)}</strong></span>
         {b.voucherRappen > 0 ? (<><span className="muted">davon Gutschein</span><span>{formatChf(b.voucherRappen)} · per Karte/TWINT {formatChf(b.totalRappen - b.voucherRappen)}</span></>) : null}

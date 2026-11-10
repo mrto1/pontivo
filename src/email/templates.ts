@@ -4,6 +4,7 @@ import { formatDay, isLocale, t, type Locale } from "../i18n/dict";
 import type { Booking, Hotel, RatePlan, RoomType } from "../db/schema";
 import { planName, roomName } from "../domain/i18n-names";
 import { CI } from "../i18n/checkin";
+import { tr } from "../domain/blocks";
 
 /**
  * E-Mail-Texte (SPEC 10): an Gäste in allen Website-Sprachen, an das Hotel DE/EN.
@@ -18,6 +19,8 @@ export type EmailContext = {
   plan?: RatePlan | null;
   data: Record<string, unknown>;
   baseUrl: string;
+  /** gebuchte Zusatzleistungen */
+  extras?: { name: Partial<Record<Locale, string>>; quantity: number; amountRappen: number }[];
 };
 
 export type Rendered = { subject: string; text: string; html: string };
@@ -93,6 +96,7 @@ function summary(c: EmailContext, l: Locale): string[] {
     `${m.checkout}: ${formatDay(b.checkout, l)} (${c.hotel.checkoutTime.slice(0, 5)})`,
     `${m.room}: ${c.roomType ? roomName(c.roomType, l) : "-"}${c.plan ? ` · ${planName(c.plan, l)}` : ""}`,
     `${m.guests}: ${b.adults}${b.children ? ` + ${b.children} ${m.children}` : ""}`,
+    ...(c.extras ?? []).map((x) => `${tr(x.name, l)}${x.quantity > 1 ? ` × ${x.quantity}` : ""}: ${formatChf(x.amountRappen)}`),
     `${m.total}: ${formatChf(b.totalRappen)}${b.touristTaxRappen ? ` (${m.inclTax} ${formatChf(b.touristTaxRappen)})` : ""}`,
     ...(b.voucherRappen > 0 ? [`${t(l).voucherPaid}: − ${formatChf(b.voucherRappen)}`, `${t(l).cardPaid}: ${formatChf(b.totalRappen - b.voucherRappen)}`] : []),
   ];

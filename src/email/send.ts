@@ -1,6 +1,6 @@
 import { and, eq, lte, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { bookingRooms, bookings, emailOutbox, guests, hotels, ratePlans, roomTypes, type Hotel } from "../db/schema";
+import { bookingRooms, bookings, emailOutbox, guests, hotels, ratePlans, roomTypes, type Hotel, bookingExtras } from "../db/schema";
 import { env } from "../env";
 import { render, type Rendered } from "./templates";
 
@@ -35,7 +35,9 @@ async function renderRow(row: typeof emailOutbox.$inferSelect): Promise<Rendered
   const [roomType] = room ? await db().select().from(roomTypes).where(eq(roomTypes.id, room.roomTypeId)) : [];
   const [plan] = room?.ratePlanId ? await db().select().from(ratePlans).where(eq(ratePlans.id, room.ratePlanId)) : [];
   const [guest] = booking?.guestId ? await db().select().from(guests).where(eq(guests.id, booking.guestId)) : [];
+  const extras = booking ? await db().select().from(bookingExtras).where(eq(bookingExtras.bookingId, booking.id)).orderBy(bookingExtras.position) : [];
   return render(row.template, row.language, {
+    extras,
     hotel: hotel ?? PLATFORM_DEFAULT_HOTEL,
     booking,
     roomType,

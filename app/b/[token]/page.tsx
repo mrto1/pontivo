@@ -10,6 +10,8 @@ import { CancelBox } from "@/components/public/CancelBox";
 import { AutoRefresh } from "@/components/public/AutoRefresh";
 import { checkinContext } from "@/src/services/guests";
 import { CI } from "@/src/i18n/checkin";
+import { bookingExtrasOf } from "@/src/services/extras";
+import { tr } from "@/src/domain/blocks";
 
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false } };
@@ -26,6 +28,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
   const preview = booking.status === "confirmed" ? await cancellationPreview(booking.id, { by: "guest" }) : null;
   const base = hotel.primaryDomain ? "" : `/h/${hotel.slug}`;
   const ci = await checkinContext(token);
+  const extras = await bookingExtrasOf(booking.id);
 
   return (
     <Shell hotel={hotel} locale={locale} base={base}>
@@ -44,6 +47,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
               <tr><td>{d.checkout}</td><td>{formatDay(booking.checkout, locale)} ({hotel.checkoutTime.slice(0, 5)})</td></tr>
               <tr><td>{roomType ? roomName(roomType, locale) : ""}{plan ? ` · ${planName(plan, locale)}` : ""}</td><td>{n} {n === 1 ? d.night : d.nights} · {booking.adults} {d.adults}{booking.children ? `, ${booking.children} ${d.children}` : ""}</td></tr>
               <tr><td>{d.roomPrice}</td><td>{formatChf(booking.roomsTotalRappen)}</td></tr>
+              {extras.map((x) => <tr key={x.id}><td>{tr(x.name, locale)}{x.quantity > 1 ? ` × ${x.quantity}` : ""}</td><td>{formatChf(x.amountRappen)}</td></tr>)}
               <tr><td>{d.touristTax}</td><td>{hotel.touristTaxIncludedInPrice ? d.included : formatChf(booking.touristTaxRappen)}</td></tr>
               <tr><td><strong>{d.total}</strong></td><td><strong>{formatChf(booking.totalRappen)}</strong></td></tr>
               {booking.voucherRappen > 0 ? (<>

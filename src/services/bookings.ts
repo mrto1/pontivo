@@ -3,9 +3,10 @@ import { t, type Locale } from "../i18n/dict";
 import { and, eq, lt, sql } from "drizzle-orm";
 import { db, rows, type Executor, type Tx } from "../db/client";
 import {
-  bookingRooms, bookings, guests, hotels, payments, ratePlans,
+  bookingExtras, bookingRooms, bookings, extras, guests, hotels, payments, ratePlans,
   type Booking, type Hotel,
 } from "../db/schema";
+import { ExtrasError, resolveExtras } from "../domain/extras";
 import { addDays, nightsOf, todayIn, zonedToUtc } from "../domain/dates";
 import { platformFee } from "../domain/pricing";
 import { assertTransition } from "../domain/state-machine";
@@ -53,6 +54,8 @@ export type CreateBookingInput = {
   children: number;
   childrenAges: number[];
   guest: GuestInput;
+  /** Zusatzleistungen (optional); obligatorische werden immer ergänzt */
+  extras?: { id: string; quantity: number }[];
 };
 
 // ---------------------------------------------------------------- Hold (5.3)
@@ -108,6 +111,16 @@ export async function createDirectBooking(
   const now = opts.now ?? new Date();
   const today = todayIn(hotel.timezone, now);
   const holdExpiresAt = new Date(now.getTime() + HOLD_MINUTES * 60_000);
+  // Zusatzleistungen serverseitig bepreisen; der Angebotspreis enthält schon die obligatorischen
+  const extraDefs = await db().select().from(extras).where(and(eq(extras.hotelId, hotel.id), eq(extras.active, true))).orderBy(extras.sortOrder, extras.createdAt);
+  let chosen: ReturnType<typeof resolveExtras<(typeof extraDefs)[number]>>;
+  try {
+    chosen = resolveExtras(extraDefs, input.extras ?? [], { roomTypeId: input.roomTypeId, nights: nightsOf(input.checkin, input.checkout).length, persons: input.adults + input.children });
+  } catch (e) {
+    if (e instanceof ExtrasError) throw new BookingError(e.code, 400);
+    throw e;
+  }
+  const totalRappen = offer.totalRappen - offer.extrasRappen + chosen.totalRappen;
 
   let booking: Booking | null = null;
   for (let attempt = 0; attempt < 3 && !booking; attempt++) {
@@ -117,9 +130,9 @@ export async function createDirectBooking(
         if (!ok) throw new RollbackSoldOut();
         // Gutschein sperren und anrechnen; 1 % Plattformgebühr nur auf den Teil, der per Karte/TWINT bezahlt wird
         // (am Gutschein hat Pontivo beim Verkauf schon verdient)
-        const vt = input.voucherCode?.trim() ? await takeVoucherForBooking(tx, hotel, input.voucherCode, offer.totalRappen, today) : null;
+        const vt = input.voucherCode?.trim() ? await takeVoucherForBooking(tx, hotel, input.voucherCode, totalRappen, today) : null;
         const voucherRappen = vt?.amountRappen ?? 0;
-        const fee = platformFee(offer.totalRappen - voucherRappen, hotel.platformFeeBps);
+        const fee = platformFee(totalRappen - voucherRappen, hotel.platformFeeBps);
         const [g] = await tx
           .insert(guests)
           .values({
@@ -149,8 +162,9 @@ export async function createDirectBooking(
             language: input.guest.language,
             guestId: g.id,
             roomsTotalRappen: offer.roomsTotalRappen,
+            extrasRappen: chosen.totalRappen,
             touristTaxRappen: offer.touristTaxRappen,
-            totalRappen: offer.totalRappen,
+            totalRappen,
             platformFeeRappen: fee,
             voucherId: vt?.voucher.id ?? null,
             voucherRappen,
@@ -168,11 +182,17 @@ export async function createDirectBooking(
           nightlyPrices: offer.nightlyPrices,
           amountRappen: offer.roomsTotalRappen,
         });
+        if (chosen.lines.length) {
+          await tx.insert(bookingExtras).values(chosen.lines.map((l, position) => ({ position,
+            bookingId: b.id, hotelId: hotel.id, extraId: l.extra.id, name: l.extra.name, unit: l.extra.unit,
+            unitPriceRappen: l.extra.priceRappen, quantity: l.quantity, amountRappen: l.amountRappen,
+          })));
+        }
         if (vt) await chargeVoucher(tx, vt.voucher, b.id, voucherRappen, `Buchung ${b.reference}`, "guest");
         await enqueueAvailability(tx, hotel.id, input.roomTypeId, input.checkin, addDays(input.checkout, -1));
         await audit(tx, {
           hotelId: hotel.id, actor: "guest", action: "booking.hold", entity: "booking", entityId: b.id,
-          details: { total: offer.totalRappen, fee, voucher: voucherRappen, ip: opts.ip ?? null },
+          details: { total: totalRappen, extras: chosen.totalRappen, fee, voucher: voucherRappen, ip: opts.ip ?? null },
         });
         return b;
       });
