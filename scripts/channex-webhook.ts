@@ -1,6 +1,6 @@
 /**
  * Channex-Webhook für Buchungen einrichten (einmal pro Umgebung: Staging, Produktion).
- *   node --import tsx scripts/channex-webhook.ts [Callback-URL] [--new-key]
+ *   node --import tsx scripts/channex-webhook.ts [Callback-URL] [--new-key] [--remove-others]
  * Standard-URL: <APP_BASE_URL>/api/webhooks/channex
  *
  * - Signierschlüssel (HMAC) für das Channex-Konto anlegen, falls keiner da ist (oder mit --new-key).
@@ -23,7 +23,7 @@ async function api<T>(method: string, path: string, body?: unknown): Promise<T> 
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`${method} ${path} → ${res.status}: ${text.slice(0, 400)}`);
-  return JSON.parse(text) as T;
+  return (text ? JSON.parse(text) : null) as T;
 }
 type One<A> = { data: { id: string; attributes: A } };
 type Many<A> = { data: { id: string; attributes: A }[] };
@@ -53,4 +53,12 @@ if (existing) {
   console.log(`Webhook angelegt: ${callback}`);
 }
 const others = hooks.data.filter((h) => h.attributes.callback_url !== callback);
-if (others.length) console.log(`Weitere Webhooks im Konto (prüfen, ggf. löschen): ${others.map((h) => h.attributes.callback_url).join(", ")}`);
+if (others.length && args.includes("--remove-others")) {
+  // z. B. alte Test-Weiterleitungen (smee.io) oder eine frühere Server-Adresse
+  for (const h of others) {
+    await api("DELETE", `/webhooks/${h.id}`);
+    console.log(`Webhook gelöscht: ${h.attributes.callback_url}`);
+  }
+} else if (others.length) {
+  console.log(`Weitere Webhooks im Konto (prüfen, mit --remove-others löschen): ${others.map((h) => h.attributes.callback_url).join(", ")}`);
+}
