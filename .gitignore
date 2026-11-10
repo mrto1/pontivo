@@ -8,3 +8,6 @@ next-env.d.ts
 test-results
 playwright-report
 data/
+
+# Produktion: Geheimnisse
+deploy/.env.production

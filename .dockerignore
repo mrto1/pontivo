@@ -1,0 +1,14 @@
+# Nie ins Image: Geheimnisse, lokale Daten, Tests, Git
+.env
+.env.*
+!.env.example
+deploy/.env.production
+data
+node_modules
+.next
+.git
+.github
+test-results
+playwright-report
+tests
+*.tsbuildinfo

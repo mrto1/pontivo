@@ -1,0 +1,32 @@
+# HTTPS für die Plattform und die eigenen Domains der Hotels (Zertifikate automatisch von Let's Encrypt)
+{
+	email {$ACME_EMAIL}
+	# Zertifikate für Hotel-Domains nur, wenn ein Hotel diese Domain eingetragen hat
+	on_demand_tls {
+		ask http://app:3000/api/tls-check
+	}
+}
+
+www.{$APP_DOMAIN} {
+	redir https://{$APP_DOMAIN}{uri} permanent
+}
+
+{$APP_DOMAIN} {
+	encode zstd gzip
+	request_body {
+		max_size 50MB
+	}
+	reverse_proxy app:3000
+}
+
+# Eigene Domains der Hotels, z. B. www.hotel-beispiel.ch (DNS zeigt auf diesen Server)
+https:// {
+	tls {
+		on_demand
+	}
+	encode zstd gzip
+	request_body {
+		max_size 50MB
+	}
+	reverse_proxy app:3000
+}

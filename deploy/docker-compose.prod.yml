@@ -1,0 +1,90 @@
+# Produktion auf einem eigenen Server (z. B. Infomaniak VPS Lite, Ubuntu 24.04). Anleitung: docs/DEPLOY.md
+# Start:  cd deploy && docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+name: pontivo
+
+x-app: &app
+  image: pontivo-app:latest
+  env_file: .env.production
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: postgres://pontivo:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}@db:5432/pontivo
+    UPLOAD_DIR: /app/data/uploads
+    HOSTNAME: 0.0.0.0
+    PORT: "3000"
+  restart: unless-stopped
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pontivo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}
+      POSTGRES_DB: pontivo
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pontivo -d pontivo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Datenbank-Migrationen vor jedem Start (läuft kurz und beendet sich)
+  migrate:
+    <<: *app
+    build: { context: .., dockerfile: Dockerfile }
+    command: ["node", "--import", "tsx", "scripts/migrate.ts"]
+    restart: "no"
+    depends_on:
+      db: { condition: service_healthy }
+
+  app:
+    <<: *app
+    volumes: [uploads:/app/data/uploads]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    <<: *app
+    command: ["node", "--import", "tsx", "src/jobs/worker.ts"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  # HTTPS mit automatischen Zertifikaten (Let's Encrypt) für pontivo.ch und die eigenen Domains der Hotels
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN fehlt}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL fehlt}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+
+  # Tägliche Sicherung: Datenbank (pg_dump) und Fotos/Dokumente, 14 Tage aufbewahren. Kopie ausser Haus: docs/DEPLOY.md
+  backup:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}
+    volumes:
+      - backups:/backups
+      - uploads:/uploads:ro
+      - ./backup.sh:/backup.sh:ro
+    entrypoint: ["sh", "-c", "while true; do sh /backup.sh; sleep 86400; done"]
+    depends_on:
+      db: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  uploads:
+  backups:
+  caddy_data:
+  caddy_config:

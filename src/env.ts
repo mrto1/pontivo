@@ -42,7 +42,12 @@ export function env(): Env {
   const raw = Object.fromEntries(
     Object.entries(process.env).filter(([, v]) => v !== undefined && v !== ""),
   );
-  cached = schema.parse(raw);
+  const parsed = schema.parse(raw);
+  // Sicherheitsnetz: In Produktion nie Buchungen ohne Zahlung bestätigen (ausser ausdrücklich für eine Demo erlaubt)
+  if (parsed.NODE_ENV === "production" && parsed.PAYMENT_PROVIDER === "fake" && raw.ALLOW_FAKE_PAYMENTS !== "1") {
+    throw new Error("PAYMENT_PROVIDER=fake ist in Produktion nicht erlaubt (Buchungen würden ohne Zahlung bestätigt). PAYMENT_PROVIDER=stripe setzen.");
+  }
+  cached = parsed;
   return cached;
 }
 
