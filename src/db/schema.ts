@@ -334,6 +334,8 @@ export const channexOutbox = pgTable("channex_outbox", {
   nextAttemptAt: ts("next_attempt_at").notNull().defaultNow(),
   lastError: text("last_error"),
   taskId: text("task_id"),
+  /** geänderte Restriktionsfelder; NULL = alle */
+  fields: text("fields").array(),
   createdAt: ts("created_at").notNull().defaultNow(),
   sentAt: ts("sent_at"),
 });

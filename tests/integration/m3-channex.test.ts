@@ -11,7 +11,8 @@ import { enableChannex } from "../../src/integrations/channex/connect";
 import { signChannex } from "../../src/integrations/channex/signature";
 import { setFeedTrigger } from "../../src/jobs/queue";
 import { HORIZON_DAYS, updateRates, updateRatesBatch, setBlocked } from "../../src/services/inventory";
-import { createDirectBooking } from "../../src/services/bookings";
+import { BookingError, createDirectBooking } from "../../src/services/bookings";
+import { createAdminBooking, moveBooking } from "../../src/services/admin-bookings";
 import { addDays } from "../../src/domain/dates";
 import { guest, inDays, inv, makeHotel } from "../helpers";
 
@@ -130,12 +131,14 @@ describe("M3 ARI senden", () => {
     const req = mine(h.prop, "/restrictions");
     expect(req).toHaveLength(1);
     const v = req[0].body.values;
+    // Nur geänderte Felder (Channex: kein Snapshot): Preisänderung → nur rate, Verkaufsstopp → nur stop_sell
     expect(v.map((x: any) => [x.date_from, x.date_to, x.rate, x.stop_sell])).toEqual([
-      [from, addDays(from, 1), "200.00", false],
-      [addDays(from, 2), addDays(from, 6), "210.00", false],
-      [addDays(from, 7), addDays(from, 7), "180.00", true],
+      [from, addDays(from, 1), "200.00", undefined],
+      [addDays(from, 2), addDays(from, 6), "210.00", undefined],
+      [addDays(from, 7), addDays(from, 7), undefined, true],
     ]);
-    expect(v[0]).toMatchObject({ property_id: h.prop, rate_plan_id: h.map[rp.id], min_stay_arrival: 1, max_stay: 0, closed_to_arrival: false, closed_to_departure: false });
+    expect(Object.keys(v[0]).sort()).toEqual(["date_from", "date_to", "property_id", "rate", "rate_plan_id"]);
+    expect(v[0]).toMatchObject({ property_id: h.prop, rate_plan_id: h.map[rp.id] });
     const ob = await db().select().from(channexOutbox).where(eq(channexOutbox.hotelId, h.hotel.id));
     expect(ob.every((o) => o.status === "sent")).toBe(true);
   });
@@ -157,7 +160,10 @@ describe("M3 ARI senden", () => {
     expect(req).toHaveLength(1);
     const v = req[0].body.values;
     expect(v.find((x: any) => x.date_from === from && x.rate_plan_id === h.map[plans[0].id]).rate).toBe("333.00");
-    expect(v.find((x: any) => x.date_from === addDays(from, 4))).toMatchObject({ min_stay_arrival: 3, max_stay: 4, closed_to_arrival: true });
+    const restr = v.find((x: any) => x.date_from === addDays(from, 4));
+    expect(restr).toMatchObject({ date_to: addDays(from, 8), min_stay_arrival: 3, max_stay: 4, closed_to_arrival: true });
+    expect(restr).not.toHaveProperty("rate");
+    expect(restr).not.toHaveProperty("stop_sell");
     const ob = await db().select().from(channexOutbox).where(eq(channexOutbox.hotelId, h.hotel.id));
     expect(ob.every((o) => o.taskId === "task")).toBe(true);
   });
@@ -279,6 +285,8 @@ describe("M3 ARI senden", () => {
     expect(mine(h.prop, "/availability")).toHaveLength(1);
     expect(mine(h.prop, "/restrictions")).toHaveLength(1);
     const r = mine(h.prop, "/restrictions")[0].body.values;
+    // Vollabgleich: alle Felder
+    expect(r[0]).toMatchObject({ min_stay_arrival: expect.any(Number), max_stay: expect.any(Number), closed_to_arrival: false, closed_to_departure: false, stop_sell: false });
     expect(r.every((v: any) => v.date_to <= inDays(HORIZON_DAYS - 1))).toBe(true);
     expect(r.some((v: any) => v.date_to === inDays(HORIZON_DAYS - 1))).toBe(true);
   });
@@ -442,5 +450,63 @@ describe("Vollabgleich-Hilfe", () => {
     const h = await makeHotel();
     await enqueueFullSync(h.hotel, "t");
     expect(await db().select().from(channexOutbox).where(eq(channexOutbox.hotelId, h.hotel.id))).toHaveLength(0);
+  });
+});
+
+describe("Vom Hotel erfasste Buchung (Channex-Live-Test)", () => {
+  const guestIn = { firstName: "Peter", lastName: "Telefon", email: "peter@example.ch", language: "de" as const };
+
+  it("Erfassen (1 Nacht) → Verfügbarkeit nur für diese Nacht; Verschieben um 1 Woche → alte und neue Nacht in einem Request", async () => {
+    const h = await channexHotel();
+    const rt = h.rooms[0].roomType;
+    const plan = h.rooms[0].plans[0];
+    const d = inDays(30);
+    const b = await createAdminBooking(h.hotel, { roomTypeId: rt.id, ratePlanId: plan.id, checkin: d, checkout: addDays(d, 1), adults: 2, guest: guestIn }, "user:t");
+    expect(b).toMatchObject({ source: "admin", status: "confirmed", platformFeeRappen: 0, totalRappen: expect.any(Number) });
+    expect((await inv(rt.id, d)).booked).toBe(1);
+    await runOutboxOnce(new OutboxState());
+    const a1 = mine(h.prop, "/availability");
+    expect(a1).toHaveLength(1);
+    expect(a1[0].body.values).toEqual([{ property_id: h.prop, room_type_id: h.map[rt.id], date_from: d, date_to: d, availability: 2 }]);
+    const mails = await db().select().from(emailOutbox).where(eq(emailOutbox.bookingId, b.id));
+    expect(mails.map((m) => m.template).sort()).toEqual(["booking_confirmed", "pre_arrival"]);
+
+    calls.length = 0;
+    const moved = await moveBooking(h.hotel.id, b.id, addDays(d, 7), { actor: "user:t", notifyGuest: false });
+    expect([moved.checkin, moved.checkout]).toEqual([addDays(d, 7), addDays(d, 8)]);
+    expect((await inv(rt.id, d)).booked).toBe(0);
+    expect((await inv(rt.id, addDays(d, 7))).booked).toBe(1);
+    await runOutboxOnce(new OutboxState());
+    const a2 = mine(h.prop, "/availability");
+    expect(a2).toHaveLength(1);
+    expect(a2[0].body.values.map((v: any) => [v.date_from, v.date_to, v.availability])).toEqual([
+      [d, d, 3],
+      [addDays(d, 7), addDays(d, 7), 2],
+    ]);
+    const [room] = await db().select().from(bookingRooms).where(eq(bookingRooms.bookingId, b.id));
+    expect(room.nightlyPrices.map((n) => n.night)).toEqual([addDays(d, 7)]);
+    // Erinnerung neu geplant, keine zweite Bestätigung
+    const after = await db().select().from(emailOutbox).where(eq(emailOutbox.bookingId, b.id));
+    expect(after.filter((m) => m.template === "booking_confirmed")).toHaveLength(1);
+    expect(after.filter((m) => m.template === "pre_arrival")).toHaveLength(1);
+  });
+
+  it("Verschieben auf ausgebuchte Daten → Fehler, nichts geändert; Portal-Buchungen nicht verschiebbar", async () => {
+    const h = await channexHotel();
+    const rt = h.rooms[1].roomType; // 1 Zimmer
+    const plan = h.rooms[1].plans[0];
+    const d = inDays(40);
+    const b1 = await createAdminBooking(h.hotel, { roomTypeId: rt.id, ratePlanId: plan.id, checkin: d, checkout: addDays(d, 2), adults: 1, guest: guestIn }, "user:t");
+    await createAdminBooking(h.hotel, { roomTypeId: rt.id, ratePlanId: plan.id, checkin: addDays(d, 10), checkout: addDays(d, 11), adults: 1, guest: { ...guestIn, email: "" } }, "user:t");
+    await expect(createAdminBooking(h.hotel, { roomTypeId: rt.id, ratePlanId: plan.id, checkin: d, checkout: addDays(d, 1), adults: 1, guest: guestIn }, "user:t")).rejects.toMatchObject({ code: "sold_out" });
+    await expect(moveBooking(h.hotel.id, b1.id, addDays(d, 9), { actor: "t", notifyGuest: false })).rejects.toBeInstanceOf(BookingError);
+    const [same] = await db().select().from(bookings).where(eq(bookings.id, b1.id));
+    expect(same.checkin).toBe(d);
+    expect((await inv(rt.id, d)).booked).toBe(1);
+    await db().update(bookings).set({ source: "booking_com" }).where(eq(bookings.id, b1.id));
+    await expect(moveBooking(h.hotel.id, b1.id, addDays(d, 20), { actor: "t", notifyGuest: false })).rejects.toMatchObject({ code: "ota_booking" });
+    // anderes Hotel
+    const other = await channexHotel();
+    await expect(moveBooking(other.hotel.id, b1.id, addDays(d, 20), { actor: "t", notifyGuest: false })).rejects.toMatchObject({ code: "not_found" });
   });
 });

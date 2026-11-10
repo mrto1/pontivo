@@ -61,7 +61,7 @@ export type CreateBookingInput = {
 // ---------------------------------------------------------------- Hold (5.3)
 
 /** Zimmer für alle Nächte atomar belegen. Gibt false zurück, wenn nicht alle Nächte frei waren (Tx muss zurückrollen). */
-async function reserveNights(tx: Tx, roomTypeId: string, checkin: string, checkout: string): Promise<boolean> {
+export async function reserveNights(tx: Tx, roomTypeId: string, checkin: string, checkout: string): Promise<boolean> {
   const res = await tx.execute(sql`
     UPDATE inventory_days
        SET booked = booked + 1, updated_at = now()
@@ -71,7 +71,7 @@ async function reserveNights(tx: Tx, roomTypeId: string, checkin: string, checko
   return res.rows.length === nightsOf(checkin, checkout).length;
 }
 
-async function releaseNights(tx: Tx, hotelId: string, roomTypeId: string, checkin: string, checkout: string) {
+export async function releaseNights(tx: Tx, hotelId: string, roomTypeId: string, checkin: string, checkout: string) {
   await tx.execute(sql`
     UPDATE inventory_days
        SET booked = booked - 1, updated_at = now()
@@ -80,7 +80,7 @@ async function releaseNights(tx: Tx, hotelId: string, roomTypeId: string, checki
   await enqueueAvailability(tx, hotelId, roomTypeId, checkin, addDays(checkout, -1));
 }
 
-class RollbackSoldOut extends Error {}
+export class RollbackSoldOut extends Error {}
 
 /**
  * POST /api/bookings: Preis serverseitig neu berechnen, Hold anlegen, Checkout-Session erstellen.

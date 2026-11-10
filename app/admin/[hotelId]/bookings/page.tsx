@@ -21,7 +21,10 @@ export default async function Bookings({ params, searchParams }: { params: Promi
   const list = await listBookings(hotel.id, f);
   return (
     <div className="stack">
-      <h1>Buchungen</h1>
+      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <h1 style={{ margin: 0 }}>Buchungen</h1>
+        <a className="btn small" href={`/admin/${hotel.id}/bookings/new`}>+ Buchung erfassen</a>
+      </div>
       <form className="card inline-form" method="get">
         <div><label>Anreise ab</label><input type="date" name="from" defaultValue={f.from} /></div>
         <div><label>Anreise bis</label><input type="date" name="to" defaultValue={f.to} /></div>

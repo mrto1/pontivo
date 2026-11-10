@@ -1,10 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
-import { bookingDetail } from "@/src/services/admin-bookings";
+import { bookingDetail, bookingErrorText, moveBooking } from "@/src/services/admin-bookings";
 import { BookingError, cancelBooking, cancellationPreview, markNoShow } from "@/src/services/bookings";
 import { formatChf } from "@/src/domain/money";
-import { todayIn } from "@/src/domain/dates";
+import { addDays, nightsOf, todayIn } from "@/src/domain/dates";
 import { bookingExtrasOf } from "@/src/services/extras";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +20,28 @@ async function cancelAction(formData: FormData) {
     msg = `Storniert, Rückerstattung ${formatChf(r.refundRappen)}`;
   } catch (e) {
     msg = e instanceof BookingError ? `Nicht möglich: ${e.code}` : `Fehler: ${(e as Error).message}`;
+  }
+  redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}`);
+}
+
+const MOVE_ERRORS: Record<string, string> = {
+  same_dates: "Das ist schon die aktuelle Anreise.",
+  in_past: "Die neue Anreise liegt in der Vergangenheit.",
+  ota_booking: "Portal-Buchungen bitte im Portal ändern.",
+  not_confirmed: "Nur bestätigte Buchungen können verschoben werden.",
+};
+
+async function moveAction(formData: FormData) {
+  "use server";
+  const hotelId = String(formData.get("hotelId"));
+  const bookingId = String(formData.get("bookingId"));
+  const { actor } = await requireHotel(hotelId, "staff");
+  let msg = "Aufenthalt verschoben";
+  try {
+    const b = await moveBooking(hotelId, bookingId, String(formData.get("checkin")), { actor, notifyGuest: formData.get("notify") === "on" });
+    msg = `Aufenthalt verschoben auf ${b.checkin} → ${b.checkout}`;
+  } catch (e) {
+    msg = e instanceof BookingError ? MOVE_ERRORS[e.code] ?? bookingErrorText(e.code) : `Fehler: ${(e as Error).message}`;
   }
   redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}`);
 }
@@ -84,6 +106,20 @@ export default async function BookingDetail({ params, searchParams }: { params: 
       </table>
 
       {isOta && b.status === "confirmed" ? <p className="notice warn">Portal-Buchung: Bitte im Portal ({b.source}) stornieren. Die Stornierung kommt dann automatisch hierher.</p> : null}
+
+      {b.status === "confirmed" && !isOta && b.checkout > todayIn(hotel.timezone) ? (
+        <form action={moveAction} className="card stack">
+          <h3>Aufenthalt verschieben</h3>
+          <p className="muted small" style={{ margin: 0 }}>Gleiche Anzahl Nächte ({nightsOf(b.checkin, b.checkout).length}) und gleiches Zimmer, die vereinbarten Preise bleiben. Die Portale erhalten die Verfügbarkeit für alte und neue Daten.</p>
+          <input type="hidden" name="hotelId" value={hotel.id} />
+          <input type="hidden" name="bookingId" value={b.id} />
+          <div className="inline-form">
+            <div><label>Neue Anreise</label><input type="date" name="checkin" required min={todayIn(hotel.timezone)} defaultValue={addDays(b.checkin, 7)} /></div>
+            <label className="check"><input type="checkbox" name="notify" defaultChecked={!!g?.email} /> Gast per E-Mail informieren</label>
+          </div>
+          <button className="btn secondary">Verschieben</button>
+        </form>
+      ) : null}
 
       {preview?.cancellable && atLeast(role, "manager") ? (
         <form action={cancelAction} className="card stack">

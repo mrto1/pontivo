@@ -5,7 +5,7 @@ import { addDays, nightsOf, todayIn, weekday } from "../../domain/dates";
 import { rappenToDecimal } from "../../domain/money";
 import { occupancyPrices } from "../../domain/pricing";
 import { audit } from "../../services/audit";
-import { enqueueAvailability, enqueueRestrictions } from "../../services/outbox";
+import { enqueueAvailability, enqueueRestrictions, RESTRICTION_FIELDS, type RestrictionField } from "../../services/outbox";
 import { HORIZON_DAYS } from "../../services/inventory";
 import { channex, ChannexHttpError, type AriResponse, type AvailabilityValue, type RestrictionValue } from "./client";
 import { channexAlert } from "./alerts";
@@ -103,9 +103,28 @@ async function buildAvailability(hotel: Hotel, entries: Entry[], today: string):
 
 type R = { rate: string | null; rates: { occupancy: number; rate: string }[] | null; min: number; max: number; cta: boolean; ctd: boolean; ss: boolean };
 
+const ALL_FIELDS: ReadonlySet<RestrictionField> = new Set(RESTRICTION_FIELDS);
+
+/** Welche Felder sich pro Tag geändert haben: Vereinigung aller Einträge, die den Tag abdecken (NULL = alle) */
+function fieldsByDay(entries: Entry[]): (d: string) => ReadonlySet<RestrictionField> {
+  return (d) => {
+    const out = new Set<RestrictionField>();
+    for (const e of entries) {
+      if (d < e.dateFrom || d > e.dateTo) continue;
+      if (!e.fields) return ALL_FIELDS;
+      for (const f of e.fields) out.add(f as RestrictionField);
+    }
+    return out;
+  };
+}
+
+/**
+ * Restriktionen für Channex: aktuelle Werte aus der DB, aber nur die Felder, die sich geändert haben
+ * (Channex-Zertifizierung: kein «Snapshot», nur das Delta). Gleiche Tage werden zu Bereichen zusammengefasst.
+ */
 async function buildRestrictions(hotel: Hotel, entries: Entry[], today: string): Promise<RestrictionValue[]> {
-  const byRp = new Map<string, [string, string][]>();
-  for (const e of entries) if (e.ratePlanId) byRp.set(e.ratePlanId, [...(byRp.get(e.ratePlanId) ?? []), [e.dateFrom, e.dateTo]]);
+  const byRp = new Map<string, Entry[]>();
+  for (const e of entries) if (e.ratePlanId) byRp.set(e.ratePlanId, [...(byRp.get(e.ratePlanId) ?? []), e]);
   if (!byRp.size) return [];
   const rps = await db().select().from(ratePlans).where(and(eq(ratePlans.hotelId, hotel.id), inArray(ratePlans.id, [...byRp.keys()])));
   const maxAdults = new Map(
@@ -116,16 +135,18 @@ async function buildRestrictions(hotel: Hotel, entries: Entry[], today: string):
     if (!rp.channexRatePlanId) continue;
     const perPerson = rp.channexPerPerson;
     const occupancies = maxAdults.get(rp.roomTypeId) ?? rp.baseOccupancy;
-    for (const [f, t] of clamp(mergeRanges(byRp.get(rp.id)!), today)) {
+    const rpEntries = byRp.get(rp.id)!;
+    const fieldsOf = fieldsByDay(rpEntries);
+    for (const [f, t] of clamp(mergeRanges(rpEntries.map((e) => [e.dateFrom, e.dateTo] as [string, string])), today)) {
       const rows = await db()
         .select()
         .from(ratesDays)
         .where(and(eq(ratesDays.ratePlanId, rp.id), sql`${ratesDays.night} BETWEEN ${f}::date AND ${t}::date`));
       const by = new Map(rows.map((r) => [r.night, r]));
-      const valueOf = (d: string): R => {
+      const full = (d: string): R | null => {
         const r = by.get(d);
         // ASSUMPTION: Fehlende Zeile = nicht buchbar → nur stop_sell senden. max_stay NULL → 0 (keine Begrenzung).
-        if (!r) return { rate: null, rates: null, min: 1, max: 0, cta: false, ctd: false, ss: true };
+        if (!r) return null;
         return {
           rate: rappenToDecimal(r.priceRappen),
           rates: perPerson
@@ -138,26 +159,24 @@ async function buildRestrictions(hotel: Hotel, entries: Entry[], today: string):
           ss: r.stopSell || !rp.active,
         };
       };
-      const same = (a: R, b: R) =>
-        a.rate === b.rate && JSON.stringify(a.rates) === JSON.stringify(b.rates) && a.min === b.min && a.max === b.max && a.cta === b.cta && a.ctd === b.ctd && a.ss === b.ss;
+      // Nur die geänderten Felder des Tages (in Channex-Schreibweise)
+      const valueOf = (d: string): Record<string, unknown> => {
+        const v = full(d);
+        if (!v) return { stop_sell: true };
+        const fs = fieldsOf(d);
+        const o: Record<string, unknown> = {};
+        if (fs.has("rate")) Object.assign(o, v.rates ? { rates: v.rates } : { rate: v.rate });
+        if (fs.has("min_stay_arrival")) o.min_stay_arrival = v.min;
+        if (fs.has("max_stay")) o.max_stay = v.max;
+        if (fs.has("closed_to_arrival")) o.closed_to_arrival = v.cta;
+        if (fs.has("closed_to_departure")) o.closed_to_departure = v.ctd;
+        if (fs.has("stop_sell")) o.stop_sell = v.ss;
+        return o;
+      };
+      const same = (a: Record<string, unknown>, b: Record<string, unknown>) => JSON.stringify(a) === JSON.stringify(b);
       for (const r of runs(nightsOf(f, addDays(t, 1)), valueOf, same)) {
-        const v = r.value;
-        values.push(
-          v.rate === null
-            ? { property_id: hotel.channexPropertyId!, rate_plan_id: rp.channexRatePlanId, date_from: r.from, date_to: r.to, stop_sell: true }
-            : {
-                property_id: hotel.channexPropertyId!,
-                rate_plan_id: rp.channexRatePlanId,
-                date_from: r.from,
-                date_to: r.to,
-                ...(v.rates ? { rates: v.rates } : { rate: v.rate }),
-                min_stay_arrival: v.min,
-                max_stay: v.max,
-                closed_to_arrival: v.cta,
-                closed_to_departure: v.ctd,
-                stop_sell: v.ss,
-              },
-        );
+        if (!Object.keys(r.value).length) continue;
+        values.push({ property_id: hotel.channexPropertyId!, rate_plan_id: rp.channexRatePlanId, date_from: r.from, date_to: r.to, ...r.value } as RestrictionValue);
       }
     }
   }

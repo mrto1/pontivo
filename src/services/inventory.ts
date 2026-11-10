@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db, type Executor } from "../db/client";
 import { hotels, inventoryDays, ratePlans, ratesDays, roomTypes } from "../db/schema";
 import { addDays, nightsOf, todayIn, weekday } from "../domain/dates";
-import { enqueueAvailability, enqueueRestrictions } from "./outbox";
+import { enqueueAvailability, enqueueRestrictions, type RestrictionField } from "./outbox";
 import { audit } from "./audit";
 
 export const HORIZON_DAYS = 548; // ~18 Monate (SPEC 4)
@@ -77,6 +77,18 @@ export async function updateRates(
   return updateRatesBatch(hotelId, [{ ratePlanId, from, to, change }], opts);
 }
 
+/** Welche Channex-Felder eine Änderung betrifft (nur diese werden gesendet) */
+function changedFields(c: RateChange): RestrictionField[] {
+  const f: RestrictionField[] = [];
+  if (c.priceRappen !== undefined) f.push("rate");
+  if (c.minStayArrival !== undefined) f.push("min_stay_arrival");
+  if (c.maxStay !== undefined) f.push("max_stay");
+  if (c.closedToArrival !== undefined) f.push("closed_to_arrival");
+  if (c.closedToDeparture !== undefined) f.push("closed_to_departure");
+  if (c.stopSell !== undefined) f.push("stop_sell");
+  return f;
+}
+
 export type RateRow = { ratePlanId: string; from: string; to: string; change: RateChange };
 
 /**
@@ -110,7 +122,8 @@ export async function updateRatesBatch(hotelId: string, rowsIn: RateRow[], opts:
           .where(and(eq(ratesDays.hotelId, hotelId), eq(ratesDays.ratePlanId, ratePlanId), sql`${ratesDays.night} BETWEEN ${a}::date AND ${b}::date`))
           .returning({ night: ratesDays.night });
         // Fehlende Tage neu anlegen, wenn ein Preis gesetzt wird
-        if (change.priceRappen !== undefined && res.length < nightsOf(a, addDays(b, 1)).length) {
+        const inserting = change.priceRappen !== undefined && res.length < nightsOf(a, addDays(b, 1)).length;
+        if (inserting) {
           await tx.execute(sql`
             INSERT INTO rates_days (hotel_id, rate_plan_id, night, price_rappen, min_stay_arrival, max_stay, closed_to_arrival, closed_to_departure, stop_sell)
             SELECT ${hotelId}, ${ratePlanId}, d::date, ${change.priceRappen}, ${change.minStayArrival ?? 1}, ${change.maxStay ?? null},
@@ -119,7 +132,8 @@ export async function updateRatesBatch(hotelId: string, rowsIn: RateRow[], opts:
             ON CONFLICT DO NOTHING`);
         }
         n += res.length;
-        await enqueueRestrictions(tx, hotelId, ratePlanId, a, b);
+        // Neu angelegte Tage waren vorher nicht buchbar → alle Felder senden
+        await enqueueRestrictions(tx, hotelId, ratePlanId, a, b, inserting ? undefined : changedFields(change));
       }
       await audit(tx, { hotelId, actor: opts.actor, action: "rates.update", entity: "rate_plan", entityId: ratePlanId, details: { from, to, weekdays: opts.weekdays ?? null, change } });
     }
