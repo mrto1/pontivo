@@ -15,7 +15,7 @@ export function hostTerms(): LegalDoc {
   const min = formatChf(DEFAULT_MONTHLY_MINIMUM_RAPPEN);
   return {
     title: `Bedingungen für Gastgeber – ${p.name}`,
-    intro: `Diese Bedingungen regeln die Nutzung von ${p.name} durch Hotels, B&Bs, Ferienwohnungen und weitere Beherbergungsbetriebe («Gastgeber»). Anbieterin ist ${p.operator}, ${p.address} («${p.name}»).`,
+    intro: `Diese Bedingungen regeln die Nutzung von ${p.name} durch Hotels, B&Bs, Ferienwohnungen und weitere Beherbergungsbetriebe («Gastgeber»). Anbieterin ist ${p.operator} («${p.name}»), Adresse siehe Impressum.`,
     draftNote: "Entwurf – noch nicht juristisch geprüft.",
     sections: [
       { h: "1. Leistungen", p: [

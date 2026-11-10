@@ -25,13 +25,14 @@ export default async function Root() {
   const e = env();
   // ASSUMPTION: Das Demo-Hotel (Slug DEMO_HOTEL_SLUG) wird als Beispiel verlinkt, wenn es existiert und live ist.
   const [demo] = await db().select().from(hotels).where(eq(hotels.slug, e.DEMO_HOTEL_SLUG));
-  const list = e.NODE_ENV === "production" ? [] : await db().select().from(hotels).orderBy(hotels.name);
+  const list = e.NODE_ENV === "production" || process.env.STATIC_SITE === "1" ? [] : await db().select().from(hotels).orderBy(hotels.name);
   return (
     <PontivoHome
       contact={{
         name: e.PLATFORM_NAME,
         email: e.PLATFORM_CONTACT_EMAIL,
         phone: e.PLATFORM_PHONE,
+        staticSite: process.env.STATIC_SITE === "1",
         demoUrl: demo?.status === "live" ? `/h/${demo.slug}/de` : undefined,
       }}
     >

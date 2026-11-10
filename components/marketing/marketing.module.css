@@ -145,3 +145,5 @@
   .calc, .contact { padding: 26px; }
   .section { padding: 56px 0; }
 }
+.footLinks { display: flex; gap: 16px; flex-wrap: wrap; }
+.footLinks a { color: inherit; }

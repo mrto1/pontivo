@@ -24,12 +24,23 @@ function Logo() {
 
 const fmt = (n: number) => n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
 
-export type Contact = { name: string; email?: string; phone?: string; demoUrl?: string };
+export type Contact = {
+  name: string; email?: string; phone?: string; demoUrl?: string;
+  /** Inhaber/Firma und Adresse (Impressum, Kontakt) */
+  operator?: string; address?: string;
+  /** Statische Fassung für einfachen Webspace: kein Login/Registrieren, Links auf .html-Dateien */
+  staticSite?: boolean;
+};
+
+/** Link auf eine Plattform-Seite (statisch: Datei mit .html) */
+export const pageHref = (path: string, staticSite?: boolean) => (staticSite ? (path === "/" ? "index.html" : `${path.slice(1)}.html`) : path);
 
 export function PontivoHome({ contact, children }: { contact: Contact; children?: React.ReactNode }) {
   const portalFee = BOOKING * PORTAL;
   const ourFee = (BOOKING * FEE_PERCENT) / 100;
-  const mail = contact.email ? `mailto:${contact.email}?subject=${encodeURIComponent("Pontivo für unser Hotel")}` : "#kontakt";
+  const mail = contact.email ? `mailto:${contact.email}?subject=${encodeURIComponent("Pontivo für unseren Betrieb")}` : "#kontakt";
+  const st = contact.staticSite;
+  const signup = st ? mail : "/registrieren";
 
   return (
     <div className={`${s.page} ${display.variable} ${body.variable}`}>
@@ -43,7 +54,7 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
             <a href="#preis">Preis</a>
             <a href="#fragen">Fragen</a>
             <a href={mail}>Kontakt</a>
-            <a className={s.btn} href="/registrieren">Registrieren</a>
+            <a className={s.btn} href={signup}>{st ? "Anfragen" : "Registrieren"}</a>
           </nav>
         </header>
 
@@ -51,12 +62,14 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
           <div>
             <h1 className={s.heroTitle}>Ihre Gäste buchen direkt bei Ihnen. Die Provision bleibt im Haus.</h1>
             <p className={s.heroLead}>
-              {contact.name} bringt Online-Buchung mit TWINT und Kartenzahlung auf Ihre bestehende Website – oder gibt Ihnen eine neue. Booking.com läuft weiter und wird automatisch abgeglichen. Sie zahlen {FEE_PERCENT} % pro Direktbuchung, mindestens CHF 19 im Monat – sonst nichts.
+              {contact.name} bringt Online-Buchung mit TWINT und Kartenzahlung auf Ihre bestehende Website – oder gibt Ihnen eine neue. Für Hotels, B&amp;Bs und Ferienwohnungen. Booking.com läuft weiter und wird automatisch abgeglichen. Sie zahlen {FEE_PERCENT} % pro Direktbuchung, mindestens CHF 19 im Monat – sonst nichts.
             </p>
             <div className={s.heroActions}>
-              <a className={s.btn} href="/registrieren">Jetzt selbst einrichten</a>
-              <a className={s.btnGhost} href={mail}>Gespräch vereinbaren</a>
-              {contact.demoUrl ? <a className={s.btnGhost} href={contact.demoUrl}>Demo-Hotel ansehen</a> : null}
+              {st ? <a className={s.btn} href={mail}>Gespräch vereinbaren</a> : (<>
+                <a className={s.btn} href="/registrieren">Jetzt selbst einrichten</a>
+                <a className={s.btnGhost} href={mail}>Gespräch vereinbaren</a>
+              </>)}
+              {contact.demoUrl && !st ? <a className={s.btnGhost} href={contact.demoUrl}>Demo-Hotel ansehen</a> : null}
             </div>
           </div>
 
@@ -163,6 +176,7 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
                 <li>Buchungen über Booking.com &amp; Co. kosten bei uns nichts</li>
                 <li>Zahlungsgebühren von Stripe gehen wie bei jedem Kartenterminal zu Ihren Lasten</li>
               </ul>
+              <p className={s.fieldHint}>Alle Einzelheiten: <a href={pageHref("/gastgeber-bedingungen", st)}>Bedingungen für Gastgeber</a>. Preise ohne MWST, sofern geschuldet.</p>
             </div>
           </div>
         </section>
@@ -194,6 +208,14 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
             <p>Gastdaten bearbeiten wir in Ihrem Auftrag nach Schweizer Datenschutzgesetz. Kartendaten sehen weder wir noch Sie – die verarbeitet ausschliesslich der Zahlungsdienst Stripe.</p>
           </details>
           <details>
+            <summary>Wie kann ich kündigen?</summary>
+            <p>Jederzeit per E-Mail mit 30 Tagen Frist auf Ende eines Monats. Es gibt keine Mindestlaufzeit und keine Einrichtungsgebühr. Bestehende Buchungen Ihrer Gäste werden bis zur Abreise normal abgewickelt, und Sie können Ihre Daten während 30 Tagen exportieren.</p>
+          </details>
+          <details>
+            <summary>Was passiert bei Stornierungen, Rückerstattungen und Rückbuchungen?</summary>
+            <p>Storniert ein Gast, gilt die Stornoregel Ihres Betriebs; die Rückerstattung läuft automatisch über Stripe, und unsere Gebühr von {FEE_PERCENT} % wird anteilig zurückerstattet. Ficht ein Gast eine Kartenzahlung an (Rückbuchung), klären Sie das als Verkäufer direkt in Ihrem Stripe-Konto, wir unterstützen Sie dabei. Fragen zu einer Abrechnung von {contact.name} beantworten wir per E-Mail{contact.email ? ` an ${contact.email}` : ""}; zu Unrecht belastete Beträge erstatten wir zurück.</p>
+          </details>
+          <details>
             <summary>Wer ist Vertragspartner des Gastes?</summary>
             <p>Immer Ihr Hotel. {contact.name} stellt nur die Technik zur Verfügung und ist weder Reiseveranstalter noch Vermittler mit eigener Provision auf Ihren Zimmerpreis.</p>
           </details>
@@ -216,7 +238,12 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
 
         <footer className={s.foot}>
           <span>© {new Date().getFullYear()} {contact.name}</span>
-          <span>Direktbuchung für Hotels in der Schweiz</span>
+          <span>Direktbuchung für Hotels und Ferienwohnungen in der Schweiz</span>
+          <nav className={s.footLinks} aria-label="Rechtliches">
+            <a href={pageHref("/impressum", st)}>Impressum</a>
+            <a href={pageHref("/datenschutz", st)}>Datenschutz</a>
+            <a href={pageHref("/gastgeber-bedingungen", st)}>Bedingungen für Gastgeber</a>
+          </nav>
         </footer>
         {children ? <div className={s.dev}>{children}</div> : null}
       </div>
