@@ -28,7 +28,7 @@ export async function createInChannex(hotel: Hotel, actor: string) {
       address: hotel.addressLine ?? undefined,
       timezone: hotel.timezone,
       property_type: "hotel",
-      settings: { min_stay_type: "arrival" },
+      settings: { min_stay_type: "arrival", state_length: 730 },
     });
     propertyId = res.data.id;
     await db().update(hotels).set({ channexPropertyId: propertyId }).where(eq(hotels.id, hotel.id));
@@ -121,5 +121,12 @@ export async function channexStatus(hotelId: string) {
     .where(and(eq(channexOutbox.hotelId, hotelId), sql`${channexOutbox.lastError} IS NOT NULL AND ${channexOutbox.lastError} NOT LIKE 'übersprungen%'`))
     .orderBy(sql`${channexOutbox.id} DESC`)
     .limit(5);
-  return { ...counts, errors };
+  // Ein Channex-Request = eine Task-ID (mehrere Outbox-Einträge können im selben Request stecken)
+  const recent = (
+    await db().execute(sql`
+      SELECT task_id, kind, max(sent_at) AS sent_at, count(*)::int AS entries
+        FROM channex_outbox WHERE hotel_id = ${hotelId} AND task_id IS NOT NULL
+       GROUP BY task_id, kind ORDER BY max(sent_at) DESC LIMIT 20`)
+  ).rows as { task_id: string; kind: string; sent_at: Date; entries: number }[];
+  return { ...counts, errors, recent };
 }

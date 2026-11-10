@@ -74,41 +74,55 @@ export async function updateRates(
   change: RateChange,
   opts: { weekdays?: number[]; actor: string },
 ): Promise<number> {
-  const days = filterDays(from, to, opts.weekdays);
-  if (!days.length) return 0;
-  if (change.priceRappen !== undefined && (!Number.isSafeInteger(change.priceRappen) || change.priceRappen <= 0)) {
-    throw new Error("Preis muss > 0 Rappen sein");
-  }
-  return db().transaction(async (tx) => {
-    const [plan] = await tx.select().from(ratePlans).where(and(eq(ratePlans.id, ratePlanId), eq(ratePlans.hotelId, hotelId)));
-    if (!plan) throw new Error("Rateplan nicht gefunden");
-    const set: Record<string, unknown> = { updatedAt: new Date() };
-    if (change.priceRappen !== undefined) set.priceRappen = change.priceRappen;
-    if (change.minStayArrival !== undefined) set.minStayArrival = change.minStayArrival;
-    if (change.maxStay !== undefined) set.maxStay = change.maxStay;
-    if (change.closedToArrival !== undefined) set.closedToArrival = change.closedToArrival;
-    if (change.closedToDeparture !== undefined) set.closedToDeparture = change.closedToDeparture;
-    if (change.stopSell !== undefined) set.stopSell = change.stopSell;
-    let n = 0;
-    for (const [a, b] of toRanges(days)) {
-      const res = await tx
-        .update(ratesDays)
-        .set(set)
-        .where(and(eq(ratesDays.hotelId, hotelId), eq(ratesDays.ratePlanId, ratePlanId), sql`${ratesDays.night} BETWEEN ${a}::date AND ${b}::date`))
-        .returning({ night: ratesDays.night });
-      // Fehlende Tage neu anlegen, wenn ein Preis gesetzt wird
-      if (change.priceRappen !== undefined && res.length < nightsOf(a, addDays(b, 1)).length) {
-        await tx.execute(sql`
-          INSERT INTO rates_days (hotel_id, rate_plan_id, night, price_rappen, min_stay_arrival, max_stay, closed_to_arrival, closed_to_departure, stop_sell)
-          SELECT ${hotelId}, ${ratePlanId}, d::date, ${change.priceRappen}, ${change.minStayArrival ?? 1}, ${change.maxStay ?? null},
-                 ${change.closedToArrival ?? false}, ${change.closedToDeparture ?? false}, ${change.stopSell ?? false}
-            FROM generate_series(${a}::date, ${b}::date, interval '1 day') d
-          ON CONFLICT DO NOTHING`);
-      }
-      n += res.length;
-      await enqueueRestrictions(tx, hotelId, ratePlanId, a, b);
+  return updateRatesBatch(hotelId, [{ ratePlanId, from, to, change }], opts);
+}
+
+export type RateRow = { ratePlanId: string; from: string; to: string; change: RateChange };
+
+/**
+ * Mehrere Änderungen (verschiedene Ratepläne/Zeiträume) in EINER Transaktion speichern.
+ * Die Outbox-Einträge werden damit gemeinsam sichtbar und gehen als ein einziger Channex-Request raus.
+ */
+export async function updateRatesBatch(hotelId: string, rowsIn: RateRow[], opts: { weekdays?: number[]; actor: string }): Promise<number> {
+  for (const r of rowsIn) {
+    if (r.change.priceRappen !== undefined && (!Number.isSafeInteger(r.change.priceRappen) || r.change.priceRappen <= 0)) {
+      throw new Error("Preis muss > 0 Rappen sein");
     }
-    await audit(tx, { hotelId, actor: opts.actor, action: "rates.update", entity: "rate_plan", entityId: ratePlanId, details: { from, to, weekdays: opts.weekdays ?? null, change } });
+  }
+  const work = rowsIn.map((r) => ({ ...r, days: filterDays(r.from, r.to, opts.weekdays) })).filter((r) => r.days.length && Object.keys(r.change).length);
+  if (!work.length) return 0;
+  return db().transaction(async (tx) => {
+    let n = 0;
+    for (const { ratePlanId, from, to, change, days } of work) {
+      const [plan] = await tx.select().from(ratePlans).where(and(eq(ratePlans.id, ratePlanId), eq(ratePlans.hotelId, hotelId)));
+      if (!plan) throw new Error("Rateplan nicht gefunden");
+      const set: Record<string, unknown> = { updatedAt: new Date() };
+      if (change.priceRappen !== undefined) set.priceRappen = change.priceRappen;
+      if (change.minStayArrival !== undefined) set.minStayArrival = change.minStayArrival;
+      if (change.maxStay !== undefined) set.maxStay = change.maxStay;
+      if (change.closedToArrival !== undefined) set.closedToArrival = change.closedToArrival;
+      if (change.closedToDeparture !== undefined) set.closedToDeparture = change.closedToDeparture;
+      if (change.stopSell !== undefined) set.stopSell = change.stopSell;
+      for (const [a, b] of toRanges(days)) {
+        const res = await tx
+          .update(ratesDays)
+          .set(set)
+          .where(and(eq(ratesDays.hotelId, hotelId), eq(ratesDays.ratePlanId, ratePlanId), sql`${ratesDays.night} BETWEEN ${a}::date AND ${b}::date`))
+          .returning({ night: ratesDays.night });
+        // Fehlende Tage neu anlegen, wenn ein Preis gesetzt wird
+        if (change.priceRappen !== undefined && res.length < nightsOf(a, addDays(b, 1)).length) {
+          await tx.execute(sql`
+            INSERT INTO rates_days (hotel_id, rate_plan_id, night, price_rappen, min_stay_arrival, max_stay, closed_to_arrival, closed_to_departure, stop_sell)
+            SELECT ${hotelId}, ${ratePlanId}, d::date, ${change.priceRappen}, ${change.minStayArrival ?? 1}, ${change.maxStay ?? null},
+                   ${change.closedToArrival ?? false}, ${change.closedToDeparture ?? false}, ${change.stopSell ?? false}
+              FROM generate_series(${a}::date, ${b}::date, interval '1 day') d
+            ON CONFLICT DO NOTHING`);
+        }
+        n += res.length;
+        await enqueueRestrictions(tx, hotelId, ratePlanId, a, b);
+      }
+      await audit(tx, { hotelId, actor: opts.actor, action: "rates.update", entity: "rate_plan", entityId: ratePlanId, details: { from, to, weekdays: opts.weekdays ?? null, change } });
+    }
     return n;
   });
 }

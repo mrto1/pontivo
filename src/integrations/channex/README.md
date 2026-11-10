@@ -14,3 +14,10 @@ Worker `channex-feed` (Feed lesen, Revisionen nach SPEC 5.6 verarbeiten, nur nac
 und einen globalen, signierten Webhook (`event_mask: "booking"`, `send_data: false`, `is_signed: true`, `signing_key_id`) an.
 Channex sendet `x-hmac-timestamp`, `x-hmac-signature-256` (und `x-hmac-keys-256`). Test: neue Buchung und Stornierung über die
 Channex-CRS-API → Webhook → Feed → Import und Ack innerhalb weniger Sekunden, Verfügbarkeit danach zurück an Channex.
+
+## Zertifizierung (Stand 10.11.2026)
+
+- Kalender: «Preise und Regeln setzen» speichert mehrere Zeilen (Ratepläne/Zeiträume) in einer Transaktion → ein einziger `POST /restrictions`.
+- Vollabgleich (Einschalten oder Knopf) = genau ein Request je Art über den ganzen Horizont (548 Tage); neue Properties mit `state_length: 730`.
+- Jede Übertragung speichert die Channex-Task-ID (`channex_outbox.task_id`), sichtbar im Admin unter Channex → «Letzte Übertragungen».
+- Kein zeitgesteuerter Vollabgleich; nur Änderungen werden gesendet. Rate-Limit: höchstens 10 Requests/Minute je Property und Art, bei 429 Backoff.

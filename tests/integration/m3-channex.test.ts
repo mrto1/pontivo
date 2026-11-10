@@ -10,7 +10,7 @@ import { pullFeed, sourceFromOta } from "../../src/integrations/channex/feed";
 import { enableChannex } from "../../src/integrations/channex/connect";
 import { signChannex } from "../../src/integrations/channex/signature";
 import { setFeedTrigger } from "../../src/jobs/queue";
-import { updateRates, setBlocked } from "../../src/services/inventory";
+import { HORIZON_DAYS, updateRates, updateRatesBatch, setBlocked } from "../../src/services/inventory";
 import { createDirectBooking } from "../../src/services/bookings";
 import { addDays } from "../../src/domain/dates";
 import { guest, inDays, inv, makeHotel } from "../helpers";
@@ -140,6 +140,28 @@ describe("M3 ARI senden", () => {
     expect(ob.every((o) => o.status === "sent")).toBe(true);
   });
 
+  it("Sammeländerung (mehrere Ratepläne/Zeiträume) → genau ein Request, Task-ID gespeichert", async () => {
+    const h = await channexHotel();
+    const plans = h.rooms.flatMap((r) => r.plans);
+    const from = inDays(20);
+    await updateRatesBatch(
+      h.hotel.id,
+      [
+        { ratePlanId: plans[0].id, from, to: from, change: { priceRappen: 33300 } },
+        { ratePlanId: plans[plans.length - 1].id, from: addDays(from, 4), to: addDays(from, 8), change: { minStayArrival: 3, maxStay: 4, closedToArrival: true } },
+      ],
+      { actor: "test" },
+    );
+    await runOutboxOnce(new OutboxState());
+    const req = mine(h.prop, "/restrictions");
+    expect(req).toHaveLength(1);
+    const v = req[0].body.values;
+    expect(v.find((x: any) => x.date_from === from && x.rate_plan_id === h.map[plans[0].id]).rate).toBe("333.00");
+    expect(v.find((x: any) => x.date_from === addDays(from, 4))).toMatchObject({ min_stay_arrival: 3, max_stay: 4, closed_to_arrival: true });
+    const ob = await db().select().from(channexOutbox).where(eq(channexOutbox.hotelId, h.hotel.id));
+    expect(ob.every((o) => o.taskId === "task")).toBe(true);
+  });
+
   it("Tarif per_person → POST /restrictions mit Preisen je Belegung statt einem Preis", async () => {
     const h = await channexHotel();
     const rp = h.rooms[0].plans[0];
@@ -253,7 +275,12 @@ describe("M3 ARI senden", () => {
     expect(ob.filter((o) => o.kind === "restrictions")).toHaveLength(4);
     await runOutboxOnce(new OutboxState());
     expect(mine(h.prop, "/availability")[0].body.values.length).toBeGreaterThanOrEqual(2);
-    expect(mine(h.prop, "/restrictions")[0].body.values.every((v: any) => v.date_to <= inDays(499))).toBe(true);
+    // Channex-Zertifizierung Test 1: Vollabgleich = genau ein Request je Art, ganzer Horizont
+    expect(mine(h.prop, "/availability")).toHaveLength(1);
+    expect(mine(h.prop, "/restrictions")).toHaveLength(1);
+    const r = mine(h.prop, "/restrictions")[0].body.values;
+    expect(r.every((v: any) => v.date_to <= inDays(HORIZON_DAYS - 1))).toBe(true);
+    expect(r.some((v: any) => v.date_to === inDays(HORIZON_DAYS - 1))).toBe(true);
   });
 
   it("Hotels ohne Channex: Einträge werden übersprungen, nichts gesendet", async () => {

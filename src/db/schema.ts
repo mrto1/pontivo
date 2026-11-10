@@ -333,6 +333,7 @@ export const channexOutbox = pgTable("channex_outbox", {
   attempts: integer("attempts").notNull().default(0),
   nextAttemptAt: ts("next_attempt_at").notNull().defaultNow(),
   lastError: text("last_error"),
+  taskId: text("task_id"),
   createdAt: ts("created_at").notNull().defaultNow(),
   sentAt: ts("sent_at"),
 });

@@ -7,13 +7,17 @@ import { occupancyPrices } from "../../domain/pricing";
 import { audit } from "../../services/audit";
 import { enqueueAvailability, enqueueRestrictions } from "../../services/outbox";
 import { HORIZON_DAYS } from "../../services/inventory";
-import { channex, ChannexHttpError, type AvailabilityValue, type RestrictionValue } from "./client";
+import { channex, ChannexHttpError, type AriResponse, type AvailabilityValue, type RestrictionValue } from "./client";
 import { channexAlert } from "./alerts";
 
 /** Channex: 10 Availability- und 10 Restrictions-Requests pro Minute und Property (Rate-Limits-Doku). */
 export const MAX_REQUESTS_PER_MINUTE = 10;
-/** ASSUMPTION: Nicht weiter als 500 Tage senden (Channex-Standard `state_length` = 500). */
-export const CHANNEX_STATE_DAYS = 500;
+/**
+ * Wie weit in die Zukunft gesendet wird: der ganze Buchungshorizont (~18 Monate).
+ * Channex speichert standardmässig 500 Tage (`state_length`), erlaubt bis 730; neue Properties werden mit 730 angelegt.
+ */
+// ASSUMPTION: Von Hand zugeordnete Properties haben state_length ≥ HORIZON_DAYS; sonst meldet Channex Warnungen für die letzten Tage.
+export const CHANNEX_STATE_DAYS = HORIZON_DAYS;
 const ALERT_AFTER_MS = 15 * 60_000;
 
 type Kind = "availability" | "restrictions";
@@ -160,6 +164,14 @@ async function buildRestrictions(hotel: Hotel, entries: Entry[], today: string):
   return values;
 }
 
+/** ARI-Antwort: `data: [{ id, type: "task" }]` */
+export function taskIdOf(res: AriResponse | null | undefined): string | null {
+  const ids = (res?.data ?? [])
+    .map((d) => (d && typeof d === "object" && "id" in d ? String((d as { id: unknown }).id) : null))
+    .filter((x): x is string => !!x);
+  return ids.length ? ids.join(",") : null;
+}
+
 /**
  * Ein Durchlauf des Workers `channex-outbox` (alle 6 Sekunden, SPEC 7.2).
  * Pro Hotel und Art höchstens ein Request pro Durchlauf.
@@ -197,6 +209,7 @@ export async function runOutboxOnce(state: OutboxState, now: Date = new Date()):
     const ids = claimed.map((c) => c.id);
     const today = todayIn(hotel.timezone, now);
 
+    let taskId: string | null = null;
     try {
       const values = kind === "availability" ? await buildAvailability(hotel, claimed, today) : await buildRestrictions(hotel, claimed, today);
       if (values.length) {
@@ -206,15 +219,17 @@ export async function runOutboxOnce(state: OutboxState, now: Date = new Date()):
           kind === "availability"
             ? await channex.postAvailability(values as AvailabilityValue[])
             : await channex.postRestrictions(values as RestrictionValue[]);
+        taskId = taskIdOf(res);
+        console.log(`[channex] ${kind} hotel=${hotel.id} values=${values.length} task=${taskId ?? "-"}`);
         const warnings = res?.meta?.warnings ?? [];
         if (warnings.length) {
           // Validierungsfehler kommen als 200 mit meta.warnings (ARI-Doku) → failed + Alarm
-          await db().update(channexOutbox).set({ status: "failed", lastError: JSON.stringify(warnings).slice(0, 4000) }).where(inArray(channexOutbox.id, ids));
+          await db().update(channexOutbox).set({ status: "failed", taskId, lastError: JSON.stringify(warnings).slice(0, 4000) }).where(inArray(channexOutbox.id, ids));
           await channexAlert(hotel, `Channex hat ${kind}-Werte abgelehnt`, JSON.stringify(warnings).slice(0, 2000));
           continue;
         }
       }
-      await db().update(channexOutbox).set({ status: "sent", sentAt: now, lastError: null }).where(inArray(channexOutbox.id, ids));
+      await db().update(channexOutbox).set({ status: "sent", sentAt: now, lastError: null, taskId }).where(inArray(channexOutbox.id, ids));
       state.failingSince.delete(key);
       state.alerted.delete(key);
     } catch (e) {

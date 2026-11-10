@@ -107,6 +107,24 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
             <tbody>{status.errors.map((e) => <tr key={e.id}><td>{e.kind}</td><td>{e.status}</td><td>{e.error}</td></tr>)}</tbody>
           </table>
         ) : null}
+        {status.recent.length ? (
+          <details>
+            <summary>Letzte Übertragungen</summary>
+            <table className="table small">
+              <thead><tr><th>Gesendet</th><th>Art</th><th>Änderungen</th><th>Channex-Task</th></tr></thead>
+              <tbody>
+                {status.recent.map((r) => (
+                  <tr key={r.task_id}>
+                    <td>{new Date(r.sent_at).toLocaleString("de-CH", { timeZone: hotel.timezone })}</td>
+                    <td>{r.kind === "availability" ? "Verfügbarkeit" : "Preise/Regeln"}</td>
+                    <td>{r.entries}</td>
+                    <td><code>{r.task_id}</code></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
+        ) : null}
         {canEdit && configured ? (
           <div className="inline-form">
             {hotel.channexEnabled ? (
