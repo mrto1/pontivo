@@ -340,6 +340,16 @@ export const channexOutbox = pgTable("channex_outbox", {
   sentAt: ts("sent_at"),
 });
 
+/** Gesperrte Empfänger (Postmark Bounce/Spam-Webhook). Plattformweit, deshalb ohne hotel_id. */
+export const emailSuppressions = pgTable("email_suppressions", {
+  email: text("email").primaryKey(),
+  reason: text("reason").notNull(),
+  bounceType: text("bounce_type"),
+  details: text("details"),
+  postmarkId: text("postmark_id"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
 export const emailOutbox = pgTable("email_outbox", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
   hotelId: uuid("hotel_id"),

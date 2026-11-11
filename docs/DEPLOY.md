@@ -143,3 +143,9 @@ cd /opt/pontivo/deploy && ./deploy.sh
 - [ ] Postmark-Domain bestätigt, Test-Login-Mail angekommen
 - [ ] Sicherung ausser Haus läuft
 - [ ] Testbuchung mit echter Karte und Rückerstattung
+
+## Postmark: Bounces und Spam-Beschwerden
+
+1. Geheimnis erzeugen: `openssl rand -hex 24` und in `.env.production` als `POSTMARK_WEBHOOK_SECRET=…` eintragen, dann `./deploy.sh` (führt auch die Migration aus).
+2. In Postmark beim Stream «Default Transactional Stream» → Webhooks → Webhook hinzufügen: URL `https://pontivo.ch/api/webhooks/postmark`, Basic Auth mit beliebigem Benutzernamen (z. B. `postmark`) und dem Geheimnis als Passwort. Ereignisse **Bounce** und **Spam Complaint** anwählen, mit «Test» prüfen.
+3. Adressen mit hartem Bounce oder Spam-Beschwerde landen in `email_suppressions`; Mails an sie werden nicht mehr gesendet (Status `cancelled`).

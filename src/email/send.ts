@@ -1,6 +1,6 @@
 import { and, eq, lte, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { bookingRooms, bookings, emailOutbox, guests, hotels, ratePlans, roomTypes, type Hotel, bookingExtras } from "../db/schema";
+import { bookingRooms, bookings, emailOutbox, emailSuppressions, guests, hotels, ratePlans, roomTypes, type Hotel, bookingExtras } from "../db/schema";
 import { env } from "../env";
 import { render, type Rendered } from "./templates";
 
@@ -68,6 +68,13 @@ export async function sendDueEmails(now: Date = new Date(), limit = 50): Promise
       .returning();
     if (!claimed.length) continue;
     try {
+      // Gesperrte Adresse (harter Bounce oder Spam-Beschwerde): nicht senden, nicht wiederholen
+      const [blocked] = await db().select().from(emailSuppressions).where(eq(emailSuppressions.email, row.toEmail.trim().toLowerCase()));
+      if (blocked) {
+        await db().update(emailOutbox).set({ status: "cancelled" }).where(eq(emailOutbox.id, row.id));
+        console.warn(`[mail] ${row.toEmail} gesperrt (${blocked.reason}), E-Mail ${row.id} nicht gesendet`);
+        continue;
+      }
       const r = await renderRow(row);
       await mailer({ from: env().EMAIL_FROM, to: row.toEmail, ...r });
       await db().update(emailOutbox).set({ status: "sent", sentAt: new Date() }).where(eq(emailOutbox.id, row.id));

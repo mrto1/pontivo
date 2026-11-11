@@ -13,6 +13,8 @@ const schema = z.object({
   CHANNEX_API_KEY: z.string().optional(),
   CHANNEX_WEBHOOK_SECRET: z.string().optional(),
   POSTMARK_SERVER_TOKEN: z.string().optional(),
+  // Passwort (Basic Auth) bzw. Token (Header x-webhook-token) für den Postmark-Webhook für Bounces/Spam-Beschwerden
+  POSTMARK_WEBHOOK_SECRET: z.string().optional(),
   EMAIL_FROM: z.string().default("buchung@example.ch"),
   PLATFORM_ALERT_EMAIL: z.string().optional(),
   AUTH_SECRET: z.string().min(16).optional(),
