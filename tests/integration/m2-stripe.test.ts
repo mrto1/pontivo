@@ -11,7 +11,7 @@ import { StripePaymentProvider } from "../../src/integrations/stripe/provider";
 import { setPaymentProvider } from "../../src/payments/provider";
 import { cancelBooking, expireHolds } from "../../src/services/bookings";
 import { setBlocked, updateRates } from "../../src/services/inventory";
-import { addDays } from "../../src/domain/dates";
+import { addDays, weekday } from "../../src/domain/dates";
 import { inDays, inv, makeHotel } from "../helpers";
 
 const SECRET = "whsec_test_secret";
@@ -249,7 +249,8 @@ describe("M2 Kalender", () => {
   it("Kalender-Änderung erzeugt Outbox-Einträge und audit_log", async () => {
     const h = await makeHotel();
     const rp = h.rooms[0].plans[0];
-    const from = inDays(10);
+    let from = inDays(10);
+    while (weekday(from) !== 1) from = addDays(from, 1); // Montag, damit der Test nicht vom Wochentag abhängt
     const to = addDays(from, 13);
     // nur Fr+Sa → zwei Bereiche pro Woche
     const n = await updateRates(h.hotel.id, rp.id, from, to, { priceRappen: 22000, minStayArrival: 2 }, { weekdays: [5, 6], actor: "user:test" });

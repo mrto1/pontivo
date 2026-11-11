@@ -108,3 +108,12 @@ describe("IDs und Datum", () => {
     expect(ageOn("2016-12-10", "2026-12-10")).toBe(10);
   });
 });
+
+import { coverageIssue } from "../../src/domain/channex-readiness";
+describe("Channex Anbindung: Preis-Abdeckung", () => {
+  it("meldet fehlende und zu kurze Preise, sonst nichts", () => {
+    expect(coverageIssue({ name: "BAR", pricedDays: 0, lastNight: null }, "2027-01-01")).toContain("keine Preise");
+    expect(coverageIssue({ name: "BAR", pricedDays: 20, lastNight: "2027-01-21" }, "2027-01-01")).toContain("nur bis 21.01.2027");
+    expect(coverageIssue({ name: "BAR", pricedDays: 200, lastNight: "2027-07-01" }, "2027-01-01")).toBeNull();
+  });
+});

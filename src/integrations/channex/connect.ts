@@ -106,6 +106,17 @@ export async function disableChannex(hotel: Hotel, actor: string) {
   await audit(db(), { hotelId: hotel.id, actor, action: "channex.disable", entity: "hotel", entityId: hotel.id });
 }
 
+/** Preis-Abdeckung je Tarif ab `today` (für den Hinweis vor dem Verbinden). Filtert nach hotel_id. */
+export async function ratePlanCoverage(hotelId: string, today: string) {
+  const rows = (
+    await db().execute(sql`
+      SELECT rate_plan_id, count(*)::int AS priced_days, max(night)::text AS last_night
+        FROM rates_days WHERE hotel_id = ${hotelId} AND night >= ${today}
+       GROUP BY rate_plan_id`)
+  ).rows as { rate_plan_id: string; priced_days: number; last_night: string }[];
+  return new Map(rows.map((r) => [r.rate_plan_id, { pricedDays: r.priced_days, lastNight: r.last_night }]));
+}
+
 /** Status für den Admin: offene/fehlerhafte Einträge, letzte Synchronisation */
 export async function channexStatus(hotelId: string) {
   const [counts] = (

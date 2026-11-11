@@ -5,7 +5,9 @@ import { atLeast } from "@/src/auth/session";
 import { db } from "@/src/db/client";
 import { ratePlans, roomTypes } from "@/src/db/schema";
 import { channexConfigured } from "@/src/integrations/channex/client";
-import { channexStatus, createInChannex, disableChannex, enableChannex, saveMapping } from "@/src/integrations/channex/connect";
+import { channexStatus, createInChannex, disableChannex, enableChannex, ratePlanCoverage, saveMapping } from "@/src/integrations/channex/connect";
+import { coverageIssue } from "@/src/domain/channex-readiness";
+import { todayIn } from "@/src/domain/dates";
 import { enqueueFullSync } from "@/src/integrations/channex/outbox-worker";
 import { pullFeed } from "@/src/integrations/channex/feed";
 import { env } from "@/src/env";
@@ -49,6 +51,7 @@ async function mappingAction(f: FormData) {
 async function enableAction(f: FormData) {
   "use server";
   await run(f, async ({ hotel, actor }) => {
+    if (f.get("confirm") !== "on") throw new Error("Bitte zuerst bestätigen, dass Preise und Verfügbarkeit gepflegt sind");
     await enableChannex(hotel, actor);
     return "Abgleich eingeschaltet, Vollabgleich läuft";
   });
@@ -84,6 +87,10 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
   const rps = await db().select().from(ratePlans).where(eq(ratePlans.hotelId, hotel.id)).orderBy(ratePlans.createdAt);
   const status = await channexStatus(hotel.id);
   const configured = channexConfigured();
+  const coverage = await ratePlanCoverage(hotel.id, todayIn(hotel.timezone));
+  const issues = rps
+    .map((p) => coverageIssue({ name: p.name, ...(coverage.get(p.id) ?? { pricedDays: 0, lastNight: null }) }, todayIn(hotel.timezone)))
+    .filter((x): x is string => x !== null);
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
 
   return (
@@ -134,7 +141,11 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
                 <form action={disableAction}>{hidden}<button className="btn secondary">Abgleich ausschalten</button></form>
               </>
             ) : (
-              <form action={enableAction}>{hidden}<button className="btn" disabled={!hotel.channexPropertyId}>Abgleich einschalten</button></form>
+              <form action={enableAction} className="stack">
+                {hidden}
+                <label><input type="checkbox" name="confirm" required /> Preise, Verfügbarkeit und Mindestaufenthalte sind für alle Tarife gepflegt.</label>
+                <div><button className="btn" disabled={!hotel.channexPropertyId}>Abgleich einschalten</button></div>
+              </form>
             )}
           </div>
         ) : null}
@@ -143,6 +154,26 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
           Die Verbindung zu Booking.com richtet das Hotel in Channex ein.
         </p>
       </section>
+
+      {canEdit && configured ? (
+        <section className="card stack">
+          <h2>Vor der Anbindung an Booking.com oder Airbnb</h2>
+          <p className="small">Pontivo sendet Preise und Verfügbarkeit an Channex. Sobald du den Kanal in Channex aktivierst, übernimmt er diese Werte. Prüfe deshalb vorher:</p>
+          <ul className="small">
+            <li>Preise, Verfügbarkeit und Mindestaufenthalte sind in Pontivo für alle Tarife gepflegt.</li>
+            <li><strong>Booking.com:</strong> Die Aktivierung führt einen Vollabgleich durch und <strong>überschreibt</strong>, was dort steht. Sende danach sofort einen Vollabgleich.</li>
+            <li><strong>Airbnb:</strong> Das Inserat muss schon bestehen. Beim Zuordnen wird es auf <strong>Sofortbuchung</strong> umgestellt (danach wieder abschaltbar) und <strong>Smart Pricing wird deaktiviert</strong>.</li>
+          </ul>
+          {issues.length ? (
+            <div className="notice warn">
+              <strong>Prüfen:</strong>
+              <ul className="small">{issues.map((i) => <li key={i}>{i}</li>)}</ul>
+            </div>
+          ) : (
+            <p className="muted small">Preise: für alle Tarife mindestens 90 Tage im Voraus hinterlegt.</p>
+          )}
+        </section>
+      ) : null}
 
       {canEdit && configured ? (
         <section className="card stack">
