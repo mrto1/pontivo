@@ -7,8 +7,13 @@ import { setChannexFetch } from "../../src/integrations/channex/client";
 import {
   activateBookingChannel,
   deactivateBookingChannel,
+  activateMetaChannel,
   getBookingChannel,
+  getMetaChannel,
   probeBookingChannel,
+  probeMetaChannel,
+  removeMetaChannel,
+  saveMetaMapping,
   removeBookingChannel,
   saveBookingMapping,
 } from "../../src/integrations/channex/channels";
@@ -146,5 +151,54 @@ describe("Booking.com verbinden (Channex Channel API)", () => {
     await expect(saveBookingMapping(a.hotel, { [pairKey(ROOM, RATE)]: b.plan.id }, "user:t")).rejects.toThrow(/Unbekannter Tarif/);
     const rows = await db().select().from(channexChannels).where(eq(channexChannels.hotelId, a.hotel.id));
     expect(rows).toHaveLength(1);
+  });
+});
+
+describe("Expedia verbinden (gleicher Ablauf, eigene Einstellungen)", () => {
+  // Die Channex-Attrappe liefert immer dieselbe Kanal-ID (unique): Reste früherer Tests entfernen
+  beforeEach(async () => {
+    await db().delete(channexChannels).where(eq(channexChannels.channexChannelId, "ca4ac55f-3be1-4039-9542-21e8285ffbf9"));
+  });
+  it("Kanal Expedia: prüfen, anlegen mit Expedia-Einstellungen, aktivieren, entfernen; Booking.com unberührt", async () => {
+    const { hotel, plan, chxPlan } = await hotelInChannex();
+    await expect(probeMetaChannel(hotel, "Expedia", "abc", "user:t")).rejects.toThrow(/Expedia Hotel-ID besteht nur aus Ziffern/);
+    testSuccess = false;
+    await expect(probeMetaChannel(hotel, "Expedia", "12345678", "user:t")).rejects.toThrow(/Expedia hat die Hotel-ID nicht akzeptiert/);
+    testSuccess = true;
+    await expect(probeMetaChannel(hotel, "Expedia", "12345678", "user:t", { minStayType: "Nonsense" })).rejects.toThrow(/Ungültige Einstellung/);
+
+    calls.length = 0;
+    const ch = await probeMetaChannel(hotel, "Expedia", "12345678", "user:t", { minStayType: "Through", bookingAmount: "Total Amount" });
+    expect(ch).toMatchObject({ channel: "Expedia", externalId: "12345678", status: "draft" });
+    expect(ch.details).toMatchObject({ minStayType: "Through", bookingAmount: "Total Amount" });
+    expect(calls[0].body).toEqual({ channel: "Expedia", settings: { hotel_id: "12345678" } });
+
+    calls.length = 0;
+    await saveMetaMapping(hotel, "Expedia", { [pairKey(ROOM, RATE)]: plan.id }, "user:t");
+    const create = calls.find((c) => c.path === "/channels" && c.method === "POST")!;
+    expect(create.body.channel).toMatchObject({
+      channel: "Expedia",
+      title: `Expedia – ${hotel.name}`,
+      settings: { hotel_id: "12345678", min_stay_type: "Through", booking_amount_settings: "Total Amount" },
+    });
+    expect(create.body.channel.rate_plans[0].rate_plan_id).toBe(chxPlan);
+
+    const [h2] = await db().select().from(hotels).where(eq(hotels.id, hotel.id));
+    expect(await activateMetaChannel(h2, "Expedia", "user:t")).toEqual({ loaded: true });
+    expect((await getMetaChannel(hotel.id, "Expedia"))!.status).toBe("active");
+    expect(await getBookingChannel(hotel.id)).toBeNull();
+
+    await removeMetaChannel(h2, "Expedia", "user:t");
+    expect(await getMetaChannel(hotel.id, "Expedia")).toBeNull();
+    const actions = (await db().select().from(auditLog).where(eq(auditLog.hotelId, hotel.id))).map((a) => a.action);
+    expect(actions).toEqual(expect.arrayContaining(["channel.expedia.probe", "channel.expedia.mapping", "channel.expedia.activate", "channel.expedia.remove"]));
+  });
+
+  it("Booking.com und Expedia können gleichzeitig für dasselbe Hotel bestehen", async () => {
+    const { hotel } = await hotelInChannex();
+    await probeBookingChannel(hotel, "5868189", "user:t");
+    await probeMetaChannel(hotel, "Expedia", "12345678", "user:t");
+    const rows = await db().select().from(channexChannels).where(eq(channexChannels.hotelId, hotel.id));
+    expect(rows.map((r) => r.channel).sort()).toEqual(["BookingCom", "Expedia"]);
   });
 });

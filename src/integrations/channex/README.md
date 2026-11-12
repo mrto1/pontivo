@@ -37,3 +37,6 @@ failure_redirect_uri, token, settings.min_stay_type) → Gastgeber gibt auf Airb
 mit `success`, `channel_id`, `token` (Token in `channex_channels.auth_token`, 2 h gültig, einmalig) → `GET /channels/{id}/action/listings`
 → je Inserat `POST /channels/{id}/mappings` (`settings.listing_id`, dauert bei Airbnb ca. 30 s) → `check_readiness` → `activate`
 → `execute/load_future_reservations` mit `listing_id` je Inserat. Neu verbinden: Link mit `channel_id`.
+
+## Expedia im Admin verbinden
+Gleicher Ablauf wie Booking.com (`channels.ts`, Kanal als Parameter, Seite `app/admin/[hotelId]/channex/_meta`). Channex-Adapter `Expedia` (`GET /channels/adapter?code=Expedia`): Einstellungen `hotel_id`, `min_stay_type` (Arrival/Through), `booking_amount_settings` (Collect Amount / Total Amount / Total Amount Excluding Tax), Aktion `load_future_reservations`, Zuordnung `room_rate_multioccupancy`. Auf Staging geprüft: Adapter-Beschreibung, test_connection mit Dummy-ID (authentication_failed). Nicht geprüft (kein Expedia-Testhotel): mapping_details, Anlegen, Aktivieren. Weitere Kanäle dieser Familie (z. B. Agoda): Eintrag in `META_CHANNELS` und Migration für die CHECK-Bedingung.

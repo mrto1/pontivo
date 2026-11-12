@@ -152,16 +152,16 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
         <p className="muted small">
           Webhook in Channex: <code>{env().APP_BASE_URL}/api/webhooks/channex</code>, Ereignisse <code>booking</code>, signiert (HMAC). <strong>Nötig:</strong> ohne Webhook kommen Buchungen erst nach bis zu 15 Minuten (Überbuchungsgefahr).
         </p>
-        {hotel.channexPropertyId ? <p><a className="btn secondary" href={`/admin/${hotel.id}/channex/booking`}>Booking.com verbinden →</a> <a className="btn secondary" href={`/admin/${hotel.id}/channex/airbnb`}>Airbnb verbinden →</a></p> : null}
+        {hotel.channexPropertyId ? <p><a className="btn secondary" href={`/admin/${hotel.id}/channex/booking`}>Booking.com verbinden →</a> <a className="btn secondary" href={`/admin/${hotel.id}/channex/airbnb`}>Airbnb verbinden →</a> <a className="btn secondary" href={`/admin/${hotel.id}/channex/expedia`}>Expedia verbinden →</a></p> : null}
       </section>
 
       {canEdit && configured ? (
         <section className="card stack">
-          <h2>Vor der Anbindung an Booking.com oder Airbnb</h2>
+          <h2>Vor der Anbindung an Booking.com, Expedia oder Airbnb</h2>
           <p className="small">Pontivo sendet Preise und Verfügbarkeit an Channex. Sobald du den Kanal in Channex aktivierst, übernimmt er diese Werte. Prüfe deshalb vorher:</p>
           <ul className="small">
             <li>Preise, Verfügbarkeit und Mindestaufenthalte sind in Pontivo für alle Tarife gepflegt.</li>
-            <li><strong>Booking.com:</strong> Die Aktivierung führt einen Vollabgleich durch und <strong>überschreibt</strong>, was dort steht. Sende danach sofort einen Vollabgleich.</li>
+            <li><strong>Booking.com und Expedia:</strong> Die Aktivierung führt einen Vollabgleich durch und <strong>überschreibt</strong>, was dort steht. Sende danach sofort einen Vollabgleich.</li>
             <li><strong>Airbnb:</strong> Das Inserat muss schon bestehen. Beim Zuordnen wird es auf <strong>Sofortbuchung</strong> umgestellt (danach wieder abschaltbar) und <strong>Smart Pricing wird deaktiviert</strong>.</li>
           </ul>
           {issues.length ? (

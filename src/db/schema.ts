@@ -327,8 +327,8 @@ export const inboundEvents = pgTable(
 export const channexChannels = pgTable("channex_channels", {
   id: uuid("id").primaryKey().defaultRandom(),
   hotelId: uuid("hotel_id").notNull(),
-  channel: text("channel").$type<"BookingCom" | "Airbnb">().notNull(),
-  /** Booking.com Hotel-ID; bei Airbnb leer */
+  channel: text("channel").$type<"BookingCom" | "Airbnb" | "Expedia">().notNull(),
+  /** Hotel-ID bei Booking.com bzw. Expedia; bei Airbnb leer */
   externalId: text("external_id"),
   channexChannelId: uuid("channex_channel_id").unique(),
   status: text("status").$type<"draft" | "inactive" | "active">().notNull().default("draft"),
