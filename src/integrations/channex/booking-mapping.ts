@@ -53,6 +53,12 @@ export function buildBookingMappings(
         const pairs = occs
           .map((occ) => ({ occ, opt: opts.find((o) => o.occupancy === occ) }))
           .filter((p): p is { occ: number; opt: PlanOption } => !!p.opt);
+        if (!pairs.length && opts.length === 1 && occs.length) {
+          // Tarif mit Preis pro Zimmer (eine Belegung in Channex): derselbe Zimmerpreis für die höchste Belegung von Booking.com.
+          // ASSUMPTION: Channex sendet bei "per_room" den Zimmerpreis für die zugeordnete Belegung (auf Staging nicht prüfbar,
+          // weil die Booking-Testhotels belegt sind; QUESTIONS.md).
+          pairs.push({ occ: Math.max(...occs), opt: opts[0] });
+        }
         if (!pairs.length) {
           throw new MappingError(
             `«${room.title} / ${rate.title}» (Booking.com) verkauft für ${occs.join(", ")} Personen; Tarif «${name}» hat dafür keine Preise`,

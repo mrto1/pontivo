@@ -24,9 +24,15 @@ describe("Booking.com-Zuordnung", () => {
     expect(items[0].settings).toMatchObject({ occupancy: 2, primary_occ: true });
   });
 
-  it("OBP: keine passende Belegung → verständlicher Fehler", () => {
-    const single = new Map([["plan-c", [{ channexId: "opt-c3", occupancy: 3 }]]]);
-    expect(() => buildBookingMappings(obp, { [pairKey(586818903, 16385046)]: "plan-c" }, single, new Map([["plan-c", "Suite – BAR"]]))).toThrow(/Suite – BAR/);
+  it("OBP: Preis pro Zimmer ohne passende Belegung → Zimmerpreis für die höchste Booking-Belegung", () => {
+    const perRoom3 = new Map([["plan-c", [{ channexId: "opt-c3", occupancy: 3 }]]]);
+    const items = buildBookingMappings(obp, { [pairKey(586818903, 16385046)]: "plan-c" }, perRoom3);
+    expect(items).toEqual([{ rate_plan_id: "opt-c3", settings: expect.objectContaining({ occupancy: 2, primary_occ: true }) }]);
+  });
+
+  it("OBP: Preis pro Person ohne gemeinsame Belegung → verständlicher Fehler", () => {
+    const pp = new Map([["plan-d", [{ channexId: "d", occupancy: 3 }, { channexId: "d", occupancy: 4 }]]]);
+    expect(() => buildBookingMappings(obp, { [pairKey(586818903, 16385046)]: "plan-d" }, pp, new Map([["plan-d", "Suite – BAR"]]))).toThrow(/Suite – BAR/);
   });
 
   it("Standard: ein primärer Eintrag je Tarif", () => {

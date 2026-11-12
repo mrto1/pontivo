@@ -26,6 +26,9 @@ export async function getBookingChannel(hotelId: string): Promise<BookingChannel
 /** Fehlertext für den Admin (Channex-Fehler verständlich, Rest unverändert) */
 export function channelErrorText(e: unknown): string {
   if (e instanceof MappingError) return e.message;
+  if (e instanceof ChannexHttpError && /same settings already exists/.test(JSON.stringify(e.body))) {
+    return "Diese Booking.com Hotel-ID ist bei Channex schon verbunden (auch über ein anderes Konto möglich). Jede Hotel-ID lässt sich nur einmal verbinden.";
+  }
   if (e instanceof ChannexHttpError) {
     const body = e.body as { errors?: { title?: string; details?: unknown } } | null;
     const det = body?.errors?.details;
