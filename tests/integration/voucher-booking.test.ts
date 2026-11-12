@@ -80,7 +80,9 @@ describe("Gutschein bei der Online-Buchung", () => {
     ]);
     const ok = results.filter((r) => r.status === "fulfilled");
     const failed = results.filter((r) => r.status === "rejected") as PromiseRejectedResult[];
-    expect(ok).toHaveLength(1);
+    // Bei einem Fehlschlag steht der Grund jeder Buchung in der Meldung (der Test ist selten rot geworden, Ursache nicht bekannt)
+    const info = JSON.stringify(results.map((r) => (r.status === "fulfilled" ? "ok" : `${r.reason?.code ?? ""} ${r.reason?.message ?? r.reason}`)));
+    expect(ok, info).toHaveLength(1);
     expect(failed[0].reason).toBeInstanceOf(BookingError);
     expect(failed[0].reason.code).toBe("voucher_empty");
     expect(await remaining(h.voucher.id)).toBe(0);
