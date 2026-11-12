@@ -152,7 +152,7 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
         <p className="muted small">
           Webhook in Channex: <code>{env().APP_BASE_URL}/api/webhooks/channex</code>, Ereignisse <code>booking</code>, signiert (HMAC). <strong>Nötig:</strong> ohne Webhook kommen Buchungen erst nach bis zu 15 Minuten (Überbuchungsgefahr).
         </p>
-        {hotel.channexPropertyId ? <p><a className="btn secondary" href={`/admin/${hotel.id}/channex/booking`}>Booking.com verbinden →</a></p> : null}
+        {hotel.channexPropertyId ? <p><a className="btn secondary" href={`/admin/${hotel.id}/channex/booking`}>Booking.com verbinden →</a> <a className="btn secondary" href={`/admin/${hotel.id}/channex/airbnb`}>Airbnb verbinden →</a></p> : null}
       </section>
 
       {canEdit && configured ? (

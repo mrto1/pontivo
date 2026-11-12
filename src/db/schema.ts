@@ -327,14 +327,18 @@ export const inboundEvents = pgTable(
 export const channexChannels = pgTable("channex_channels", {
   id: uuid("id").primaryKey().defaultRandom(),
   hotelId: uuid("hotel_id").notNull(),
-  channel: text("channel").$type<"BookingCom">().notNull(),
-  externalId: text("external_id").notNull(),
+  channel: text("channel").$type<"BookingCom" | "Airbnb">().notNull(),
+  /** Booking.com Hotel-ID; bei Airbnb leer */
+  externalId: text("external_id"),
   channexChannelId: uuid("channex_channel_id").unique(),
   status: text("status").$type<"draft" | "inactive" | "active">().notNull().default("draft"),
   details: jsonb("details").$type<Record<string, unknown>>().notNull().default({}),
   selection: jsonb("selection").$type<Record<string, string>>().notNull().default({}),
   mappings: jsonb("mappings").$type<unknown[]>().notNull().default([]),
   lastError: text("last_error"),
+  /** Airbnb: Einmal-Token für den Rücksprung nach der Freigabe (Migration 0016) */
+  authToken: text("auth_token"),
+  authExpiresAt: ts("auth_expires_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });

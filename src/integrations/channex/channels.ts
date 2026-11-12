@@ -13,7 +13,7 @@ import { channexGroupId, channexPlanOptions } from "./lookups";
 const CHANNEL = "BookingCom" as const;
 
 export type BookingChannelDetails = BookingMappingDetails & { currency?: string | null };
-export type BookingChannel = typeof channexChannels.$inferSelect & { details: BookingChannelDetails };
+export type BookingChannel = typeof channexChannels.$inferSelect & { details: BookingChannelDetails; externalId: string };
 
 export async function getBookingChannel(hotelId: string): Promise<BookingChannel | null> {
   const [row] = await db()

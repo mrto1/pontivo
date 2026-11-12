@@ -29,3 +29,11 @@ Ablauf nach dem Channex-Leitfaden «Booking.com»: `test_connection` → `mappin
 → Zuordnung → `POST /channels` (inaktiv; `group_id` aus `GET /properties/{id}`, in `hotels.channex_group_id` gespeichert)
 → `check_readiness` → `activate` → `execute/load_future_reservations`. Ändern der Zuordnung: `PUT /channels/{id}` mit allen `rate_plans`.
 Aktivieren nur bei eingeschaltetem Abgleich. Staging-Testhotels: 5868189 (OBP), 6519420 (Standard); Testverbindung danach entfernen.
+
+## Airbnb im Admin verbinden
+
+Seite `/admin/<id>/channex/airbnb`, Logik in `airbnb.ts`. `POST /meta/airbnb/connection_link` (group_id, properties, redirect_uri,
+failure_redirect_uri, token, settings.min_stay_type) → Gastgeber gibt auf Airbnb frei → Rücksprung auf `/channex/airbnb/return`
+mit `success`, `channel_id`, `token` (Token in `channex_channels.auth_token`, 2 h gültig, einmalig) → `GET /channels/{id}/action/listings`
+→ je Inserat `POST /channels/{id}/mappings` (`settings.listing_id`, dauert bei Airbnb ca. 30 s) → `check_readiness` → `activate`
+→ `execute/load_future_reservations` mit `listing_id` je Inserat. Neu verbinden: Link mit `channel_id`.

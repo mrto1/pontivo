@@ -131,8 +131,35 @@ export const channex = {
     call<{ data: { id: string; entity: string; relation: string; error_code: string }[] }>("POST", `/channels/${encodeURIComponent(id)}/check_readiness`),
   activateChannel: (id: string) => call<unknown>("POST", `/channels/${encodeURIComponent(id)}/activate`),
   deactivateChannel: (id: string) => call<unknown>("POST", `/channels/${encodeURIComponent(id)}/deactivate`),
+  getChannel: (id: string) =>
+    call<{ data: { id: string; attributes: { is_active: boolean; channel: string; properties: string[]; rate_plans: { id: string; rate_plan_id: string; settings: Record<string, unknown> }[] } } }>(
+      "GET",
+      `/channels/${encodeURIComponent(id)}`,
+    ),
+
+  // Airbnb (Leitfaden Airbnb): OAuth-Link, Inserate, Zuordnung je Inserat
+  airbnbConnectionLink: (link: Record<string, unknown>) =>
+    call<{ data: { type: string; attributes: { url: string } } }>("POST", "/meta/airbnb/connection_link", { connection_link: link }),
+  airbnbListings: (channelId: string) =>
+    call<{ data: { listing_id_dictionary: { values: AirbnbListing[] } } }>("GET", `/channels/${encodeURIComponent(channelId)}/action/listings`),
+  createMapping: (channelId: string, mapping: { rate_plan_id: string; settings: Record<string, unknown> }) =>
+    call<{ data: { id: string } }>("POST", `/channels/${encodeURIComponent(channelId)}/mappings`, { mapping }),
+  deleteMapping: (channelId: string, mappingId: string) =>
+    call<unknown>("DELETE", `/channels/${encodeURIComponent(channelId)}/mappings/${encodeURIComponent(mappingId)}`),
   executeChannelAction: (id: string, action: string, body?: Record<string, unknown>) =>
     call<unknown>("POST", `/channels/${encodeURIComponent(id)}/execute/${encodeURIComponent(action)}`, body),
+};
+
+/** Ein Airbnb-Inserat (List Airbnb listings) */
+export type AirbnbListing = {
+  id: string;
+  title: string;
+  type: string;
+  occupancies: number[];
+  synchronization_category: string | null;
+  city: string;
+  country_code: string;
+  quality_status: string;
 };
 
 /** Antwort von mapping_details für Booking.com (Leitfaden Booking.com, Schritt 3) */
