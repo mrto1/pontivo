@@ -12,6 +12,13 @@ import {
 } from "@/src/integrations/channex/channels";
 import { activateAction, deactivateAction, mappingAction, probeAction, removeAction } from "./actions";
 
+/** Erklärung der Betragsart (Leitfaden Expedia, «Booking Total Type»; API-Werte laut Adapter) */
+const AMOUNT_LABEL = {
+  "Collect Amount": "Auszahlungsbetrag (Collect Amount / VCC, inkl. Steuern und Gebühren)",
+  "Total Amount": "Gesamtbetrag des Gastes (inkl. Steuern und Gebühren)",
+  "Total Amount Excluding Tax": "Gesamtbetrag ohne Steuern (für die USA)",
+} as const;
+
 /** Gemeinsame Seite für Kanäle mit Hotel-ID und Zimmer/Tarif-Zuordnung (Booking.com, Expedia) */
 export async function MetaChannelView({ hotelId, channel, msg }: { hotelId: string; channel: MetaChannel; msg?: string }) {
   const cfg = META_CHANNELS[channel];
@@ -44,7 +51,7 @@ export async function MetaChannelView({ hotelId, channel, msg }: { hotelId: stri
           {ch?.details.currency ? (<><span className="muted">Währung auf {cfg.label}</span><span>{ch.details.currency} (Channex rechnet um)</span></>) : null}
           {ch ? (<><span className="muted">Preismodell</span><span>{ch.details.pricing_type === "OBP" ? "Preis pro Belegung (OBP)" : "Preis pro Zimmer (Standard)"}</span></>) : null}
           {channel === "Expedia" && ch?.details.minStayType ? (<><span className="muted">Mindestaufenthalt</span><span>{ch.details.minStayType === "Arrival" ? "gilt am Anreisetag" : "gilt für jeden Tag des Aufenthalts"}</span></>) : null}
-          {channel === "Expedia" && ch?.details.bookingAmount ? (<><span className="muted">Betrag in der Buchung</span><span>{ch.details.bookingAmount}</span></>) : null}
+          {channel === "Expedia" && ch?.details.bookingAmount ? (<><span className="muted">Betrag in der Buchung</span><span>{AMOUNT_LABEL[ch.details.bookingAmount]}</span></>) : null}
         </div>
         {ch?.lastError ? <p className="notice warn">{ch.lastError}</p> : null}
         {channel === "BookingCom" ? (
@@ -53,8 +60,8 @@ export async function MetaChannelView({ hotelId, channel, msg }: { hotelId: stri
           </p>
         ) : (
           <p className="small muted">
-            Das Hotel muss bei Expedia zuerst den Zugriff für Channex freigeben; die Anleitung dazu steht im Channex-Leitfaden zu Expedia.
-            Die Hotel-ID ist die Expedia-Objektnummer.
+            Zuerst muss das Hotel im Expedia-Extranet unter «Rooms and Rates» → «Connectivity Settings» (mit Zwei-Faktor-Anmeldung) bei
+            Verbindung <strong>und</strong> Buchungen Channex auswählen. Die Hotel-ID ist die Expedia-Objektnummer (Property ID).
           </p>
         )}
         {canEdit && ch?.status !== "active" ? (
@@ -67,7 +74,7 @@ export async function MetaChannelView({ hotelId, channel, msg }: { hotelId: stri
                   {EXPEDIA_MIN_STAY.map((v) => <option key={v} value={v}>{v === "Arrival" ? "Mindestaufenthalt am Anreisetag" : "Mindestaufenthalt an jedem Tag"}</option>)}
                 </select>
                 <select name="bookingAmount" defaultValue={ch?.details.bookingAmount ?? "Collect Amount"} disabled={created} aria-label="Betrag in der Buchung">
-                  {EXPEDIA_BOOKING_AMOUNT.map((v) => <option key={v} value={v}>{v}</option>)}
+                  {EXPEDIA_BOOKING_AMOUNT.map((v) => <option key={v} value={v}>{AMOUNT_LABEL[v]}</option>)}
                 </select>
               </>
             ) : null}
