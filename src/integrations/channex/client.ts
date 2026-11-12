@@ -73,7 +73,7 @@ export type BookingRevision = {
   inserted_at?: string | null;
 };
 
-async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+async function call<T>(method: "GET" | "POST" | "PUT" | "DELETE", path: string, body?: unknown): Promise<T> {
   const url = `${env().CHANNEX_BASE_URL.replace(/\/$/, "")}${path}`;
   const f: FetchLike = fetchOverride ?? ((u, init) => fetch(u, init));
   let res;
@@ -112,7 +112,43 @@ export const channex = {
   createProperty: (p: Record<string, unknown>) => call<{ data: { id: string } }>("POST", "/properties", { property: p }),
   createRoomType: (r: Record<string, unknown>) => call<{ data: { id: string } }>("POST", "/room_types", { room_type: r }),
   createRatePlan: (r: Record<string, unknown>) => call<{ data: { id: string } }>("POST", "/rate_plans", { rate_plan: r }),
+
+  /** Gruppen der Property: data.relationships.groups.data[].id (Doku: Get Property API) */
+  getProperty: (id: string) =>
+    call<{ data: { id: string; relationships?: { groups?: { data?: { id: string; type: string }[] } } } }>("GET", `/properties/${encodeURIComponent(id)}`),
+
+  // Channel API (Doku: Channel API + Booking.com-Leitfaden, docs.channex.io/api-v.1-documentation/channel-api)
+  testConnection: (channel: string, settings: Record<string, unknown>) =>
+    call<{ data: { success: boolean; errors: unknown } }>("POST", "/channels/test_connection", { channel, settings }),
+  mappingDetails: (channel: string, settings: Record<string, unknown>) =>
+    call<{ data: BookingMappingDetails }>("POST", "/channels/mapping_details", { channel, settings }),
+  connectionDetails: (channel: string, settings: Record<string, unknown>) =>
+    call<{ data: { type: string; attributes: { currency?: string } } }>("POST", "/channels/connection_details", { channel, settings }),
+  createChannel: (c: Record<string, unknown>) => call<{ data: { id: string; attributes: { is_active: boolean; currency?: string | null } } }>("POST", "/channels", { channel: c }),
+  updateChannel: (id: string, c: Record<string, unknown>) => call<{ data: { id: string } }>("PUT", `/channels/${encodeURIComponent(id)}`, { channel: c }),
+  deleteChannel: (id: string) => call<unknown>("DELETE", `/channels/${encodeURIComponent(id)}`),
+  checkReadiness: (id: string) =>
+    call<{ data: { id: string; entity: string; relation: string; error_code: string }[] }>("POST", `/channels/${encodeURIComponent(id)}/check_readiness`),
+  activateChannel: (id: string) => call<unknown>("POST", `/channels/${encodeURIComponent(id)}/activate`),
+  deactivateChannel: (id: string) => call<unknown>("POST", `/channels/${encodeURIComponent(id)}/deactivate`),
+  executeChannelAction: (id: string, action: string, body?: Record<string, unknown>) =>
+    call<unknown>("POST", `/channels/${encodeURIComponent(id)}/execute/${encodeURIComponent(action)}`, body),
 };
+
+/** Antwort von mapping_details für Booking.com (Leitfaden Booking.com, Schritt 3) */
+export type BookingRate = {
+  id: number | string;
+  title: string;
+  max_persons: number | null;
+  occupancies: number[];
+  price_1: boolean | null;
+  pricing: "OBP" | "Standard";
+  parent_rate_id: string;
+  readonly: boolean;
+  derived_rate_plan_ids?: (number | string)[];
+};
+export type BookingRoom = { id: number | string; title: string; max_children: number | null; rates: BookingRate[] };
+export type BookingMappingDetails = { pricing_type: "OBP" | "Standard"; rooms: BookingRoom[] };
 
 export function channexConfigured(): boolean {
   return !!env().CHANNEX_API_KEY;

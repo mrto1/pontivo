@@ -34,6 +34,8 @@ export const hotels = pgTable("hotels", {
   stripeTwintActive: boolean("stripe_twint_active").notNull().default(false),
   channexPropertyId: uuid("channex_property_id").unique(),
   channexEnabled: boolean("channex_enabled").notNull().default(false),
+  /** Channex-Gruppe der Property (nötig für Kanalverbindungen) */
+  channexGroupId: uuid("channex_group_id"),
   status: text("status").notNull().default("draft"),
   content: jsonb("content").$type<HotelContent>().notNull().default({}),
   /** Objektart (Migration 0011): steuert Texte und Schritte im Einrichtungs-Assistenten */
@@ -320,6 +322,22 @@ export const inboundEvents = pgTable(
   },
   (t) => [primaryKey({ columns: [t.source, t.eventId] })],
 );
+
+/** Kanalverbindung (Booking.com) über die Channex Channel API (Migration 0015) */
+export const channexChannels = pgTable("channex_channels", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  channel: text("channel").$type<"BookingCom">().notNull(),
+  externalId: text("external_id").notNull(),
+  channexChannelId: uuid("channex_channel_id").unique(),
+  status: text("status").$type<"draft" | "inactive" | "active">().notNull().default("draft"),
+  details: jsonb("details").$type<Record<string, unknown>>().notNull().default({}),
+  selection: jsonb("selection").$type<Record<string, string>>().notNull().default({}),
+  mappings: jsonb("mappings").$type<unknown[]>().notNull().default([]),
+  lastError: text("last_error"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
 
 export const channexOutbox = pgTable("channex_outbox", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
