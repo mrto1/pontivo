@@ -24,6 +24,8 @@ type Call = { method: string; path: string; body: any };
 const calls: Call[] = [];
 let testSuccess = true;
 let readiness: unknown[] = [];
+// Jede Anlage liefert eine neue Kanal-ID (die Spalte ist eindeutig; Reste früherer Läufe dürfen nicht stören)
+let channelId = "";
 const GROUP = crypto.randomUUID();
 const ROOM = 586818903;
 const RATE = 16385046;
@@ -40,7 +42,7 @@ beforeAll(() => {
       return reply(200, { data: { pricing_type: "OBP", rooms: [{ id: ROOM, title: "Double Room", max_children: 0, rates: [{ id: RATE, title: "standard rate", max_persons: 2, occupancies: [1, 2], price_1: null, pricing: "OBP", parent_rate_id: "", readonly: false }] }] } });
     if (path === "/channels/connection_details") return reply(200, { data: { type: "connection_details", attributes: { currency: "EUR" } } });
     if (path.startsWith("/properties/")) return reply(200, { data: { id: "p", relationships: { groups: { data: [{ id: GROUP, type: "group" }] } } } });
-    if (path === "/channels" && init.method === "POST") return reply(201, { data: { id: "ca4ac55f-3be1-4039-9542-21e8285ffbf9", attributes: { is_active: false } } });
+    if (path === "/channels" && init.method === "POST") return reply(201, { data: { id: (channelId = crypto.randomUUID()), attributes: { is_active: false } } });
     if (path.endsWith("/check_readiness")) return reply(200, { data: readiness, meta: { message: "ok" } });
     return reply(200, { meta: { message: "Success" } });
   });
@@ -102,20 +104,20 @@ describe("Booking.com verbinden (Channex Channel API)", () => {
     });
     const [h2] = await db().select().from(hotels).where(eq(hotels.id, hotel.id));
     expect(h2.channexGroupId).toBe(GROUP);
-    expect(await getBookingChannel(hotel.id)).toMatchObject({ status: "inactive", channexChannelId: "ca4ac55f-3be1-4039-9542-21e8285ffbf9" });
+    expect(await getBookingChannel(hotel.id)).toMatchObject({ status: "inactive", channexChannelId: channelId });
 
     // erneut speichern → PUT ersetzt die ganze Zuordnung, kein zweites Anlegen
     calls.length = 0;
     await saveBookingMapping(h2, { [pairKey(ROOM, RATE)]: plan.id }, "user:t");
-    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual(["PUT /channels/ca4ac55f-3be1-4039-9542-21e8285ffbf9"]);
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([`PUT /channels/${channelId}`]);
     expect(calls[0].body.channel.rate_plans).toHaveLength(2);
 
     calls.length = 0;
     expect(await activateBookingChannel(h2, "user:t")).toEqual({ loaded: true });
     expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([
-      "POST /channels/ca4ac55f-3be1-4039-9542-21e8285ffbf9/check_readiness",
-      "POST /channels/ca4ac55f-3be1-4039-9542-21e8285ffbf9/activate",
-      "POST /channels/ca4ac55f-3be1-4039-9542-21e8285ffbf9/execute/load_future_reservations",
+      `POST /channels/${channelId}/check_readiness`,
+      `POST /channels/${channelId}/activate`,
+      `POST /channels/${channelId}/execute/load_future_reservations`,
     ]);
     expect((await getBookingChannel(hotel.id))!.status).toBe("active");
 
@@ -124,7 +126,7 @@ describe("Booking.com verbinden (Channex Channel API)", () => {
 
     calls.length = 0;
     await removeBookingChannel(h2, "user:t");
-    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual(["DELETE /channels/ca4ac55f-3be1-4039-9542-21e8285ffbf9"]);
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([`DELETE /channels/${channelId}`]);
     expect(await getBookingChannel(hotel.id)).toBeNull();
     const actions = (await db().select().from(auditLog).where(eq(auditLog.hotelId, hotel.id))).map((a) => a.action);
     expect(actions).toEqual(expect.arrayContaining(["channel.booking.probe", "channel.booking.mapping", "channel.booking.activate", "channel.booking.remove"]));
@@ -155,10 +157,6 @@ describe("Booking.com verbinden (Channex Channel API)", () => {
 });
 
 describe("Expedia verbinden (gleicher Ablauf, eigene Einstellungen)", () => {
-  // Die Channex-Attrappe liefert immer dieselbe Kanal-ID (unique): Reste früherer Tests entfernen
-  beforeEach(async () => {
-    await db().delete(channexChannels).where(eq(channexChannels.channexChannelId, "ca4ac55f-3be1-4039-9542-21e8285ffbf9"));
-  });
   it("Kanal Expedia: prüfen, anlegen mit Expedia-Einstellungen, aktivieren, entfernen; Booking.com unberührt", async () => {
     const { hotel, plan, chxPlan } = await hotelInChannex();
     await expect(probeMetaChannel(hotel, "Expedia", "abc", "user:t")).rejects.toThrow(/Expedia Hotel-ID besteht nur aus Ziffern/);
