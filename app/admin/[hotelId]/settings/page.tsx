@@ -8,6 +8,7 @@ import { chargesOf, startCardSetup } from "@/src/services/billing";
 import { todayIn } from "@/src/domain/dates";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { env } from "@/src/env";
+import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
 
 export const dynamic = "force-dynamic";
 
@@ -154,9 +155,17 @@ export default async function Settings({ params, searchParams }: { params: Promi
           <span className="muted">TWINT aktiv</span><span>{hotel.stripeTwintActive ? "ja" : "nein"}</span>
           <span className="muted">Plattformgebühr</span><span>{hotel.platformFeeBps / 100} % pro Direktbuchung</span>
         </div>
+        {isOwner && provider === "stripe" && !hotel.stripeChargesEnabled && env().STRIPE_PUBLISHABLE_KEY && sp.stripe !== "return" ? (
+          <StripeOnboarding
+            hotelId={hotel.id}
+            publishableKey={env().STRIPE_PUBLISHABLE_KEY!}
+            privacyUrl={`${env().APP_BASE_URL}/datenschutz`}
+            returnTo={`/admin/${hotel.id}/settings?stripe=return`}
+          />
+        ) : null}
         {isOwner ? (
           <div className="inline-form">
-            <form action={stripeOnboarding}>{hidden}<button className="btn">{hotel.stripeAccountId ? "Stripe-Einrichtung fortsetzen" : "Stripe-Konto einrichten"}</button></form>
+            <form action={stripeOnboarding}>{hidden}<button className={!hotel.stripeChargesEnabled && env().STRIPE_PUBLISHABLE_KEY && provider === "stripe" ? "btn secondary small" : "btn"}>{hotel.stripeChargesEnabled || !env().STRIPE_PUBLISHABLE_KEY || provider !== "stripe" ? (hotel.stripeAccountId ? "Stripe-Einrichtung fortsetzen" : "Stripe-Konto einrichten") : "Lieber auf der Stripe-Seite einrichten"}</button></form>
             {hotel.stripeAccountId ? <form action={stripeRefresh}>{hidden}<button className="btn secondary">Status neu laden</button></form> : null}
           </div>
         ) : <p className="muted small">Nur Inhaber können Stripe einrichten.</p>}
