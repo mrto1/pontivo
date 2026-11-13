@@ -21,7 +21,7 @@ Diese Datei ist der Auftrag für KI-Coding-Agenten. Sie ist zusammen mit `schema
 
 ## 1. Ziel und Umfang
 
-Hotels bekommen eine Website mit Direktbuchung. Der Gast bucht, zahlt mit TWINT, Karte, Apple Pay oder Google Pay; das Geld geht direkt an das Hotel (Stripe Connect, Direct Charge), die Plattform behält 1 % als Application Fee. Verfügbarkeit und Preise werden über Channex mit Booking.com und anderen Portalen abgeglichen; deren Buchungen kommen in unser System.
+Hotels bekommen eine Website mit Direktbuchung. Der Gast bucht, zahlt mit TWINT, Karte, Apple Pay oder Google Pay; das Geld geht direkt an das Hotel (Stripe Connect, Direct Charge), die Plattform behält 1,9 % als Application Fee. Verfügbarkeit und Preise werden über Channex mit Booking.com und anderen Portalen abgeglichen; deren Buchungen kommen in unser System.
 
 **In v1 enthalten**
 - Mehrere Hotels (Mandanten) in einem System; Hotel wird über die Domain erkannt.
@@ -361,7 +361,7 @@ Abnahme:
 ### M2 – Stripe und Admin
 Aufgaben: 6.1–6.4, Admin (Abschnitt 9) inkl. Magic-Link-Login, E-Mails (10).
 Abnahme (Stripe-Testmodus):
-- Checkout als Direct Charge mit Application Fee = 1 %; nach Webhook ist die Buchung `confirmed`, `payments` korrekt.
+- Checkout als Direct Charge mit Application Fee = 1,9 % (190 bps, Standard in `hotels.platform_fee_bps`); nach Webhook ist die Buchung `confirmed`, `payments` korrekt.
 - Doppelt gesendeter Webhook ändert nichts.
 - Storno vor Frist: volle Rückerstattung inkl. Gebühr; nach Frist: Gebühr nach Rateplan.
 - `checkout.session.expired` gibt Hold frei.

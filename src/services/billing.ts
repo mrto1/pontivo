@@ -11,7 +11,7 @@ import { monthlyReport } from "./report";
 import { shiftMonth } from "./overview";
 
 /**
- * Mindestgebühr (Bedingungen für Gastgeber, Ziffer 2): 1 % pro Direktbuchung/Gutschein, mindestens monthly_minimum_rappen
+ * Mindestgebühr (Bedingungen für Gastgeber, Ziffer 2): Plattformgebühr (Standard 1,9 %) pro Direktbuchung/Gutschein, mindestens monthly_minimum_rappen
  * pro Kalendermonat. Die Differenz wird Anfang des Folgemonats der hinterlegten Karte belastet (Plattform-Konto).
  */
 // ASSUMPTION: Die Mindestgebühr gilt ab dem ersten vollen Kalendermonat nach live_since, auch in Monaten mit Status «paused»;
@@ -20,7 +20,7 @@ import { shiftMonth } from "./overview";
 export const MAX_ATTEMPTS = 3;
 const RETRY_DAYS = 3;
 
-/** Verdiente 1 % eines Monats: Buchungen (netto nach Rückerstattung, wie Monatsabrechnung) + bezahlte Gutscheine */
+/** Verdiente Plattformgebühr eines Monats: Buchungen (netto nach Rückerstattung, wie Monatsabrechnung) + bezahlte Gutscheine */
 export async function feesForMonth(hotel: Hotel, month: string): Promise<number> {
   const r = await monthlyReport(hotel.id, month);
   const bookingFees = r.lines.filter((l) => l.source === "direct").reduce((s, l) => s + l.net_fee_rappen, 0);

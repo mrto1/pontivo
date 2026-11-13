@@ -47,14 +47,14 @@ const input = (h: Awaited<ReturnType<typeof hotelWithVoucher>>, d: string, code:
 });
 
 describe("Gutschein bei der Online-Buchung", () => {
-  it("Teilbetrag: Gutschein angerechnet, nur der Rest per Karte, 1 % nur auf den Kartenteil", async () => {
+  it("Teilbetrag: Gutschein angerechnet, nur der Rest per Karte, Plattformgebühr nur auf den Kartenteil", async () => {
     const pay = stripeLike();
     const h = await hotelWithVoucher(10000);
     const { booking } = await createDirectBooking(h.hotel, input(h, inDays(30), h.voucher.code.toLowerCase()));
     expect(booking.status).toBe("hold");
     expect(booking.voucherRappen).toBe(10000);
     const card = booking.totalRappen - 10000;
-    expect(pay.checkouts).toEqual([{ amount: card, fee: Math.max(1, Math.round(card / 100)) }]);
+    expect(pay.checkouts).toEqual([{ amount: card, fee: Math.max(1, Math.round((card * 190) / 10000)) }]);
     expect(await remaining(h.voucher.id)).toBe(0);
     const [p] = await db().select().from(payments).where(eq(payments.bookingId, booking.id));
     expect(p.amountRappen).toBe(card);

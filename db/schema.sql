@@ -21,7 +21,7 @@ CREATE TABLE hotels (
   default_language       text NOT NULL DEFAULT 'de',
   contact_email          text NOT NULL,
   contact_phone          text,
-  platform_fee_bps       integer NOT NULL DEFAULT 100,      -- 100 bps = 1 %
+  platform_fee_bps       integer NOT NULL DEFAULT 190,      -- 190 bps = 1,9 % (Migration 0019)
   -- Kurtaxe: Regel kommt aus tourist_tax_rules (canton + municipality, gültig am Anreisetag).
   tourist_tax_included_in_price boolean NOT NULL DEFAULT false,
   tourist_tax_category text NOT NULL DEFAULT 'hotel' CHECK (tourist_tax_category IN ('hotel','group')),

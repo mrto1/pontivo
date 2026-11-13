@@ -2,6 +2,7 @@
  * Drizzle-Abbild von db/migrations/*.sql (Quelle der Wahrheit bleibt SQL, SPEC 2).
  * Bei Schemaänderungen: neue Datei in db/migrations/ UND diese Datei nachführen.
  */
+import { DEFAULT_PLATFORM_FEE_BPS } from "../domain/fee";
 import {
   pgTable, uuid, text, char, integer, boolean, timestamp, time, date, jsonb, bigserial, primaryKey,
 } from "drizzle-orm/pg-core";
@@ -24,7 +25,7 @@ export const hotels = pgTable("hotels", {
   defaultLanguage: text("default_language").notNull().default("de"),
   contactEmail: text("contact_email").notNull(),
   contactPhone: text("contact_phone"),
-  platformFeeBps: integer("platform_fee_bps").notNull().default(100),
+  platformFeeBps: integer("platform_fee_bps").notNull().default(DEFAULT_PLATFORM_FEE_BPS),
   touristTaxIncludedInPrice: boolean("tourist_tax_included_in_price").notNull().default(false),
   touristTaxCategory: text("tourist_tax_category").notNull().default("hotel"),
   checkinTime: time("checkin_time").notNull().default("15:00"),
@@ -40,7 +41,7 @@ export const hotels = pgTable("hotels", {
   content: jsonb("content").$type<HotelContent>().notNull().default({}),
   /** Objektart (Migration 0011): steuert Texte und Schritte im Einrichtungs-Assistenten */
   propertyType: text("property_type").$type<"hotel" | "bnb" | "apartment" | "chalet" | "group_house">().notNull().default("hotel"),
-  /** Mindestgebühr pro Monat (0 = keine); Differenz zu den 1 % wird monatlich der Karte belastet */
+  /** Mindestgebühr pro Monat (0 = keine); Differenz zur Plattformgebühr wird monatlich der Karte belastet */
   monthlyMinimumRappen: integer("monthly_minimum_rappen").notNull().default(0),
   hostTermsVersion: text("host_terms_version"),
   hostTermsAcceptedAt: ts("host_terms_accepted_at"),

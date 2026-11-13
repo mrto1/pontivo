@@ -42,7 +42,7 @@ describe("Zusatzleistungen: Rechnen", () => {
 });
 
 describe("Zusatzleistungen: Buchung", () => {
-  it("Suche zeigt Preis inkl. obligatorischer Leistungen; Buchung bepreist serverseitig, friert ein, 1 % auf alles", async () => {
+  it("Suche zeigt Preis inkl. obligatorischer Leistungen; Buchung bepreist serverseitig, friert ein, Plattformgebühr auf alles", async () => {
     const { hotel, rooms } = await makeHotel();
     const rt = rooms[0].roomType.id, rp = rooms[0].plans[0].id;
     const checkin = inDays(20), checkout = addDays(checkin, 3);

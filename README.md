@@ -1,6 +1,6 @@
 # Pontivo – Direktbuchung für Hotels
 
-Buchungsmaschine für kleine Hotels: eigene Website mit Direktbuchung, Zahlung über Stripe Connect (TWINT, Karte, Apple Pay, Google Pay) direkt aufs Konto des Hotels, 1 % Plattformgebühr. Abgleich mit Booking.com & Co. über Channex folgt in M3.
+Buchungsmaschine für kleine Hotels: eigene Website mit Direktbuchung, Zahlung über Stripe Connect (TWINT, Karte, Apple Pay, Google Pay) direkt aufs Konto des Hotels, 1,9 % Plattformgebühr. Abgleich mit Booking.com & Co. über Channex folgt in M3.
 
 Auftrag und Details: [`docs/SPEC.md`](docs/SPEC.md) · Offene Fragen und Annahmen: [`QUESTIONS.md`](QUESTIONS.md) · Regeln für KI-Agenten: [`CLAUDE.md`](CLAUDE.md)
 
@@ -9,7 +9,7 @@ Auftrag und Details: [`docs/SPEC.md`](docs/SPEC.md) · Offene Fragen und Annahme
 | Meilenstein | Stand |
 | --- | --- |
 | **M1 Kern** | fertig: Schema, Suche, Preise, Kurtaxe nach Gemeinde, Hold (30+2 Min.), Ablauf, Storno, Zustandsautomat, Buchungsseiten DE/EN mit Fake-Zahlung. Alle Abnahmetests grün. |
-| **M2 Stripe und Admin** | Code fertig und mit gemocktem Stripe getestet: Onboarding (Connect, Direct Charges), Checkout mit 1 % Application Fee, Webhooks, Rückerstattung, Magic-Link-Login, Kalender, Buchungen, Einstellungen, E-Mails. **Aktivieren mit eigenen Stripe-Testschlüsseln** (siehe unten). |
+| **M2 Stripe und Admin** | Code fertig und mit gemocktem Stripe getestet: Onboarding (Connect, Direct Charges), Checkout mit 1,9 % Application Fee, Webhooks, Rückerstattung, Magic-Link-Login, Kalender, Buchungen, Einstellungen, E-Mails. **Aktivieren mit eigenen Stripe-Testschlüsseln** (siehe unten). |
 | **M3 Channex** | Code fertig und mit gemockter Channex-API getestet: ARI-Outbox (gebündelt, Rate-Limit 10/min, Backoff, Alarm), Buchungen über Feed + Ack (neu, geändert, storniert, Überbuchung, unbekanntes Mapping), Webhook mit HMAC, Admin-Seite „Channex“ (anlegen oder IDs zuordnen, Vollabgleich). **Aktivieren mit Channex-Staging-Schlüssel.** Monatsabrechnung mit CSV und Druck/PDF. |
 | Rechtstexte | AGB und Datenschutzerklärung als Entwurf (DE/EN) unter `/<sprache>/agb` und `/<sprache>/datenschutz`, Betreiberangaben aus `PLATFORM_*`-Variablen. **Vor dem Livegang prüfen lassen.** |
 | M4 Modul Gäste | offen |

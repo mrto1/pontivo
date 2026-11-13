@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { feePercentText } from "@/src/domain/fee";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
@@ -14,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const name = env().PLATFORM_NAME;
   return {
     title: `${name} – Direktbuchung für Hotels`,
-    description: `Website mit Online-Buchung, TWINT und Abgleich mit Booking.com für kleine Hotels in der Schweiz. ${name} kostet 1 % pro Direktbuchung.`,
+    description: `Website mit Online-Buchung, TWINT und Abgleich mit Booking.com für kleine Hotels in der Schweiz. ${name} kostet ${feePercentText()} % pro Direktbuchung.`,
   };
 }
 

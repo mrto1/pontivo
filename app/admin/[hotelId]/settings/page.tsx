@@ -182,7 +182,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
           {isOwner ? <form action={cardSetup}>{hidden}<button className="btn secondary">{hotel.billingCardLabel ? "Andere Karte hinterlegen" : "Karte hinterlegen"}</button></form> : null}
           {charges.length ? (
             <table className="table small">
-              <thead><tr><th>Monat</th><th>1 %</th><th>Minimum</th><th>Belastet</th><th>Status</th></tr></thead>
+              <thead><tr><th>Monat</th><th>Gebühr</th><th>Minimum</th><th>Belastet</th><th>Status</th></tr></thead>
               <tbody>{charges.map((c) => (
                 <tr key={c.id}><td>{c.month}</td><td>{formatChf(c.feesRappen)}</td><td>{formatChf(c.minimumRappen)}</td><td>{formatChf(c.chargeRappen)}</td>
                   <td>{c.status === "succeeded" ? "bezahlt" : c.status === "none" ? "nichts fällig" : c.status === "pending" ? "offen" : <span className="badge warn">fehlgeschlagen ({c.attempts}×)</span>}</td></tr>

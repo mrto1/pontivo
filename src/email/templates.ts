@@ -1,4 +1,5 @@
 import { formatChf } from "../domain/money";
+import { feePercentText } from "../domain/fee";
 import { cancellationPolicyText } from "../domain/cancellation";
 import { formatDay, isLocale, t, type Locale } from "../i18n/dict";
 import type { Booking, Hotel, RatePlan, RoomType } from "../db/schema";
@@ -235,9 +236,9 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
     case "host_minimum_charged": {
       const d = c.data as Record<string, string>;
       return wrap(c, l, de ? `${env().PLATFORM_NAME}: Abrechnung ${d.month}` : `${env().PLATFORM_NAME}: statement ${d.month}`,
-        de ? ["Guten Tag,", `im ${d.month} sind 1 % von Direktbuchungen und Gutscheinen von ${d.fees} angefallen. Bis zur Mindestgebühr von ${d.minimum} fehlten ${d.amount}; dieser Betrag wurde Ihrer Karte ${d.card} belastet.`]
-          : ["Hello,", `in ${d.month} the 1 % fees amounted to ${d.fees}. The difference to the minimum of ${d.minimum}, ${d.amount}, was charged to your card ${d.card}.`],
-        [`${de ? "Monat" : "Month"}: ${d.month}`, `1 %: ${d.fees}`, `Minimum: ${d.minimum}`, `${de ? "Belastet" : "Charged"}: ${d.amount}`]);
+        de ? ["Guten Tag,", `im ${d.month} sind ${feePercentText(c.hotel.platformFeeBps)} % von Direktbuchungen und Gutscheinen von ${d.fees} angefallen. Bis zur Mindestgebühr von ${d.minimum} fehlten ${d.amount}; dieser Betrag wurde Ihrer Karte ${d.card} belastet.`]
+          : ["Hello,", `in ${d.month} the ${feePercentText(c.hotel.platformFeeBps)} % fees amounted to ${d.fees}. The difference to the minimum of ${d.minimum}, ${d.amount}, was charged to your card ${d.card}.`],
+        [`${de ? "Monat" : "Month"}: ${d.month}`, `${feePercentText(c.hotel.platformFeeBps)} %: ${d.fees}`, `Minimum: ${d.minimum}`, `${de ? "Belastet" : "Charged"}: ${d.amount}`]);
     }
     case "host_charge_failed": {
       const d = c.data as Record<string, string | boolean>;

@@ -79,7 +79,7 @@ describe("Gutscheine", () => {
     expect(checkoutUrl).toContain(`/v/${voucher.publicToken}?paid=1`);
     expect(voucher.code).toMatch(/^GS-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
     const v = (await voucherByToken(voucher.publicToken))!;
-    expect(v).toMatchObject({ status: "paid", amountRappen: 10000, remainingRappen: 10000, platformFeeRappen: 100, language: "it" });
+    expect(v).toMatchObject({ status: "paid", amountRappen: 10000, remainingRappen: 10000, platformFeeRappen: 190, language: "it" });
     expect(v.validUntil > inDays(3 * 365 - 2)).toBe(true);
     const mails = await db().select().from(emailOutbox).where(eq(emailOutbox.hotelId, h.hotel.id));
     expect(mails.map((m) => m.template).sort()).toEqual(["hotel_voucher_sold", "voucher_purchased"]);
@@ -99,7 +99,7 @@ describe("Gutscheine", () => {
     const pending: PaymentProvider = {
       name: "fake", confirmsImmediately: false, ...cardStubs,
       async createCheckout() { throw new Error("nicht benutzt"); },
-      async createPaymentCheckout(a) { expect(a.feeRappen).toBe(200); expect(a.metadata.voucher_id).toBeTruthy(); return { url: "https://checkout.test/x", sessionId: "cs_test" }; },
+      async createPaymentCheckout(a) { expect(a.feeRappen).toBe(380); expect(a.metadata.voucher_id).toBeTruthy(); return { url: "https://checkout.test/x", sessionId: "cs_test" }; },
       async refund() { return { refundId: "re" }; },
     };
     setPaymentProvider(pending);

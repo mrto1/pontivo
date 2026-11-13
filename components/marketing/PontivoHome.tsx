@@ -1,12 +1,13 @@
 import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
 import s from "./marketing.module.css";
+import { DEFAULT_PLATFORM_FEE_BPS } from "@/src/domain/fee";
 import { SavingsCalculator } from "./SavingsCalculator";
 
 const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["700", "800"], variable: "--pv-display", display: "swap" });
 const body = Instrument_Sans({ subsets: ["latin"], weight: ["400", "600", "700"], variable: "--pv-body", display: "swap" });
 
 /** Gebühr pro Direktbuchung in Prozent (Standard für neue Hotels, siehe hotels.platform_fee_bps) */
-const FEE_PERCENT = 1;
+const FEE_PERCENT = DEFAULT_PLATFORM_FEE_BPS / 100;
 
 // Beispielbuchung im Hero: 2 Nächte à CHF 180
 const BOOKING = 360;

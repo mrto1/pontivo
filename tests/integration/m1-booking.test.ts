@@ -71,9 +71,9 @@ describe("M1 Abnahme", () => {
     expect(j.reference).toMatch(/^[A-Z2-9]{3}-[A-Z2-9]{4}$/);
     const [b] = await db().select().from(bookings).where(eq(bookings.hotelId, hotel.id));
     // Glarus: 2 Erwachsene × 440 × 2 Nächte = 1760; Zimmer 2 × 18000
-    expect(b).toMatchObject({ status: "confirmed", roomsTotalRappen: 36000, touristTaxRappen: 1760, totalRappen: 37760, platformFeeRappen: 378 });
+    expect(b).toMatchObject({ status: "confirmed", roomsTotalRappen: 36000, touristTaxRappen: 1760, totalRappen: 37760, platformFeeRappen: 717 });
     const [p] = await db().select().from(payments).where(eq(payments.bookingId, b.id));
-    expect(p).toMatchObject({ status: "succeeded", amountRappen: 37760, applicationFeeRappen: 378 });
+    expect(p).toMatchObject({ status: "succeeded", amountRappen: 37760, applicationFeeRappen: 717 });
     const mails = await db().select().from(emailOutbox).where(eq(emailOutbox.bookingId, b.id));
     expect(mails.map((m) => m.template).sort()).toEqual(["booking_confirmed", "hotel_new_booking", "pre_arrival"]);
     const ob = await db().select().from(channexOutbox).where(and(eq(channexOutbox.hotelId, hotel.id), eq(channexOutbox.kind, "availability")));

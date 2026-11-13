@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { feePercentText } from "@/src/domain/fee";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
@@ -316,7 +317,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
     case "karte":
       body = (
         <div className="stack">
-          <p>{formatChf(hotel.monthlyMinimumRappen)} pro Monat ist die Mindestgebühr. Die 1 % pro Direktbuchung werden damit verrechnet: Liegen sie in einem Monat darunter, belasten wir Anfang des Folgemonats nur die Differenz. Die Mindestgebühr gilt ab dem ersten vollen Monat nach dem Live-Gang.</p>
+          <p>{formatChf(hotel.monthlyMinimumRappen)} pro Monat ist die Mindestgebühr. Die {feePercentText(hotel.platformFeeBps)} % pro Direktbuchung werden damit verrechnet: Liegen sie in einem Monat darunter, belasten wir Anfang des Folgemonats nur die Differenz. Die Mindestgebühr gilt ab dem ersten vollen Monat nach dem Live-Gang.</p>
           <p>Die Karte wird bei Stripe gespeichert, wir sehen nur Kartentyp und die letzten vier Ziffern. Jetzt wird nichts belastet.</p>
           {hotel.billingCardLabel ? <p className="notice">✓ Hinterlegt: {hotel.billingCardLabel}</p> : null}
           {isOwner ? <form action={cardStart}>{H}<button className="btn">{hotel.billingCardLabel ? "Andere Karte hinterlegen" : "Karte hinterlegen"}</button></form> : <p className="small muted">Die Karte hinterlegt die Inhaberin bzw. der Inhaber.</p>}

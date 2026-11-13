@@ -102,7 +102,7 @@ function completed(sessionId: string, b: { id: string; hotelId: string; totalRap
 }
 
 describe("M2 Stripe Connect", () => {
-  it("Checkout als Direct Charge mit Application Fee 1 %; nach Webhook confirmed, payments korrekt", async () => {
+  it("Checkout als Direct Charge mit Application Fee 1,9 %; nach Webhook confirmed, payments korrekt", async () => {
     const h = await stripeHotel({ twint: true });
     const b = await book(h, inDays(30));
     expect(b.status).toBe("hold");
@@ -113,7 +113,7 @@ describe("M2 Stripe Connect", () => {
     expect(params.mode).toBe("payment");
     expect(params.currency).toBe("chf");
     expect(params.line_items?.[0].price_data?.unit_amount).toBe(b.totalRappen);
-    expect(params.payment_intent_data?.application_fee_amount).toBe(Math.floor((b.totalRappen * 100 + 5000) / 10000));
+    expect(params.payment_intent_data?.application_fee_amount).toBe(Math.floor((b.totalRappen * 190 + 5000) / 10000));
     expect(params.payment_intent_data?.metadata).toEqual({ booking_id: b.id, hotel_id: h.hotel.id });
     expect(params.expires_at).toBe(Math.floor(b.holdExpiresAt!.getTime() / 1000));
     expect(params.expires_at! - Date.now() / 1000).toBeGreaterThanOrEqual(30 * 60);

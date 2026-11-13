@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { feePercentText } from "@/src/domain/fee";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
@@ -115,7 +116,7 @@ export default async function Vouchers({ params, searchParams }: { params: Promi
           </fieldset>
           {canEdit ? <div><button className="btn small">Speichern</button></div> : null}
         </form>
-        <p className="muted small">Auf der Website zeigen Sie das Formular mit dem Baustein «Gutscheine». Bezahlung wie bei Buchungen (TWINT, Karte), das Geld geht direkt an Sie, Pontivo behält 1 %. Die Gültigkeitsdauer bitte rechtlich prüfen lassen.</p>
+        <p className="muted small">Auf der Website zeigen Sie das Formular mit dem Baustein «Gutscheine». Bezahlung wie bei Buchungen (TWINT, Karte), das Geld geht direkt an Sie, Pontivo behält {feePercentText(hotel.platformFeeBps)} %. Die Gültigkeitsdauer bitte rechtlich prüfen lassen.</p>
       </section>
     </div>
   );

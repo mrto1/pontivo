@@ -1,4 +1,5 @@
 import { platformInfo, type LegalDoc } from "./texts";
+import { feePercentText } from "../domain/fee";
 import { formatChf } from "../domain/money";
 
 /**
@@ -7,7 +8,7 @@ import { formatChf } from "../domain/money";
  * WICHTIG: Vor dem produktiven Einsatz juristisch prüfen lassen (QUESTIONS.md). Inklusive Auftragsbearbeitung (DSG).
  */
 // ASSUMPTION: Nur Deutsch; französische und italienische Fassung folgen nach der juristischen Prüfung.
-export const HOST_TERMS_VERSION = "2026-11-10";
+export const HOST_TERMS_VERSION = "2026-11-13";
 export const DEFAULT_MONTHLY_MINIMUM_RAPPEN = 1900;
 
 export function hostTerms(): LegalDoc {
@@ -23,8 +24,8 @@ export function hostTerms(): LegalDoc {
         "Der Gastgeber ist Vertragspartner seiner Gäste. Er ist verantwortlich für seine Inhalte, Preise, Stornoregeln, Kurtaxe, Gästemeldung und die Einhaltung der für ihn geltenden Vorschriften (z. B. Bewilligungen, Preisbekanntgabe, Lebensmittelrecht).",
       ] },
       { h: "2. Preis", p: [
-        `Pro Direktbuchung und pro verkauftem Gutschein: 1 % des per Karte, TWINT oder Wallet bezahlten Betrags. Die Gebühr wird bei der Zahlung direkt einbehalten und bei einer Rückerstattung anteilig zurückgegeben.`,
-        `Mindestgebühr: ${min} pro Kalendermonat. Liegen die 1 % eines Monats darunter, wird die Differenz Anfang des Folgemonats der hinterlegten Karte belastet. Die Mindestgebühr gilt ab dem ersten vollen Kalendermonat nach der Live-Schaltung, auch in Monaten, in denen der Betrieb pausiert ist.`,
+        `Pro Direktbuchung und pro verkauftem Gutschein: ${feePercentText()} % des per Karte, TWINT oder Wallet bezahlten Betrags. Die Gebühr wird bei der Zahlung direkt einbehalten und bei einer Rückerstattung anteilig zurückgegeben.`,
+        `Mindestgebühr: ${min} pro Kalendermonat. Liegen die ${feePercentText()} % eines Monats darunter, wird die Differenz Anfang des Folgemonats der hinterlegten Karte belastet. Die Mindestgebühr gilt ab dem ersten vollen Kalendermonat nach der Live-Schaltung, auch in Monaten, in denen der Betrieb pausiert ist.`,
         "Gebühren von Stripe (Zahlungsabwicklung) trägt der Gastgeber direkt gegenüber Stripe. Die Website und automatische Übersetzungen im Rahmen der angegebenen Grenzen sind inbegriffen.",
         "Preise verstehen sich ohne Mehrwertsteuer, sofern diese geschuldet ist. Preisänderungen werden mindestens 60 Tage im Voraus per E-Mail angekündigt; der Gastgeber kann auf den Zeitpunkt der Änderung kündigen.",
       ] },

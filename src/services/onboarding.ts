@@ -78,7 +78,7 @@ export async function registerHost(input: RegisterInput, now = new Date()) {
       propertyType: v.propertyType,
       // ASSUMPTION: Ferienwohnungen, Chalets und Gruppenhäuser fallen unter die Kurtaxe-Kategorie «group» (Parahotellerie); im Assistenten bestätigt der Gastgeber den Satz.
       touristTaxCategory: isWholeUnit(v.propertyType) ? "group" : "hotel",
-      // ASSUMPTION: Selbst registrierte Betriebe aller Arten: 1 %, mindestens CHF 19 pro Monat. Bestehende, von Hand angelegte Hotels bleiben ohne Minimum.
+      // ASSUMPTION: Selbst registrierte Betriebe aller Arten: 1,9 %, mindestens CHF 19 pro Monat. Bestehende, von Hand angelegte Hotels bleiben ohne Minimum.
       monthlyMinimumRappen: DEFAULT_MONTHLY_MINIMUM_RAPPEN,
       hostTermsVersion: HOST_TERMS_VERSION, hostTermsAcceptedAt: now,
       onboarding: { startedAt: now.toISOString(), reminders: 0 },

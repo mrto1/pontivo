@@ -129,7 +129,7 @@ export async function createDirectBooking(
       booking = await db().transaction(async (tx) => {
         const ok = await reserveNights(tx, input.roomTypeId, input.checkin, input.checkout);
         if (!ok) throw new RollbackSoldOut();
-        // Gutschein sperren und anrechnen; 1 % Plattformgebühr nur auf den Teil, der per Karte/TWINT bezahlt wird
+        // Gutschein sperren und anrechnen; Plattformgebühr (Standard 1,9 %) nur auf den Teil, der per Karte/TWINT bezahlt wird
         // (am Gutschein hat Pontivo beim Verkauf schon verdient)
         const vt = input.voucherCode?.trim() ? await takeVoucherForBooking(tx, hotel, input.voucherCode, totalRappen, today) : null;
         const voucherRappen = vt?.amountRappen ?? 0;

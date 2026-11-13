@@ -16,7 +16,7 @@ import { enqueuePush } from "./../push/service";
 import crypto from "node:crypto";
 
 /**
- * Wertgutscheine (Pontivo Web): Gast kauft online (Direct Charge aufs Hotelkonto, 1 % Plattformgebühr),
+ * Wertgutscheine (Pontivo Web): Gast kauft online (Direct Charge aufs Hotelkonto, Plattformgebühr (Standard 1,9 %)),
  * bekommt Code und Druckansicht per Mail, das Hotel löst im Admin ein – auch in Teilbeträgen.
  */
 // ASSUMPTION: v1 ohne Einlösung bei der Online-Buchung; Gültigkeit Standard 3 Jahre (rechtlich prüfen lassen).

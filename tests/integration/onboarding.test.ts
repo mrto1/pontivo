@@ -164,7 +164,7 @@ describe("Mindestgebühr", () => {
   const lastMonth = () => shiftMonth(todayIn("Europe/Zurich").slice(0, 7), -1);
   const chargeOf = async (hotelId: string) => (await db().select().from(platformCharges).where(eq(platformCharges.hotelId, hotelId)))[0];
 
-  it("Differenz zum Minimum wird belastet, nur einmal pro Monat; mit 1 % darüber nichts", async () => {
+  it("Differenz zum Minimum wird belastet, nur einmal pro Monat; mit höherer Gebühr darüber nichts", async () => {
     const fake = new FakePaymentProvider();
     setPaymentProvider(fake);
     const a = await liveHost(3);

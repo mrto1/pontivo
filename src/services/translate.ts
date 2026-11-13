@@ -9,7 +9,7 @@ import { getPage, SiteError } from "./site";
 
 /**
  * Automatische Übersetzung der Hotel-Texte aus dem Deutschen (Claude API, Messages-Endpunkt).
- * Pontivo trägt die Kosten (in den 1 % enthalten); Limit pro Hotel und Monat (TRANSLATIONS_PER_MONTH).
+ * Pontivo trägt die Kosten (in der Plattformgebühr enthalten); Limit pro Hotel und Monat (TRANSLATIONS_PER_MONTH).
  * Formatierungszeichen (src/domain/richtext.ts), Links, E-Mail, Telefon und Eigennamen bleiben erhalten.
  */
 

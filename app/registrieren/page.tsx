@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { feePercentText } from "@/src/domain/fee";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
@@ -51,7 +52,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
             <li><strong>Online gehen</strong> – sofort buchbar. Mit eigener Website: Link oder Knopf «Buchen» einbauen, wir zeigen wie.</li>
           </ol>
           <div className="card small">
-            <strong>Preis, mit oder ohne Website gleich:</strong> 1 % pro Direktbuchung, mindestens CHF 19 pro Monat (ab dem ersten vollen Monat nach dem Live-Gang). Liegen die 1 % darunter, wird nur die Differenz belastet. Keine Einrichtungsgebühr, monatlich kündbar.
+            <strong>Preis, mit oder ohne Website gleich:</strong> {feePercentText()} % pro Direktbuchung, mindestens CHF 19 pro Monat (ab dem ersten vollen Monat nach dem Live-Gang). Liegen die {feePercentText()} % darunter, wird nur die Differenz belastet. Keine Einrichtungsgebühr, monatlich kündbar.
           </div>
         </section>
         <form action={register} className="card stack">
@@ -80,7 +81,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
           <div><label htmlFor="contactName">Ihr Name</label><input id="contactName" name="contactName" required maxLength={120} autoComplete="name" /></div>
           <div><label htmlFor="email">E-Mail</label><input id="email" name="email" type="email" required maxLength={200} autoComplete="email" /></div>
           <div className="hp" aria-hidden="true"><label>Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
-          <label className="check"><input type="checkbox" name="terms" required /><span>Ich akzeptiere die <a href="/gastgeber-bedingungen" target="_blank">Bedingungen für Gastgeber</a> (1 %, mindestens CHF 19 pro Monat).</span></label>
+          <label className="check"><input type="checkbox" name="terms" required /><span>Ich akzeptiere die <a href="/gastgeber-bedingungen" target="_blank">Bedingungen für Gastgeber</a> ({feePercentText()} %, mindestens CHF 19 pro Monat).</span></label>
           <button className="btn">Registrieren und Login-Link erhalten</button>
           <p className="small muted">Schon registriert? <a href="/admin/login">Anmelden</a></p>
         </form>
