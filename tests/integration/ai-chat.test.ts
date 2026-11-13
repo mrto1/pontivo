@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { and, eq, sql } from "drizzle-orm";
 import { closeDb, db, rows } from "../../src/db/client";
 import { aiUsage, hotelModules, hotels, inquiries, platformCharges } from "../../src/db/schema";
-import { aiChatActive, AiModuleError, cancelAiChat, enableAiChat, setAiBudget } from "../../src/services/ai-module";
+import { aiChatActive, aiInsights, AiModuleError, cancelAiChat, enableAiChat, setAiBudget } from "../../src/services/ai-module";
 import { handleChat, setChatFetch } from "../../src/services/chat";
 import { runMonthlyMinimum } from "../../src/services/billing";
 import { shiftMonth } from "../../src/services/overview";
@@ -126,7 +126,7 @@ describe("KI-Chat: Antworten", () => {
 
   it("ai_usage speichert nur Zähler, keine Texte", async () => {
     const cols = rows<{ column_name: string }>(await db().execute(sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'ai_usage' ORDER BY column_name`)).map((c) => c.column_name);
-    expect(cols).toEqual(["hotel_id", "id", "input_tokens", "last_at", "messages", "month", "output_tokens", "started_at", "surface"]);
+    expect(cols).toEqual(["hotel_id", "id", "input_tokens", "last_at", "messages", "month", "output_tokens", "started_at", "surface", "unanswered"]);
   });
 
   it("Gespräch zählt einmal pro Sitzung; nach 30 Minuten Pause beginnt ein neues; fremde Sitzung wird nicht weitergeführt", async () => {
@@ -166,6 +166,24 @@ describe("KI-Chat: Antworten", () => {
     expect(calls[0].system).toContain("Deutsch");
     expect(calls[0].system).not.toContain("The guest is on their booking page");
     expect((await db().select().from(aiUsage).where(eq(aiUsage.hotelId, a.id)))[0].surface).toBe("site");
+  });
+
+  it("Auswertung: nicht beantwortete Fragen werden nur gezählt, nie als Text gespeichert", async () => {
+    const a = await enable(await liveHotel());
+    fakeModel("Das weiss ich leider nicht. [[FORWARD]]");
+    const first = await handleChat(a, { messages: q("Gibt es eine Sauna?"), lang: "de" });
+    if (first.status !== "ok") throw new Error("erwartet ok");
+    fakeModel("Ja, Parkplätze gibt es.");
+    await handleChat(a, { messages: q("Parkplätze?"), lang: "de", session: first.session });
+    fakeModel("Auch das weiss ich nicht. [[FORWARD]]");
+    await handleChat(a, { messages: q("Hunde erlaubt?"), lang: "de", session: first.session });
+    fakeModel("Gern. Hallo!");
+    await handleChat(a, { messages: q("Hallo"), lang: "de" }); // zweites Gespräch ohne Lücke
+    const [cur] = await aiInsights(a.id);
+    expect(cur).toMatchObject({ conversations: 2, messages: 4, unanswered: 2, conversationsWithGap: 1 });
+    const cols = (await db().execute(sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'ai_usage'`)).rows.map((r) => String(r.column_name));
+    expect(cols.filter((c) => /text|content|question|prompt/.test(c))).toEqual([]);
+    expect(await aiInsights((await liveHotel()).id)).toEqual([]);
   });
 
   it("Fehler des Dienstes: Fehlermeldung, ein fehlgeschlagener erster Aufruf zählt nicht", async () => {

@@ -69,7 +69,7 @@ async function uniqueHotelSlug(name: string): Promise<string> {
  * Neuer Gastgeber: Betrieb (Entwurf), Benutzer (Inhaber), Annahme der Bedingungen, Mindestgebühr,
  * Willkommensmail und Login-Link. Gibt den Login-Link zurück (für die Entwicklung ohne Mailversand).
  */
-export async function registerHost(input: RegisterInput, now = new Date()) {
+export async function registerHost(input: RegisterInput, now = new Date(), opts: { noLogin?: boolean } = {}) {
   const v = registerSchema.parse(input);
   const slug = await uniqueHotelSlug(v.name);
   const hotel = await db().transaction(async (tx) => {
@@ -91,7 +91,7 @@ export async function registerHost(input: RegisterInput, now = new Date()) {
     await enqueueEmail(tx, { hotelId: h.id, template: "host_welcome", to: v.email, language: "de", data: { contactName: v.contactName, propertyType: v.propertyType, mode: v.mode } });
     return h;
   });
-  const loginLink = await requestLoginLink(v.email, now);
+  const loginLink = opts.noLogin ? null : await requestLoginLink(v.email, now);
   return { hotel, loginLink };
 }
 
@@ -295,4 +295,9 @@ export async function updateBasics(hotel: Hotel, input: z.input<typeof basicsSch
     }).where(eq(hotels.id, hotel.id));
     await audit(tx, { hotelId: hotel.id, actor, action: "hotel.basics", entity: "hotel", entityId: hotel.id });
   });
+}
+
+/** Weiterer Betrieb für einen angemeldeten Gastgeber: gleiches Konto (E-Mail), neuer Entwurf, Inhaber-Rolle, kein neuer Login-Link */
+export async function addHotelForUser(user: { email: string; name: string | null }, input: Omit<RegisterInput, "email" | "contactName">, now = new Date()) {
+  return registerHost({ ...input, email: user.email, contactName: user.name?.trim() || user.email }, now, { noLogin: true });
 }

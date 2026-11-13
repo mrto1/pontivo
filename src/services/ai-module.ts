@@ -96,6 +96,16 @@ export type AiUsageSummary = {
   inputTokens: number; outputTokens: number;
 };
 
+export type AiInsights = { month: string; conversations: number; messages: number; unanswered: number; conversationsWithGap: number };
+
+/** Auswertung der letzten Monate (neuester zuerst): Fragen, die der Chat nicht beantworten konnte. Nur Zähler, keine Texte. */
+export async function aiInsights(hotelId: string, months = 6): Promise<AiInsights[]> {
+  return rows<{ month: string; c: number; m: number; u: number; g: number }>(await db().execute(sql`
+    SELECT month, count(*)::int AS c, coalesce(sum(messages),0)::int AS m, coalesce(sum(unanswered),0)::int AS u, (count(*) FILTER (WHERE unanswered > 0))::int AS g
+      FROM ai_usage WHERE hotel_id = ${hotelId} GROUP BY month ORDER BY month DESC LIMIT ${months}`))
+    .map((r) => ({ month: r.month, conversations: r.c, messages: r.m, unanswered: r.u, conversationsWithGap: r.g }));
+}
+
 export async function aiUsageSummary(hotel: Hotel, month: string): Promise<AiUsageSummary | null> {
   const { settings } = await aiModuleRow(hotel.id);
   const t = settings.terms;

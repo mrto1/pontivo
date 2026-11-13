@@ -583,6 +583,8 @@ export const aiUsage = pgTable("ai_usage", {
   messages: integer("messages").notNull().default(0),
   inputTokens: integer("input_tokens").notNull().default(0),
   outputTokens: integer("output_tokens").notNull().default(0),
+  /** Antworten, bei denen der Chat die Frage nicht beantworten konnte (Weiterleitungs-Hinweis), nur Zähler */
+  unanswered: integer("unanswered").notNull().default(0),
   startedAt: ts("started_at").notNull().defaultNow(),
   lastAt: ts("last_at").notNull().defaultNow(),
 });

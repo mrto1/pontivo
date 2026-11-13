@@ -319,6 +319,9 @@ Rate-Limit für öffentliche POST-Routen (z. B. 10 pro Minute und IP). Alle Eing
 
 ---
 
+### 9b. Mehrere Betriebe pro Konto
+Ein Benutzer kann Mitglied mehrerer Betriebe sein (`hotel_members`). `/admin` zeigt ab zwei Betrieben (und für Plattform-Admins) eine Übersicht mit Anreisen/Abreisen heute, Gästen im Haus, neuen Anfragen, Buchungen und Umsatz des Monats; im Betrieb gibt es «Betrieb wechseln». `/admin/neu` legt für Inhaber einen weiteren Betrieb im selben Konto an (eigene Bedingungen, Mindestgebühr, Stripe, Abrechnung je Betrieb, ohne neuen Login-Link). Alle Zahlen werden je `hotel_id` aus den zugänglichen Betrieben gebildet. Abnahme: `tests/integration/portfolio.test.ts`.
+
 ## 10. E-Mails
 
 | Template | Empfänger | Auslöser |
@@ -490,6 +493,9 @@ Abnahme KI-Chat:
 - Ankunftsinfos: nie im Prompt; nur mit gültigem Link, bestätigter Buchung und im Aufenthaltszeitraum; Zimmertext überschreibt Hoteltext; nicht im Audit-Log.
 
 ---
+
+### 14b.1 Auswertung «Was der Chat nicht wusste»
+`ai_usage.unanswered` zählt Antworten mit Weiterleitungs-Marker. Der Admin zeigt je Monat Gespräche, Fragen, nicht beantwortete Fragen (Anzahl und Anteil) und Gespräche mit Lücke. Nur Zähler, nie Texte oder Themen. Abnahme: Test «Auswertung» in `tests/integration/ai-chat.test.ts`.
 
 ## 14c. Buchhaltung des Betreibers (Export für Banana)
 

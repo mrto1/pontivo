@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
-import { AiModuleError, aiModuleRow, aiUsageSummary, cancelAiChat, enableAiChat, offeredPlans, setAiBudget } from "@/src/services/ai-module";
+import { AiModuleError, aiInsights, aiModuleRow, aiUsageSummary, cancelAiChat, enableAiChat, offeredPlans, setAiBudget } from "@/src/services/ai-module";
 import { moduleActiveOn } from "@/src/domain/ai-plan";
 import { todayIn } from "@/src/domain/dates";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
@@ -57,6 +57,7 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
   const t = m.settings.terms;
   const usage = running ? await aiUsageSummary(hotel, today.slice(0, 7)) : null;
   const plans = await offeredPlans();
+  const insights = running ? await aiInsights(hotel.id) : [];
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
   const keyMissing = !env().ANTHROPIC_API_KEY;
 
@@ -90,6 +91,25 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
             ) : null}
             {keyMissing ? <p className="notice warn small">Der Chat ist technisch noch nicht eingerichtet (API-Schlüssel fehlt). Bitte beim Betreiber melden.</p> : null}
           </section>
+
+          {insights.length ? (
+            <section className="card stack">
+              <h2>Was der Chat nicht wusste</h2>
+              <p className="small muted">Nur Zahlen, wir speichern keine Gesprächstexte. Jede nicht beantwortete Frage zeigt eine Info, die auf Ihrer Website fehlt: ergänzen Sie sie unter Website, Speisekarte, Zusatzleistungen oder Angebote.</p>
+              <table className="table">
+                <thead><tr><th>Monat</th><th>Gespräche</th><th>Fragen insgesamt</th><th>Nicht beantwortet</th><th>Gespräche mit Lücke</th></tr></thead>
+                <tbody>
+                  {insights.map((i) => (
+                    <tr key={i.month}>
+                      <td>{i.month.split("-").reverse().join(".")}</td><td>{i.conversations}</td><td>{i.messages}</td>
+                      <td><strong>{i.unanswered}</strong>{i.messages ? ` (${Math.round((i.unanswered * 100) / i.messages)} %)` : ""}</td>
+                      <td>{i.conversationsWithGap}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          ) : null}
 
           {t.packSize > 0 ? (
             <section className="card stack">

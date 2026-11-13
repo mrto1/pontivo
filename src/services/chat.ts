@@ -160,7 +160,7 @@ export async function handleChat(
     const arrival = arrivalOk && raw.includes(ARRIVAL_MARKER);
     const reply = raw.split(FORWARD_MARKER).join("").split(ARRIVAL_MARKER).join("").trim();
     await db().update(aiUsage).set({
-      messages: sql`${aiUsage.messages} + 1`, inputTokens: sql`${aiUsage.inputTokens} + ${usage.input}`,
+      messages: sql`${aiUsage.messages} + 1`, unanswered: sql`${aiUsage.unanswered} + ${forward ? 1 : 0}`, inputTokens: sql`${aiUsage.inputTokens} + ${usage.input}`,
       outputTokens: sql`${aiUsage.outputTokens} + ${usage.output}`, lastAt: now,
     }).where(eq(aiUsage.id, sessionId));
     return { status: "ok", session: sessionId, reply: reply || text.error, forward, arrival };
