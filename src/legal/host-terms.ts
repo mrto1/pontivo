@@ -3,7 +3,7 @@ import { feePercentText } from "../domain/fee";
 import { formatChf } from "../domain/money";
 
 /**
- * Bedingungen für Gastgeber (Vertrag zwischen Pontivo und dem Betrieb), Entwurf.
+ * Bedingungen für Gastgeber (Vertrag zwischen Pontivo und dem Betrieb).
  * Wird bei der Selbst-Registrierung akzeptiert (hotels.host_terms_version/_accepted_at).
  * WICHTIG: Vor dem produktiven Einsatz juristisch prüfen lassen (QUESTIONS.md). Inklusive Auftragsbearbeitung (DSG).
  */
@@ -17,7 +17,7 @@ export function hostTerms(): LegalDoc {
   return {
     title: `Bedingungen für Gastgeber – ${p.name}`,
     intro: `Diese Bedingungen regeln die Nutzung von ${p.name} durch Hotels, B&Bs, Ferienwohnungen und weitere Beherbergungsbetriebe («Gastgeber»). Anbieterin ist ${p.operator} («${p.name}»), Adresse siehe Impressum.`,
-    draftNote: "Entwurf – noch nicht juristisch geprüft.",
+    draftNote: "",
     sections: [
       { h: "1. Leistungen", p: [
         `${p.name} stellt eine Website mit Online-Buchung, Zahlungsabwicklung über Stripe, Verwaltung von Zimmern/Wohnungen, Preisen und Buchungen sowie optionale Module (z. B. Gästemeldung, Gutscheine, Abgleich mit Buchungsportalen über Channex) zur Verfügung.`,
