@@ -149,3 +149,13 @@ cd /opt/pontivo/deploy && ./deploy.sh
 1. Geheimnis erzeugen: `openssl rand -hex 24` und in `.env.production` als `POSTMARK_WEBHOOK_SECRET=…` eintragen, dann `./deploy.sh` (führt auch die Migration aus).
 2. In Postmark beim Stream «Default Transactional Stream» → Webhooks → Webhook hinzufügen: URL `https://pontivo.ch/api/webhooks/postmark`, Basic Auth mit beliebigem Benutzernamen (z. B. `postmark`) und dem Geheimnis als Passwort. Ereignisse **Bounce** und **Spam Complaint** anwählen, mit «Test» prüfen.
 3. Adressen mit hartem Bounce oder Spam-Beschwerde landen in `email_suppressions`; Mails an sie werden nicht mehr gesendet (Status `cancelled`).
+
+
+## Push-Mitteilungen im Admin
+
+1. Schlüsselpaar erzeugen (einmalig, auf dem eigenen Rechner oder dem Server): `npx web-push generate-vapid-keys`
+2. In `.env.production` eintragen: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (geheim, nie in Chat oder Git) und `VAPID_SUBJECT=mailto:info@pontivo.ch`.
+3. `./deploy.sh` (Migration 0018, der Worker sendet jede Minute).
+4. Jedes Mitglied schaltet sein Gerät im Admin unter «Mehr» → «Mitteilungen einschalten» ein. Auf dem iPhone zuerst die App zum Home-Bildschirm hinzufügen und von dort öffnen.
+
+Den Schlüssel nach dem Setzen nicht mehr ändern: sonst müssen alle Geräte die Mitteilungen neu einschalten.

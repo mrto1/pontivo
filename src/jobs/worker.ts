@@ -2,6 +2,7 @@
  * Hintergrund-Jobs mit pg-boss (SPEC 2): eigener Prozess `npm run worker`.
  * - holds:   abgelaufene Holds freigeben (jede Minute, SPEC 5.5)
  * - emails:  E-Mail-Outbox senden (jede Minute, SPEC 10)
+ * - push:    Push-Mitteilungen an die Geräte der Mitarbeitenden senden (jede Minute)
  * - horizon: Verfügbarkeit/Preise auf 18 Monate auffüllen (täglich 03:15, SPEC 4)
  * - channex-feed:   Buchungen aus Channex holen (sofort per Webhook, zur Sicherheit alle 15 Minuten, SPEC 7.3)
  * - guests-checkin: Check-in-Links einreihen (Modul Gäste, alle 10 Minuten, SPEC 14.1)
@@ -20,10 +21,12 @@ import { pullFeed } from "../integrations/channex/feed";
 import { enqueueCheckinLinks, purgeExpiredRegistrations } from "../services/guests";
 import { onboardingReminders } from "../services/onboarding";
 import { runMonthlyMinimum } from "../services/billing";
+import { sendDuePushes } from "../push/service";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
   { name: "emails", cron: "* * * * *", run: () => sendDueEmails() },
+  { name: "push", cron: "* * * * *", run: () => sendDuePushes() },
   { name: "horizon", cron: "15 3 * * *", run: () => extendHorizon() },
   { name: "channex-feed", cron: "*/15 * * * *", run: () => pullFeed() },
   { name: "guests-checkin", cron: "*/10 * * * *", run: () => enqueueCheckinLinks() },

@@ -549,3 +549,28 @@ export const platformCharges = pgTable("platform_charges", {
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 export type PlatformCharge = typeof platformCharges.$inferSelect;
+
+/** Geräte (Browser/App) von Hotel-Mitarbeitenden für Push-Mitteilungen (Migration 0018) */
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  userId: uuid("user_id").notNull(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  userAgent: text("user_agent"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const pushOutbox = pgTable("push_outbox", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  hotelId: uuid("hotel_id").notNull(),
+  dedupeKey: text("dedupe_key").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  url: text("url").notNull(),
+  status: text("status").$type<"pending" | "sent" | "failed" | "cancelled">().notNull().default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  sentAt: ts("sent_at"),
+});

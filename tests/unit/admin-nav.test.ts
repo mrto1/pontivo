@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminNav, isActive } from "../../src/admin/nav";
+import { adminNav, allPages, isActive, sectionFor } from "../../src/admin/nav";
 import { GET as manifest } from "../../app/admin/manifest.webmanifest/route";
 import { GET as sw } from "../../app/admin/sw.js/route";
 import { GET as icon } from "../../app/admin/pwa-icon/[size]/route";
@@ -9,12 +9,26 @@ const hotel = { id: "h1", slug: "demo", primaryDomain: null };
 describe("Admin-Menü", () => {
   it("jede Seite genau einmal; alle Links gehören zum eigenen Hotel", () => {
     const nav = adminNav(hotel, false);
-    const all = [...nav.primary, ...nav.groups.flatMap((g) => g.items)];
+    const all = allPages(nav);
     const keys = all.map((i) => i.key);
     expect(new Set(keys).size).toBe(keys.length);
-    for (const i of all) if (!i.external) expect(i.href.startsWith("/admin/h1")).toBe(true);
+    for (const i of all) expect(i.href.startsWith("/admin/h1")).toBe(true);
     expect(nav.primary.length).toBeLessThanOrEqual(4); // passt in die untere Leiste
     expect(keys).toEqual(expect.arrayContaining(["home", "calendar", "bookings", "guests", "inquiries", "vouchers", "report", "rooms", "site", "channex", "embed", "settings"]));
+  });
+
+  it("zusammengelegte Punkte: Gäste, Angebot und Vertrieb haben Reiter; im Menü steht nur der Sammelpunkt", () => {
+    const nav = adminNav(hotel, false);
+    const menu = [...nav.primary, ...nav.groups.flatMap((g) => g.items)].map((i) => i.label);
+    expect(menu).toEqual(expect.arrayContaining(["Gäste", "Angebot", "Vertrieb"]));
+    expect(menu).not.toEqual(expect.arrayContaining(["Anfragen"]));
+    const home = "/admin/h1";
+    expect(sectionFor("/admin/h1/inquiries", nav, home)?.label).toBe("Gäste");
+    expect(sectionFor("/admin/h1/site/blocks", nav, home)?.label).toBe("Angebot");
+    expect(sectionFor("/admin/h1/channex/booking", nav, home)?.label).toBe("Vertrieb");
+    expect(sectionFor("/admin/h1/calendar", nav, home)).toBeNull();
+    const guests = nav.primary.find((i) => i.key === "guests")!;
+    expect(isActive("/admin/h1/vouchers", guests, home)).toBe(true); // Reiter hält den Sammelpunkt aktiv
   });
 
   it("Einrichtung: schlankes Menü; eigene Domain wird für «Ansehen» verwendet", () => {

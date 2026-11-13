@@ -18,6 +18,7 @@ import { enqueueEmail } from "../email/enqueue";
 import { getPaymentProvider } from "../payments/provider";
 import { isBookable } from "./hotels";
 import { searchOffers } from "./search";
+import { pushForBooking } from "../push/service";
 import { env } from "../env";
 
 /**
@@ -359,6 +360,7 @@ async function enqueueBookingEmails(tx: Tx, booking: Booking, now: Date) {
     }
   }
   await enqueueEmail(tx, { hotelId: hotel.id, bookingId: booking.id, template: "hotel_new_booking", to: hotel.contactEmail, language: hotel.defaultLanguage, data });
+  await pushForBooking(tx, hotel.id, booking.id, "new");
 }
 
 // ---------------------------------------------------------------- Ablauf und Freigabe (5.5)
@@ -483,6 +485,7 @@ export async function cancelBooking(
     const data = { bookingId, refundRappen: refunded, voucherBackRappen: voucherBack, feeRappen: preview.feeRappen };
     if (guest) await enqueueEmail(tx, { hotelId: hotel.id, bookingId, template: "booking_cancelled", to: guest.email, language: booking.language, data });
     await enqueueEmail(tx, { hotelId: hotel.id, bookingId, template: "booking_cancelled", to: hotel.contactEmail, language: hotel.defaultLanguage, data });
+    await pushForBooking(tx, hotel.id, bookingId, "cancelled");
     await audit(tx, { hotelId: hotel.id, actor: opts.actor, action: "booking.cancel", entity: "booking", entityId: bookingId, details: { by: opts.by, refund: refunded, voucherBack, fee: preview.feeRappen } });
   });
   return { refundRappen: refunded, voucherBackRappen: voucherBack, feeRappen: preview.feeRappen };

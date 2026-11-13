@@ -86,8 +86,9 @@ describe("Gutschein bei der Online-Buchung", () => {
     expect(failed[0].reason).toBeInstanceOf(BookingError);
     expect(failed[0].reason.code).toBe("voucher_empty");
     expect(await remaining(h.voucher.id)).toBe(0);
-    // Nächte der abgelehnten Buchung sind nicht belegt
-    expect((await inv(h.rooms[0].roomType.id, inDays(50))).booked).toBe(0);
+    // Welche der beiden zuerst den Gutschein sperrt, ist Zufall: Nächte der abgelehnten Buchung sind frei, die der angenommenen belegt
+    const days = [inDays(40), inDays(50)];
+    for (let i = 0; i < 2; i++) expect((await inv(h.rooms[0].roomType.id, days[i])).booked, `Tag ${days[i]}`).toBe(results[i].status === "fulfilled" ? 1 : 0);
   });
 
   it("ungültiger Code oder Gutschein eines anderen Hotels → Fehler, Zimmer bleibt frei", async () => {

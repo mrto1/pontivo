@@ -10,6 +10,7 @@ import { audit } from "../../services/audit";
 import { enqueueEmail } from "../../email/enqueue";
 import { env } from "../../env";
 import { channex, type BookingRevision } from "./client";
+import { pushForBooking } from "../../push/service";
 import { channexAlert } from "./alerts";
 
 /** SPEC 5.6: ota_name → bookings.source. Channex liefert z. B. "Booking.com", "BookingCom", "A-Expedia", "Airbnb". */
@@ -123,6 +124,7 @@ export async function processRevision(rev: BookingRevision): Promise<{ bookingId
       await occupyRooms(tx, hotel.id, old.map((o) => ({ roomTypeId: o.roomTypeId, nightly: o.nightlyPrices })), -1);
       await tx.update(bookings).set({ status: "cancelled", cancelledAt: new Date(), cancelReason: "ota", updatedAt: new Date() }).where(eq(bookings.id, b.id));
       await enqueueEmail(tx, { hotelId: hotel.id, bookingId: b.id, template: "booking_cancelled", to: hotel.contactEmail, language: hotel.defaultLanguage, data: { bookingId: b.id, refundRappen: 0 } });
+      await pushForBooking(tx, hotel.id, b.id, "cancelled");
       await audit(tx, { hotelId: hotel.id, actor: "channex", action: "booking.cancel", entity: "booking", entityId: b.id, details: { revision: rev.id } });
       return { bookingId: b.id, action: "cancelled" };
     });
@@ -216,11 +218,13 @@ export async function processRevision(rev: BookingRevision): Promise<{ bookingId
     if (over && !existing?.overbooked) {
       const data = { bookingId };
       await enqueueEmail(tx, { hotelId: hotel.id, bookingId, template: "overbooking_alert", to: hotel.contactEmail, language: hotel.defaultLanguage, data });
+      await pushForBooking(tx, hotel.id, bookingId, "overbooking");
       const alert = env().PLATFORM_ALERT_EMAIL;
       if (alert) await enqueueEmail(tx, { hotelId: hotel.id, bookingId, template: "overbooking_alert", to: alert, data });
     }
     if (action === "created") {
       await enqueueEmail(tx, { hotelId: hotel.id, bookingId, template: "hotel_new_booking", to: hotel.contactEmail, language: hotel.defaultLanguage, data: { bookingId } });
+      await pushForBooking(tx, hotel.id, bookingId, "new");
     }
     await audit(tx, { hotelId: hotel.id, actor: "channex", action: `booking.ota_${action}`, entity: "booking", entityId: bookingId, details: { revision: rev.id, ota: rev.ota_name, overbooked: over } });
     return { bookingId, action };

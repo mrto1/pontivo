@@ -98,6 +98,9 @@ details > summary::-webkit-details-marker { display: none; }
 .tabbar { display: none; }
 .more-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .35); z-index: 30; }
 .more-panel { position: fixed; z-index: 40; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0, 0, 0, .18); overflow-y: auto; top: calc(env(safe-area-inset-top) + 60px); right: max(16px, calc((100vw - 1040px) / 2 + 16px)); width: 540px; max-width: calc(100vw - 32px); max-height: calc(100vh - 90px); border-radius: var(--radius); padding: 0 20px 16px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; align-content: start; }
+.section-tabs { display: flex; gap: 6px; margin: 0 0 18px; overflow-x: auto; border-bottom: 1px solid var(--line); }
+.section-tabs a { padding: 8px 14px; color: var(--muted); text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.section-tabs a.active { color: var(--ink); font-weight: 600; border-bottom-color: var(--accent); }
 .more-group h3 { font-family: var(--font); font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 4px; }
 .more-group a { display: block; padding: 10px 0; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
 .more-group a.active { font-weight: 600; color: var(--accent); }

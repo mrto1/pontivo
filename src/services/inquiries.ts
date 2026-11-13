@@ -5,6 +5,7 @@ import { inquiries, type Hotel } from "../db/schema";
 import { INQUIRY_KINDS, TIME_RE } from "../domain/blocks";
 import { isLocale } from "../i18n/dict";
 import { enqueueEmail } from "../email/enqueue";
+import { enqueuePush } from "../push/service";
 import { audit } from "./audit";
 
 /** Anfragen (Tischreservation, Gruppen, Seminare, Hochzeiten …) aus dem Website-Baustein «Anfrageformular» */
@@ -32,6 +33,7 @@ export async function createInquiry(hotel: Hotel, input: z.input<typeof inquiryS
     const [row] = await tx.insert(inquiries).values({ hotelId: hotel.id, ...v }).returning();
     const data = { inquiryId: row.id, kind: v.kind, name: v.name, email: v.email, phone: v.phone, dateFrom: v.dateFrom, dateTo: v.dateTo, persons: v.persons, timeOfDay: v.timeOfDay, message: v.message };
     await enqueueEmail(tx, { hotelId: hotel.id, template: "inquiry_received", to: hotel.contactEmail, language: hotel.defaultLanguage, data });
+    await enqueuePush(tx, hotel.id, `inquiry:${row.id}`, { title: "Neue Anfrage", body: v.kind === "table" ? "Tischreservation" : "Anfrage über die Website", url: `/admin/${hotel.id}/inquiries` });
     await enqueueEmail(tx, { hotelId: hotel.id, template: "inquiry_confirmation", to: v.email, language: v.language, data });
     await audit(tx, { hotelId: hotel.id, actor: "guest", action: "inquiry.create", entity: "inquiry", entityId: row.id, details: { kind: v.kind } });
     return row;

@@ -12,6 +12,7 @@ import { getPaymentProvider } from "../payments/provider";
 import { env } from "../env";
 import { isBookable } from "./hotels";
 import { audit } from "./audit";
+import { enqueuePush } from "./../push/service";
 import crypto from "node:crypto";
 
 /**
@@ -104,6 +105,7 @@ export async function markVoucherPaid(voucherId: string, p: { sessionId: string 
     const data = { voucherId: v.id, code: v.code, amountRappen: v.amountRappen, validUntil: v.validUntil, token: v.publicToken, buyer: v.buyerName, recipient: v.recipientName };
     await enqueueEmail(tx, { hotelId: v.hotelId, template: "voucher_purchased", to: v.buyerEmail, language: v.language, data });
     await enqueueEmail(tx, { hotelId: v.hotelId, template: "hotel_voucher_sold", to: h.contactEmail, language: h.defaultLanguage, data });
+    await enqueuePush(tx, v.hotelId, `voucher:${v.id}`, { title: "Gutschein verkauft", body: `Wert CHF ${(v.amountRappen / 100).toFixed(2)}`, url: `/admin/${v.hotelId}/vouchers` });
     await audit(tx, { hotelId: v.hotelId, actor: "payment", action: "voucher.paid", entity: "voucher", entityId: v.id, details: { amount: v.amountRappen } });
   });
 }

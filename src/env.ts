@@ -15,6 +15,10 @@ const schema = z.object({
   POSTMARK_SERVER_TOKEN: z.string().optional(),
   // Passwort (Basic Auth) bzw. Token (Header x-webhook-token) für den Postmark-Webhook für Bounces/Spam-Beschwerden
   POSTMARK_WEBHOOK_SECRET: z.string().optional(),
+  // Push-Mitteilungen im Admin (Web Push). Schlüsselpaar erzeugen: npx web-push generate-vapid-keys. Ohne Schlüssel ist die Funktion aus.
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().optional(), // z. B. mailto:info@pontivo.ch (Standard: PLATFORM_ALERT_EMAIL)
   EMAIL_FROM: z.string().default("buchung@example.ch"),
   PLATFORM_ALERT_EMAIL: z.string().optional(),
   AUTH_SECRET: z.string().min(16).optional(),

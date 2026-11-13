@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { isActive, type Nav, type NavItem } from "@/src/admin/nav";
+import { PushToggle } from "./PushToggle";
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
 
@@ -9,7 +10,7 @@ type InstallEvent = Event & { prompt: () => Promise<void> };
  * Menü: Desktop = Links in der Kopfzeile, Handy = feste Leiste unten. «Mehr» öffnet auf dem Handy ein Fenster von unten,
  * auf dem Desktop ein Menü unter der Kopfzeile. Menüinhalt kommt aus src/admin/nav.ts.
  */
-export function AdminNav({ nav, home, userLabel }: { nav: Nav; home: string; userLabel: string }) {
+export function AdminNav({ nav, home, hotelId, userLabel }: { nav: Nav; home: string; hotelId: string; userLabel: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [install, setInstall] = useState<InstallEvent | null>(null);
@@ -65,6 +66,7 @@ export function AdminNav({ nav, home, userLabel }: { nav: Nav; home: string; use
               <h3>App</h3>
               {install ? <button type="button" className="btn secondary small" onClick={() => install.prompt().then(() => setInstall(null))}>Als App installieren</button> : null}
               {iosHint ? <p className="muted small">Zum Installieren: Teilen-Symbol, dann «Zum Home-Bildschirm».</p> : null}
+              <PushToggle hotelId={hotelId} />
               <p className="muted small">{userLabel}</p>
               <form action="/api/auth/logout" method="post"><button className="btn secondary small">Abmelden</button></form>
             </div>
