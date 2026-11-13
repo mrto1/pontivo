@@ -283,6 +283,15 @@ Channex prüft live per Bildschirmfreigabe: Preisänderung, Sperre, Buchung, Än
 
 ---
 
+## 7b. iCal-Abgleich (für Betriebe ohne Channel-Manager)
+
+- **Export:** Pro Zimmertyp eine geheime Adresse `/api/ical/<token>.ics` (Token 64 Zeichen, erneuerbar). Inhalt: Bereiche ausverkaufter Nächte (`total - booked - blocked <= 0`) als «Belegt», ohne Gästedaten. Importierte Belegungen werden nicht zurückgespiegelt. Unbekannter Token: 404.
+- **Import:** Bis zu 5 fremde Kalender je Zimmertyp (`ical_feeds`). Der Worker holt sie alle 15 Minuten ab. Belegte Nächte stehen in `ical_feed_nights`, `inventory_days.external_blocked = LEAST(total, Anzahl Kalender)`; die Verfügbarkeit ist `total - booked - blocked - external_blocked`. Jede Änderung schreibt in derselben Transaktion `channex_outbox` und `audit_log`.
+- **Sicherheit:** Nur https, keine Zugangsdaten in der Adresse, nur Port 443, keine privaten/internen Adressen (auch nicht über Weiterleitung oder DNS), 10 s Zeitlimit, 2 MB, höchstens 3 Weiterleitungen. Die Adresse (oft mit Schlüssel) kommt nicht ins Audit-Log.
+- **Fehler:** Schlägt ein Abruf fehl oder ist die Antwort kein Kalender, bleibt der bisherige Stand (nichts wird freigegeben). Nach 48 Stunden ohne Erfolg Alarm an die Plattform.
+- **Doppelbelegung:** Fällt eine importierte Nacht auf eine eigene Buchung, wird sie am Kalender gezählt und im Admin angezeigt; nichts wird storniert.
+- **Abnahme:** `tests/unit/ical.test.ts`, `tests/integration/ical.test.ts`.
+
 ## 8. Öffentliche Seiten und API
 
 | Route | Zweck |

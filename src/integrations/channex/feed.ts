@@ -93,7 +93,7 @@ async function isOverbooked(tx: Tx, rooms: { roomTypeId: string; nightly: { nigh
     const res = rows<{ n: number }>(
       await tx.execute(sql`
         SELECT count(*)::int AS n FROM inventory_days
-         WHERE room_type_id = ${r.roomTypeId} AND booked + blocked > total
+         WHERE room_type_id = ${r.roomTypeId} AND booked + blocked + external_blocked > total
            AND night = ANY(${sql.raw(`ARRAY[${nights.map((n) => `'${n}'`).join(",")}]`)}::date[])`),
     );
     if (res[0].n > 0) return true;

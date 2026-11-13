@@ -2,6 +2,7 @@
  * Drizzle-Abbild von db/migrations/*.sql (Quelle der Wahrheit bleibt SQL, SPEC 2).
  * Bei Schemaänderungen: neue Datei in db/migrations/ UND diese Datei nachführen.
  */
+import { sql } from "drizzle-orm";
 import { DEFAULT_PLATFORM_FEE_BPS } from "../domain/fee";
 import {
   pgTable, uuid, text, char, integer, boolean, timestamp, time, date, jsonb, bigserial, primaryKey,
@@ -145,6 +146,8 @@ export const roomTypes = pgTable("room_types", {
   photos: jsonb("photos").$type<{ url: string; alt?: string }[]>().notNull().default([]),
   sortOrder: integer("sort_order").notNull().default(0),
   channexRoomTypeId: uuid("channex_room_type_id").unique(),
+  /** geheimer Token der Export-Feed-URL (iCal), pro Zimmertyp; erneuerbar */
+  icalToken: text("ical_token").notNull().unique().default(sql`(replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''))`),
   active: boolean("active").notNull().default(true),
   i18n: jsonb("i18n").$type<Partial<Record<"en" | "fr" | "it" | "nl", { name?: string; description?: string }>>>().notNull().default({}),
   createdAt: ts("created_at").notNull().defaultNow(),
@@ -182,6 +185,8 @@ export const inventoryDays = pgTable(
     total: integer("total").notNull(),
     booked: integer("booked").notNull().default(0),
     blocked: integer("blocked").notNull().default(0),
+    /** durch importierte iCal-Kalender belegt (nie manuell setzen, SPEC 7b) */
+    externalBlocked: integer("external_blocked").notNull().default(0),
     updatedAt: ts("updated_at").notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.roomTypeId, t.night] })],
@@ -613,3 +618,28 @@ export const systemStatus = pgTable("system_status", {
   value: jsonb("value").$type<Record<string, unknown>>().notNull().default({}),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
+
+export const icalFeeds = pgTable("ical_feeds", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  roomTypeId: uuid("room_type_id").notNull(),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  active: boolean("active").notNull().default(true),
+  lastSyncedAt: ts("last_synced_at"),
+  lastOkAt: ts("last_ok_at"),
+  lastError: text("last_error"),
+  lastConflicts: integer("last_conflicts").notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const icalFeedNights = pgTable(
+  "ical_feed_nights",
+  {
+    feedId: uuid("feed_id").notNull(),
+    hotelId: uuid("hotel_id").notNull(),
+    roomTypeId: uuid("room_type_id").notNull(),
+    night: date("night", { mode: "string" }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.feedId, t.night] })],
+);

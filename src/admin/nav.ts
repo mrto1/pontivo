@@ -31,7 +31,7 @@ export function adminNav(hotel: { id: string; slug: string; primaryDomain: strin
         title: "Mein Betrieb",
         items: [{ ...link("rooms", "Angebot"), tabs: [link("rooms", "Zimmer"), link("site", "Website")] }, link("ki-chat", "KI-Chat"), link("report", "Abrechnung")],
       },
-      { title: "Verbinden", items: [{ ...link("channex", "Vertrieb"), tabs: [link("channex", "Channel-Manager"), link("embed", "Einbinden")] }] },
+      { title: "Verbinden", items: [{ ...link("channex", "Vertrieb"), tabs: [link("channex", "Channel-Manager"), link("ical", "Kalender-Abgleich"), link("embed", "Einbinden")] }] },
       {
         title: "Konto",
         items: [

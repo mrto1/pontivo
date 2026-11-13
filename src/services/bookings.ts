@@ -67,7 +67,7 @@ export async function reserveNights(tx: Tx, roomTypeId: string, checkin: string,
     UPDATE inventory_days
        SET booked = booked + 1, updated_at = now()
      WHERE room_type_id = ${roomTypeId} AND night >= ${checkin}::date AND night < ${checkout}::date
-       AND total - booked - blocked >= 1
+       AND total - booked - blocked - external_blocked >= 1
     RETURNING night`);
   return res.rows.length === nightsOf(checkin, checkout).length;
 }

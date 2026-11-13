@@ -97,8 +97,8 @@ export async function updateRoomType(hotelId: string, roomTypeId: string, input:
     if (v.roomCount !== old.room_count) {
       const [conflict] = rows<{ night: string; used: number }>(
         await tx.execute(sql`
-          SELECT night::text, booked + blocked AS used FROM inventory_days
-           WHERE room_type_id = ${roomTypeId} AND night >= ${today}::date AND booked + blocked > ${v.roomCount}
+          SELECT night::text, booked + blocked + external_blocked AS used FROM inventory_days
+           WHERE room_type_id = ${roomTypeId} AND night >= ${today}::date AND booked + blocked + external_blocked > ${v.roomCount}
            ORDER BY night LIMIT 1`),
       );
       if (conflict) {

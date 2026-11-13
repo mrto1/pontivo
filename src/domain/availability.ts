@@ -13,7 +13,7 @@ export type StayQuery = {
 
 export type RoomCapacity = { maxAdults: number; maxChildren: number; maxOccupancy: number };
 
-export type InvRow = { night: Day; total: number; booked: number; blocked: number };
+export type InvRow = { night: Day; total: number; booked: number; blocked: number; externalBlocked?: number };
 export type RateRow = {
   night: Day;
   priceRappen: number;
@@ -72,7 +72,7 @@ export function evaluateOffer(
   for (const night of nights) {
     const i = invBy.get(night);
     if (!i) return { ok: false, reason: "no_inventory" };
-    if (i.total - i.booked - i.blocked < 1) return { ok: false, reason: "sold_out" };
+    if (i.total - i.booked - i.blocked - (i.externalBlocked ?? 0) < 1) return { ok: false, reason: "sold_out" };
     const r = rateBy.get(night);
     if (!r) return { ok: false, reason: "no_rate" };
     if (r.stopSell) return { ok: false, reason: "stop_sell" };

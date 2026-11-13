@@ -92,7 +92,7 @@ async function buildAvailability(hotel: Hotel, entries: Entry[], today: string):
         .select()
         .from(inventoryDays)
         .where(and(eq(inventoryDays.roomTypeId, rt.id), sql`${inventoryDays.night} BETWEEN ${f}::date AND ${t}::date`));
-      const by = new Map(rows.map((r) => [r.night, rt.active ? Math.max(0, r.total - r.booked - r.blocked) : 0]));
+      const by = new Map(rows.map((r) => [r.night, rt.active ? Math.max(0, r.total - r.booked - r.blocked - r.externalBlocked) : 0]));
       for (const r of runs(nightsOf(f, addDays(t, 1)), (d) => by.get(d) ?? 0, (a, b) => a === b)) {
         values.push({ property_id: hotel.channexPropertyId!, room_type_id: rt.channexRoomTypeId, date_from: r.from, date_to: r.to, availability: r.value });
       }

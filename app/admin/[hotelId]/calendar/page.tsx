@@ -127,9 +127,9 @@ export default async function Calendar({ params, searchParams }: { params: Promi
                   {days.map((d) => {
                     const i = invKey.get(`${rt.id}|${d}`);
                     if (!i) return <td key={d} className="muted">–</td>;
-                    const free = i.total - i.booked - i.blocked;
+                    const free = i.total - i.booked - i.blocked - i.externalBlocked;
                     return (
-                      <td key={d} className={free <= 0 ? "full" : ""} title={`frei ${free}, gebucht ${i.booked}, gesperrt ${i.blocked}`}>
+                      <td key={d} className={free <= 0 ? "full" : ""} title={`frei ${free}, gebucht ${i.booked}, gesperrt ${i.blocked}, extern belegt ${i.externalBlocked}`}>
                         {free}
                         <span className="muted"> /{i.booked}</span>
                         {i.blocked ? <span className="blk"> /{i.blocked}</span> : null}
