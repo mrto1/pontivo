@@ -18,6 +18,7 @@ export const roomTypeSchema = z
   .object({
     name: z.string().trim().min(1, "Name fehlt").max(120),
     description: z.string().trim().max(2000).nullable(),
+    arrivalInfo: z.string().trim().max(2000).nullable().default(null),
     roomCount: z.number().int().min(0).max(500),
     maxAdults: z.number().int().min(1).max(20),
     maxChildren: z.number().int().min(0).max(20),
@@ -28,6 +29,12 @@ export const roomTypeSchema = z
   })
   .refine((v) => v.maxOccupancy >= v.maxAdults, { message: "Max. Personen muss mindestens so gross sein wie max. Erwachsene", path: ["maxOccupancy"] });
 export type RoomTypeInput = z.input<typeof roomTypeSchema>;
+
+/** Ankunftsinfos enthalten Codes: nie in den Audit-Log schreiben, nur ob sie gesetzt sind */
+function auditDetails(v: z.output<typeof roomTypeSchema>) {
+  const { arrivalInfo, ...rest } = v;
+  return { ...rest, arrivalInfoSet: !!arrivalInfo };
+}
 
 export const ratePlanSchema = z.object({
   name: z.string().trim().min(1, "Name fehlt").max(120),
@@ -66,7 +73,7 @@ export async function createRoomType(hotelId: string, input: RoomTypeInput, acto
     const [rt] = await tx.insert(roomTypes).values({ ...v, hotelId }).returning();
     await ensureInventory(tx, hotelId, rt.id, today, end);
     await enqueueAvailability(tx, hotelId, rt.id, today, addDays(end, -1));
-    await audit(tx, { hotelId, actor, action: "room_type.create", entity: "room_type", entityId: rt.id, details: v });
+    await audit(tx, { hotelId, actor, action: "room_type.create", entity: "room_type", entityId: rt.id, details: auditDetails(v) });
     return rt;
   });
 }
@@ -104,7 +111,7 @@ export async function updateRoomType(hotelId: string, roomTypeId: string, input:
       if (updated.rows.length) await enqueueAvailability(tx, hotelId, roomTypeId, today, addDays(today, HORIZON_DAYS - 1));
     }
     const [rt] = await tx.update(roomTypes).set(v).where(and(eq(roomTypes.id, roomTypeId), eq(roomTypes.hotelId, hotelId))).returning();
-    await audit(tx, { hotelId, actor, action: "room_type.update", entity: "room_type", entityId: roomTypeId, details: { ...v, previousRoomCount: old.room_count } });
+    await audit(tx, { hotelId, actor, action: "room_type.update", entity: "room_type", entityId: roomTypeId, details: { ...auditDetails(v), previousRoomCount: old.room_count } });
     return rt;
   });
 }

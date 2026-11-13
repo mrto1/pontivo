@@ -3,11 +3,12 @@ import type { Locale } from "./dict";
 /** Texte des KI-Chats (SPEC 14b): Hinweise, Pause, Fehler, Weiterleitung */
 export type ChatText = {
   title: string; open: string; close: string; placeholder: string; send: string; hello: string; notice: string;
-  paused: string; error: string; tooLong: string; forward: string; forwardName: string; forwardEmail: string; forwardSend: string; forwardDone: string; forwardFail: string; thinking: string;
+  paused: string; error: string; tooLong: string; forward: string; forwardName: string; forwardEmail: string; forwardSend: string; forwardDone: string; forwardFail: string; thinking: string; arrivalTitle: string; arrivalNone: string; arrivalShow: string;
 };
 
 export const CHAT_TEXT: Record<Locale, ChatText> = {
   de: {
+    arrivalTitle: 'Ihre Ankunftsinfos', arrivalNone: 'Das Haus hat noch keine Ankunftsinfos hinterlegt. Bitte melden Sie sich direkt beim Haus.', arrivalShow: 'Ankunftsinfos anzeigen',
     title: "Fragen ans Haus", open: "Fragen? Chat öffnen", close: "Schliessen", placeholder: "Ihre Frage …", send: "Senden", thinking: "Einen Moment …",
     hello: "Guten Tag! Ich bin der digitale Assistent dieses Hauses. Fragen Sie mich nach Zeiten, Zimmern, Restaurant oder Ausflugstipps.",
     notice: "KI-Assistent: Antworten können Fehler enthalten. Zimmerpreise und Verfügbarkeit finden Sie in der Suche.",
@@ -18,6 +19,7 @@ export const CHAT_TEXT: Record<Locale, ChatText> = {
     forwardDone: "Danke! Das Haus meldet sich bei Ihnen.", forwardFail: "Das Weiterleiten hat nicht geklappt. Bitte prüfen Sie Name und E-Mail.",
   },
   en: {
+    arrivalTitle: 'Your arrival information', arrivalNone: 'The house has not stored any arrival information yet. Please contact the house directly.', arrivalShow: 'Show arrival information',
     title: "Ask the house", open: "Questions? Open chat", close: "Close", placeholder: "Your question …", send: "Send", thinking: "One moment …",
     hello: "Hello! I'm the digital assistant of this house. Ask me about opening times, rooms, the restaurant or things to do nearby.",
     notice: "AI assistant: answers may contain mistakes. Room prices and availability are in the search.",
@@ -28,6 +30,7 @@ export const CHAT_TEXT: Record<Locale, ChatText> = {
     forwardDone: "Thank you! The house will get back to you.", forwardFail: "Sending did not work. Please check your name and e-mail.",
   },
   fr: {
+    arrivalTitle: "Vos informations d'arrivée", arrivalNone: "L'établissement n'a pas encore enregistré d'informations d'arrivée. Veuillez le contacter directement.", arrivalShow: "Afficher les informations d'arrivée",
     title: "Une question ?", open: "Une question ? Ouvrir le chat", close: "Fermer", placeholder: "Votre question …", send: "Envoyer", thinking: "Un instant …",
     hello: "Bonjour ! Je suis l'assistant numérique de cet établissement. Posez-moi vos questions sur les horaires, les chambres, le restaurant ou les excursions.",
     notice: "Assistant IA : les réponses peuvent contenir des erreurs. Les prix et disponibilités des chambres se trouvent dans la recherche.",
@@ -38,6 +41,7 @@ export const CHAT_TEXT: Record<Locale, ChatText> = {
     forwardDone: "Merci ! L'établissement vous répondra.", forwardFail: "L'envoi a échoué. Veuillez vérifier votre nom et votre e-mail.",
   },
   it: {
+    arrivalTitle: 'Le sue informazioni di arrivo', arrivalNone: 'La struttura non ha ancora inserito informazioni di arrivo. La preghiamo di contattarla direttamente.', arrivalShow: 'Mostra le informazioni di arrivo',
     title: "Domande sulla struttura", open: "Domande? Apri la chat", close: "Chiudi", placeholder: "La sua domanda …", send: "Invia", thinking: "Un attimo …",
     hello: "Buongiorno! Sono l'assistente digitale di questa struttura. Mi chieda di orari, camere, ristorante o escursioni.",
     notice: "Assistente IA: le risposte possono contenere errori. Prezzi e disponibilità delle camere si trovano nella ricerca.",
@@ -48,6 +52,7 @@ export const CHAT_TEXT: Record<Locale, ChatText> = {
     forwardDone: "Grazie! La struttura la contatterà.", forwardFail: "Invio non riuscito. Controlli nome ed e-mail.",
   },
   nl: {
+    arrivalTitle: 'Uw aankomstinformatie', arrivalNone: 'Het huis heeft nog geen aankomstinformatie opgeslagen. Neem rechtstreeks contact op met het huis.', arrivalShow: 'Aankomstinformatie tonen',
     title: "Vragen over het huis", open: "Vragen? Open de chat", close: "Sluiten", placeholder: "Uw vraag …", send: "Verzenden", thinking: "Een moment …",
     hello: "Goedendag! Ik ben de digitale assistent van dit huis. Vraag me naar tijden, kamers, het restaurant of tips voor uitstapjes.",
     notice: "AI-assistent: antwoorden kunnen fouten bevatten. Kamerprijzen en beschikbaarheid vindt u in de zoekfunctie.",

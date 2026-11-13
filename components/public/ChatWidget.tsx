@@ -4,9 +4,10 @@ import { useRef, useState } from "react";
 import type { ChatText } from "@/src/i18n/chat";
 
 type Msg = { role: "user" | "assistant"; content: string };
+type Card = { title: string; body: string };
 
 /** KI-Chat auf der Hotel-Website und auf der Buchungsseite (SPEC 14b). Der Verlauf bleibt nur im Browser, nichts wird gespeichert. */
-export function ChatWidget({ hotel, locale, surface, text }: { hotel: string; locale: string; surface: "site" | "booking"; text: ChatText }) {
+export function ChatWidget({ hotel, locale, token, text }: { hotel: string; locale: string; token?: string; text: ChatText }) {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -16,6 +17,7 @@ export function ChatWidget({ hotel, locale, surface, text }: { hotel: string; lo
   const [fwd, setFwd] = useState<"idle" | "form" | "done" | "fail">("idle");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [cards, setCards] = useState<Card[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
   const scroll = () => setTimeout(() => endRef.current?.scrollIntoView({ block: "end" }), 30);
 
@@ -31,17 +33,29 @@ export function ChatWidget({ hotel, locale, surface, text }: { hotel: string; lo
     try {
       const r = await fetch("/api/chat", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ hotel, session, messages: next, lang: locale, surface }),
+        body: JSON.stringify({ hotel, session, messages: next, lang: locale, token }),
       });
-      const j = (await r.json()) as { status: string; reply?: string; session?: string; forward?: boolean };
+      const j = (await r.json()) as { status: string; reply?: string; session?: string; forward?: boolean; arrival?: boolean };
       if (j.session) setSession(j.session);
       setMsgs([...next, { role: "assistant", content: j.reply ?? text.error }]);
       if (j.status === "paused" || j.forward) setOfferForward(true);
+      if (j.arrival && token) await showArrival();
     } catch {
       setMsgs([...next, { role: "assistant", content: text.error }]);
     } finally {
       setBusy(false);
       scroll();
+    }
+  }
+
+  /** Ankunftsinfos kommen direkt vom Server (nicht vom KI-Modell) und werden als feste Karte gezeigt */
+  async function showArrival() {
+    try {
+      const r = await fetch("/api/chat/arrival", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token, lang: locale }) });
+      const j = (await r.json()) as { status: string; text?: string };
+      setCards((c) => [...c, { title: text.arrivalTitle, body: j.status === "ok" && j.text ? j.text : text.arrivalNone }]);
+    } catch {
+      setCards((c) => [...c, { title: text.arrivalTitle, body: text.error }]);
     }
   }
 
@@ -70,6 +84,7 @@ export function ChatWidget({ hotel, locale, surface, text }: { hotel: string; lo
       <div className="chat-body" aria-live="polite">
         <p className="chat-msg bot">{text.hello}</p>
         {msgs.map((m, i) => <p key={i} className={`chat-msg ${m.role === "user" ? "me" : "bot"}`}>{m.content}</p>)}
+        {cards.map((c, i) => <div key={i} className="chat-card"><strong>{c.title}</strong><p>{c.body}</p></div>)}
         {busy ? <p className="chat-msg bot chat-wait">{text.thinking}</p> : null}
         {offerForward && fwd === "idle" ? <button type="button" className="chat-link" onClick={() => setFwd("form")}>{text.forward}</button> : null}
         {fwd === "form" || fwd === "fail" ? (

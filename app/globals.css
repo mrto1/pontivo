@@ -495,6 +495,8 @@ fieldset:has(input[value="booking_only"]:checked) .mode-url { display: block; }
 .chat-msg.bot { background: var(--accent-soft); align-self: flex-start; }
 .chat-msg.me { background: var(--brand, var(--accent)); color: var(--brand-ink, var(--accent-ink)); align-self: flex-end; }
 .chat-wait { opacity: .7; }
+.chat-card { border: 1px solid var(--line); border-left: 4px solid var(--brand, var(--accent)); border-radius: 8px; padding: 10px 12px; background: var(--surface); }
+.chat-card p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .chat-link { align-self: flex-start; background: none; border: 0; padding: 4px 0; color: var(--brand-link, var(--accent)); text-decoration: underline; cursor: pointer; font: inherit; }
 .chat-forward { display: grid; gap: 8px; }
 .chat-forward input, .chat-input input { font: inherit; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); min-width: 0; }

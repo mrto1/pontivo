@@ -161,7 +161,7 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
         [...(Number(c.data.voucherBackRappen ?? 0) > 0 ? [`${t(gl).voucherPaid} (+): ${money("voucherBackRappen")}`] : []), ...summary(c, gl)], link);
     case "pre_arrival": {
       // Infos zur Ankunft (Schlüssel, Code, WLAN …) aus dem Einrichtungs-Assistenten
-      const arrival = tr(c.hotel.content.arrivalInfo, gl);
+      const arrival = c.roomType?.arrivalInfo?.trim() || tr(c.hotel.content.arrivalInfo, gl);
       return wrap(c, gl, m.preSubject(c.hotel.name), [hi + ",", m.preText(c.hotel.checkinTime.slice(0, 5)), ...(arrival ? arrival.split(/\n\s*\n/) : [])], summary(c, gl), link);
     }
     case "checkin_link": {

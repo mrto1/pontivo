@@ -136,6 +136,8 @@ export const roomTypes = pgTable("room_types", {
   hotelId: uuid("hotel_id").notNull(),
   name: text("name").notNull(),
   description: text("description"),
+  /** Ankunftsinfos dieser Wohnung/dieses Zimmers (Code, WLAN …), überschreiben die allgemeinen des Hotels; nie in Logs oder KI-Prompts */
+  arrivalInfo: text("arrival_info"),
   maxAdults: integer("max_adults").notNull(),
   maxChildren: integer("max_children").notNull().default(0),
   maxOccupancy: integer("max_occupancy").notNull(),

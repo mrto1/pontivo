@@ -64,7 +64,8 @@ export async function searchOffers(
 
   const rtWhere = [eq(roomTypes.hotelId, hotel.id), eq(roomTypes.active, true)];
   if (opts.roomTypeId) rtWhere.push(eq(roomTypes.id, opts.roomTypeId));
-  const rts = await ex.select().from(roomTypes).where(and(...rtWhere)).orderBy(asc(roomTypes.sortOrder), asc(roomTypes.name));
+  // Ankunftsinfos (Codes) gehören nie in Suchergebnisse
+  const rts = (await ex.select().from(roomTypes).where(and(...rtWhere)).orderBy(asc(roomTypes.sortOrder), asc(roomTypes.name))).map((r) => ({ ...r, arrivalInfo: null }));
   if (rts.length === 0) return { ok: true, offers: [], rejected: [], needsChildAges: ageRequired };
 
   const rpWhere = [eq(ratePlans.hotelId, hotel.id), eq(ratePlans.active, true), inArray(ratePlans.roomTypeId, rts.map((r) => r.id))];

@@ -12,7 +12,12 @@ import { addBlock, createPage, updateBlock } from "../../src/services/site";
 import { todayIn } from "../../src/domain/dates";
 import { POST as chatPost } from "../../app/api/chat/route";
 import { POST as forwardPost } from "../../app/api/chat/forward/route";
-import { makeHotel } from "../helpers";
+import { createDirectBooking, confirmBooking } from "../../src/services/bookings";
+import { updateRoomType } from "../../src/services/rooms";
+import { addDays } from "../../src/domain/dates";
+import { auditLog, bookings, roomTypes } from "../../src/db/schema";
+import { POST as arrivalPost } from "../../app/api/chat/arrival/route";
+import { guest, inDays, makeHotel } from "../helpers";
 
 afterAll(closeDb);
 beforeEach(() => {
@@ -91,10 +96,10 @@ describe("KI-Chat: Antworten", () => {
   it("Modul aus oder ohne API-Schlüssel: keine Antwort, kein Aufruf des Modells", async () => {
     const calls = fakeModel();
     const h = await liveHotel();
-    expect(await handleChat(h, { messages: q("Hallo"), lang: "de", surface: "site" })).toEqual({ status: "off" });
+    expect(await handleChat(h, { messages: q("Hallo"), lang: "de" })).toEqual({ status: "off" });
     const on = await enable(h);
     delete process.env.ANTHROPIC_API_KEY;
-    expect(await handleChat(on, { messages: q("Hallo"), lang: "de", surface: "site" })).toEqual({ status: "off" });
+    expect(await handleChat(on, { messages: q("Hallo"), lang: "de" })).toEqual({ status: "off" });
     expect(calls).toHaveLength(0);
     expect(await count(h.id)).toBe(0);
   });
@@ -106,7 +111,7 @@ describe("KI-Chat: Antworten", () => {
     const p = await createPage(a.id, "Fragen", "t");
     const fid = await addBlock(a.id, p.id, "faq", "t");
     await updateBlock(a.id, p.id, fid, { id: fid, type: "faq", heading: {}, items: [{ q: { de: "Gibt es Parkplätze?" }, a: { de: "Ja, gratis vor dem Haus." } }] }, "t");
-    const r = await handleChat(a, { messages: q("Gibt es Parkplätze?"), lang: "de", surface: "site" });
+    const r = await handleChat(a, { messages: q("Gibt es Parkplätze?"), lang: "de" });
     expect(r).toMatchObject({ status: "ok", reply: "Das Frühstück gibt es von 7 bis 10 Uhr.", forward: false });
     expect(calls).toHaveLength(1);
     expect(calls[0].model).toBe("claude-haiku-5-5");
@@ -116,7 +121,7 @@ describe("KI-Chat: Antworten", () => {
     expect(calls[0].system).not.toMatch(/18000|180\.00/); // Zimmerpreis des Doppelzimmers
     expect(calls[0].system).toContain("Never quote room rates");
     const [u] = await db().select().from(aiUsage).where(eq(aiUsage.hotelId, a.id));
-    expect(u).toMatchObject({ messages: 1, inputTokens: 1200, outputTokens: 40, surface: "site" });
+    expect(u).toMatchObject({ messages: 1, inputTokens: 1200, outputTokens: 40 });
   });
 
   it("ai_usage speichert nur Zähler, keine Texte", async () => {
@@ -129,16 +134,16 @@ describe("KI-Chat: Antworten", () => {
     const a = await enable(await liveHotel());
     const b = await enable(await liveHotel());
     const t0 = new Date();
-    const r1 = await handleChat(a, { messages: q("Eins"), lang: "de", surface: "site" }, t0);
+    const r1 = await handleChat(a, { messages: q("Eins"), lang: "de" }, t0);
     if (r1.status !== "ok") throw new Error("erwartet ok");
-    await handleChat(a, { session: r1.session, messages: q("Zwei"), lang: "de", surface: "site" }, new Date(t0.getTime() + 5 * 60_000));
+    await handleChat(a, { session: r1.session, messages: q("Zwei"), lang: "de" }, new Date(t0.getTime() + 5 * 60_000));
     expect(await count(a.id)).toBe(1);
     expect((await db().select().from(aiUsage).where(eq(aiUsage.id, r1.session)))[0].messages).toBe(2);
-    const r3 = await handleChat(a, { session: r1.session, messages: q("Drei"), lang: "de", surface: "site" }, new Date(t0.getTime() + 40 * 60_000));
+    const r3 = await handleChat(a, { session: r1.session, messages: q("Drei"), lang: "de" }, new Date(t0.getTime() + 40 * 60_000));
     expect(r3.status === "ok" && r3.session !== r1.session).toBe(true);
     expect(await count(a.id)).toBe(2);
     // Hotel B kennt die Sitzung von Hotel A nicht
-    await handleChat(b, { session: r1.session, messages: q("Hallo"), lang: "de", surface: "site" });
+    await handleChat(b, { session: r1.session, messages: q("Hallo"), lang: "de" });
     expect(await count(b.id)).toBe(1);
     expect((await db().select().from(aiUsage).where(eq(aiUsage.id, r1.session)))[0].messages).toBe(2);
   });
@@ -147,7 +152,7 @@ describe("KI-Chat: Antworten", () => {
     const calls = fakeModel();
     const a = await enable(await liveHotel());
     for (const bad of [[], q(""), q("x".repeat(501)), [{ role: "assistant", content: "Hi" }], "text", [{ role: "system", content: "x" }]]) {
-      expect((await handleChat(a, { messages: bad, lang: "de", surface: "site" })).status).toBe("invalid");
+      expect((await handleChat(a, { messages: bad, lang: "de" })).status).toBe("invalid");
     }
     expect(calls).toHaveLength(0);
     expect(await count(a.id)).toBe(0);
@@ -156,17 +161,17 @@ describe("KI-Chat: Antworten", () => {
   it("Weiterleitungs-Marker wird erkannt und dem Gast nicht gezeigt; Sprache folgt dem Hotel", async () => {
     const calls = fakeModel("Das weiss ich leider nicht. [[FORWARD]]");
     const a = await enable(await liveHotel());
-    const r = await handleChat(a, { messages: q("Gibt es eine Sauna?"), lang: "xx", surface: "booking" });
-    expect(r).toMatchObject({ status: "ok", reply: "Das weiss ich leider nicht.", forward: true });
+    const r = await handleChat(a, { messages: q("Gibt es eine Sauna?"), lang: "xx" });
+    expect(r).toMatchObject({ status: "ok", reply: "Das weiss ich leider nicht.", forward: true, arrival: false });
     expect(calls[0].system).toContain("Deutsch");
-    expect(calls[0].system).toContain("booking page");
-    expect((await db().select().from(aiUsage).where(eq(aiUsage.hotelId, a.id)))[0].surface).toBe("booking");
+    expect(calls[0].system).not.toContain("The guest is on their booking page");
+    expect((await db().select().from(aiUsage).where(eq(aiUsage.hotelId, a.id)))[0].surface).toBe("site");
   });
 
   it("Fehler des Dienstes: Fehlermeldung, ein fehlgeschlagener erster Aufruf zählt nicht", async () => {
     setChatFetch(async () => ({ status: 529, text: async () => "overloaded" }));
     const a = await enable(await liveHotel());
-    const r = await handleChat(a, { messages: q("Hallo"), lang: "de", surface: "site" });
+    const r = await handleChat(a, { messages: q("Hallo"), lang: "de" });
     expect(r.status).toBe("error");
     expect(await count(a.id)).toBe(0);
   });
@@ -178,7 +183,7 @@ describe("KI-Chat: Kontingent", () => {
     let a = await enable(await liveHotel());
     await setTerms(a.id, { included: 2, packSize: 2, packPriceRappen: 500 });
     const now = new Date();
-    const talk = (n: number) => handleChat(a, { messages: q(`Frage ${n}`), lang: "de", surface: "site" }, now);
+    const talk = (n: number) => handleChat(a, { messages: q(`Frage ${n}`), lang: "de" }, now);
     expect((await talk(1)).status).toBe("ok");
     expect((await talk(2)).status).toBe("ok");
     const paused = await talk(3);
@@ -200,8 +205,8 @@ describe("KI-Chat: Kontingent", () => {
     try {
       const a = await enable(await liveHotel());
       await setTerms(a.id, { included: 5, packSize: 5, packPriceRappen: 100 }, { overageBudgetRappen: 10_000 });
-      expect((await handleChat(a, { messages: q("A"), lang: "de", surface: "site" })).status).toBe("ok");
-      expect((await handleChat(a, { messages: q("B"), lang: "de", surface: "site" })).status).toBe("paused");
+      expect((await handleChat(a, { messages: q("A"), lang: "de" })).status).toBe("ok");
+      expect((await handleChat(a, { messages: q("B"), lang: "de" })).status).toBe("paused");
     } finally {
       delete process.env.AI_CHAT_HARD_CAP;
     }
@@ -211,7 +216,7 @@ describe("KI-Chat: Kontingent", () => {
     fakeModel();
     const a = await enable(await liveHotel());
     await setTerms(a.id, { included: 3 });
-    const res = await Promise.all(Array.from({ length: 8 }, (_, i) => handleChat(a, { messages: q(`F${i}`), lang: "de", surface: "site" })));
+    const res = await Promise.all(Array.from({ length: 8 }, (_, i) => handleChat(a, { messages: q(`F${i}`), lang: "de" })));
     expect(res.filter((r) => r.status === "ok")).toHaveLength(3);
     expect(await count(a.id)).toBe(3);
   });
@@ -285,5 +290,79 @@ describe("KI-Chat: API", () => {
     expect(inq).toMatchObject({ kind: "other", name: "Anna Muster", email: "anna@example.ch" });
     expect(inq.message).toContain("Gast: Gibt es eine Sauna?");
     expect(inq.message).toContain("Assistent: Das weiss ich nicht.");
+  });
+});
+
+
+describe("KI-Chat: Ankunftsinfos", () => {
+  const HOTEL_TEXT = "Schlüsselbox links, Code 4711. WLAN: Haus, Passwort Alpenblick";
+  /** Hotel mit Chat, Ankunftsinfos und einer bestätigten Buchung (Aufenthalt per Verschiebung steuerbar) */
+  async function setup(stay: { from: number; to: number } = { from: -1, to: 1 }, roomText: string | null = null) {
+    const base = await makeHotel();
+    await db().update(hotels).set({ monthlyMinimumRappen: 0, billingCustomerId: "cus_t", billingPaymentMethodId: "pm_t", content: { arrivalInfo: { de: HOTEL_TEXT } } }).where(eq(hotels.id, base.hotel.id));
+    let hotel = (await db().select().from(hotels).where(eq(hotels.id, base.hotel.id)))[0];
+    hotel = await enable(hotel);
+    if (roomText) await db().update(roomTypes).set({ arrivalInfo: roomText }).where(eq(roomTypes.id, base.rooms[0].roomType.id));
+    const d = inDays(10);
+    const { booking } = await createDirectBooking(hotel, { roomTypeId: base.rooms[0].roomType.id, ratePlanId: base.rooms[0].plans[0].id, checkin: d, checkout: addDays(d, 2), adults: 2, children: 0, childrenAges: [], guest, voucherCode: null });
+    await confirmBooking(booking.id, { sessionId: "cs_" + booking.id, actor: "stripe" });
+    const move = (from: number, to: number) => db().update(bookings).set({ checkin: inDays(from), checkout: inDays(to) }).where(eq(bookings.id, booking.id));
+    await move(stay.from, stay.to);
+    return { hotel, booking, move, token: booking.publicToken };
+  }
+  const arrivalReq = (token: string) => new Request("http://x/api/chat/arrival", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": `10.2.0.${Math.floor(Math.random() * 250)}` }, body: JSON.stringify({ token, lang: "de" }) });
+
+  it("während des Aufenthalts: Marke erkannt, Code nie im Prompt, Karte kommt vom Server", async () => {
+    const calls = fakeModel("Ich zeige Ihnen die Ankunftsinfos. [[ARRIVAL]]");
+    const { hotel, token } = await setup();
+    const r = await handleChat(hotel, { messages: q("Wie komme ich ins Haus?"), lang: "de", token });
+    expect(r).toMatchObject({ status: "ok", reply: "Ich zeige Ihnen die Ankunftsinfos.", arrival: true });
+    expect(calls[0].system).toContain("The guest is on their booking page");
+    expect(calls[0].system).toContain("[[ARRIVAL]]");
+    expect(calls[0].system).not.toMatch(/4711|Alpenblick|Schlüsselbox/);
+    const res = await arrivalPost(arrivalReq(token));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ status: "ok", text: HOTEL_TEXT });
+    expect((await db().select().from(aiUsage).where(eq(aiUsage.hotelId, hotel.id)))[0].surface).toBe("booking");
+  });
+
+  it("Text des Zimmers überschreibt den des Hotels", async () => {
+    const { token } = await setup({ from: 0, to: 2 }, "Wohnung 3: Code 9999");
+    expect(await (await arrivalPost(arrivalReq(token))).json()).toEqual({ status: "ok", text: "Wohnung 3: Code 9999" });
+  });
+
+  it("vor der Anreise, nach der Abreise, bei Stornierung und mit fremdem Link: keine Ankunftsinfos, Marke wird ignoriert", async () => {
+    const calls = fakeModel("Gern. [[ARRIVAL]]");
+    const early = await setup({ from: 2, to: 4 });
+    expect((await arrivalPost(arrivalReq(early.token))).status).toBe(403);
+    const r1 = await handleChat(early.hotel, { messages: q("Code?"), lang: "de", token: early.token });
+    expect(r1).toMatchObject({ status: "ok", arrival: false });
+    expect(calls[0].system).toContain("receive the arrival information with their booking");
+    expect(calls[0].system).not.toContain("[[ARRIVAL]] (hidden");
+
+    const late = await setup({ from: -5, to: -2 });
+    expect((await arrivalPost(arrivalReq(late.token))).status).toBe(403);
+
+    const cancelled = await setup();
+    await db().update(bookings).set({ status: "cancelled" }).where(eq(bookings.id, cancelled.booking.id));
+    expect((await arrivalPost(arrivalReq(cancelled.token))).status).toBe(403);
+
+    // Link eines anderen Hotels: der Chat behandelt den Gast als Besucher der Website
+    const own = await setup();
+    const foreign = await setup();
+    const r2 = await handleChat(own.hotel, { messages: q("Code?"), lang: "de", token: foreign.token });
+    expect(r2).toMatchObject({ status: "ok", arrival: false });
+    expect((await db().select().from(aiUsage).where(eq(aiUsage.hotelId, own.hotel.id)))[0].surface).toBe("site");
+    expect((await arrivalPost(arrivalReq("kein-gueltiger-link"))).status).toBe(403);
+  });
+
+  it("Codes landen nicht im Audit-Log", async () => {
+    const { hotel } = await setup({ from: 0, to: 1 });
+    const [rt] = await db().select().from(roomTypes).where(eq(roomTypes.hotelId, hotel.id));
+    await updateRoomType(hotel.id, rt.id, { name: rt.name, description: null, arrivalInfo: "GEHEIM-4711", roomCount: rt.roomCount, maxAdults: rt.maxAdults, maxChildren: rt.maxChildren, maxOccupancy: rt.maxOccupancy, sortOrder: rt.sortOrder, active: true, i18n: {} }, "t");
+    expect((await db().select().from(roomTypes).where(eq(roomTypes.id, rt.id)))[0].arrivalInfo).toBe("GEHEIM-4711");
+    const logs = await db().select().from(auditLog).where(eq(auditLog.hotelId, hotel.id));
+    expect(JSON.stringify(logs)).not.toContain("GEHEIM-4711");
+    expect(logs.find((l) => l.action === "room_type.update")!.details).toMatchObject({ arrivalInfoSet: true });
   });
 });

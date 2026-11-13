@@ -34,6 +34,7 @@ function roomInput(f: FormData): RoomTypeInput {
   return {
     name: s(f, "name"),
     description: s(f, "description") || null,
+    arrivalInfo: s(f, "arrivalInfo") || null,
     roomCount: n(f, "roomCount"),
     maxAdults: n(f, "maxAdults"),
     maxChildren: n(f, "maxChildren"),
@@ -191,6 +192,7 @@ function RoomForm({ hotelId, rt, canEdit, nextOrder = 0, langs }: { hotelId: str
         <div><label>Reihenfolge auf der Website</label><input name="sortOrder" type="number" min={0} defaultValue={rt?.sortOrder ?? nextOrder} disabled={!canEdit} /></div>
       </div>
       <div><label>Beschreibung</label><textarea name="description" rows={2} defaultValue={rt?.description ?? ""} disabled={!canEdit} placeholder="Grösse, Bett, Aussicht, Ausstattung" /></div>
+      <div><label>Ankunftsinfos für diese Wohnung/dieses Zimmer (optional)</label><textarea name="arrivalInfo" rows={3} maxLength={2000} defaultValue={rt?.arrivalInfo ?? ""} disabled={!canEdit} placeholder="z. B. Schlüsselbox-Code, WLAN. Überschreibt die allgemeinen Infos zur Ankunft. Gäste sehen es nur während ihres Aufenthalts." /></div>
       {EXTRA.map((l) => langs.includes(l) ? (
         <div key={l} className="form-grid">
           <div><label>Name {LOCALE_NAMES[l]}</label><input name={`name.${l}`} defaultValue={rt?.i18n?.[l]?.name ?? ""} disabled={!canEdit} placeholder={l === "en" ? "z. B. Double room with lake view" : ""} /></div>

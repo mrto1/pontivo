@@ -5,6 +5,8 @@ import { diffDays } from "@/src/domain/dates";
 import { formatChf } from "@/src/domain/money";
 import { formatDay, isLocale, t, type Locale } from "@/src/i18n/dict";
 import { Shell } from "@/components/public/Shell";
+import { arrivalAllowed, arrivalText } from "@/src/services/arrival";
+import { CHAT_TEXT } from "@/src/i18n/chat";
 import { planName, roomName } from "@/src/domain/i18n-names";
 import { CancelBox } from "@/components/public/CancelBox";
 import { AutoRefresh } from "@/components/public/AutoRefresh";
@@ -29,9 +31,11 @@ export default async function BookingView({ params, searchParams }: { params: Pr
   const base = hotel.primaryDomain ? "" : `/h/${hotel.slug}`;
   const ci = await checkinContext(token);
   const extras = await bookingExtrasOf(booking.id);
+  // Ankunftsinfos (Code, WLAN …) nur während des Aufenthalts einer bestätigten Buchung
+  const arrival = arrivalAllowed({ booking, hotel }) ? arrivalText({ hotel, roomType }, locale) : "";
 
   return (
-    <Shell hotel={hotel} locale={locale} base={base} chatSurface="booking">
+    <Shell hotel={hotel} locale={locale} base={base} chatToken={token}>
       <section style={{ padding: "32px 0" }}>
         <h1>{d.booking}</h1>
         {sp.paid && booking.status === "confirmed" ? <p className="notice">{d.paidThanks}</p> : null}
@@ -59,6 +63,12 @@ export default async function BookingView({ params, searchParams }: { params: Pr
           {plan ? (<><h3 style={{ marginTop: 20 }}>{d.cancellation}</h3><p className="small muted">{cancellationPolicyText(plan, locale)}</p></>) : null}
           {preview?.cancellable ? <CancelBox token={token} locale={locale} /> : null}
         </div>
+        {arrival ? (
+          <div className="card" style={{ marginTop: 16 }}>
+            <h3>{CHAT_TEXT[locale].arrivalTitle}</h3>
+            <p style={{ whiteSpace: "pre-wrap" }}>{arrival}</p>
+          </div>
+        ) : null}
         {ci?.open ? (
           <div className="card" style={{ marginTop: 16 }}>
             <h3>{CI[locale].linkTitle}</h3>

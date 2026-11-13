@@ -460,6 +460,11 @@ Zweck: Ein Chat auf der Hotel-Website und auf der Buchungsseite des Gastes (`/b/
 - Admin → Abrechnung zeigt die KI-Nutzung des Monats (Gespräche, Kontingent, Pakete, Betrag).
 - Die Kosten des Betreibers (Tokens) lassen sich mit `ai_usage` auswerten; Preise pro Million Tokens als Einstellung `CHAT_COST_IN_USD_PER_MTOK`, `CHAT_COST_OUT_USD_PER_MTOK` (Standard 0.10 und 0.50, Stand November 2026, vor Gebrauch bei Anthropic prüfen).
 
+**Ankunftsinfos (Codes, WLAN)**
+- Codes und Passwörter gehen nie in den Prompt. `hotels.content.arrivalInfo` und neu `room_types.arrival_info` (überschreibt die des Hotels) werden nur von `src/services/arrival.ts` gelesen: gültiger Buchungslink dieses Hotels, Status `confirmed`, heute zwischen Anreise- und Abreisetag (Hotelzeit). Die Prüfung macht der Server; `surface='booking'` gilt nur mit gültigem Link.
+- Fragt der Gast danach, antwortet das Modell kurz und hängt `[[ARRIVAL]]` an (nur, wenn erlaubt). Das Widget holt dann `POST /api/chat/arrival` und zeigt den Text als feste Karte. Dieselben Infos stehen als Abschnitt auf `/b/<token>`. Ausserhalb des Aufenthalts: 403, der Chat verweist auf die Buchungsseite.
+- `arrival_info` erscheint nicht im Audit-Log und nicht in Suchergebnissen.
+
 **Recht**
 - Neue Ziffer in den Bedingungen für Gastgeber (Modul, Preis, Kontingent, Zusatzpakete, monatliche Kündigung, Anbieter im Ausland, Hinweis, dass KI-Antworten Fehler enthalten können) mit neuer Version; Datenschutzerklärung der Plattform und der Hotel-Websites ergänzen. Beides vom Juristen prüfen lassen.
 
@@ -473,6 +478,7 @@ Abnahme KI-Chat:
 - Einschalten nur mit Karte und Preisbestätigung; die Konditionen werden kopiert.
 - Abrechnung: Betrag = Mindestgebühr-Differenz + Modulpreis + Pakete; Aktivierungsmonat kostenlos; zweiter Lauf erzeugt nichts doppelt; Kündigung wirkt zum Monatsende.
 - Weiterleitung als Anfrage erzeugt eine `inquiries`-Zeile mit Push.
+- Ankunftsinfos: nie im Prompt; nur mit gültigem Link, bestätigter Buchung und im Aufenthaltszeitraum; Zimmertext überschreibt Hoteltext; nicht im Audit-Log.
 
 ---
 
