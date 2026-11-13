@@ -31,7 +31,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
   const extras = await bookingExtrasOf(booking.id);
 
   return (
-    <Shell hotel={hotel} locale={locale} base={base}>
+    <Shell hotel={hotel} locale={locale} base={base} chatSurface="booking">
       <section style={{ padding: "32px 0" }}>
         <h1>{d.booking}</h1>
         {sp.paid && booking.status === "confirmed" ? <p className="notice">{d.paidThanks}</p> : null}

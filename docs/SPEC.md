@@ -33,7 +33,7 @@ Hotels bekommen eine Website mit Direktbuchung. Der Gast bucht, zahlt mit TWINT,
 - E-Mails an Gast und Hotel.
 - DE und EN.
 
-**Nicht in v1** (nicht bauen): eigene Hotelverwaltung ausser Modul „Gäste“ (Phase 2), Google-Hotel-Anbindung, WhatsApp, KI-Rezeption, Programm-Marktplatz, Gutscheine, Pakete, Restaurant-Kasse, Zahlung im Hotel, Kreditkarten-Garantie.
+**Nicht in v1** (nicht bauen): eigene Hotelverwaltung ausser Modul „Gäste“ (Phase 2), Google-Hotel-Anbindung, WhatsApp, KI-Rezeption (der kostenpflichtige KI-Chat für Gäste ist davon ausgenommen, siehe 14b), Programm-Marktplatz, Gutscheine, Pakete, Restaurant-Kasse, Zahlung im Hotel, Kreditkarten-Garantie.
 
 ---
 
@@ -427,6 +427,52 @@ Abnahme M4:
 - Gast füllt Formular aus, Daten erscheinen in Tagesliste; GL-Hotel verlangt Unterschrift, SG-Hotel nicht.
 - Export CSV enthält alle Pflichtfelder für den Zeitraum, Export ist im `audit_log`.
 - Löschjob entfernt Einträge nach Ablauf, nicht vorher.
+
+---
+
+## 14b. Modul „KI-Chat“ (kostenpflichtig, zuschaltbar über `hotel_modules.module='ai_chat'`)
+
+Zweck: Ein Chat auf der Hotel-Website und auf der Buchungsseite des Gastes (`/b/<token>`) beantwortet Fragen zum Haus und zur Umgebung, vor und während des Aufenthalts (Frühstückszeiten, WLAN, Öffnungszeiten, Ausflugstipps, Anreise). Er antwortet **nur** aus den Daten des Hotels (`hotelKnowledge()`, `src/services/knowledge.ts`). Der Betreiber verkauft das Modul als Premium-Funktion mit Marge.
+
+**Grenzen (wichtig)**
+- Keine Preis- und Verfügbarkeitsabfragen: Der Chat nennt keine Zimmerpreise und prüft keine Verfügbarkeit, sondern verweist auf die Suchleiste. Veröffentlichte Preise aus Speisekarte, Zusatzleistungen und Angeboten darf er nennen.
+- Er ändert nie Buchungen, löst keine Zahlungen aus und fragt nicht nach persönlichen Daten.
+- Er gibt sich als KI zu erkennen. Was er nicht weiss, leitet er als Anfrage ans Hotel weiter (bestehende `inquiries`, mit Push und Mail); der Gast gibt dafür Name, E-Mail und Text ein, der Gesprächsverlauf wird der Anfrage vom Browser mitgegeben.
+- Antwortsprache = Sprache des Gastes, soweit das Hotel sie in `hotelLocales` führt, sonst Deutsch.
+
+**Technik**
+- `src/services/chat.ts`, Route `POST /api/chat` (Body: `hotel` aus dem Host, `session`, `messages`, `lang`). Modell aus `CHAT_MODEL` (Standard `claude-haiku-5-5`), Schlüssel `ANTHROPIC_API_KEY`, derselbe fetch-Mechanismus wie in `translate.ts` (für Tests abfangbar). Keine Streaming-Antworten in der ersten Version.
+- Schutz: Rate-Limit pro IP und Hotel, höchstens 20 Nachrichten pro Gespräch, höchstens 500 Zeichen pro Nachricht, höchstens 500 Ausgabe-Tokens, nur die letzten 10 Nachrichten gehen ans Modell. Das Hotelwissen steht im System-Prompt, Anweisungen des Gastes können es nicht überschreiben.
+- Alle Abfragen mit `hotel_id`. Der Chat erscheint als schwebendes Widget im gemeinsamen Seitenrahmen (`components/public/Shell.tsx`), auf allen Seiten des Hotels und auf `/b/<token>` (dort mit `surface='booking'`), sobald das Modul läuft. Das Hotel muss nichts platzieren; für alle Hotels gleich.
+
+**Gespräch und Kontingent**
+- Ein **Gespräch** ist eine Sitzung (`ai_usage`, eine Zeile pro Sitzung): sie endet nach 30 Minuten Pause oder nach 20 Nachrichten, danach beginnt ein neues Gespräch. Die Sitzungs-ID vergibt der Server.
+- **Gesprächstexte werden nicht gespeichert.** `ai_usage` hat nur Zähler: Hotel, Monat, Sitzung, Anzahl Nachrichten, Eingabe- und Ausgabe-Tokens, Zeitpunkte.
+- Tarife stehen als Daten in `ai_plans` (Code, Name, Preis in Rappen, enthaltene Gespräche pro Monat, Zusatzpaket: Grösse und Preis, `active`, `public`). Start: `basic` = CHF 19.00, 250 Gespräche, Zusatzpaket 100 Gespräche = CHF 5.00. `mini` = CHF 4.90, 50 Gespräche, ohne Zusatzpakete, nicht öffentlich (`public=false`), wird vom Betreiber später freigeschaltet. Preise ohne MWST.
+- Beim Einschalten speichert das Hotel eine Kopie der Konditionen in `hotel_modules.settings` (`terms`: Tarif, Preis, Gespräche, Paketgrösse, Paketpreis, `acceptedAt`, `acceptedBy`), spätere Preisänderungen gelten für bestehende Hotels erst nach Ankündigung.
+- Ist das Kontingent des Monats aufgebraucht: **Standard = Pause bis Monatsende**. Der Chat nennt das freundlich und bietet die Anfrage ans Hotel an, ohne Aufruf des Modells.
+- Option **«Bei Limit weiterlaufen»**: Das Hotel setzt ein Monatsbudget für Zusatzpakete (`settings.overageBudgetRappen`, 0 = aus). Jedes angebrochene Paket zählt voll; ist das Budget erreicht, gilt wieder die Pause.
+- Zusätzlich gibt es eine technische Obergrenze pro Hotel und Monat (`AI_CHAT_HARD_CAP`, Standard 5000 Gespräche), unabhängig vom Tarif.
+
+**Abrechnung**
+- Der Modulpreis und die Zusatzpakete werden für den Vormonat in derselben Monatsbelastung wie die Mindestgebühr erhoben (`platform_charges`, neue Spalten `ai_module_rappen`, `ai_packs_rappen`); Betrag = Differenz Mindestgebühr + Modulpreis + Pakete. Eine Belastung pro Monat, gleiche Wiederholversuche.
+- Einschalten verlangt eine hinterlegte Karte (`billing_payment_method_id`) und die Preisbestätigung. Der Aktivierungsmonat ist kostenlos. Kündigung ist jederzeit möglich und wirkt zum Monatsende (`settings.endsAt`).
+- Admin → Abrechnung zeigt die KI-Nutzung des Monats (Gespräche, Kontingent, Pakete, Betrag).
+- Die Kosten des Betreibers (Tokens) lassen sich mit `ai_usage` auswerten; Preise pro Million Tokens als Einstellung `CHAT_COST_IN_USD_PER_MTOK`, `CHAT_COST_OUT_USD_PER_MTOK` (Standard 0.10 und 0.50, Stand November 2026, vor Gebrauch bei Anthropic prüfen).
+
+**Recht**
+- Neue Ziffer in den Bedingungen für Gastgeber (Modul, Preis, Kontingent, Zusatzpakete, monatliche Kündigung, Anbieter im Ausland, Hinweis, dass KI-Antworten Fehler enthalten können) mit neuer Version; Datenschutzerklärung der Plattform und der Hotel-Websites ergänzen. Beides vom Juristen prüfen lassen.
+
+Abnahme KI-Chat:
+- Modul aus: `POST /api/chat` antwortet ohne Aufruf des Modells mit einem Fehler.
+- Der Prompt enthält das Wissen des eigenen Hotels und nie das eines anderen; er enthält keine Zimmerpreise und keine Verfügbarkeit.
+- Ein Gespräch zählt einmal pro Sitzung; nach 20 Nachrichten oder 30 Minuten Pause beginnt ein neues.
+- Kontingent erreicht ohne Budget: Pause-Antwort, kein Aufruf des Modells. Mit Budget: Zusatzpakete bis zum Budget, dann Pause. Obergrenze pro Hotel gilt immer.
+- `ai_usage` enthält keine Textspalten; Gesprächstexte erscheinen nirgends in der Datenbank oder im Log.
+- Rate-Limit und Längenlimits greifen.
+- Einschalten nur mit Karte und Preisbestätigung; die Konditionen werden kopiert.
+- Abrechnung: Betrag = Mindestgebühr-Differenz + Modulpreis + Pakete; Aktivierungsmonat kostenlos; zweiter Lauf erzeugt nichts doppelt; Kündigung wirkt zum Monatsende.
+- Weiterleitung als Anfrage erzeugt eine `inquiries`-Zeile mit Push.
 
 ---
 

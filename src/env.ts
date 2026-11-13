@@ -33,6 +33,11 @@ const schema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   TRANSLATE_MODEL: z.string().default("claude-sonnet-5-5"),
   TRANSLATIONS_PER_MONTH: z.coerce.number().int().min(0).default(50),
+  // KI-Chat (SPEC 14b): Modell, technische Obergrenze Gespräche pro Hotel und Monat, Kosten pro Million Tokens (USD, für die Auswertung)
+  CHAT_MODEL: z.string().default("claude-haiku-5-5"),
+  AI_CHAT_HARD_CAP: z.coerce.number().int().min(0).default(5000),
+  CHAT_COST_IN_USD_PER_MTOK: z.coerce.number().min(0).default(0.1),
+  CHAT_COST_OUT_USD_PER_MTOK: z.coerce.number().min(0).default(0.5),
   // Modul Gäste: Schlüssel für Geburtsdatum/Ausweisnummer/Unterschrift (32 Byte base64: openssl rand -base64 32)
   GUEST_DATA_KEY: z.string().optional(),
   HOSTING_PROVIDER: z.string().optional(),

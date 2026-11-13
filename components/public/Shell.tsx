@@ -9,9 +9,13 @@ import { fontVars } from "./fonts";
 import { hotelJsonLd, ldJson } from "@/src/lib/structured-data";
 import { publicBase } from "@/src/services/brand";
 import { addDays, todayIn } from "@/src/domain/dates";
+import { aiChatActive } from "@/src/services/ai-module";
+import { chatLocale } from "@/src/services/chat";
+import { CHAT_TEXT } from "@/src/i18n/chat";
+import { ChatWidget } from "./ChatWidget";
 
 /** Rahmen der Hotel-Seiten: Kopf mit Logo, Fusszeile, Erscheinungsbild des Hotels (Farbe, Logo) */
-export async function Shell({ hotel, locale, base, path = "", current, noBookButton, children }: { hotel: Hotel; locale: Locale; base: string; path?: string; current?: string; noBookButton?: boolean; children: React.ReactNode }) {
+export async function Shell({ hotel, locale, base, path = "", current, noBookButton, chatSurface = "site", children }: { hotel: Hotel; locale: Locale; base: string; path?: string; current?: string; noBookButton?: boolean; chatSurface?: "site" | "booking"; children: React.ReactNode }) {
   const d = t(locale);
   const brand = hotel.content?.brand ?? {};
   const color = brand.color && HEX.test(brand.color) ? brand.color : null;
@@ -31,6 +35,8 @@ export async function Shell({ hotel, locale, base, path = "", current, noBookBut
   const langs = hotelLocales(hotel);
   const nav = bookingOnly ? [] : pages.filter((p) => p.showInNav && p.slug !== "");
   const imprint = pages.find((p) => p.slug === "impressum");
+  // KI-Chat (SPEC 14b): nur wenn das Modul läuft; Sprache = Seitensprache, sonst Deutsch
+  const chat = (await aiChatActive(hotel)).active ? CHAT_TEXT[chatLocale(hotel, locale)] : null;
   return (
     <div className={`site layout-${layout}${color ? " branded" : ""}`} style={style} lang={locale}>
       <header className="site-head">
@@ -56,6 +62,7 @@ export async function Shell({ hotel, locale, base, path = "", current, noBookBut
       </header>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(jsonLd) }} />
       <main className="wrap">{children}</main>
+      {chat ? <ChatWidget hotel={hotel.slug} locale={chatLocale(hotel, locale)} surface={chatSurface} text={chat} /> : null}
       {showBook ? <a className="sticky-book btn" href={bookHref}>{d.bookNow}</a> : null}
       <footer className="foot">
         <div className="wrap">

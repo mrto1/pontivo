@@ -8,7 +8,7 @@ import { formatChf } from "../domain/money";
  * WICHTIG: Vor dem produktiven Einsatz juristisch prüfen lassen (QUESTIONS.md). Inklusive Auftragsbearbeitung (DSG).
  */
 // ASSUMPTION: Nur Deutsch; französische und italienische Fassung folgen nach der juristischen Prüfung.
-export const HOST_TERMS_VERSION = "2026-11-13";
+export const HOST_TERMS_VERSION = "2026-11-13b";
 export const DEFAULT_MONTHLY_MINIMUM_RAPPEN = 1900;
 
 export function hostTerms(): LegalDoc {
@@ -36,7 +36,7 @@ export function hostTerms(): LegalDoc {
         `Scheitert eine Belastung, wird der Gastgeber per E-Mail informiert und kann die Karte im Admin erneuern. Bleibt eine Forderung länger als 30 Tage offen, darf ${p.name} die Online-Buchung erst pausieren, nachdem sie den Gastgeber per E-Mail gemahnt und ihm eine Nachfrist von mindestens 14 Tagen gesetzt hat. Die Pausierung endet, sobald die offene Forderung bezahlt ist. Bereits bestätigte Buchungen bleiben davon unberührt.`,
       ] },
       { h: "4. Daten", p: [
-        `${p.name} bearbeitet Personendaten der Gäste im Auftrag des Gastgebers (Auftragsbearbeitung nach Art. 9 DSG) und nur für die Erbringung der Leistungen. Daten werden in der Schweiz bzw. bei ${p.hosting} gespeichert. Unterauftragsbearbeiter: Stripe (Zahlungen), Postmark (E-Mail), Channex (bei Portal-Abgleich), Anthropic (automatische Übersetzung von Hotel-Texten, ohne Gastdaten).`,
+        `${p.name} bearbeitet Personendaten der Gäste im Auftrag des Gastgebers (Auftragsbearbeitung nach Art. 9 DSG) und nur für die Erbringung der Leistungen. Daten werden in der Schweiz bzw. bei ${p.hosting} gespeichert. Unterauftragsbearbeiter: Stripe (Zahlungen), Postmark (E-Mail), Channex (bei Portal-Abgleich), Anthropic (USA; automatische Übersetzung von Hotel-Texten ohne Gastdaten und, nur bei eingeschaltetem Modul «KI-Chat», Verarbeitung der Chat-Nachrichten der Gäste ohne Speicherung; Übermittlung gestützt auf anerkannte Garantien, z. B. Swiss-US Data Privacy Framework oder Standardvertragsklauseln).`,
         "Der Gastgeber ist für die Rechtmässigkeit der Bearbeitung gegenüber seinen Gästen verantwortlich und informiert sie mit der bereitgestellten Datenschutzerklärung.",
       ] },
       { h: "5. Verfügbarkeit und Haftung", p: [
@@ -48,7 +48,14 @@ export function hostTerms(): LegalDoc {
         "Der Vertrag läuft unbefristet und kann von beiden Seiten mit 30 Tagen Frist auf Ende eines Monats per E-Mail gekündigt werden. Bestehende Buchungen werden bis zur Abreise abgewickelt.",
         "Nach Vertragsende kann der Gastgeber seine Buchungs- und Gästedaten während 30 Tagen exportieren; danach werden sie gelöscht, soweit keine gesetzliche Aufbewahrungspflicht besteht.",
       ] },
-      { h: "7. Schlussbestimmungen", p: [
+      { h: "7. Optionales Modul «KI-Chat»", p: [
+        `Der Gastgeber kann das Modul «KI-Chat» im Admin einschalten. Es stellt auf seiner Website und auf der Buchungsseite der Gäste einen Chat bereit, der Fragen zum Haus und zur Umgebung ausschliesslich anhand der Inhalte des Gastgebers beantwortet. Der Chat nennt keine Zimmerpreise, prüft keine Verfügbarkeit und ändert keine Buchungen.`,
+        `Preis und Umfang (Tarif, monatlicher Preis ohne Mehrwertsteuer, enthaltene Gespräche pro Monat, Zusatzpakete) zeigt ${p.name} vor dem Einschalten an; sie gelten ab der Bestätigung des Gastgebers und werden bei der Bestätigung festgehalten. Der erste Monat ist kostenlos. Der Preis wird zusammen mit den übrigen Gebühren monatlich der hinterlegten Karte belastet (Ziffer 3). Preisänderungen kündigt ${p.name} wie nach Ziffer 2 mit mindestens 60 Tagen Frist an; der Gastgeber kann das Modul bis dahin kündigen.`,
+        `Ein Gespräch ist eine zusammenhängende Chat-Sitzung eines Gastes (Ende nach 30 Minuten Pause oder nach 20 Nachrichten). Ist das Kontingent des Monats aufgebraucht, pausiert der Chat bis Monatsende und bietet dem Gast an, die Frage an den Gastgeber weiterzuleiten. Zusatzpakete werden nur berechnet, wenn der Gastgeber sie mit einem Monatsbudget freigegeben hat; über das Budget hinaus wird nichts berechnet.`,
+        `Das Modul ist jederzeit kündbar mit Wirkung auf Ende des laufenden Monats, unabhängig von der Kündigung des übrigen Vertrags.`,
+        `Antworten des Chats werden mit Hilfe künstlicher Intelligenz erzeugt und können Fehler enthalten. ${p.name} gewährleistet nicht, dass sie richtig, vollständig oder aktuell sind; der Gastgeber bleibt für seine Inhalte verantwortlich und weist die Gäste im Chat auf diese Einschränkung hin (der Chat zeigt den Hinweis automatisch an). Gesprächstexte werden nicht gespeichert; es werden nur Anzahl und Umfang der Gespräche gezählt. Der Gastgeber informiert seine Gäste über den Einsatz des Chats in der bereitgestellten Datenschutzerklärung (wird bei eingeschaltetem Modul automatisch ergänzt).`,
+      ] },
+      { h: "8. Schlussbestimmungen", p: [
         `Änderungen dieser Bedingungen werden mindestens 30 Tage im Voraus per E-Mail mitgeteilt. Es gilt Schweizer Recht. Gerichtsstand ist der Sitz von ${p.name}.`,
       ] },
     ],

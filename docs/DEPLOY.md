@@ -159,3 +159,12 @@ cd /opt/pontivo/deploy && ./deploy.sh
 4. Jedes Mitglied schaltet sein Gerät im Admin unter «Mehr» → «Mitteilungen einschalten» ein. Auf dem iPhone zuerst die App zum Home-Bildschirm hinzufügen und von dort öffnen.
 
 Den Schlüssel nach dem Setzen nicht mehr ändern: sonst müssen alle Geräte die Mitteilungen neu einschalten.
+
+## KI-Chat (kostenpflichtiges Modul)
+
+1. In `.env.production` muss `ANTHROPIC_API_KEY` stehen (derselbe Schlüssel wie für die Übersetzung). Optional: `CHAT_MODEL` (Standard `claude-haiku-5-5`), `AI_CHAT_HARD_CAP` (Gespräche pro Hotel und Monat, Standard 5000), `CHAT_COST_IN_USD_PER_MTOK` und `CHAT_COST_OUT_USD_PER_MTOK` (für die Kostenauswertung; Preise vor Gebrauch bei Anthropic prüfen).
+2. `./deploy.sh` bringt Migration 0020 (Tarife, Nutzungszähler, Abrechnungsspalten) live.
+3. Im Anthropic-Konto ein Ausgabenlimit setzen (Console → Limits), damit auch bei Fehlern keine Überraschung entsteht.
+4. Pilotpreise oder Rabatte: `UPDATE hotel_modules SET settings = jsonb_set(settings, '{terms,priceRappen}', '900') WHERE module = 'ai_chat' AND hotel_id = '<id>';`
+5. Kosten prüfen: `SELECT month, count(*) AS gespraeche, sum(input_tokens) AS tok_in, sum(output_tokens) AS tok_out FROM ai_usage GROUP BY month ORDER BY month DESC;`
+

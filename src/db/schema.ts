@@ -542,6 +542,9 @@ export const platformCharges = pgTable("platform_charges", {
   feesRappen: integer("fees_rappen").notNull(),
   minimumRappen: integer("minimum_rappen").notNull(),
   chargeRappen: integer("charge_rappen").notNull(),
+  /** KI-Chat (SPEC 14b): Modulpreis und Zusatzpakete des Monats, in chargeRappen enthalten */
+  aiModuleRappen: integer("ai_module_rappen").notNull().default(0),
+  aiPacksRappen: integer("ai_packs_rappen").notNull().default(0),
   status: text("status").$type<"none" | "pending" | "succeeded" | "failed">().notNull(),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   error: text("error"),
@@ -550,6 +553,32 @@ export const platformCharges = pgTable("platform_charges", {
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 export type PlatformCharge = typeof platformCharges.$inferSelect;
+
+/** KI-Chat-Tarife (Migration 0020, SPEC 14b). pack_size 0 = keine Zusatzpakete */
+export const aiPlans = pgTable("ai_plans", {
+  code: text("code").primaryKey(),
+  name: text("name").notNull(),
+  priceRappen: integer("price_rappen").notNull(),
+  includedConversations: integer("included_conversations").notNull(),
+  packSize: integer("pack_size").notNull().default(0),
+  packPriceRappen: integer("pack_price_rappen").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type AiPlan = typeof aiPlans.$inferSelect;
+
+/** Ein Gespräch (Sitzung) des KI-Chats, nur Zähler, nie Gesprächstexte */
+export const aiUsage = pgTable("ai_usage", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  month: text("month").notNull(),
+  surface: text("surface").$type<"site" | "booking">().notNull().default("site"),
+  messages: integer("messages").notNull().default(0),
+  inputTokens: integer("input_tokens").notNull().default(0),
+  outputTokens: integer("output_tokens").notNull().default(0),
+  startedAt: ts("started_at").notNull().defaultNow(),
+  lastAt: ts("last_at").notNull().defaultNow(),
+});
 
 /** Geräte (Browser/App) von Hotel-Mitarbeitenden für Push-Mitteilungen (Migration 0018) */
 export const pushSubscriptions = pgTable("push_subscriptions", {

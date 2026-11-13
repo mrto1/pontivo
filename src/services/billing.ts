@@ -7,6 +7,7 @@ import { getPaymentProvider } from "../payments/provider";
 import { enqueueEmail } from "../email/enqueue";
 import { env } from "../env";
 import { audit } from "./audit";
+import { aiBillFor, hotelsWithAiModule } from "./ai-module";
 import { monthlyReport } from "./report";
 import { shiftMonth } from "./overview";
 
@@ -36,18 +37,27 @@ export function firstBilledMonth(hotel: Pick<Hotel, "liveSince" | "timezone">): 
   return shiftMonth(todayIn(hotel.timezone, hotel.liveSince).slice(0, 7), 1);
 }
 
-/** Abrechnungszeilen für den Vormonat anlegen (idempotent), dann fällige Belastungen ausführen */
+/**
+ * Abrechnungszeilen für den Vormonat anlegen (idempotent), dann fällige Belastungen ausführen.
+ * Betrag = Differenz zur Mindestgebühr + KI-Chat (Modulpreis und Zusatzpakete, SPEC 14b). Eine Belastung pro Monat.
+ */
 export async function runMonthlyMinimum(now = new Date()): Promise<{ created: number; charged: number; failed: number }> {
   const month = shiftMonth(todayIn("Europe/Zurich", now).slice(0, 7), -1);
-  const list = await db().select().from(hotels).where(and(sql`${hotels.monthlyMinimumRappen} > 0`, inArray(hotels.status, ["live", "paused"])));
+  const list = await db().select().from(hotels).where(inArray(hotels.status, ["live", "paused"]));
+  const aiHotels = new Set(await hotelsWithAiModule());
   let created = 0;
   for (const h of list) {
     const first = firstBilledMonth(h);
-    if (!first || month < first) continue;
-    const fees = await feesForMonth(h, month);
-    const charge = Math.max(0, h.monthlyMinimumRappen - fees);
+    const minApplies = h.monthlyMinimumRappen > 0 && !!first && month >= first;
+    const ai = aiHotels.has(h.id) ? await aiBillFor(h.id, month) : null;
+    const aiTotal = ai?.totalRappen ?? 0;
+    if (!minApplies && aiTotal === 0) continue;
+    const fees = h.monthlyMinimumRappen > 0 ? await feesForMonth(h, month) : 0;
+    const shortfall = minApplies ? Math.max(0, h.monthlyMinimumRappen - fees) : 0;
+    const charge = shortfall + aiTotal;
     const ins = await db().insert(platformCharges).values({
-      hotelId: h.id, month, feesRappen: fees, minimumRappen: h.monthlyMinimumRappen, chargeRappen: charge, status: charge > 0 ? "pending" : "none",
+      hotelId: h.id, month, feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, chargeRappen: charge,
+      aiModuleRappen: ai?.moduleRappen ?? 0, aiPacksRappen: ai?.packsRappen ?? 0, status: charge > 0 ? "pending" : "none",
     }).onConflictDoNothing().returning({ id: platformCharges.id });
     created += ins.length;
   }
@@ -69,7 +79,7 @@ export async function processCharges(now = new Date()): Promise<{ charged: numbe
     const res = h.billingCustomerId && h.billingPaymentMethodId
       ? await provider.chargeSavedCard({
           hotel: h, customerId: h.billingCustomerId, paymentMethodId: h.billingPaymentMethodId, amountRappen: c.chargeRappen,
-          description: `${env().PLATFORM_NAME} Mindestgebühr ${c.month} – ${h.name}`, receiptEmail: h.contactEmail,
+          description: `${env().PLATFORM_NAME} Abrechnung ${c.month} – ${h.name}`, receiptEmail: h.contactEmail,
           idempotencyKey: `minimum-${h.id}-${c.month}-${attempt}-${h.billingPaymentMethodId}`,
         })
       : { ok: false as const, paymentIntentId: null, error: "no_card" };
@@ -80,11 +90,15 @@ export async function processCharges(now = new Date()): Promise<{ charged: numbe
       }).where(eq(platformCharges.id, c.id));
       await audit(tx, { hotelId: h.id, actor: "system", action: res.ok ? "billing.minimum_charged" : "billing.minimum_failed", entity: "platform_charge", entityId: c.id,
         details: { month: c.month, amount: c.chargeRappen, attempt, error: res.ok ? null : res.error } });
-      const data = { month: c.month, fees: formatChf(c.feesRappen), minimum: formatChf(c.minimumRappen), amount: formatChf(c.chargeRappen), card: h.billingCardLabel ?? "", attempt, last: attempt >= MAX_ATTEMPTS };
+      const shortfall = c.chargeRappen - c.aiModuleRappen - c.aiPacksRappen;
+      const data = {
+        month: c.month, fees: formatChf(c.feesRappen), minimum: formatChf(c.minimumRappen), amount: formatChf(c.chargeRappen), card: h.billingCardLabel ?? "", attempt, last: attempt >= MAX_ATTEMPTS,
+        shortfall: shortfall > 0 ? formatChf(shortfall) : "", aiModule: c.aiModuleRappen > 0 ? formatChf(c.aiModuleRappen) : "", aiPacks: c.aiPacksRappen > 0 ? formatChf(c.aiPacksRappen) : "",
+      };
       await enqueueEmail(tx, { hotelId: h.id, template: res.ok ? "host_minimum_charged" : "host_charge_failed", to: h.contactEmail, language: "de", data });
       if (!res.ok && attempt >= MAX_ATTEMPTS && env().PLATFORM_ALERT_EMAIL) {
         await enqueueEmail(tx, { hotelId: h.id, template: "platform_onboarding_alert", to: env().PLATFORM_ALERT_EMAIL!, language: "de",
-          data: { hotel: h.name, email: h.contactEmail, propertyType: h.propertyType, openSteps: [`Mindestgebühr ${c.month} (${formatChf(c.chargeRappen)}) nach ${attempt} Versuchen nicht bezahlt: ${res.error}`], days: 0 } });
+          data: { hotel: h.name, email: h.contactEmail, propertyType: h.propertyType, openSteps: [`Abrechnung ${c.month} (${formatChf(c.chargeRappen)}) nach ${attempt} Versuchen nicht bezahlt: ${res.error}`], days: 0 } });
       }
     });
     if (res.ok) charged++;

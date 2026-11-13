@@ -126,7 +126,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
   const members = isOwner ? await listMembers(hotel.id) : [];
   const provider = env().PAYMENT_PROVIDER;
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
-  const charges = hotel.monthlyMinimumRappen > 0 ? await chargesOf(hotel.id) : [];
+  const charges = await chargesOf(hotel.id);
 
   return (
     <div className="stack">
@@ -171,10 +171,10 @@ export default async function Settings({ params, searchParams }: { params: Promi
         ) : <p className="muted small">Nur Inhaber können Stripe einrichten.</p>}
       </section>
 
-      {hotel.monthlyMinimumRappen > 0 ? (
+      {(
         <section className="card stack" id="karte">
           <h2>Grundgebühr und Karte</h2>
-          <p className="small">{hotel.platformFeeBps / 100} % pro Direktbuchung, mindestens {formatChf(hotel.monthlyMinimumRappen)} pro Monat. Liegen die {hotel.platformFeeBps / 100} % darunter, wird Anfang des Folgemonats die Differenz der Karte belastet{hotel.liveSince ? "" : " (ab dem ersten vollen Monat nach dem Live-Gang)"}.</p>
+          {hotel.monthlyMinimumRappen > 0 ? <p className="small">{hotel.platformFeeBps / 100} % pro Direktbuchung, mindestens {formatChf(hotel.monthlyMinimumRappen)} pro Monat. Liegen die {hotel.platformFeeBps / 100} % darunter, wird Anfang des Folgemonats die Differenz der Karte belastet{hotel.liveSince ? "" : " (ab dem ersten vollen Monat nach dem Live-Gang)"}.</p> : <p className="small">Die Karte dient der Abrechnung von Modulen (z. B. KI-Chat) und Gebühren der Plattform.</p>}
           <div className="kv">
             <span className="muted">Karte</span><span>{hotel.billingCardLabel ?? <span className="badge warn">keine hinterlegt</span>}</span>
             <span className="muted">Bedingungen</span><span><a href="/gastgeber-bedingungen" target="_blank">Version {hotel.hostTermsVersion ?? "–"}</a>{hotel.hostTermsAcceptedAt ? `, akzeptiert am ${hotel.hostTermsAcceptedAt.toISOString().slice(0, 10)}` : ""}</span>
@@ -182,15 +182,15 @@ export default async function Settings({ params, searchParams }: { params: Promi
           {isOwner ? <form action={cardSetup}>{hidden}<button className="btn secondary">{hotel.billingCardLabel ? "Andere Karte hinterlegen" : "Karte hinterlegen"}</button></form> : null}
           {charges.length ? (
             <table className="table small">
-              <thead><tr><th>Monat</th><th>Gebühr</th><th>Minimum</th><th>Belastet</th><th>Status</th></tr></thead>
+              <thead><tr><th>Monat</th><th>Gebühr</th><th>Minimum</th><th>KI-Chat</th><th>Belastet</th><th>Status</th></tr></thead>
               <tbody>{charges.map((c) => (
-                <tr key={c.id}><td>{c.month}</td><td>{formatChf(c.feesRappen)}</td><td>{formatChf(c.minimumRappen)}</td><td>{formatChf(c.chargeRappen)}</td>
+                <tr key={c.id}><td>{c.month}</td><td>{formatChf(c.feesRappen)}</td><td>{formatChf(c.minimumRappen)}</td><td>{formatChf(c.aiModuleRappen + c.aiPacksRappen)}</td><td>{formatChf(c.chargeRappen)}</td>
                   <td>{c.status === "succeeded" ? "bezahlt" : c.status === "none" ? "nichts fällig" : c.status === "pending" ? "offen" : <span className="badge warn">fehlgeschlagen ({c.attempts}×)</span>}</td></tr>
               ))}</tbody>
             </table>
           ) : null}
         </section>
-      ) : null}
+      )}
 
       <section className="card stack">
         <h2>Kurtaxe</h2>

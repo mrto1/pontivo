@@ -235,16 +235,27 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
         [], { href: c.hotel.primaryDomain ? `https://${c.hotel.primaryDomain}` : `${env().APP_BASE_URL}/h/${c.hotel.slug}/de`, label: de ? "Website ansehen" : "View website" });
     case "host_minimum_charged": {
       const d = c.data as Record<string, string>;
+      const pct = feePercentText(c.hotel.platformFeeBps);
+      const ai = !!(d.aiModule || d.aiPacks);
+      const deParts = [
+        d.shortfall ? `Im ${d.month} sind ${pct} % von Direktbuchungen und Gutscheinen von ${d.fees} angefallen. Bis zur Mindestgebühr von ${d.minimum} fehlten ${d.shortfall}.` : "",
+        ai ? `KI-Chat: ${[d.aiModule ? `Modul ${d.aiModule}` : "", d.aiPacks ? `Zusatzpakete ${d.aiPacks}` : ""].filter(Boolean).join(", ")}.` : "",
+        `Insgesamt wurden ${d.amount} Ihrer Karte ${d.card} belastet.`,
+      ].filter(Boolean);
+      const enParts = [
+        d.shortfall ? `In ${d.month} the ${pct} % fees amounted to ${d.fees}. The difference to the minimum of ${d.minimum} was ${d.shortfall}.` : "",
+        ai ? `AI chat: ${[d.aiModule ? `module ${d.aiModule}` : "", d.aiPacks ? `extra packs ${d.aiPacks}` : ""].filter(Boolean).join(", ")}.` : "",
+        `A total of ${d.amount} was charged to your card ${d.card}.`,
+      ].filter(Boolean);
       return wrap(c, l, de ? `${env().PLATFORM_NAME}: Abrechnung ${d.month}` : `${env().PLATFORM_NAME}: statement ${d.month}`,
-        de ? ["Guten Tag,", `im ${d.month} sind ${feePercentText(c.hotel.platformFeeBps)} % von Direktbuchungen und Gutscheinen von ${d.fees} angefallen. Bis zur Mindestgebühr von ${d.minimum} fehlten ${d.amount}; dieser Betrag wurde Ihrer Karte ${d.card} belastet.`]
-          : ["Hello,", `in ${d.month} the ${feePercentText(c.hotel.platformFeeBps)} % fees amounted to ${d.fees}. The difference to the minimum of ${d.minimum}, ${d.amount}, was charged to your card ${d.card}.`],
-        [`${de ? "Monat" : "Month"}: ${d.month}`, `${feePercentText(c.hotel.platformFeeBps)} %: ${d.fees}`, `Minimum: ${d.minimum}`, `${de ? "Belastet" : "Charged"}: ${d.amount}`]);
+        de ? ["Guten Tag,", ...deParts] : ["Hello,", ...enParts],
+        [`${de ? "Monat" : "Month"}: ${d.month}`, ...(d.shortfall ? [`${pct} %: ${d.fees}`, `Minimum: ${d.minimum}`] : []), ...(d.aiModule ? [`${de ? "KI-Chat Modul" : "AI chat module"}: ${d.aiModule}`] : []), ...(d.aiPacks ? [`${de ? "KI-Chat Zusatzpakete" : "AI chat extra packs"}: ${d.aiPacks}`] : []), `${de ? "Belastet" : "Charged"}: ${d.amount}`]);
     }
     case "host_charge_failed": {
       const d = c.data as Record<string, string | boolean>;
       return wrap(c, l, de ? `${env().PLATFORM_NAME}: Zahlung fehlgeschlagen` : `${env().PLATFORM_NAME}: payment failed`,
-        de ? ["Guten Tag,", `die Mindestgebühr für ${d.month} (${d.amount}) konnte nicht von Ihrer Karte abgebucht werden. ${d.last ? "Das war der letzte automatische Versuch." : "Wir versuchen es in drei Tagen erneut."} Bitte hinterlegen Sie im Admin eine gültige Karte.`]
-          : ["Hello,", `the minimum fee for ${d.month} (${d.amount}) could not be charged to your card. Please add a valid card in the admin.`],
+        de ? ["Guten Tag,", `die Abrechnung für ${d.month} (${d.amount}) konnte nicht von Ihrer Karte abgebucht werden. ${d.last ? "Das war der letzte automatische Versuch." : "Wir versuchen es in drei Tagen erneut."} Bitte hinterlegen Sie im Admin eine gültige Karte.`]
+          : ["Hello,", `the statement for ${d.month} (${d.amount}) could not be charged to your card. Please add a valid card in the admin.`],
         [], { href: `${env().APP_BASE_URL}/admin/${c.hotel.id}/settings#karte`, label: de ? "Karte erneuern" : "Update card" });
     }
     case "platform_onboarding_alert": {
