@@ -267,6 +267,8 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
     case "channex_alert":
       return wrap(c, l, `[Channex] ${String(c.data.subject)}${c.data.hotel ? ` – ${c.data.hotel}` : ""}`,
         [String(c.data.subject), String(c.data.details ?? "")]);
+    case "platform_alert":
+      return wrap(c, "de", `[Pontivo] ${String(c.data.subject)}`, [String(c.data.subject), String(c.data.details ?? "")]);
     default:
       throw new Error(`Unbekanntes Template ${template}`);
   }

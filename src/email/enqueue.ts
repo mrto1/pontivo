@@ -22,7 +22,8 @@ export type TemplateName =
   | "late_payment_refunded"
   | "dispute_alert"
   | "login_link"
-  | "channex_alert";
+  | "channex_alert"
+  | "platform_alert";
 
 /** SPEC 10: E-Mails nur über die Outbox. Gleiche Kombination booking/template/to wird nur einmal eingereiht. */
 export async function enqueueEmail(

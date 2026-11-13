@@ -11,3 +11,6 @@ data/
 
 # Produktion: Geheimnisse
 deploy/.env.production
+
+# Sicherungen (Personendaten)
+backups/

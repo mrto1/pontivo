@@ -22,6 +22,8 @@ import { enqueueCheckinLinks, purgeExpiredRegistrations } from "../services/gues
 import { onboardingReminders } from "../services/onboarding";
 import { runMonthlyMinimum } from "../services/billing";
 import { sendDuePushes } from "../push/service";
+import { beat, runWatchdog } from "../services/monitor";
+import { reconcilePayments } from "../services/reconcile";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
@@ -33,6 +35,8 @@ const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "guests-purge", cron: "30 2 * * *", run: () => purgeExpiredRegistrations() },
   { name: "onboarding-reminders", cron: "20 9 * * *", run: () => onboardingReminders() },
   { name: "billing-minimum", cron: "10 7 * * *", run: () => runMonthlyMinimum() },
+  { name: "watchdog", cron: "*/10 * * * *", run: () => runWatchdog() },
+  { name: "reconcile-payments", cron: "10 4 * * *", run: () => reconcilePayments() },
 ];
 
 /** channex-outbox: pg-boss kennt nur Minuten-Cron, darum eigene Schleife (nie zwei Durchläufe gleichzeitig) */
@@ -67,9 +71,13 @@ async function main() {
       if (r && (typeof r === "number" ? r > 0 : true)) console.log(`[job ${j.name}]`, r);
     });
   }
+  // Lebenszeichen für /api/health?deep=1
+  const heartbeat = setInterval(() => beat().catch((e) => console.error("[heartbeat]", e)), 60_000);
+  beat().catch((e) => console.error("[heartbeat]", e));
   const stopOutbox = env().CHANNEX_API_KEY ? startOutboxLoop() : () => {};
   console.log("Worker läuft:", jobs.map((j) => `${j.name} (${j.cron})`).join(", "), env().CHANNEX_API_KEY ? "+ channex-outbox (6 s)" : "(Channex nicht konfiguriert)");
   const stop = async () => {
+    clearInterval(heartbeat);
     stopOutbox();
     await boss.stop({ graceful: true });
     process.exit(0);

@@ -168,3 +168,19 @@ Den Schlüssel nach dem Setzen nicht mehr ändern: sonst müssen alle Geräte di
 4. Pilotpreise oder Rabatte: `UPDATE hotel_modules SET settings = jsonb_set(settings, '{terms,priceRappen}', '900') WHERE module = 'ai_chat' AND hotel_id = '<id>';`
 5. Kosten prüfen: `SELECT month, count(*) AS gespraeche, sum(input_tokens) AS tok_in, sum(output_tokens) AS tok_out FROM ai_usage GROUP BY month ORDER BY month DESC;`
 
+## Sicherung auf den eigenen PC (kostenlos)
+
+Der Container `backup` sichert täglich die Datenbank und die Uploads nach `/opt/pontivo/backups` (14 Tage Aufbewahrung, nur für den Benutzer `ubuntu` lesbar). Eine Sicherung auf demselben Server schützt nicht vor einem Totalausfall des Servers, deshalb holst du die Dateien regelmässig auf deinen PC:
+
+1. Einmalig auf dem Server: `cd /opt/pontivo && git pull && cd deploy && ./deploy.sh` (der Sicherungsordner wird dabei von einem Docker-Volume auf `/opt/pontivo/backups` umgestellt; die ersten Dateien entstehen gleich nach dem Start).
+2. Auf dem PC (PowerShell, im Ordner des Repos): `powershell -ExecutionPolicy Bypass -File scripts\pull-backups.ps1`. Zielordner standardmässig `%USERPROFILE%\PontivoBackups`, lokal werden 90 Tage behalten.
+3. Automatisch: Windows-Aufgabenplanung → neue Aufgabe → täglich → Programm `powershell`, Argumente `-ExecutionPolicy Bypass -File "C:\Pfad\zum\Repo\scripts\pull-backups.ps1"`. Der PC muss zur Zeit eingeschaltet sein, sonst wird einfach am nächsten Tag nachgeholt.
+4. Die Dateien enthalten Personendaten (DSG): Zielordner auf einer verschlüsselten Platte (BitLocker) ablegen, nicht in eine Cloud synchronisieren.
+5. Wiederherstellung testen (mindestens einmal): `pg_restore -d <leere Datenbank> db-JJJJ-MM-TT.dump`.
+
+## Überwachung
+
+- Der Worker meldet sich jede Minute. `GET https://pontivo.ch/api/health?deep=1` antwortet mit 200, wenn alles in Ordnung ist, und mit 503 plus den Namen der Probleme (`worker`, `email_backlog`, `channex_backlog`, `stuck_holds`, `disk`). Dort einen kostenlosen Uptime-Dienst einrichten (z. B. UptimeRobot, Prüfintervall 5 Minuten, Benachrichtigung per Mail). Für die einfache Prüfung der Website reicht `/api/health`.
+- Der Worker prüft alle 10 Minuten selbst und schickt bei neuen Problemen eine Mail an `PLATFORM_ALERT_EMAIL` (pro Problem höchstens alle 6 Stunden).
+- Nachts um 04:10 gleicht ein Job Stripe-Zahlungen mit Buchungen ab (bezahlt ohne bestätigte Buchung, bestätigt ohne Zahlung, bezahlt aber abgelaufen) und meldet Abweichungen per Mail. Er ändert nichts selbst.
+

@@ -606,3 +606,10 @@ export const pushOutbox = pgTable("push_outbox", {
   createdAt: ts("created_at").notNull().defaultNow(),
   sentAt: ts("sent_at"),
 });
+
+/** Überwachung (Migration 0022): Worker-Lebenszeichen und Alarm-Zeitpunkte */
+export const systemStatus = pgTable("system_status", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").$type<Record<string, unknown>>().notNull().default({}),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});

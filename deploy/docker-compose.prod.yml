@@ -75,7 +75,8 @@ services:
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}
     volumes:
-      - backups:/backups
+      # Ordner auf dem Server (/opt/pontivo/backups), damit die Sicherungen per scp auf einen eigenen Rechner kopiert werden können
+      - ../backups:/backups
       - uploads:/uploads:ro
       - ./backup.sh:/backup.sh:ro
     entrypoint: ["sh", "-c", "while true; do sh /backup.sh; sleep 86400; done"]
@@ -85,6 +86,5 @@ services:
 volumes:
   pgdata:
   uploads:
-  backups:
   caddy_data:
   caddy_config:
