@@ -86,10 +86,36 @@ details > summary::-webkit-details-marker { display: none; }
 
 /* ---------- Admin ---------- */
 .admin-head { background: var(--surface); border-bottom: 1px solid var(--line); }
-.admin-head .wrap { display: flex; align-items: center; gap: 20px; height: 56px; overflow-x: auto; }
-.admin-head nav a { color: var(--muted); text-decoration: none; margin-right: 14px; white-space: nowrap; }
-.admin-head nav a.active { color: var(--ink); font-weight: 600; }
-.admin-main { padding: 24px 0 64px; }
+.admin-head { position: sticky; top: 0; z-index: 20; padding-top: env(safe-area-inset-top); }
+.admin-head .wrap { display: flex; align-items: center; gap: 20px; height: 56px; position: relative; }
+.admin-brand { font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw; }
+.admin-nav { display: flex; gap: 4px; align-items: center; }
+.admin-nav a { color: var(--muted); text-decoration: none; padding: 8px 10px; border-radius: 8px; white-space: nowrap; }
+.admin-nav a:hover { background: var(--accent-soft); }
+.admin-nav a.active, .more-btn.active { color: var(--ink); font-weight: 600; }
+.more-btn { font: inherit; background: none; border: 0; color: var(--muted); padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.more-btn:hover { background: var(--accent-soft); }
+.tabbar { display: none; }
+.more-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .35); z-index: 30; }
+.more-panel { position: fixed; z-index: 40; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0, 0, 0, .18); overflow-y: auto; top: calc(env(safe-area-inset-top) + 60px); right: max(16px, calc((100vw - 1040px) / 2 + 16px)); width: 540px; max-width: calc(100vw - 32px); max-height: calc(100vh - 90px); border-radius: var(--radius); padding: 0 20px 16px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; align-content: start; }
+.more-group h3 { font-family: var(--font); font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 4px; }
+.more-group a { display: block; padding: 10px 0; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+.more-group a.active { font-weight: 600; color: var(--accent); }
+@media (max-width: 860px) {
+  .admin-nav, .more-btn { display: none; }
+  .admin-brand { max-width: none; }
+  .tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  .tabbar a, .tabbar button { flex: 1; min-height: 56px; display: flex; align-items: center; justify-content: center; text-align: center; font: inherit; font-size: .8rem; color: var(--muted); text-decoration: none; background: none; border: 0; padding: 4px; cursor: pointer; }
+  .tabbar .active { color: var(--accent); font-weight: 700; box-shadow: inset 0 2px 0 var(--accent); }
+  .more-panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-width: none; max-height: 85vh; border-radius: 16px 16px 0 0; padding: 0 16px calc(16px + env(safe-area-inset-bottom)); display: block; }
+  .more-group a { padding: 11px 0; }
+  .admin-main { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  /* Handy: Tabellen seitlich scrollbar statt die Seite zu sprengen, Eingaben ohne iOS-Zoom, Knöpfe in Daumengrösse */
+  .table { display: block; overflow-x: auto; }
+  input, select, textarea { font-size: 16px; }
+  .btn { min-height: 44px; }
+}
+.admin-main { padding: 24px 16px 64px; }
 .table { width: 100%; border-collapse: collapse; background: var(--surface); }
 .table th, .table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; font-size: .9rem; vertical-align: top; }
 .table th { color: var(--muted); font-weight: 600; font-size: .8rem; }
@@ -127,7 +153,6 @@ details > summary::-webkit-details-marker { display: none; }
 .thumbs img { width: 64px; height: 48px; object-fit: cover; border-radius: 6px; flex: none; }
 .offer-photo { width: 160px; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; }
 @media (max-width: 600px) { .offer-photo { width: 100%; } }
-@media (max-width: 1360px) { .admin-user { display: none; } .admin-head form { margin-left: auto; } }
 
 /* ---------- Erscheinungsbild pro Hotel ---------- */
 .brand-logo { height: 40px; width: auto; max-width: 220px; object-fit: contain; display: block; }
@@ -174,7 +199,6 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .addblock { width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; cursor: pointer; font: inherit; color: var(--ink); display: flex; flex-direction: column; gap: 4px; }
 .addblock:hover { border-color: var(--accent); }
 .addblock span { font-size: .82rem; color: var(--muted); }
-.admin-head .wrap { flex-wrap: wrap; height: auto; min-height: 56px; row-gap: 6px; padding-top: 8px; padding-bottom: 8px; overflow: visible; }
 
 /* ---------- Layouts der Hotel-Website (src/domain/theme.ts) ----------
    Gleiches Markup für alle Hotels; ein Layout ist nur eine Klasse am Rahmen. */

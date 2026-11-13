@@ -1,4 +1,6 @@
 import { requireHotel } from "@/src/auth/guard";
+import { adminNav } from "@/src/admin/nav";
+import { AdminNav } from "@/components/admin/AdminNav";
 
 export default async function HotelAdminLayout({ children, params }: { children: React.ReactNode; params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
@@ -9,34 +11,8 @@ export default async function HotelAdminLayout({ children, params }: { children:
     <>
       <header className="admin-head">
         <div className="wrap">
-          <a href="/admin" className="brand" style={{ fontSize: "1.05rem" }}>{hotel.name}</a>
-          {setup ? (
-            <nav>
-              <a href={`/admin/${hotel.id}/einrichten`}><strong>Einrichten</strong></a>
-              <a href={`/admin/${hotel.id}/rooms`}>Zimmer</a>
-              <a href={`/admin/${hotel.id}/site`}>Website</a>
-              <a href={`/admin/${hotel.id}/settings`}>Einstellungen</a>
-              <a href={`/h/${hotel.slug}/de`} target="_blank">Vorschau ↗</a>
-            </nav>
-          ) : (
-            <nav>
-            <a href={`/admin/${hotel.id}`}>Übersicht</a>
-            <a href={`/admin/${hotel.id}/calendar`}>Kalender</a>
-            <a href={`/admin/${hotel.id}/rooms`}>Zimmer</a>
-            <a href={`/admin/${hotel.id}/site`}>Website</a>
-            <a href={`/admin/${hotel.id}/bookings`}>Buchungen</a>
-            <a href={`/admin/${hotel.id}/guests`}>Gäste</a>
-            <a href={`/admin/${hotel.id}/inquiries`}>Anfragen</a>
-            <a href={`/admin/${hotel.id}/vouchers`}>Gutscheine</a>
-            <a href={`/admin/${hotel.id}/report`}>Abrechnung</a>
-            <a href={`/admin/${hotel.id}/channex`}>Channex</a>
-            <a href={`/admin/${hotel.id}/embed`}>Einbinden</a>
-            <a href={`/admin/${hotel.id}/settings`}>Einstellungen</a>
-            <a href={hotel.primaryDomain ? `//${hotel.primaryDomain}` : `/h/${hotel.slug}/de`} target="_blank">Ansehen ↗</a>
-          </nav>
-          )}
-          <span className="muted small admin-user" style={{ marginLeft: "auto", whiteSpace: "nowrap" }}>{user.email} · {role}</span>
-          <form action="/api/auth/logout" method="post"><button className="btn secondary small">Abmelden</button></form>
+          <a href="/admin" className="brand admin-brand">{hotel.name}</a>
+          <AdminNav nav={adminNav(hotel, setup)} home={`/admin/${hotel.id}`} userLabel={`${user.email} · ${role}`} />
         </div>
       </header>
       <main className="wrap admin-main">{children}</main>
