@@ -30,7 +30,7 @@ export function platformPrivacy(): LegalDoc {
   return {
     title: "Datenschutzerklärung",
     intro: `Diese Erklärung gilt für die Website ${p.name} (Informationen, Registrierung und Admin-Bereich für Gastgeber). Für Buchungen auf den Websites der Betriebe gilt deren eigene Datenschutzerklärung; dort bearbeitet ${p.name} Daten im Auftrag des Betriebs.`,
-    draftNote: "Entwurf – noch nicht juristisch geprüft.",
+    draftNote: "",
     sections: [
       { h: "1. Verantwortlich", p: [`${p.operator}, E-Mail ${p.email}. Postadresse siehe Impressum.`] },
       { h: "2. Welche Daten wir bearbeiten", p: [
