@@ -21,6 +21,12 @@ const schema = z.object({
   VAPID_SUBJECT: z.string().optional(), // z. B. mailto:info@pontivo.ch (Standard: PLATFORM_ALERT_EMAIL)
   EMAIL_FROM: z.string().default("buchung@example.ch"),
   PLATFORM_ALERT_EMAIL: z.string().optional(),
+  // Buchhaltung des Betreibers (Export für Banana). Kontonummern müssen zum eigenen Kontenplan passen.
+  ACCOUNTING_EXPORT_DIR: z.string().optional(),
+  BANANA_ACCOUNT_STRIPE: z.string().default("1090"), // Soll: Durchlaufkonto Stripe/Bank
+  BANANA_ACCOUNT_REV_FEES: z.string().default("3000"), // Haben: Ertrag Plattformgebühr
+  BANANA_ACCOUNT_REV_MINIMUM: z.string().default("3001"), // Haben: Ertrag Mindestgebühr
+  BANANA_ACCOUNT_REV_AI: z.string().default("3002"), // Haben: Ertrag KI-Chat
   AUTH_SECRET: z.string().min(16).optional(),
   // Betreiber der Plattform (für AGB, Datenschutz, Fusszeile)
   PLATFORM_NAME: z.string().default("Pontivo"),

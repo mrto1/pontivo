@@ -51,6 +51,13 @@ services:
   worker:
     <<: *app
     command: ["node", "--import", "tsx", "src/jobs/worker.ts"]
+    # Buchungsdatei für Banana (monatlich), bleibt auf dem Server unter /opt/pontivo/buchhaltung
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://pontivo:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}@db:5432/pontivo
+      UPLOAD_DIR: /app/data/uploads
+      ACCOUNTING_EXPORT_DIR: /buchhaltung
+    volumes: ["../buchhaltung:/buchhaltung"]
     depends_on:
       migrate: { condition: service_completed_successfully }
 

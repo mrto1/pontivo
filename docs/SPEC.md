@@ -491,6 +491,14 @@ Abnahme KI-Chat:
 
 ---
 
+## 14c. Buchhaltung des Betreibers (Export für Banana)
+
+- Am 5. jedes Monats schreibt der Worker die Erträge des Vormonats als `pontivo-JJJJ-MM.txt` in `ACCOUNTING_EXPORT_DIR` (Server: `/opt/pontivo/buchhaltung`). Von Hand: `npm run export:banana -- JJJJ-MM`.
+- Format: Textdatei mit Spaltenüberschriften (`Date, DocInvoice, Description, AccountDebit, AccountCredit, Amount, ExternalReference`), Tabulator, Datum `yyyy-mm-dd`, Betrag mit Punkt, UTF-8. Betreiber nicht MWST-pflichtig: kein `VatCode`.
+- Zeilen je Hotel und Monat: Plattformgebühr (netto nach Rückerstattungen, bereits per Stripe eingezogen), Mindestgebühr-Differenz, KI-Modul, KI-Zusatzpakete. Die drei letzten nur bei erfolgreicher Belastung (`status = succeeded`); offene oder fehlgeschlagene stehen nicht in der Datei.
+- Konten (Soll Durchlaufkonto Stripe, Haben je Ertragsart) aus Umgebungsvariablen `BANANA_ACCOUNT_*`, müssen zum eigenen Kontenplan passen. Die Bankseite kommt aus dem Kontoauszug der Bank, nicht von Pontivo.
+- Abnahme: `tests/integration/accounting.test.ts`.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

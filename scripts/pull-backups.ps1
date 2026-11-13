@@ -16,6 +16,10 @@ scp -q "${Server}:/opt/pontivo/backups/*" "$Dest\"
 if ($LASTEXITCODE -ne 0) { Write-Error "Kopieren fehlgeschlagen (Server erreichbar? SSH-Schlüssel?)"; exit 1 }
 # Lokal nur die letzten $KeepDays Tage behalten
 Get-ChildItem $Dest -File | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-$KeepDays) } | Remove-Item -Force
+# Buchungsdateien für Banana (monatlich), werden nie gelöscht (Aufbewahrungspflicht 10 Jahre)
+$Acc = "$HOME\PontivoBuchhaltung"
+New-Item -ItemType Directory -Force -Path $Acc | Out-Null
+scp -q "${Server}:/opt/pontivo/buchhaltung/*" "$Acc\" 2>$null
 $n = (Get-ChildItem $Dest -File).Count
 $newest = (Get-ChildItem $Dest -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1).Name
 Write-Host "Fertig: $n Dateien in $Dest, neueste: $newest"

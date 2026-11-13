@@ -10,6 +10,7 @@
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
     "db:seed": "tsx --env-file-if-exists=.env.local scripts/seed.ts",
     "db:reset": "tsx --env-file-if-exists=.env.local scripts/migrate.ts --reset && tsx --env-file-if-exists=.env.local scripts/seed.ts",
+    "export:banana": "tsx --env-file-if-exists=.env.local scripts/export-banana.ts",
     "worker": "tsx --env-file-if-exists=.env.local src/jobs/worker.ts",
     "test": "vitest run",
     "test:watch": "vitest",

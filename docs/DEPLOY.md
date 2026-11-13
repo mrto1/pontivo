@@ -184,3 +184,14 @@ Der Container `backup` sichert täglich die Datenbank und die Uploads nach `/opt
 - Der Worker prüft alle 10 Minuten selbst und schickt bei neuen Problemen eine Mail an `PLATFORM_ALERT_EMAIL` (pro Problem höchstens alle 6 Stunden).
 - Nachts um 04:10 gleicht ein Job Stripe-Zahlungen mit Buchungen ab (bezahlt ohne bestätigte Buchung, bestätigt ohne Zahlung, bezahlt aber abgelaufen) und meldet Abweichungen per Mail. Er ändert nichts selbst.
 
+
+## Buchhaltung (Banana)
+
+Am 5. jedes Monats legt der Worker die Erträge des Vormonats als `pontivo-JJJJ-MM.txt` in `/opt/pontivo/buchhaltung` ab. `scripts\pull-backups.ps1` kopiert sie nach `%USERPROFILE%\PontivoBuchhaltung` (werden nicht gelöscht, Aufbewahrungspflicht 10 Jahre).
+
+Einmal einrichten:
+1. Auf dem Server: `mkdir -p /opt/pontivo/buchhaltung`, in `deploy/.env.production` die Kontonummern `BANANA_ACCOUNT_STRIPE`, `BANANA_ACCOUNT_REV_FEES`, `BANANA_ACCOUNT_REV_MINIMUM`, `BANANA_ACCOUNT_REV_AI` an den eigenen Kontenplan anpassen, dann `./deploy.sh`.
+2. In Banana: Aktionen › In Buchhaltung importieren › «Buchungen» › Dateityp «Textdatei mit Kopfzeile» › UTF-8 anhaken › Datei wählen. Zuerst mit einem Monat und einer Kopie der Buchhaltung ausprobieren, besonders die Beträge (Dezimalpunkt) und die Kontonummern prüfen.
+3. Manuell, auch für frühere Monate: `docker compose --env-file .env.production -f docker-compose.prod.yml run --rm worker npm run export:banana -- 2026-11`
+
+Nicht in der Datei: Stripe-Gebühren, Server- und Anthropic-Kosten (Aufwand, Belege selbst ablegen) und die Bankseite (kommt aus dem Kontoauszug der Bank).

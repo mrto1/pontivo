@@ -25,6 +25,7 @@ import { sendDuePushes } from "../push/service";
 import { beat, runWatchdog } from "../services/monitor";
 import { reconcilePayments } from "../services/reconcile";
 import { syncDueFeeds } from "../services/ical";
+import { monthlyAccountingJob } from "../services/accounting";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
@@ -37,6 +38,7 @@ const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "onboarding-reminders", cron: "20 9 * * *", run: () => onboardingReminders() },
   { name: "billing-minimum", cron: "10 7 * * *", run: () => runMonthlyMinimum() },
   { name: "ical-sync", cron: "*/15 * * * *", run: () => syncDueFeeds() },
+  { name: "accounting-export", cron: "40 8 5 * *", run: () => monthlyAccountingJob() },
   { name: "watchdog", cron: "*/10 * * * *", run: () => runWatchdog() },
   { name: "reconcile-payments", cron: "10 4 * * *", run: () => reconcilePayments() },
 ];
