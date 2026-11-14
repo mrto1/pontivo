@@ -5,7 +5,7 @@ import { addDays, isDay, todayIn } from "@/src/domain/dates";
 import { isMonth } from "@/src/services/report";
 import { shiftMonth } from "@/src/services/overview";
 import { TaxTable, SOURCE } from "@/components/admin/GuestTables";
-import { arrivals, cantonRule, guestsModuleEnabled, setGuestsModule, touristTaxList, verifyRegistration } from "@/src/services/guests";
+import { arrivals, cantonRule, guestsModuleEnabled, isTaxQuarter, quarterOf, setGuestsModule, shiftQuarter, touristTaxList, touristTaxQuarter, verifyRegistration } from "@/src/services/guests";
 
 export const dynamic = "force-dynamic";
 
@@ -65,7 +65,7 @@ export default async function Guests({ params, searchParams }: { params: Promise
         </section>
       ) : null}
 
-      {tab === "tax" && isManager ? <TaxTab hotel={hotel} month={isMonth(sp.month) ? sp.month : today.slice(0, 7)} /> : null}
+      {tab === "tax" && isManager ? <TaxTab hotel={hotel} month={isMonth(sp.month) ? sp.month : today.slice(0, 7)} quarter={isTaxQuarter(sp.quarter) ? sp.quarter : sp.view === "quarter" ? quarterOf(today.slice(0, 7)) : null} /> : null}
 
       {tab === "settings" ? (
         <section className="card stack">
@@ -132,16 +132,22 @@ async function ArrivalsTab({ hotelId, day, today, hidden }: { hotelId: string; d
   );
 }
 
-async function TaxTab({ hotel, month }: { hotel: Awaited<ReturnType<typeof requireHotel>>["hotel"]; month: string }) {
-  const r = await touristTaxList(hotel, month);
+async function TaxTab({ hotel, month, quarter }: { hotel: Awaited<ReturnType<typeof requireHotel>>["hotel"]; month: string; quarter: string | null }) {
+  const r = quarter ? await touristTaxQuarter(hotel, quarter) : await touristTaxList(hotel, month);
+  const key = quarter ?? month;
+  const param = quarter ? "quarter" : "month";
   return (
     <section className="stack">
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <a className="btn secondary small" href={`?tab=tax&month=${shiftMonth(month, -1)}`}>←</a>
-        <form method="get"><input type="hidden" name="tab" value="tax" /><input type="month" name="month" defaultValue={month} style={{ width: 170 }} /></form>
-        <a className="btn secondary small" href={`?tab=tax&month=${shiftMonth(month, 1)}`}>→</a>
-        <a className="btn small" href={`/admin/${hotel.id}/guests/tax?month=${month}&format=csv`}>CSV</a>
-        <a className="btn secondary small" href={`/admin/${hotel.id}/guests/tax?month=${month}&format=pdf`} target="_blank">PDF / Drucken</a>
+        <nav className="seg" aria-label="Zeitraum">
+          <a href={`?tab=tax&month=${month}`} aria-current={!quarter ? "true" : undefined}>Monat</a>
+          <a href={`?tab=tax&quarter=${quarterOf(month)}`} aria-current={quarter ? "true" : undefined}>Quartal</a>
+        </nav>
+        <a className="btn secondary small" href={quarter ? `?tab=tax&quarter=${shiftQuarter(quarter, -1)}` : `?tab=tax&month=${shiftMonth(month, -1)}`}>←</a>
+        {quarter ? <strong>{quarter.replace("-Q", " Q")}</strong> : <form method="get"><input type="hidden" name="tab" value="tax" /><input type="month" name="month" defaultValue={month} style={{ width: 170 }} /></form>}
+        <a className="btn secondary small" href={quarter ? `?tab=tax&quarter=${shiftQuarter(quarter, 1)}` : `?tab=tax&month=${shiftMonth(month, 1)}`}>→</a>
+        <a className="btn small" href={`/admin/${hotel.id}/guests/tax?${param}=${key}&format=csv`}>CSV</a>
+        <a className="btn secondary small" href={`/admin/${hotel.id}/guests/tax?${param}=${key}&format=pdf`} target="_blank">PDF / Drucken</a>
       </div>
       <TaxTable r={r} />
     </section>

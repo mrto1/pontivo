@@ -1,13 +1,13 @@
 import { formatChf } from "@/src/domain/money";
-import type { touristTaxList } from "@/src/services/guests";
+import type { TaxList } from "@/src/services/guests";
 
 export const SOURCE: Record<string, string> = { direct: "Direkt", booking_com: "Booking.com", expedia: "Expedia", airbnb: "Airbnb", other_ota: "Portal", admin: "Manuell" };
 
-export function TaxTable({ r }: { r: Awaited<ReturnType<typeof touristTaxList>> }) {
+export function TaxTable({ r }: { r: TaxList }) {
   return (
     <>
       <table className="table">
-        <thead><tr><th>Buchung</th><th>Gast</th><th>Aufenthalt</th><th>Nächte im Monat</th><th>pflichtig</th><th>befreit</th><th>Logiernächte</th><th>Kurtaxe</th><th>Grundlage</th></tr></thead>
+        <thead><tr><th>Buchung</th><th>Gast</th><th>Aufenthalt</th><th>{r.months ? "Nächte im Quartal" : "Nächte im Monat"}</th><th>pflichtig</th><th>befreit</th><th>Logiernächte</th><th>Kurtaxe</th><th>Grundlage</th></tr></thead>
         <tbody>
           {r.lines.map((l) => (
             <tr key={l.bookingId}>
@@ -21,6 +21,12 @@ export function TaxTable({ r }: { r: Awaited<ReturnType<typeof touristTaxList>> 
         </tbody>
       </table>
       <p className="small muted">Alle bestätigten Aufenthalte mit Übernachtungen im Monat, auch über Portale. Alter und Pflicht nach Meldeschein, sonst nach Buchung. Satz gemäss Kurtaxe-Regel am Anreisetag.</p>
+      {r.months ? (
+        <table className="table" style={{ marginTop: 16, width: "auto" }}>
+          <thead><tr><th>Monat</th><th>Nächte</th><th>Logiernächte pflichtig</th><th>Kurtaxe</th></tr></thead>
+          <tbody>{r.months.map((m) => <tr key={m.month}><td>{m.month}</td><td>{m.total.nights}</td><td>{m.total.personNights}</td><td>{formatChf(m.total.amountRappen)}</td></tr>)}</tbody>
+        </table>
+      ) : null}
     </>
   );
 }

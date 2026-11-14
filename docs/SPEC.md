@@ -620,6 +620,9 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 - **Rechnung:** Entwürfe von Teilnehmer-Buchungen gehen an die Firma/Kontaktperson der Gruppe. Eine Sammelrechnung ist nicht Teil von 18.1.
 - Seiten `/admin/<hotel>/groups` (Liste, Neu) und `.../groups/<id>` (Block, Teilnehmer, Freigabe); Rolle Rezeption hat Zugang (Bereich `groups`).
 
+### 18.2 Kurtaxe-Quartalsabrechnung
+- Kurtaxe-Liste (14.5) zusätzlich pro Quartal (`YYYY-Qn`): `touristTaxQuarter` fasst die drei Monatslisten zusammen (Buchung über Monatsgrenzen einmal, Nächte summiert), Monatssummen darunter. Ansicht, CSV und Druck (mit Zeile für Ort/Datum/Unterschrift) unter Gäste → Kurtaxe-Liste, Umschalter Monat/Quartal; nur Manager; Export im `audit_log`.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

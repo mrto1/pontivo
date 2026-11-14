@@ -354,12 +354,43 @@ export async function touristTaxList(hotel: Hotel, month: string) {
   return { month, lines, total };
 }
 
-export function taxListCsv(r: Awaited<ReturnType<typeof touristTaxList>>): string {
+export type TaxList = Awaited<ReturnType<typeof touristTaxList>> & { months?: { month: string; total: { nights: number; liable: number; exempt: number; personNights: number; amountRappen: number } }[] };
+
+export const isTaxQuarter = (s: string | undefined | null): s is string => !!s && /^\d{4}-Q[1-4]$/.test(s);
+/** Kurtaxe wird meist pro Quartal mit der Gemeinde abgerechnet (SPEC 18.2): 3 Monate zusammengefasst, Buchungen über Monatsgrenzen einmal */
+export function quarterMonths(q: string): string[] {
+  const y = q.slice(0, 4), n = Number(q.slice(6));
+  return [0, 1, 2].map((i) => `${y}-${String((n - 1) * 3 + 1 + i).padStart(2, "0")}`);
+}
+export const quarterOf = (month: string) => `${month.slice(0, 4)}-Q${Math.floor((Number(month.slice(5, 7)) - 1) / 3) + 1}`;
+export function shiftQuarter(q: string, n: number): string {
+  const idx = Number(q.slice(0, 4)) * 4 + (Number(q.slice(6)) - 1) + n;
+  return `${Math.floor(idx / 4)}-Q${(idx % 4) + 1}`;
+}
+
+export async function touristTaxQuarter(hotel: Hotel, quarter: string): Promise<TaxList> {
+  const months = quarterMonths(quarter);
+  const parts = [];
+  for (const m of months) parts.push(await touristTaxList(hotel, m));
+  const merged = new Map<string, TaxListLine>();
+  for (const p of parts) for (const l of p.lines) {
+    const c = merged.get(l.bookingId);
+    if (!c) merged.set(l.bookingId, { ...l });
+    else { c.nightsInMonth += l.nightsInMonth; c.personNights += l.personNights; c.amountRappen += l.amountRappen; }
+  }
+  const lines = [...merged.values()].sort((a, b) => a.checkin.localeCompare(b.checkin) || a.reference.localeCompare(b.reference));
+  const total = parts.reduce((t, p) => ({ nights: t.nights + p.total.nights, liable: t.liable + p.total.liable, exempt: t.exempt + p.total.exempt, personNights: t.personNights + p.total.personNights, amountRappen: t.amountRappen + p.total.amountRappen }),
+    { nights: 0, liable: 0, exempt: 0, personNights: 0, amountRappen: 0 });
+  return { month: quarter, lines, total, months: parts.map((p) => ({ month: p.month, total: p.total })) };
+}
+
+export function taxListCsv(r: TaxList): string {
   const head = ["Buchung", "Quelle", "Gast", "Anreise", "Abreise", "Nächte im Monat", "Personen pflichtig", "Personen befreit", "Logiernächte pflichtig", "Kurtaxe CHF", "Grundlage"];
   const lines = r.lines.map((l) => [l.reference, l.source, l.guest, l.checkin, l.checkout, l.nightsInMonth, l.liable, l.exempt, l.personNights, (l.amountRappen / 100).toFixed(2), l.fromRegister ? "Meldeschein" : `Buchung${l.unknownAge ? ` (${l.unknownAge} Kind/er Alter unbekannt)` : ""}`]
     .map((v) => { const s = String(v); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }).join(";"));
   const t = r.total;
   lines.push(["Total", "", "", "", "", t.nights, t.liable, t.exempt, t.personNights, (t.amountRappen / 100).toFixed(2), ""].join(";"));
+  for (const m of r.months ?? []) lines.push([`Monat ${m.month}`, "", "", "", "", m.total.nights, "", "", m.total.personNights, (m.total.amountRappen / 100).toFixed(2), ""].join(";"));
   return "﻿" + [head.join(";"), ...lines].join("\r\n") + "\r\n";
 }
 

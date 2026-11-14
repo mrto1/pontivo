@@ -5,7 +5,7 @@ import { auditLog, bookings, emailOutbox, guestRegistrations } from "../../src/d
 import { createDirectBooking } from "../../src/services/bookings";
 import {
   arrivals, CheckinError, enqueueCheckinLinks, logRegisterExport, purgeExpiredRegistrations, registerCsv, registerRows,
-  retentionUntil, setGuestsModule, submitCheckin, touristTaxList, verifyRegistration,
+  retentionUntil, setGuestsModule, submitCheckin, touristTaxList, touristTaxQuarter, quarterMonths, quarterOf, shiftQuarter, isTaxQuarter, taxListCsv, verifyRegistration,
 } from "../../src/services/guests";
 import { decryptField, encryptField } from "../../src/lib/guest-crypto";
 import { addDays } from "../../src/domain/dates";
@@ -207,6 +207,27 @@ describe("M4 Modul Gäste", () => {
     expect(ota.fromRegister).toBe(false);
     expect(ota.liable).toBe(1);
     expect(ota.amountRappen).toBe(440);
+  });
+
+  it("Kurtaxe-Quartal (SPEC 18.2): Hilfsfunktionen, Summe der Monate, Buchung nur einmal, CSV mit Monatszeilen", async () => {
+    expect(quarterMonths("2026-Q4")).toEqual(["2026-10", "2026-11", "2026-12"]);
+    expect(quarterMonths("2027-Q1")).toEqual(["2027-01", "2027-02", "2027-03"]);
+    expect(quarterOf("2026-12")).toBe("2026-Q4");
+    expect(quarterOf("2027-01")).toBe("2027-Q1");
+    expect(shiftQuarter("2026-Q4", 1)).toBe("2027-Q1");
+    expect(shiftQuarter("2027-Q1", -1)).toBe("2026-Q4");
+    expect(isTaxQuarter("2026-Q5")).toBe(false);
+    const { hotel, booking } = await hotelWithBooking({ adults: 2, children: 0, ages: [] });
+    const month = booking.checkin.slice(0, 7);
+    const q = quarterOf(month);
+    const r = await touristTaxQuarter(hotel, q);
+    const sum = (await Promise.all(quarterMonths(q).map((m) => touristTaxList(hotel, m)))).reduce((a, x) => a + x.total.amountRappen, 0);
+    expect(r.total.amountRappen).toBe(sum);
+    expect(r.months).toHaveLength(3);
+    expect(r.lines.filter((l) => l.bookingId === booking.id)).toHaveLength(1);
+    expect(r.lines.find((l) => l.bookingId === booking.id)!.nightsInMonth).toBe(2);
+    const csv = taxListCsv(r);
+    expect(csv).toContain(`Monat ${quarterMonths(q)[0]}`);
   });
 
   it("Datenbank enthält kein Geburtsdatum im Klartext", async () => {
