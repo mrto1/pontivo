@@ -526,6 +526,18 @@ Das Hotel erfasst Zusatzangebote (`upsell_items`: Name/Beschreibung DE/EN, Preis
 - **Einschalten:** Admin → Upselling, mit bestätigter Provision (Bedingungen Ziffer 8), nur bei eingerichteter Online-Zahlung. Ausschalten sofort; geplante Angebots-Mails werden storniert. Bei Stornierung oder Verschiebung einer Buchung werden Angebots-Mails gelöscht bzw. neu geplant.
 - **Nicht enthalten:** Rückerstattungen (im Stripe-Dashboard des Hotels), Berücksichtigung der Provision im Monatsbericht, Angebote je Zimmertyp.
 
+## 14e. GEO: Sichtbarkeit für Suchmaschinen und KI-Assistenten (alle Hotels, ohne Zusatzkosten)
+
+Alles wird aus den vorhandenen Hotel-Daten erzeugt, pro Hotel automatisch, ohne Hotel-spezifischen Code:
+
+- **`/sitemap.xml`**: alle veröffentlichten Seiten in allen Sprachen mit `hreflang` und `x-default`, `lastmod` aus der Seite.
+- **`/robots.txt`**: Suchmaschinen und KI-Crawler dürfen alles Öffentliche lesen; gesperrt sind `/admin`, `/api/`, `/b/` (persönliche Buchungslinks), `/v/`, `/vorschau`. Verweis auf die Sitemap (nur bei Hotel-Domain).
+- **`/llms.txt`** (llmstxt.org): Zusammenfassung in der Hauptsprache des Hotels: Fakten (Adresse, Kontakt, Check-in/-out, Sprachen, Zahlarten, Fakten-Bausteine), Zimmer mit Belegung und «ab»-Preis der nächsten 12 Monate, Direktbuchungs-Link, FAQ, Textbausteine, Seiten, weitere Sprachen. Nur veröffentlichte Inhalte.
+- **Strukturdaten** (schema.org JSON-LD): zusätzlich zu Hotel, FAQ, Restaurant jetzt `containsPlace` (HotelRoom mit Belegung, Beschreibung, Bild) und `potentialAction` (ReserveAction mit Buchungs-URL).
+- **`canonical`** pro Seite (Vorschau-Adresse `/h/<slug>` verweist auf die Hotel-Domain).
+- Erreichbar über die Hotel-Domain und für die Vorschau unter `/h/<slug>/sitemap.xml` und `/h/<slug>/llms.txt`.
+- **Später (Zusatzpaket):** Destinations-Paket (Gemeinde/Region: Inhalte zu Ausflügen, Events, Anreise für mehrere Betriebe).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

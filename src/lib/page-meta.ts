@@ -19,7 +19,10 @@ export function pageMetadata(hotel: Hotel, page: SitePage | null, locale: Locale
   return {
     title,
     description,
-    alternates: { languages: Object.fromEntries(hotelLocales(hotel).map((l) => [l, `${base}/${l}${page?.slug ? `/${page.slug}` : ""}`])) },
+    alternates: {
+      canonical: `${base}/${locale}${page?.slug ? `/${page.slug}` : ""}`,
+      languages: Object.fromEntries(hotelLocales(hotel).map((l) => [l, `${base}/${l}${page?.slug ? `/${page.slug}` : ""}`])),
+    },
     openGraph: { title, description, siteName: hotel.name, locale: OG_LOCALES[locale], images: img ? [{ url: origin + img }] : undefined, type: "website" },
   };
 }

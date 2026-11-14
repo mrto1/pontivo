@@ -1,6 +1,6 @@
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { ratePlans, ratesDays, type Hotel, type SitePage } from "../db/schema";
+import { ratePlans, ratesDays, roomTypes, type Hotel, type SitePage } from "../db/schema";
 import { addDays, todayIn } from "../domain/dates";
 import { plainText } from "../domain/richtext";
 import { menuSections, tr, type Block } from "../domain/blocks";
@@ -23,6 +23,7 @@ export async function hotelJsonLd(hotel: Hotel, locale: Locale, url: string, pag
       .innerJoin(ratePlans, eq(ratePlans.id, ratesDays.ratePlanId))
       .where(and(eq(ratesDays.hotelId, hotel.id), eq(ratePlans.active, true), eq(ratesDays.stopSell, false), gte(ratesDays.night, today), lte(ratesDays.night, addDays(today, 365))))
   );
+  const rooms = await db().select().from(roomTypes).where(and(eq(roomTypes.hotelId, hotel.id), eq(roomTypes.active, true))).orderBy(roomTypes.sortOrder, roomTypes.createdAt);
   const loc = pages.flatMap((p) => p.blocks).find((b): b is Extract<Block, { type: "location" }> => b.type === "location" && b.lat !== null && b.lng !== null);
   const photos = (hotel.content.photos ?? []).map((p) => new URL(p.url, url).toString()).slice(0, 6);
   const data: Record<string, unknown> = {
@@ -47,6 +48,19 @@ export async function hotelJsonLd(hotel: Hotel, locale: Locale, url: string, pag
     availableLanguage: hotelLocales(hotel).map((l) => LOCALE_TAGS[l]),
     inLanguage: LOCALE_TAGS[locale],
     ...(range?.min ? { priceRange: `CHF ${fmt(Number(range.min))}–${fmt(Number(range.max))}` } : {}),
+    // Zimmer/Wohnungen mit Belegung, damit KI-Assistenten Fragen wie «Wohnung für 4 Personen» beantworten können
+    ...(rooms.length ? {
+      containsPlace: rooms.map((r) => ({
+        "@type": "HotelRoom",
+        name: r.i18n?.[locale as "en" | "fr" | "it" | "nl"]?.name || r.name,
+        ...((r.i18n?.[locale as "en" | "fr" | "it" | "nl"]?.description || r.description) ? { description: r.i18n?.[locale as "en" | "fr" | "it" | "nl"]?.description || r.description } : {}),
+        occupancy: { "@type": "QuantitativeValue", maxValue: r.maxOccupancy },
+        ...(r.photos?.[0] ? { image: new URL(r.photos[0].url, url).toString() } : {}),
+      })),
+    } : {}),
+    // Direkt buchen: Einstieg für Assistenten, die Buchungen vorbereiten
+    potentialAction: { "@type": "ReserveAction", target: { "@type": "EntryPoint", urlTemplate: `${url}/${locale}/book`, actionPlatform: "https://schema.org/DesktopWebPlatform" }, result: { "@type": "LodgingReservation", name: hotel.name } },
+    ...(hotel.content.brand?.websiteUrl ? { sameAs: [hotel.content.brand.websiteUrl] } : {}),
     ...(loc ? { geo: { "@type": "GeoCoordinates", latitude: loc.lat, longitude: loc.lng } } : {}),
   };
   return data;
