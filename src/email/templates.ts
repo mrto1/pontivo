@@ -8,6 +8,7 @@ import { CI } from "../i18n/checkin";
 import { env } from "../env";
 import { tr } from "../domain/blocks";
 import { U } from "../i18n/upsell";
+import { fillPlaceholders, isMailTemplate, mailTextFor } from "../domain/mail-texts";
 
 /**
  * E-Mail-Texte (SPEC 10): an Gäste in allen Website-Sprachen, an das Hotel DE/EN.
@@ -139,7 +140,17 @@ function summary(c: EmailContext, l: Locale): string[] {
   ];
 }
 
+/** eigene Texte der aktuell gerenderten Mail (SPEC 17.5); render() ist synchron, daher ist ein Modulwert sicher */
+let activeCustom: { intro?: string; outro?: string } | null = null;
+
 function wrap(c: EmailContext, l: Locale, subject: string, paras: string[], lines: string[] = [], link?: { href: string; label: string }): Rendered {
+  if (activeCustom) {
+    const fill = (s: string) => fillPlaceholders(s, { name: c.guestName, hotel: c.hotel.name, reference: c.booking?.reference });
+    const intro = activeCustom.intro ? fill(activeCustom.intro).split(/\n{1,}/).filter(Boolean) : [];
+    const outro = activeCustom.outro ? fill(activeCustom.outro).split(/\n{1,}/).filter(Boolean) : [];
+    // Anrede bleibt vorn; Einleitung danach, Schlusstext nach den Absätzen
+    paras = paras.length && /,$/.test(paras[0]) ? [paras[0], ...intro, ...paras.slice(1), ...outro] : [...intro, ...paras, ...outro];
+  }
   const text = [...paras, "", ...lines, link ? `\n${link.label}: ${link.href}` : "", "", c.hotel.name, c.hotel.contactEmail].join("\n");
   const html = `<!doctype html><html lang="${l}"><body style="font-family:Arial,sans-serif;color:#1f2a2e;max-width:560px;margin:0 auto;padding:16px">
 <h2 style="font-family:Georgia,serif">${esc(c.hotel.name)}</h2>
@@ -171,7 +182,21 @@ const X: Record<Locale, {
 
 const KIND_DE: Record<string, string> = { table: "Tisch reservieren", group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
 
+/** Gäste-Mail mit den eigenen Texten des Hotels (SPEC 17.5), sonst die Standardtexte */
 export function render(template: string, lang: string, c: EmailContext): Rendered {
+  const gl: Locale = isLocale(lang) ? lang : "de";
+  const custom = isMailTemplate(template) ? mailTextFor(c.hotel.content?.mailTexts, template, gl) : null;
+  if (!custom) return renderDefault(template, lang, c);
+  activeCustom = custom;
+  try {
+    const r = renderDefault(template, lang, c);
+    return custom.subject ? { ...r, subject: fillPlaceholders(custom.subject, { name: c.guestName, hotel: c.hotel.name, reference: c.booking?.reference }) } : r;
+  } finally {
+    activeCustom = null;
+  }
+}
+
+function renderDefault(template: string, lang: string, c: EmailContext): Rendered {
   // Gäste-Mails in jeder Website-Sprache; Hotel-interne Mails nur DE/EN
   const gl: Locale = isLocale(lang) ? lang : "de";
   const l: Locale = gl === "de" || gl === "en" ? gl : "en";

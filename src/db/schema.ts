@@ -82,6 +82,8 @@ export type HotelContent = {
   brand?: HotelBrand;
   /** Rechnung: MWST, IBAN, Zahlungsfrist (src/domain/invoice.ts, SPEC 16.3) */
   invoicing?: Partial<import("../domain/invoice").InvoicingSettings>;
+  /** eigene Texte für Gäste-Mails (SPEC 17.5): Mail → Sprache → Betreff/Einleitung/Schluss */
+  mailTexts?: import("../domain/mail-texts").MailTexts;
 };
 
 export type HotelDocument = { url: string; title: Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>; bytes: number };

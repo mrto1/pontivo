@@ -603,6 +603,11 @@ Reihenfolge: 17.1 Housekeeping, 17.2 Gäste-Notizen und Tags, 17.3 Berichte, 17.
 - Bereiche: Rezeption: home, calendar, bookings, frontdesk, plan, housekeeping, guests, guestbook, inquiries, vouchers, invoices. Reinigung: housekeeping. Buchhaltung: invoices, statistics. Das Menü zeigt nur diese Punkte; `home` leitet auf die Startseite der Rolle weiter (`LANDING`).
 - Zuweisung unter Einstellungen → Mitglieder (Inhaber). Rollenwechsel im `audit_log` (`member.add`).
 
+### 17.5 Mail-Vorlagen (Modul `mailtexts`, Standard an)
+- `hotels.content.mailTexts[mail][sprache] = { subject?, intro?, outro? }` für `booking_confirmed`, `pre_arrival`, `post_stay`, `balance_due`, `invoice_sent`. Betreff höchstens 120, Einleitung und Schluss je 600 Zeichen, reiner Text (beim Versand maskiert). Platzhalter `{name}`, `{hotel}`, `{reference}`.
+- `render()` fügt die Einleitung nach der Anrede und den Schluss nach den Absätzen ein; der Betreff ersetzt den Standardbetreff. Alles andere (Beträge, Daten, Links, Bedingungen) bleibt unverändert. Ohne eigene Texte unverändertes Verhalten.
+- Seite `/admin/<hotel>/mail-texte` (Manager): Reiter je Mail, Felder je Sprache des Betriebs, Vorschau mit Beispieldaten. Änderungen im `audit_log` (`mail.texts`).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.
