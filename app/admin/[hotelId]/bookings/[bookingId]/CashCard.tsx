@@ -3,6 +3,8 @@ import { db } from "@/src/db/client";
 import { formatChf } from "@/src/domain/money";
 import { todayIn } from "@/src/domain/dates";
 import type { Hotel } from "@/src/db/schema";
+import { moduleOn } from "@/src/services/modules";
+import { TerminalCard } from "./TerminalCard";
 import { addFolioAction, deleteFolioAction, draftAction, onsitePaymentAction } from "./cash-actions";
 
 const METHOD: Record<string, string> = { cash: "bar", card: "Karte", twint: "TWINT", bank: "Überweisung", other: "andere" };
@@ -57,6 +59,8 @@ export async function CashCard({ hotel, bookingId, status }: { hotel: Hotel; boo
         <div style={{ minWidth: 160 }}><label>Notiz</label><input name="note" maxLength={200} /></div>
         <button className="btn secondary small">Zahlung verbuchen</button>
       </form>
+
+      {(await moduleOn(hotel.id, "terminal")) ? <TerminalCard hotel={hotel} bookingId={bookingId} /> : null}
 
       <h4>Rechnungen</h4>
       {invs.length ? (

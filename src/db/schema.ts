@@ -844,3 +844,29 @@ export const onsitePayments = pgTable("onsite_payments", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type OnsitePayment = typeof onsitePayments.$inferSelect;
+
+export const terminalReaders = pgTable("terminal_readers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  stripeReaderId: text("stripe_reader_id").notNull().unique(),
+  stripeLocationId: text("stripe_location_id").notNull(),
+  label: text("label").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type TerminalReader = typeof terminalReaders.$inferSelect;
+
+export const terminalPayments = pgTable("terminal_payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  bookingId: uuid("booking_id").notNull(),
+  readerId: uuid("reader_id").notNull(),
+  paymentIntentId: text("payment_intent_id").unique(),
+  amountRappen: integer("amount_rappen").notNull(),
+  status: text("status").$type<"pending" | "succeeded" | "failed" | "canceled">().notNull().default("pending"),
+  failureCode: text("failure_code"),
+  onsitePaymentId: uuid("onsite_payment_id"),
+  actor: text("actor").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+export type TerminalPayment = typeof terminalPayments.$inferSelect;

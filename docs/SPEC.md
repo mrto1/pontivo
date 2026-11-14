@@ -628,6 +628,12 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 - Inhalt: ausgestellte Rechnungen und Gutschriften (Ausstelldatum; Ertrag netto je Konto und MWST-Satz, MWST getrennt, Kurtaxe auf eigenes Konto, Debitoren Soll), Zahlungen (Zahldatum): Stripe (netto nach Rückerstattung) und Zahlungen vor Ort je Zahlart. Negative Beträge: positiv mit vertauschten Konten.
 - Kontenzuordnung je Betrieb (`hotels.content.accounting.accounts`), Vorschlag nach Kontenrahmen KMU. Zeitraum Monat, Quartal oder Jahr. Seite `/admin/<hotel>/buchhaltung` (Vorschau, Konten, CSV); Export im `audit_log`; Rolle Buchhaltung hat Zugang (Bereich `accountingexport`).
 
+### 18.4 Kartenterminal (Modul `terminal`, braucht `invoicing`, Standard aus)
+- Stripe Terminal servergesteuert (WisePOS E / S700), Direct Charges: alle Aufrufe mit `Stripe-Account` des Hotels. Location und Leser gehören dem verbundenen Konto (`terminal_readers`).
+- Ablauf: PaymentIntent (`card_present`, CHF, Plattformgebühr) → `process_payment_intent` am Leser → Webhook `terminal.reader.action_succeeded/failed` oder «Status prüfen» → Erfolg am PaymentIntent bei Stripe prüfen → genau eine `onsite_payments`-Zeile (Art Karte, Notiz «Kartenterminal»). Idempotent (`terminal_payments`, Übergang nur aus `pending`).
+- Ein Leser verarbeitet eine Zahlung zugleich; Betrag höchstens der offene Betrag; Abbruch über `cancel_action`; Ereignis eines fremden Kontos wird abgelehnt.
+- Oberflächen: Menü «Kartenterminal» (Leser registrieren, Verlauf, nur Inhaber/Manager) und Karte «Kartenzahlung am Terminal» in «Rechnung & Kasse» der Buchung.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

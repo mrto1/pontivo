@@ -1,3 +1,4 @@
+import { settleTerminalPayment } from "../../services/terminal";
 import { cancelPendingVoucher, markVoucherPaid } from "../../services/vouchers";
 import { cancelPendingUpsell, markUpsellPaid } from "../../services/upsell";
 import { and, eq, sql } from "drizzle-orm";
@@ -158,6 +159,13 @@ async function processEvent(event: Stripe.Event) {
     case "checkout.session.async_payment_succeeded": {
       const s = event.data.object as Stripe.Checkout.Session;
       if (s.payment_status === "paid" && account) await onPaid(s, account);
+      return;
+    }
+    case "terminal.reader.action_succeeded":
+    case "terminal.reader.action_failed": {
+      const a = (event.data.object as { action?: { type?: string; failure_code?: string | null; process_payment_intent?: { payment_intent?: string } } }).action;
+      const pi = a?.type === "process_payment_intent" ? a.process_payment_intent?.payment_intent : undefined;
+      if (pi) await settleTerminalPayment(pi, account, event.type === "terminal.reader.action_failed" ? { failed: a?.failure_code ?? "failed" } : undefined);
       return;
     }
     case "checkout.session.async_payment_failed": {

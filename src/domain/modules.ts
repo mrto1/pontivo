@@ -23,6 +23,7 @@ export const MODULES: ModuleDef[] = [
   { key: "mailtexts", label: "Mail-Texte", description: "Eigene Sätze und Betreff in den Gäste-Mails (Bestätigung, Vor der Anreise, Nach dem Aufenthalt, Restzahlung, Rechnung), pro Sprache.", deps: [], defaultOn: true, navKeys: ["mailtexts"] },
   { key: "groups", label: "Gruppen", description: "Zimmerblock für Gruppen mit Freigabefrist, Rooming-Liste (Teilnehmer) und Rechnung an die Firma.", deps: [], defaultOn: false, navKeys: ["groups"] },
   { key: "accountingexport", label: "Buchhaltung-Export", description: "Rechnungen und Zahlungen als Buchungsliste (CSV) für den Treuhänder, mit eigener Kontenzuordnung.", deps: ["invoicing"], defaultOn: false, navKeys: ["accountingexport"] },
+  { key: "terminal", label: "Kartenterminal", description: "Kartenzahlung am Empfang mit einem Stripe-Kartenleser (WisePOS E / S700). Die Zahlung wird automatisch auf die Buchung gebucht. Hardware und Kartengebühren siehe Stripe.", deps: ["invoicing"], defaultOn: false, navKeys: ["terminal"] },
   { key: "invoicing", label: "Rechnung & Kasse", description: "Rechnungen und Quittungen mit MWST und QR-Rechnung, Zahlungen vor Ort verbuchen.", deps: [], defaultOn: true, navKeys: ["invoices"] },
   { key: "vouchers", label: "Gutscheine", description: "Gutscheine online verkaufen und im Haus einlösen.", deps: [], defaultOn: true, navKeys: ["vouchers"] },
   { key: "inquiries", label: "Anfragen", description: "Anfragen von der Website und aus dem Chat (z. B. Gruppen, Sonderwünsche).", deps: [], defaultOn: true, navKeys: ["inquiries"] },
