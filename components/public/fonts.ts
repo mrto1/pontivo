@@ -1,4 +1,4 @@
-import { Cormorant_Garamond, Fraunces, Inter, Lato, Manrope, Nunito, Playfair_Display, Source_Sans_3, Work_Sans, Zilla_Slab } from "next/font/google";
+import { Cormorant_Garamond, DM_Sans, DM_Serif_Display, Figtree, Newsreader, Fraunces, Inter, Lato, Manrope, Nunito, Playfair_Display, Source_Sans_3, Work_Sans, Zilla_Slab } from "next/font/google";
 import type { FontKey } from "@/src/domain/theme";
 
 /**
@@ -15,6 +15,10 @@ const manrope = Manrope({ subsets: ["latin", "latin-ext"], display: "swap", prel
 const zilla = Zilla_Slab({ subsets: ["latin", "latin-ext"], display: "swap", preload: false, weight: ["500", "600", "700"] });
 const workSans = Work_Sans({ subsets: ["latin", "latin-ext"], display: "swap", preload: false, weight: ["400", "600", "700"] });
 const nunito = Nunito({ subsets: ["latin", "latin-ext"], display: "swap", preload: false, weight: ["400", "600", "700", "800"] });
+const newsreader = Newsreader({ subsets: ["latin", "latin-ext"], display: "swap", preload: false, weight: ["400", "500", "600"] });
+const figtree = Figtree({ subsets: ["latin", "latin-ext"], display: "swap", preload: false, weight: ["400", "600", "700"] });
+const dmSerif = DM_Serif_Display({ subsets: ["latin", "latin-ext"], display: "swap", preload: false, weight: "400" });
+const dmSans = DM_Sans({ subsets: ["latin", "latin-ext"], display: "swap", preload: false, weight: ["400", "600", "700"] });
 
 type Face = { style: { fontFamily: string } };
 const PAIRS: Record<FontKey, { head: Face; body: Face }> = {
@@ -24,6 +28,8 @@ const PAIRS: Record<FontKey, { head: Face; body: Face }> = {
   modern: { head: manrope, body: manrope },
   landhaus: { head: zilla, body: workSans },
   freundlich: { head: nunito, body: nunito },
+  editorial: { head: newsreader, body: figtree },
+  boutique: { head: dmSerif, body: dmSans },
 };
 
 /** CSS-Variablen für Titel- und Textschrift */

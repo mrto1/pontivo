@@ -11,6 +11,8 @@ export const LAYOUTS = [
   { key: "modern", label: "Modern", hint: "Breit, kräftige Titel, eckige Formen, Menü bleibt beim Scrollen sichtbar – für Stadt- und Designhotels" },
   { key: "landhaus", label: "Landhaus", hint: "Warmer Grundton, gerahmte Bilder, verzierte Titel – für Berg- und Landgasthöfe" },
   { key: "minimal", label: "Minimal", hint: "Viel Weissraum, feine Linien, schlichte Knöpfe – lässt die Fotos wirken" },
+  { key: "redaktion", label: "Redaktion", hint: "Wie ein Magazin: grosse linksbündige Titel, nummerierte Abschnitte, kräftige Linien – für Hotels mit Haltung und gutem Text" },
+  { key: "galerie", label: "Galerie", hint: "Bildstark und weich: grosse runde Fotos, Zimmer als Bildkacheln, runde Knöpfe – für Häuser mit schönen Fotos" },
 ] as const;
 
 export const FONTS = [
@@ -20,6 +22,8 @@ export const FONTS = [
   { key: "modern", label: "Modern", head: "Manrope", body: "Manrope" },
   { key: "landhaus", label: "Landhaus", head: "Zilla Slab", body: "Work Sans" },
   { key: "freundlich", label: "Freundlich", head: "Nunito", body: "Nunito" },
+  { key: "editorial", label: "Editorial", head: "Newsreader", body: "Figtree" },
+  { key: "boutique", label: "Boutique", head: "DM Serif Display", body: "DM Sans" },
 ] as const;
 
 export type LayoutKey = (typeof LAYOUTS)[number]["key"];

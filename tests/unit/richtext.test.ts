@@ -50,9 +50,11 @@ describe("Textformatierung", () => {
 });
 
 describe("Gestaltung", () => {
-  it("6 Layouts und 6 Schriftpaare, unbekannte Werte → Standard", () => {
-    expect(LAYOUTS).toHaveLength(6);
-    expect(FONTS).toHaveLength(6);
+  it("8 Layouts und 8 Schriftpaare, unbekannte Werte → Standard", () => {
+    expect(LAYOUTS).toHaveLength(8);
+    expect(FONTS).toHaveLength(8);
+    expect(layoutOf("redaktion")).toBe("redaktion");
+    expect(fontOf("boutique")).toBe("boutique");
     expect(layoutOf(undefined)).toBe("klassisch");
     expect(layoutOf("panorama")).toBe("panorama");
     expect(layoutOf("<script>")).toBe("klassisch");

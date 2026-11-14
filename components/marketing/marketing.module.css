@@ -147,3 +147,8 @@
 }
 .footLinks { display: flex; gap: 16px; flex-wrap: wrap; }
 .footLinks a { color: inherit; }
+
+/* ruhigere Zeilenumbrüche: keine einzelnen Wörter in der letzten Zeile */
+.h2 { text-wrap: balance; }
+.priceList li { text-wrap: pretty; }
+.page { padding-bottom: 1px; }
