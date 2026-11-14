@@ -18,6 +18,7 @@ export type ModuleDef = {
 export const MODULES: ModuleDef[] = [
   { key: "frontdesk", label: "Rezeption", description: "Tagesliste (Anreisen, Abreisen, im Haus), Zimmerplan und Zimmernummern. Sinnvoll für Hotels; Ferienwohnungen brauchen es meist nicht.", deps: [], defaultOn: true, navKeys: ["frontdesk", "plan"] },
   { key: "housekeeping", label: "Housekeeping", description: "Reinigungsstatus je Zimmer, Tagesaufträge nach Abreise, Handy-Liste für das Reinigungspersonal und Meldungen zu Mängeln.", deps: ["frontdesk"], defaultOn: false, navKeys: ["housekeeping"] },
+  { key: "guestnotes", label: "Gäste-Notizen", description: "Notizen und Tags zu Gästen (z. B. Stammgast, Wunsch Zimmer oben), sichtbar bei der Buchung, mit Suche. Bitte keine Gesundheits- oder sonstigen heiklen Angaben notieren.", deps: [], defaultOn: false, navKeys: ["guestbook"] },
   { key: "invoicing", label: "Rechnung & Kasse", description: "Rechnungen und Quittungen mit MWST und QR-Rechnung, Zahlungen vor Ort verbuchen.", deps: [], defaultOn: true, navKeys: ["invoices"] },
   { key: "vouchers", label: "Gutscheine", description: "Gutscheine online verkaufen und im Haus einlösen.", deps: [], defaultOn: true, navKeys: ["vouchers"] },
   { key: "inquiries", label: "Anfragen", description: "Anfragen von der Website und aus dem Chat (z. B. Gruppen, Sonderwünsche).", deps: [], defaultOn: true, navKeys: ["inquiries"] },

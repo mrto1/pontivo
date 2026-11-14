@@ -710,6 +710,17 @@ export const rooms = pgTable("rooms", {
 });
 export type Room = typeof rooms.$inferSelect;
 
+export const guestProfiles = pgTable("guest_profiles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  email: text("email").notNull(),
+  note: text("note").notNull().default(""),
+  tags: text("tags").array().notNull().default([]),
+  updatedBy: text("updated_by").notNull(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+export type GuestProfile = typeof guestProfiles.$inferSelect;
+
 export const housekeepingTasks = pgTable("housekeeping_tasks", {
   id: uuid("id").primaryKey().defaultRandom(),
   hotelId: uuid("hotel_id").notNull(),

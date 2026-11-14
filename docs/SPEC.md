@@ -588,6 +588,11 @@ Reihenfolge: 17.1 Housekeeping, 17.2 Gäste-Notizen und Tags, 17.3 Berichte, 17.
 - Handy-Liste `/admin/<hotel>/housekeeping`: grosse Karten je Zimmer (schmutzig zuerst, dann Anreisen), Abreise/Anreise/belegt-Hinweis, Statuswechsel mit einem Tipp, Mangel melden, Extra-Auftrag. Status «sauber»/«geprüft» schliesst offene Aufträge. Keine Preise, keine Gästedaten ausser dem Namen.
 - Jede Änderung im `audit_log`; jede Abfrage nach `hotel_id`.
 
+### 17.2 Gäste-Notizen und Tags (Modul `guestnotes`, Standard aus)
+- `guest_profiles(hotel_id, email, note, tags[])`, eindeutig pro Betrieb und E-Mail (kleingeschrieben). Notiz höchstens 1000 Zeichen, höchstens 8 Tags zu je 24 Zeichen, Duplikate ohne Beachtung der Gross-/Kleinschreibung entfernt. Leere Notiz und keine Tags löscht den Eintrag.
+- Karte «Notiz zum Gast» auf der Buchung (Rolle staff). Seite «Kartei» (`/admin/<hotel>/guestbook`): Gäste mit Anzahl bestätigter Aufenthalte, letzter Anreise, Tags, Notiz; Suche über Name, E-Mail, Tag, Notiz; Filter nach Tag.
+- Im `audit_log` steht nur «geändert» mit Anzahl Tags, nie der Inhalt. Formular weist darauf hin, keine heiklen Daten zu notieren.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.
