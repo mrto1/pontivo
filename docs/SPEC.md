@@ -567,16 +567,26 @@ Freigegeben am 14.11.2026. Alles modular (16.1), additiv zum bestehenden Bestand
 - Jede Zuweisung im `audit_log`; Mandantentrennung über `hotel_id`.
 
 ### 16.3 Rechnung und Kasse (Modul `invoicing`)
-- Einstellungen pro Betrieb (`hotels.content.invoicing`): MWST-pflichtig ja/nein, MWST-Nummer, Satz Beherbergung (Standard 3,8 %), Satz übrige Leistungen (8,1 %), IBAN, Zahlungsfrist, automatischer E-Mail-Versand (aus) in Tagen, Fusszeile. Nicht MWST-pflichtig = Rechnungen ohne MWST.
+- Einstellungen pro Betrieb (`hotels.content.invoicing`): MWST-pflichtig ja/nein, MWST-Nummer, Satz Beherbergung (Standard 3,8 %), Satz übrige Leistungen (8,1 %), IBAN, Zahlungsfrist, optional automatischer E-Mail-Versand (standardmässig aus), optional QR-IBAN (dann QR-Referenz, Referenztyp `QRR`), Fusszeile. Nicht MWST-pflichtig = Rechnungen ohne MWST.
 - Tabellen: `invoices` (Nummer lückenlos pro Betrieb und Jahr, Art `invoice`/`credit_note`, Datum, Empfänger, Summen, Status `draft`/`issued`, Verweis auf Buchung und bei Gutschrift auf die Rechnung), `invoice_lines` (Beschreibung, Menge, Einzelpreis, Betrag inkl. MWST, MWST-Satz in Basispunkten, Kategorie), `invoice_counters`, `folio_items` (Posten auf der Buchung, z. B. Minibar, bis sie fakturiert sind), `onsite_payments` (Zahlung vor Ort: bar, Karte, TWINT, Bank; Betrag, Datum, Notiz, Nutzer).
 - **Rechnung aus Buchung:** Zeilen aus Übernachtungen (`booking_rooms`), Extras (`booking_extras`), Kurtaxe (ohne MWST), offenen Posten (`folio_items`). Abzug Gutschein. Bereits bezahlte Beträge (Stripe, vor Ort) erscheinen als Zahlungen, der offene Betrag wird ausgewiesen. Ist nichts offen, heisst das Dokument **Quittung**.
 - **Unveränderlich:** Entwurf ist änderbar (Empfänger, Zeilen), «Ausstellen» vergibt die Nummer und sperrt. Korrektur nur per **Gutschrift** (eigene Nummer, negative Beträge).
 - MWST: Preise sind Bruttopreise; MWST = Betrag × Satz / (10000 + Satz), pro Satz gerundet und ausgewiesen.
 - **QR-Rechnung** (Swiss Payment Standards) für offene Beträge: Zahlteil mit QR-Code, Konto = IBAN des Betriebs, Referenztyp `NON`, Rechnungsnummer unter «Zusätzliche Informationen». Nur wenn IBAN gesetzt und Betrag offen.
-- **Druckansicht** `/admin/<hotel>/invoices/<id>/print` (A4, Browser «Als PDF speichern»); Versand per Mail später.
+- **Druckansicht** `/admin/<hotel>/invoices/<id>/print` (A4, Browser «Als PDF speichern»); Versand per Mail optional: Knopf auf der Rechnung oder automatisch beim Ausstellen; die Mail enthält den Link `/b/<token>/rechnung/<id>` (kein PDF-Anhang).
 - **Zahlung vor Ort:** Eintrag in `onsite_payments`; schliesst eine offene Restzahlung (`balance_onsite_at` wie bisher) und die Rechnung. Rückbuchungen nur per Gutschrift/Erfassung eines negativen Betrags mit Notiz.
 - Admin: Reiter «Rechnungen» (Liste, Entwurf aus Buchung, Posten erfassen, Ausstellen, Gutschrift, Zahlung erfassen).
-- Nicht in Stufe A: Sammelrechnungen für Gruppen, automatischer Versand, Buchungen auf Firmenkonto, Mahnwesen, CAMT-Abgleich.
+- Nicht in Stufe A: Sammelrechnungen für Gruppen, Buchungen auf Firmenkonto, Mahnwesen, CAMT-Abgleich.
+
+## 17. PMS Stufe B: Betrieb (Konzept: `docs/PMS-KONZEPT.md`)
+
+Reihenfolge: 17.1 Housekeeping, 17.2 Gäste-Notizen und Tags, 17.3 Berichte, 17.4 Rollen pro Modul, 17.5 Mail-Vorlagen. Alles als Modul abschaltbar (16.1), keine Hotel-Sonderlogik.
+
+### 17.1 Housekeeping (Modul `housekeeping`, braucht `frontdesk`, Standard aus)
+- `rooms.clean_status` (`dirty`/`clean`/`inspected`, Standard `clean`) mit Zeitpunkt und Bearbeiter; `housekeeping_tasks` (Zimmer, Tag, Art `checkout`/`stay`/`other`, offen/erledigt; eindeutig pro Zimmer/Tag/Art); `room_issues` (Mängelmeldungen, offen/erledigt).
+- Aufträge werden beim Öffnen der Seite für den Tag erzeugt (idempotent): Abreise heute → `checkout` und ein sauberes Zimmer wird «schmutzig»; optional Zwischenreinigung alle N Nächte (`hotels.content.housekeeping.stayEvery`, Standard 0 = aus).
+- Handy-Liste `/admin/<hotel>/housekeeping`: grosse Karten je Zimmer (schmutzig zuerst, dann Anreisen), Abreise/Anreise/belegt-Hinweis, Statuswechsel mit einem Tipp, Mangel melden, Extra-Auftrag. Status «sauber»/«geprüft» schliesst offene Aufträge. Keine Preise, keine Gästedaten ausser dem Namen.
+- Jede Änderung im `audit_log`; jede Abfrage nach `hotel_id`.
 
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 

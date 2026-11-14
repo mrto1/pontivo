@@ -39,7 +39,7 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
     primary: [
       { key: "home", label: "Übersicht", href: base },
       link("calendar", "Kalender"),
-      { ...link("bookings", "Buchungen"), tabs: [link("bookings", "Buchungen"), link("frontdesk", "Heute"), link("plan", "Zimmerplan"), link("invoices", "Rechnungen")] },
+      { ...link("bookings", "Buchungen"), tabs: [link("bookings", "Buchungen"), link("frontdesk", "Heute"), link("plan", "Zimmerplan"), link("housekeeping", "Reinigung"), link("invoices", "Rechnungen")] },
       { ...link("guests", "Gäste"), tabs: [link("guests", "Gäste"), link("inquiries", "Anfragen"), link("vouchers", "Gutscheine")] },
     ],
     groups: [

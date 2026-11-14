@@ -702,9 +702,41 @@ export const rooms = pgTable("rooms", {
   note: text("note").notNull().default(""),
   active: boolean("active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
+  /** Reinigungsstatus (SPEC 17.1) */
+  cleanStatus: text("clean_status").$type<"dirty" | "clean" | "inspected">().notNull().default("clean"),
+  statusChangedAt: ts("status_changed_at"),
+  statusChangedBy: text("status_changed_by"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type Room = typeof rooms.$inferSelect;
+
+export const housekeepingTasks = pgTable("housekeeping_tasks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  roomId: uuid("room_id").notNull(),
+  bookingId: uuid("booking_id"),
+  kind: text("kind").$type<"checkout" | "stay" | "other">().notNull(),
+  day: date("day", { mode: "string" }).notNull(),
+  status: text("status").$type<"open" | "done">().notNull().default("open"),
+  note: text("note").notNull().default(""),
+  doneAt: ts("done_at"),
+  doneBy: text("done_by"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type HousekeepingTask = typeof housekeepingTasks.$inferSelect;
+
+export const roomIssues = pgTable("room_issues", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  roomId: uuid("room_id").notNull(),
+  description: text("description").notNull(),
+  status: text("status").$type<"open" | "done">().notNull().default("open"),
+  reportedBy: text("reported_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  doneAt: ts("done_at"),
+  doneBy: text("done_by"),
+});
+export type RoomIssue = typeof roomIssues.$inferSelect;
 
 export const invoices = pgTable("invoices", {
   id: uuid("id").primaryKey().defaultRandom(),
