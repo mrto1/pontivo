@@ -1,6 +1,7 @@
+import { feeShare, planPayment } from "../domain/deposit";
 import { chargeVoucher, creditVoucher, takeVoucherForBooking, VoucherError } from "./vouchers";
 import { t, type Locale } from "../i18n/dict";
-import { and, eq, lt, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import { db, rows, type Executor, type Tx } from "../db/client";
 import {
   bookingExtras, bookingRooms, bookings, extras, guests, hotels, payments, ratePlans,
@@ -134,6 +135,8 @@ export async function createDirectBooking(
         const vt = input.voucherCode?.trim() ? await takeVoucherForBooking(tx, hotel, input.voucherCode, totalRappen, today) : null;
         const voucherRappen = vt?.amountRappen ?? 0;
         const fee = platformFee(totalRappen - voucherRappen, hotel.platformFeeBps);
+        // Anzahlung statt voller Zahlung, wenn das Hotel sie eingeschaltet hat und die Anreise weit genug weg ist (SPEC 5.9)
+        const plan = planPayment(hotel, totalRappen - voucherRappen, input.checkin, today);
         const [g] = await tx
           .insert(guests)
           .values({
@@ -167,6 +170,8 @@ export async function createDirectBooking(
             touristTaxRappen: offer.touristTaxRappen,
             totalRappen,
             platformFeeRappen: fee,
+            balanceRappen: plan.kind === "deposit" ? plan.balanceRappen : 0,
+            balanceDueOn: plan.kind === "deposit" ? plan.balanceDueOn : null,
             voucherId: vt?.voucher.id ?? null,
             voucherRappen,
             holdExpiresAt,
@@ -209,7 +214,8 @@ export async function createDirectBooking(
 
   const base = env().APP_BASE_URL;
   const lang = input.guest.language;
-  const cardRappen = booking.totalRappen - booking.voucherRappen;
+  const cardTotal = booking.totalRappen - booking.voucherRappen;
+  const cardRappen = cardTotal - booking.balanceRappen; // heute zu zahlen (Anzahlung oder alles)
   if (cardRappen <= 0) {
     await confirmBooking(booking.id, { method: "voucher", actor: "guest" });
     return { booking, checkoutUrl: `${base}/b/${booking.publicToken}?paid=1` };
@@ -235,7 +241,8 @@ export async function createDirectBooking(
     bookingId: booking.id,
     stripeCheckoutSessionId: checkout.sessionId,
     amountRappen: cardRappen,
-    applicationFeeRappen: booking.platformFeeRappen,
+    applicationFeeRappen: feeShare(booking.platformFeeRappen, cardTotal, cardRappen),
+    kind: booking.balanceRappen > 0 ? "deposit" : "full",
     status: "pending",
   });
 
@@ -336,8 +343,9 @@ async function setPaymentInfo(
       stripeCheckoutSessionId: pay.sessionId,
       stripePaymentIntentId: pay.paymentIntentId ?? null,
       method: pay.method ?? null,
-      amountRappen: pay.amountRappen ?? booking.totalRappen,
-      applicationFeeRappen: booking.platformFeeRappen,
+      amountRappen: pay.amountRappen ?? booking.totalRappen - booking.voucherRappen - booking.balanceRappen,
+      applicationFeeRappen: feeShare(booking.platformFeeRappen, booking.totalRappen - booking.voucherRappen, pay.amountRappen ?? booking.totalRappen - booking.voucherRappen - booking.balanceRappen),
+      kind: booking.balanceRappen > 0 ? "deposit" : "full",
       status,
     });
   }
@@ -412,8 +420,9 @@ async function loadForCancel(ex: Executor, bookingId: string, hotelId?: string) 
   const [hotel] = await ex.select().from(hotels).where(eq(hotels.id, booking.hotelId));
   const [room] = await ex.select().from(bookingRooms).where(eq(bookingRooms.bookingId, booking.id));
   const [plan] = room?.ratePlanId ? await ex.select().from(ratePlans).where(eq(ratePlans.id, room.ratePlanId)) : [];
-  const [payment] = await ex.select().from(payments).where(and(eq(payments.bookingId, booking.id), eq(payments.status, "succeeded")));
-  return { booking, hotel, room, plan, payment };
+  // Bei Anzahlung gibt es bis zu zwei Zahlungen (Anzahlung, Rest); neueste zuerst
+  const paid = await ex.select().from(payments).where(and(eq(payments.bookingId, booking.id), inArray(payments.status, ["succeeded", "partially_refunded"]))).orderBy(desc(payments.createdAt));
+  return { booking, hotel, room, plan, paid };
 }
 
 export async function cancellationPreview(
@@ -441,23 +450,33 @@ export async function cancellationPreview(
 export async function cancelBooking(
   bookingId: string,
   opts: { by: "guest" | "hotel"; actor: string; hotelId?: string; reason?: string; now?: Date },
-): Promise<{ refundRappen: number; voucherBackRappen: number; feeRappen: number }> {
+): Promise<{ refundRappen: number; voucherBackRappen: number; feeRappen: number; feeOpenRappen: number }> {
   const now = opts.now ?? new Date();
   const preview = await cancellationPreview(bookingId, { by: opts.by, hotelId: opts.hotelId, now });
   if (!preview.cancellable) throw new BookingError(preview.reason ?? "not_cancellable", 409);
-  const { booking, hotel, room, payment } = await loadForCancel(db(), bookingId, opts.hotelId);
+  const { booking, hotel, room, paid } = await loadForCancel(db(), bookingId, opts.hotelId);
 
+  // Rückerstattet wird höchstens, was der Gast tatsächlich bezahlt hat, abzüglich der Stornogebühr (bei Anzahlung kann das weniger sein als «Total minus Gebühr»)
+  const cardPaid = paid.reduce((n, p) => n + p.amountRappen - p.refundedRappen, 0);
+  const paidTotal = booking.voucherRappen + cardPaid;
+  const refundTotal = Math.min(preview.refundRappen, Math.max(0, paidTotal - preview.feeRappen));
+  const feeOpen = Math.max(0, preview.feeRappen - paidTotal); // Gebühr, die über das Bezahlte hinausgeht: Hotel muss sie selbst einfordern
   // Mit Gutschein bezahlt: Rückerstattung anteilig auf Gutschein und Karte
-  const voucherBack = booking.voucherRappen > 0 ? Math.round((preview.refundRappen * booking.voucherRappen) / booking.totalRappen) : 0;
-  const cardBack = Math.min(preview.refundRappen - voucherBack, payment ? payment.amountRappen - payment.refundedRappen : 0);
+  const voucherBack = booking.voucherRappen > 0 && paidTotal > 0 ? Math.round((refundTotal * booking.voucherRappen) / paidTotal) : 0;
+  let cardBack = refundTotal - voucherBack;
 
-  // 1. Rückerstattung beim Zahlungsanbieter (vor der DB-Änderung, SPEC 5.7)
-  let refunded = 0;
-  if (payment && cardBack > 0) {
-    const provider = await getPaymentProvider();
-    await provider.refund({ hotel, booking, paymentIntentId: payment.stripePaymentIntentId, amountRappen: cardBack });
-    refunded = cardBack;
+  // 1. Rückerstattung beim Zahlungsanbieter (vor der DB-Änderung, SPEC 5.7), neueste Zahlung zuerst
+  const refundsDone: { id: string; amount: number }[] = [];
+  const provider = await getPaymentProvider();
+  for (const p of paid) {
+    if (cardBack <= 0) break;
+    const part = Math.min(cardBack, p.amountRappen - p.refundedRappen);
+    if (part <= 0) continue;
+    await provider.refund({ hotel, booking, paymentIntentId: p.stripePaymentIntentId, amountRappen: part });
+    refundsDone.push({ id: p.id, amount: part });
+    cardBack -= part;
   }
+  const refunded = refundsDone.reduce((n, r) => n + r.amount, 0);
 
   // 2. Nächte freigeben, Status, Outbox, E-Mails
   await db().transaction(async (tx) => {
@@ -469,26 +488,27 @@ export async function cancelBooking(
       .update(bookings)
       .set({ status: "cancelled", cancelledAt: now, cancelReason: opts.reason ?? `by_${opts.by}`, updatedAt: now })
       .where(eq(bookings.id, bookingId));
-    if (payment && refunded > 0) {
-      const total = payment.refundedRappen + refunded;
+    for (const r of refundsDone) {
+      const p = paid.find((x) => x.id === r.id)!;
+      const total = p.refundedRappen + r.amount;
       await tx
         .update(payments)
-        .set({ refundedRappen: total, status: total >= payment.amountRappen ? "refunded" : "partially_refunded", updatedAt: now })
-        .where(eq(payments.id, payment.id));
+        .set({ refundedRappen: total, status: total >= p.amountRappen ? "refunded" : "partially_refunded", updatedAt: now })
+        .where(eq(payments.id, p.id));
     }
     if (booking.voucherId && voucherBack > 0) {
       await creditVoucher(tx, booking.voucherId, booking.hotelId, booking.id, voucherBack, `Storno ${booking.reference}`, opts.actor);
     }
     // Ausstehende Erinnerungen nicht mehr senden
-    await tx.execute(sql`UPDATE email_outbox SET status = 'cancelled' WHERE booking_id = ${bookingId} AND status = 'pending' AND template IN ('pre_arrival','post_stay','checkin_link')`);
+    await tx.execute(sql`UPDATE email_outbox SET status = 'cancelled' WHERE booking_id = ${bookingId} AND status = 'pending' AND template IN ('pre_arrival','post_stay','checkin_link','balance_due','balance_reminder')`);
     const [guest] = booking.guestId ? await tx.select().from(guests).where(eq(guests.id, booking.guestId)) : [];
-    const data = { bookingId, refundRappen: refunded, voucherBackRappen: voucherBack, feeRappen: preview.feeRappen };
+    const data = { bookingId, refundRappen: refunded, voucherBackRappen: voucherBack, feeRappen: preview.feeRappen, feeOpenRappen: feeOpen };
     if (guest) await enqueueEmail(tx, { hotelId: hotel.id, bookingId, template: "booking_cancelled", to: guest.email, language: booking.language, data });
     await enqueueEmail(tx, { hotelId: hotel.id, bookingId, template: "booking_cancelled", to: hotel.contactEmail, language: hotel.defaultLanguage, data });
     await pushForBooking(tx, hotel.id, bookingId, "cancelled");
-    await audit(tx, { hotelId: hotel.id, actor: opts.actor, action: "booking.cancel", entity: "booking", entityId: bookingId, details: { by: opts.by, refund: refunded, voucherBack, fee: preview.feeRappen } });
+    await audit(tx, { hotelId: hotel.id, actor: opts.actor, action: "booking.cancel", entity: "booking", entityId: bookingId, details: { by: opts.by, refund: refunded, voucherBack, fee: preview.feeRappen, feeOpen } });
   });
-  return { refundRappen: refunded, voucherBackRappen: voucherBack, feeRappen: preview.feeRappen };
+  return { refundRappen: refunded, voucherBackRappen: voucherBack, feeRappen: preview.feeRappen, feeOpenRappen: feeOpen };
 }
 
 // ---------------------------------------------------------------- No-Show (5.8)

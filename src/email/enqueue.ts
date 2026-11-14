@@ -23,7 +23,11 @@ export type TemplateName =
   | "dispute_alert"
   | "login_link"
   | "channex_alert"
-  | "platform_alert";
+  | "platform_alert"
+  | "balance_due"
+  | "balance_reminder"
+  | "balance_paid"
+  | "hotel_balance_open";
 
 /** SPEC 10: E-Mails nur über die Outbox. Gleiche Kombination booking/template/to wird nur einmal eingereiht. */
 export async function enqueueEmail(

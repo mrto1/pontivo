@@ -111,3 +111,14 @@ export async function removeMember(hotelId: string, userId: string, actor: strin
   await db().delete(hotelMembers).where(and(eq(hotelMembers.hotelId, hotelId), eq(hotelMembers.userId, userId)));
   await audit(db(), { hotelId, actor, action: "member.remove", entity: "user", entityId: userId });
 }
+
+/** Anzahlung (SPEC 5.9): Prozent 10–100 (100 = ganze Summe sofort), Rest fällig 1–60 Tage vor Anreise */
+export const depositSchema = z.object({ percent: z.number().int().min(10, "Mindestens 10 %").max(100, "Höchstens 100 %"), dueDays: z.number().int().min(1, "Mindestens 1 Tag").max(60, "Höchstens 60 Tage") });
+
+export async function setDeposit(hotel: Hotel, input: z.infer<typeof depositSchema>, actor: string) {
+  const v = depositSchema.parse(input);
+  await db().transaction(async (tx) => {
+    await tx.update(hotels).set({ depositBps: v.percent * 100, balanceDueDays: v.dueDays, updatedAt: new Date() }).where(eq(hotels.id, hotel.id));
+    await audit(tx, { hotelId: hotel.id, actor, action: "hotel.deposit", entity: "hotel", entityId: hotel.id, details: { percent: v.percent, dueDays: v.dueDays } });
+  });
+}

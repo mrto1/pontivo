@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { taxRuleFor } from "@/src/services/hotels";
-import { addMember, confirmTouristTax, goLiveProblems, listMembers, removeMember, setHotelStatus, updateHotelSettings } from "@/src/services/settings";
+import { ZodError } from "zod";
+import { addMember, confirmTouristTax, setDeposit, goLiveProblems, listMembers, removeMember, setHotelStatus, updateHotelSettings } from "@/src/services/settings";
 import { onboardingLink, refreshAccountStatus } from "@/src/integrations/stripe/onboarding";
 import { chargesOf, startCardSetup } from "@/src/services/billing";
 import { todayIn } from "@/src/domain/dates";
@@ -27,6 +28,18 @@ async function saveHotel(f: FormData) {
     }, actor);
   } catch (e) {
     back(hotel.id, `Fehler: ${(e as Error).message}`);
+  }
+  back(hotel.id, "Gespeichert");
+}
+
+async function saveDeposit(f: FormData) {
+  "use server";
+  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "manager");
+  try {
+    await setDeposit(hotel, { percent: Number(s(f, "percent")), dueDays: Number(s(f, "dueDays")) }, actor);
+  } catch (e) {
+    if (e instanceof ZodError) back(hotel.id, `Fehler: ${e.issues.map((i) => i.message).join(", ")}`);
+    throw e;
   }
   back(hotel.id, "Gespeichert");
 }
@@ -223,6 +236,18 @@ export default async function Settings({ params, searchParams }: { params: Promi
       </section>
 
       {isManager ? (
+        <>
+        <form action={saveDeposit} className="card stack">
+          <h2>Anzahlung</h2>
+          {hidden}
+          <p className="small muted">Der Gast zahlt bei der Buchung nur einen Teil, den Rest zahlt er online vor der Anreise (er bekommt dafür eine Mail mit Link). Liegt die Anreise näher als die Fälligkeit des Rests, muss er gleich alles zahlen. 100 % = ganze Summe sofort, wie bisher. Bei einer Stornierung wird höchstens zurückerstattet, was der Gast bezahlt hat, abzüglich der Stornogebühr.</p>
+          <div className="form-grid">
+            <div><label>Anzahlung in Prozent</label><input name="percent" type="number" min={10} max={100} step={1} defaultValue={Math.round(hotel.depositBps / 100)} required /></div>
+            <div><label>Rest fällig (Tage vor Anreise)</label><input name="dueDays" type="number" min={1} max={60} step={1} defaultValue={hotel.balanceDueDays} required /></div>
+          </div>
+          <button className="btn">Speichern</button>
+        </form>
+
         <form action={saveHotel} className="card stack">
           <h2>Hotel und Website</h2>
           {hidden}
@@ -247,6 +272,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
           </div>
           <button className="btn">Speichern</button>
         </form>
+        </>
       ) : null}
 
       {isOwner ? (

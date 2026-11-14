@@ -206,6 +206,17 @@ confirmed → no_show   (Hotel, frühestens am Tag nach Anreise)
 ```
 Jeder andere Übergang wirft einen Fehler. Jeder Übergang schreibt `audit_log`.
 
+### 5.9 Anzahlung und Restzahlung
+
+- Pro Hotel: `deposit_bps` (1000–10000, 10000 = volle Zahlung, Standard) und `balance_due_days` (1–60, Standard 7).
+- Bei der Buchung gilt Anzahlung nur, wenn die Anreise mehr als `balance_due_days` entfernt ist und der Rest mindestens CHF 10 beträgt; sonst volle Zahlung. Grundlage ist der Betrag nach Gutschein. `bookings.balance_rappen`, `balance_due_on = checkin - balance_due_days`.
+- Stripe Checkout und `application_fee_amount` gelten nur für die Anzahlung (Gebühr anteilig, `feeShare`). `payments.kind` = `full` | `deposit` | `balance`. Die Buchung wird mit der Anzahlung `confirmed`, der Zustandsautomat ändert sich nicht.
+- Restzahlung: Job stündlich. Am Fälligkeitstag Mail `balance_due` mit Link auf die Buchungsseite, nach 3 Tagen `balance_reminder`, 2 Tage vor Anreise `hotel_balance_open` ans Hotel. Jede Stufe einmal. Der Gast bezahlt über `/b/<token>/balance`, das eine frische Stripe-Sitzung erzeugt (Direct Charge, Rest der Gebühr). Webhook mit `metadata.kind = balance` verbucht nur den Rest; abgelaufene oder gescheiterte Rest-Sitzungen geben die Buchung nie frei. Trifft eine Restzahlung nach Storno oder doppelt ein: sofortige Rückerstattung.
+- Das Hotel kann den Rest als «vor Ort erhalten» markieren (`balance_onsite_at`), dann keine Aufforderungen mehr.
+- Storno: Rückerstattung höchstens `bezahlt - Stornogebühr` (Gutschein anteilig), neueste Zahlung zuerst. Übersteigt die Gebühr das Bezahlte, wird nichts erstattet; der Rest wird als `feeOpenRappen` gemeldet (Audit, Hotel-Mail), das Hotel fordert ihn selbst ein.
+- Kein automatisches Abbuchen der Karte: off-session-Zahlungen scheitern oft an 3-D Secure, TWINT ist nicht wiederverwendbar.
+- Abnahme: `tests/unit/deposit.test.ts`, `tests/integration/deposit.test.ts`.
+
 ---
 
 ## 6. Stripe Connect

@@ -5,6 +5,7 @@ import { isBookable } from "@/src/services/hotels";
 import { env } from "@/src/env";
 import { addDays, diffDays, todayIn } from "@/src/domain/dates";
 import { formatChf } from "@/src/domain/money";
+import { planPayment } from "@/src/domain/deposit";
 import { fill, formatDay, LOCALE_TAGS, t, type Locale } from "@/src/i18n/dict";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/src/db/client";
@@ -87,6 +88,10 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
               <div className="price">
                 <div className="muted small">{d.total}</div>
                 <div className="big">{formatChf(o.totalRappen)}</div>
+                {(() => {
+                  const pp = planPayment(hotel, o.totalRappen, q!.checkin, today);
+                  return pp.kind === "deposit" ? <div className="small muted">{fill(d.depositNote, { a: formatChf(pp.depositRappen), b: formatChf(pp.balanceRappen), date: formatDay(pp.balanceDueOn, locale) })}</div> : null;
+                })()}
               </div>
               <details style={{ gridColumn: "1 / -1" }}>
                 <summary className="btn secondary">{d.choose}</summary>

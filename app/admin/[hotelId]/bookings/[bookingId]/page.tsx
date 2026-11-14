@@ -3,6 +3,7 @@ import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { bookingDetail, bookingErrorText, moveBooking } from "@/src/services/admin-bookings";
 import { BookingError, cancelBooking, cancellationPreview, markNoShow } from "@/src/services/bookings";
+import { balanceOpen, markBalanceOnsite } from "@/src/services/balance";
 import { formatChf } from "@/src/domain/money";
 import { addDays, nightsOf, todayIn } from "@/src/domain/dates";
 import { bookingExtrasOf } from "@/src/services/extras";
@@ -42,6 +43,20 @@ async function moveAction(formData: FormData) {
     msg = `Aufenthalt verschoben auf ${b.checkin} → ${b.checkout}`;
   } catch (e) {
     msg = e instanceof BookingError ? MOVE_ERRORS[e.code] ?? bookingErrorText(e.code) : `Fehler: ${(e as Error).message}`;
+  }
+  redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}`);
+}
+
+async function balanceOnsiteAction(formData: FormData) {
+  "use server";
+  const hotelId = String(formData.get("hotelId"));
+  const bookingId = String(formData.get("bookingId"));
+  const { actor } = await requireHotel(hotelId, "staff");
+  let msg = "Restbetrag als erhalten markiert";
+  try {
+    await markBalanceOnsite(hotelId, bookingId, actor);
+  } catch (e) {
+    msg = e instanceof BookingError ? `Nicht möglich: ${e.message}` : String(e);
   }
   redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}`);
 }
@@ -104,6 +119,24 @@ export default async function BookingDetail({ params, searchParams }: { params: 
           ))}
         </tbody>
       </table>
+
+      {b.balanceRappen > 0 ? (
+        <div className="card stack">
+          <h3>Restzahlung</h3>
+          <p>
+            {b.balancePaidAt ? <>Bezahlt ({formatChf(b.balanceRappen)}) am {b.balancePaidAt.toLocaleDateString("de-CH")}.</>
+              : b.balanceOnsiteAt ? <>Als vor Ort erhalten markiert ({formatChf(b.balanceRappen)}).</>
+              : <>Offen: <strong>{formatChf(b.balanceRappen)}</strong>, fällig am {b.balanceDueOn?.split("-").reverse().join(".")}.{b.balanceRequestedAt ? " Der Gast wurde per Mail aufgefordert." : " Die Mail geht am Fälligkeitstag raus."}</>}
+          </p>
+          {balanceOpen(b) ? (
+            <form action={balanceOnsiteAction}>
+              <input type="hidden" name="hotelId" value={hotel.id} />
+              <input type="hidden" name="bookingId" value={b.id} />
+              <button className="btn secondary">Restbetrag vor Ort erhalten</button>
+            </form>
+          ) : null}
+        </div>
+      ) : null}
 
       {isOta && b.status === "confirmed" ? <p className="notice warn">Portal-Buchung: Bitte im Portal ({b.source}) stornieren. Die Stornierung kommt dann automatisch hierher.</p> : null}
 

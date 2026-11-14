@@ -1,5 +1,6 @@
 import type { CardSetupArgs, ChargeSavedCardArgs, ChargeResult, CheckoutArgs, PaymentCheckoutArgs, PaymentProvider, RefundArgs } from "../../payments/provider";
 import type { Hotel } from "../../db/schema";
+import { feeShare } from "../../domain/deposit";
 import { stripe, type Stripe } from "./client";
 
 /** TWINT-Limit pro Zahlung (Stripe): CHF 5'000 */
@@ -15,7 +16,8 @@ export class StripePaymentProvider implements PaymentProvider {
     if (!hotel.stripeAccountId) throw new Error("Hotel hat kein Stripe-Konto");
     if (!booking.holdExpiresAt) throw new Error("Buchung ohne Hold-Ablauf");
     // Mit Gutschein: nur der Restbetrag wird per Karte/TWINT bezahlt
-    const amount = booking.totalRappen - booking.voucherRappen;
+    const cardTotal = booking.totalRappen - booking.voucherRappen;
+    const amount = cardTotal - booking.balanceRappen; // bei Anzahlung nur der Teil von heute
     const twintAllowed = hotel.stripeTwintActive && amount <= TWINT_MAX_RAPPEN;
     const metadata = { booking_id: booking.id, hotel_id: hotel.id };
     const session = await stripe().checkout.sessions.create(
@@ -33,7 +35,7 @@ export class StripePaymentProvider implements PaymentProvider {
           },
         ],
         payment_intent_data: {
-          application_fee_amount: booking.platformFeeRappen,
+          application_fee_amount: feeShare(booking.platformFeeRappen, cardTotal, amount),
           metadata,
         },
         metadata,
@@ -83,7 +85,7 @@ export class StripePaymentProvider implements PaymentProvider {
     if (!a.paymentIntentId) throw new Error("Zahlung ohne PaymentIntent");
     const r = await stripe().refunds.create(
       { payment_intent: a.paymentIntentId, amount: a.amountRappen, refund_application_fee: true },
-      { stripeAccount: a.hotel.stripeAccountId, idempotencyKey: `refund-${a.booking.id}-${a.amountRappen}` },
+      { stripeAccount: a.hotel.stripeAccountId, idempotencyKey: `refund-${a.booking.id}-${a.paymentIntentId}-${a.amountRappen}` },
     );
     return { refundId: r.id };
   }

@@ -88,6 +88,28 @@ const G: Record<Locale, GuestMsg> = {
   },
 };
 
+/** Anzahlung und Restzahlung (SPEC 5.9) */
+const B: Record<Locale, {
+  paidNow: string; open: string; dueSubject: (r: string) => string; dueText: (amount: string, date: string) => string; remSubject: (r: string) => string;
+  remText: (amount: string, date: string) => string; pay: string; paidSubject: (r: string) => string; paidText: (amount: string) => string;
+}> = {
+  de: { paidNow: "Anzahlung bezahlt", open: "Restbetrag", dueSubject: (r) => `Restzahlung für Ihre Buchung ${r}`, dueText: (a, d) => `für Ihren Aufenthalt ist noch ein Restbetrag von ${a} offen (fällig am ${d}). Sie können ihn mit einem Klick online bezahlen.`,
+    remSubject: (r) => `Erinnerung: Restzahlung ${r}`, remText: (a, d) => `freundliche Erinnerung: der Restbetrag von ${a} für Ihren Aufenthalt war am ${d} fällig. Bitte bezahlen Sie ihn online oder bei der Ankunft nach Absprache mit dem Hotel.`, pay: "Restbetrag bezahlen",
+    paidSubject: (r) => `Restzahlung erhalten ${r}`, paidText: (a) => `vielen Dank, wir haben Ihre Restzahlung von ${a} erhalten. Ihre Buchung ist vollständig bezahlt.` },
+  en: { paidNow: "Deposit paid", open: "Balance", dueSubject: (r) => `Balance payment for your booking ${r}`, dueText: (a, d) => `a balance of ${a} is still open for your stay (due ${d}). You can pay it online with one click.`,
+    remSubject: (r) => `Reminder: balance payment ${r}`, remText: (a, d) => `friendly reminder: the balance of ${a} for your stay was due on ${d}. Please pay it online or on arrival after agreeing with the hotel.`, pay: "Pay balance",
+    paidSubject: (r) => `Balance payment received ${r}`, paidText: (a) => `thank you, we have received your balance payment of ${a}. Your booking is fully paid.` },
+  fr: { paidNow: "Acompte payé", open: "Solde", dueSubject: (r) => `Paiement du solde de votre réservation ${r}`, dueText: (a, d) => `un solde de ${a} reste à payer pour votre séjour (échéance ${d}). Vous pouvez le régler en ligne en un clic.`,
+    remSubject: (r) => `Rappel : paiement du solde ${r}`, remText: (a, d) => `petit rappel : le solde de ${a} pour votre séjour était dû le ${d}. Merci de le régler en ligne ou à l'arrivée après accord avec l'hôtel.`, pay: "Payer le solde",
+    paidSubject: (r) => `Solde reçu ${r}`, paidText: (a) => `merci, nous avons bien reçu le paiement du solde de ${a}. Votre réservation est entièrement payée.` },
+  it: { paidNow: "Acconto pagato", open: "Saldo", dueSubject: (r) => `Pagamento del saldo per la prenotazione ${r}`, dueText: (a, d) => `per il vostro soggiorno è ancora aperto un saldo di ${a} (scadenza ${d}). Potete pagarlo online con un clic.`,
+    remSubject: (r) => `Promemoria: pagamento del saldo ${r}`, remText: (a, d) => `gentile promemoria: il saldo di ${a} per il vostro soggiorno era in scadenza il ${d}. Vi preghiamo di pagarlo online o all'arrivo previo accordo con l'hotel.`, pay: "Paga il saldo",
+    paidSubject: (r) => `Saldo ricevuto ${r}`, paidText: (a) => `grazie, abbiamo ricevuto il saldo di ${a}. La prenotazione è interamente pagata.` },
+  nl: { paidNow: "Aanbetaling voldaan", open: "Restbedrag", dueSubject: (r) => `Restbetaling voor uw boeking ${r}`, dueText: (a, d) => `voor uw verblijf staat nog een restbedrag van ${a} open (te betalen op ${d}). U kunt het met één klik online betalen.`,
+    remSubject: (r) => `Herinnering: restbetaling ${r}`, remText: (a, d) => `vriendelijke herinnering: het restbedrag van ${a} voor uw verblijf moest op ${d} betaald zijn. Betaal het online of bij aankomst in overleg met het hotel.`, pay: "Restbedrag betalen",
+    paidSubject: (r) => `Restbetaling ontvangen ${r}`, paidText: (a) => `hartelijk dank, we hebben uw restbetaling van ${a} ontvangen. Uw boeking is volledig betaald.` },
+};
+
 function summary(c: EmailContext, l: Locale): string[] {
   const b = c.booking;
   if (!b) return [];
@@ -101,6 +123,9 @@ function summary(c: EmailContext, l: Locale): string[] {
     ...(c.extras ?? []).map((x) => `${tr(x.name, l)}${x.quantity > 1 ? ` × ${x.quantity}` : ""}: ${formatChf(x.amountRappen)}`),
     `${m.total}: ${formatChf(b.totalRappen)}${b.touristTaxRappen ? ` (${m.inclTax} ${formatChf(b.touristTaxRappen)})` : ""}`,
     ...(b.voucherRappen > 0 ? [`${t(l).voucherPaid}: − ${formatChf(b.voucherRappen)}`, `${t(l).cardPaid}: ${formatChf(b.totalRappen - b.voucherRappen)}`] : []),
+    ...(b.balanceRappen > 0 && !b.balancePaidAt && !b.balanceOnsiteAt
+      ? [`${B[l].paidNow}: ${formatChf(b.totalRappen - b.voucherRappen - b.balanceRappen)}`, `${B[l].open}: ${formatChf(b.balanceRappen)}${b.balanceDueOn ? ` (${formatDay(b.balanceDueOn, l)})` : ""}`]
+      : []),
   ];
 }
 
@@ -152,6 +177,21 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
     case "booking_confirmed":
       return wrap(c, gl, m.confirmedSubject(ref), [hi + ",", m.confirmedText],
         [...summary(c, gl), ...(c.plan ? [`${m.cancellation}: ${cancellationPolicyText(c.plan, gl)}`] : [])], link);
+    case "balance_due":
+    case "balance_reminder": {
+      const bm = B[gl];
+      const amount = formatChf(b?.balanceRappen ?? 0);
+      const date = b?.balanceDueOn ? formatDay(b.balanceDueOn, gl) : "";
+      const first = template === "balance_due";
+      return wrap(c, gl, first ? bm.dueSubject(ref) : bm.remSubject(ref), [hi + ",", first ? bm.dueText(amount, date) : bm.remText(amount, date)], summary(c, gl),
+        b ? { href: `${c.baseUrl}/b/${b.publicToken}`, label: bm.pay } : undefined);
+    }
+    case "balance_paid":
+      return wrap(c, gl, B[gl].paidSubject(ref), [hi + ",", B[gl].paidText(money("amountRappen"))], summary(c, gl), link);
+    case "hotel_balance_open":
+      return wrap(c, l, `${de ? "Restzahlung offen" : "Balance payment open"} ${ref}`,
+        [de ? `Der Restbetrag ${formatChf(b?.balanceRappen ?? 0)} von ${c.guestName ?? "Gast"} ist noch offen, die Anreise ist am ${b ? formatDay(b.checkin, l) : ""}. Bitte beim Gast nachfragen oder vor Ort einziehen und in der Buchung als erhalten markieren.`
+          : `The balance ${formatChf(b?.balanceRappen ?? 0)} from ${c.guestName ?? "guest"} is still open, arrival is ${b ? formatDay(b.checkin, l) : ""}. Please ask the guest or collect it on site and mark it as received in the booking.`], summary(c, l));
     case "hotel_new_booking":
       return wrap(c, l, `${de ? "Neue Buchung" : "New booking"} ${b?.reference} (${b?.source})`,
         [de ? `Neue Buchung von ${c.guestName ?? "Gast"} über ${b?.source}.` : `New booking from ${c.guestName ?? "guest"} via ${b?.source}.`],

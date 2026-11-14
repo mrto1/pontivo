@@ -4,6 +4,7 @@ import { db } from "../../db/client";
 import { bookings, guests, hotels, inboundEvents, payments, vouchers } from "../../db/schema";
 import { env, requireEnv } from "../../env";
 import { confirmBooking, releaseHold } from "../../services/bookings";
+import { markBalancePaid } from "../../services/balance";
 import { audit } from "../../services/audit";
 import { enqueueEmail } from "../../email/enqueue";
 import { getPaymentProvider } from "../../payments/provider";
@@ -95,6 +96,19 @@ async function onPaid(session: Stripe.Checkout.Session, account: string) {
   const found = await bookingForSession(session, account);
   if (!found) return;
   const piId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+  if (session.metadata?.kind === "balance") {
+    // Restzahlung nach Anzahlung (SPEC 5.9): Buchung bleibt wie sie ist, nur der Rest wird verbucht
+    const method = piId ? await paymentMethodOf(piId, account) : null;
+    const r = await markBalancePaid(found.booking.id, { sessionId: session.id, paymentIntentId: piId, method, amountRappen: session.amount_total, actor: "stripe" });
+    if (r === "refund_required" && piId) {
+      const provider = await getPaymentProvider();
+      const amount = session.amount_total ?? found.booking.balanceRappen;
+      await provider.refund({ hotel: found.hotel, booking: found.booking, paymentIntentId: piId, amountRappen: amount });
+      await db().update(payments).set({ refundedRappen: amount, status: "refunded", updatedAt: new Date() }).where(eq(payments.stripePaymentIntentId, piId));
+      await audit(db(), { hotelId: found.hotel.id, actor: "stripe", action: "booking.balance_refunded", entity: "booking", entityId: found.booking.id, details: { amount } });
+    }
+    return;
+  }
   const method = piId ? await paymentMethodOf(piId, account) : null;
   const result = await confirmBooking(found.booking.id, {
     sessionId: session.id,
@@ -131,14 +145,18 @@ async function processEvent(event: Stripe.Event) {
     case "checkout.session.async_payment_failed": {
       const vf = await voucherForSession(event.data.object as Stripe.Checkout.Session, account);
       if (vf) return cancelPendingVoucher(vf.id);
-      const found = await bookingForSession(event.data.object as Stripe.Checkout.Session, account);
+      const failed = event.data.object as Stripe.Checkout.Session;
+      if (failed.metadata?.kind === "balance") return; // Restzahlung gescheitert: Buchung bleibt bestehen, Gast kann erneut zahlen
+      const found = await bookingForSession(failed, account);
       if (found) await releaseHold(found.booking.id, { reason: "payment_failed", actor: "stripe", paymentFailed: true });
       return;
     }
     case "checkout.session.expired": {
       const v = await voucherForSession(event.data.object as Stripe.Checkout.Session, account);
       if (v) return cancelPendingVoucher(v.id);
-      const found = await bookingForSession(event.data.object as Stripe.Checkout.Session, account);
+      const expired = event.data.object as Stripe.Checkout.Session;
+      if (expired.metadata?.kind === "balance") return; // abgelaufener Zahlungslink für den Rest: nichts freigeben
+      const found = await bookingForSession(expired, account);
       if (found) await releaseHold(found.booking.id, { reason: "checkout_expired", actor: "stripe", paymentFailed: true });
       return;
     }

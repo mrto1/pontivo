@@ -172,7 +172,7 @@ describe("M2 Stripe Connect", () => {
     expect(res.status).toBe(200);
     expect(refunds).toHaveLength(1);
     expect(refunds[0].params).toEqual({ payment_intent: `pi_${b.id.slice(0, 8)}`, amount: b.totalRappen, refund_application_fee: true });
-    expect(refunds[0].opts).toMatchObject({ stripeAccount: h.acct, idempotencyKey: `refund-${b.id}-${b.totalRappen}` });
+    expect(refunds[0].opts).toMatchObject({ stripeAccount: h.acct, idempotencyKey: `refund-${b.id}-pi_${b.id.slice(0, 8)}-${b.totalRappen}` });
     const [after] = await db().select().from(bookings).where(eq(bookings.id, b.id));
     expect(after.status).toBe("cancelled");
     expect((await inv(h.rooms[0].roomType.id, b.checkin)).booked).toBe(0);
@@ -185,7 +185,7 @@ describe("M2 Stripe Connect", () => {
     const b = await book(h, inDays(1)); // Flexibel, 48 h → Frist vorbei
     await send(event("checkout.session.completed", h.acct, completed(await sessionOf(b.id), b)));
     const r = await cancelBooking(b.id, { by: "guest", actor: "guest" });
-    expect(r).toEqual({ refundRappen: b.touristTaxRappen, voucherBackRappen: 0, feeRappen: b.roomsTotalRappen });
+    expect(r).toEqual({ refundRappen: b.touristTaxRappen, voucherBackRappen: 0, feeRappen: b.roomsTotalRappen, feeOpenRappen: 0 });
     expect(refunds[0].params.amount).toBe(b.touristTaxRappen);
     const [p] = await db().select().from(payments).where(eq(payments.bookingId, b.id));
     expect(p.status).toBe("partially_refunded");

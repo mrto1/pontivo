@@ -14,6 +14,8 @@ import { checkinContext } from "@/src/services/guests";
 import { CI } from "@/src/i18n/checkin";
 import { bookingExtrasOf } from "@/src/services/extras";
 import { tr } from "@/src/domain/blocks";
+import { balanceOpen } from "@/src/services/balance";
+import { fill } from "@/src/i18n/dict";
 
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false } };
@@ -40,6 +42,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
         <h1>{d.booking}</h1>
         {sp.paid && booking.status === "confirmed" ? <p className="notice">{d.paidThanks}</p> : null}
         {sp.paid && booking.status === "hold" ? (<><p className="notice">{d.paymentPending}</p><AutoRefresh seconds={3} /></>) : null}
+        {sp.balance_paid ? <p className="notice">{d.balancePaidThanks}</p> : null}
         {sp.cancelled_payment && booking.status === "hold" ? <p className="notice warn">{d.paymentAborted}</p> : null}
         <div className="card">
           <table className="rows">
@@ -58,8 +61,16 @@ export default async function BookingView({ params, searchParams }: { params: Pr
                 <tr><td>{d.voucherPaid}</td><td>− {formatChf(booking.voucherRappen)}</td></tr>
                 <tr><td>{d.cardPaid}</td><td>{formatChf(booking.totalRappen - booking.voucherRappen)}</td></tr>
               </>) : null}
+              {booking.balanceRappen > 0 ? (
+                <tr><td>{d.balanceTitle}</td><td>{booking.balancePaidAt || booking.balanceOnsiteAt ? `${formatChf(booking.balanceRappen)} ✓ ${d.balancePaid}` : fill(d.balanceOpen, { a: formatChf(booking.balanceRappen), date: booking.balanceDueOn ? formatDay(booking.balanceDueOn, locale) : "" })}</td></tr>
+              ) : null}
             </tbody>
           </table>
+          {balanceOpen(booking) ? (
+            <form method="post" action={`/b/${token}/balance`} style={{ marginTop: 16 }}>
+              <button className="btn">{d.payBalance} ({formatChf(booking.balanceRappen)})</button>
+            </form>
+          ) : null}
           {plan ? (<><h3 style={{ marginTop: 20 }}>{d.cancellation}</h3><p className="small muted">{cancellationPolicyText(plan, locale)}</p></>) : null}
           {preview?.cancellable ? <CancelBox token={token} locale={locale} /> : null}
         </div>

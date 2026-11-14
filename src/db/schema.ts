@@ -27,6 +27,9 @@ export const hotels = pgTable("hotels", {
   contactEmail: text("contact_email").notNull(),
   contactPhone: text("contact_phone"),
   platformFeeBps: integer("platform_fee_bps").notNull().default(DEFAULT_PLATFORM_FEE_BPS),
+  /** Anzahlung (SPEC 5.9): Anteil in Basispunkten bei Buchung, 10000 = volle Zahlung; Rest «balanceDueDays» vor Anreise */
+  depositBps: integer("deposit_bps").notNull().default(10000),
+  balanceDueDays: integer("balance_due_days").notNull().default(7),
   touristTaxIncludedInPrice: boolean("tourist_tax_included_in_price").notNull().default(false),
   touristTaxCategory: text("tourist_tax_category").notNull().default("hotel"),
   checkinTime: time("checkin_time").notNull().default("15:00"),
@@ -242,6 +245,14 @@ export const bookings = pgTable("bookings", {
   touristTaxRappen: integer("tourist_tax_rappen").notNull().default(0),
   totalRappen: integer("total_rappen").notNull().default(0),
   platformFeeRappen: integer("platform_fee_rappen").notNull().default(0),
+  /** Restzahlung (SPEC 5.9): offener Betrag nach der Anzahlung, ohne Gutschein */
+  balanceRappen: integer("balance_rappen").notNull().default(0),
+  balanceDueOn: date("balance_due_on", { mode: "string" }),
+  balancePaidAt: ts("balance_paid_at"),
+  balanceOnsiteAt: ts("balance_onsite_at"),
+  balanceRequestedAt: ts("balance_requested_at"),
+  balanceRemindedAt: ts("balance_reminded_at"),
+  balanceAlertedAt: ts("balance_alerted_at"),
   /** Gutschein bei der Online-Buchung: angerechneter Betrag (wird beim Hold abgezogen) */
   voucherId: uuid("voucher_id"),
   voucherRappen: integer("voucher_rappen").notNull().default(0),
@@ -311,6 +322,7 @@ export const payments = pgTable("payments", {
   method: text("method"),
   amountRappen: integer("amount_rappen").notNull(),
   applicationFeeRappen: integer("application_fee_rappen").notNull().default(0),
+  kind: text("kind").$type<"full" | "deposit" | "balance">().notNull().default("full"),
   refundedRappen: integer("refunded_rappen").notNull().default(0),
   status: text("status").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
