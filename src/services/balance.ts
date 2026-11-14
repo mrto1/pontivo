@@ -1,6 +1,6 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
-import { bookings, guests, hotels, payments, type Booking } from "../db/schema";
+import { bookings, guests, hotels, onsitePayments, payments, type Booking } from "../db/schema";
 import { addDays, diffDays, todayIn } from "../domain/dates";
 import { enqueueEmail } from "../email/enqueue";
 import { env } from "../env";
@@ -92,6 +92,9 @@ export async function markBalanceOnsite(hotelId: string, bookingId: string, acto
     const [booking] = await tx.select().from(bookings).where(eq(bookings.id, bookingId));
     if (!open(booking)) throw new BookingError("no_balance_open", 409);
     await tx.update(bookings).set({ balanceOnsiteAt: now, updatedAt: now }).where(eq(bookings.id, bookingId));
+    // Als Zahlung vor Ort festhalten, damit Rechnung und Quittung stimmen (SPEC 16.3)
+    const [h] = await tx.select({ tz: hotels.timezone }).from(hotels).where(eq(hotels.id, hotelId));
+    await tx.insert(onsitePayments).values({ hotelId, bookingId, amountRappen: booking.balanceRappen, method: "other", note: "Restzahlung vor Ort erhalten", receivedOn: todayIn(h.tz, now), actor });
     await tx.execute(sql`UPDATE email_outbox SET status = 'cancelled' WHERE booking_id = ${bookingId} AND status = 'pending' AND template IN ('balance_due','balance_reminder')`);
     await audit(tx, { hotelId, actor, action: "booking.balance_onsite", entity: "booking", entityId: bookingId, details: { amount: booking.balanceRappen } });
   });

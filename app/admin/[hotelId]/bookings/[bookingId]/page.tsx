@@ -7,6 +7,8 @@ import { balanceOpen, markBalanceOnsite } from "@/src/services/balance";
 import { formatChf } from "@/src/domain/money";
 import { addDays, nightsOf, todayIn } from "@/src/domain/dates";
 import { bookingExtrasOf } from "@/src/services/extras";
+import { moduleOn } from "@/src/services/modules";
+import { CashCard } from "./CashCard";
 
 export const dynamic = "force-dynamic";
 
@@ -173,6 +175,8 @@ export default async function BookingDetail({ params, searchParams }: { params: 
           <button className="btn secondary">Als No-Show markieren</button>
         </form>
       ) : null}
+
+      {(await moduleOn(hotel.id, "invoicing")) ? <CashCard hotel={hotel} bookingId={b.id} status={b.status} /> : null}
 
       <h3>Verlauf</h3>
       <table className="table">

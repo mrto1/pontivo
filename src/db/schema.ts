@@ -80,6 +80,8 @@ export type HotelContent = {
   documents?: HotelDocument[];
   /** Erscheinungsbild der Buchungsseite */
   brand?: HotelBrand;
+  /** Rechnung: MWST, IBAN, Zahlungsfrist (src/domain/invoice.ts, SPEC 16.3) */
+  invoicing?: Partial<import("../domain/invoice").InvoicingSettings>;
 };
 
 export type HotelDocument = { url: string; title: Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>; bytes: number };
@@ -703,3 +705,65 @@ export const rooms = pgTable("rooms", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type Room = typeof rooms.$inferSelect;
+
+export const invoices = pgTable("invoices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  bookingId: uuid("booking_id"),
+  kind: text("kind").$type<"invoice" | "credit_note">().notNull().default("invoice"),
+  status: text("status").$type<"draft" | "issued">().notNull().default("draft"),
+  number: text("number"),
+  issuedOn: date("issued_on", { mode: "string" }),
+  dueOn: date("due_on", { mode: "string" }),
+  recipient: jsonb("recipient").$type<InvoiceRecipient>().notNull().default({}),
+  creditOf: uuid("credit_of"),
+  totalRappen: integer("total_rappen").notNull().default(0),
+  vatRappen: integer("vat_rappen").notNull().default(0),
+  note: text("note").notNull().default(""),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  issuedAt: ts("issued_at"),
+});
+export type Invoice = typeof invoices.$inferSelect;
+export type InvoiceRecipient = { name?: string; company?: string; street?: string; zip?: string; city?: string; country?: string; vatId?: string; email?: string };
+
+export const invoiceLines = pgTable("invoice_lines", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  invoiceId: uuid("invoice_id").notNull(),
+  hotelId: uuid("hotel_id").notNull(),
+  position: integer("position").notNull(),
+  description: text("description").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  unitPriceRappen: integer("unit_price_rappen").notNull(),
+  amountRappen: integer("amount_rappen").notNull(),
+  vatBps: integer("vat_bps").notNull().default(0),
+  category: text("category").$type<"stay" | "extra" | "tax" | "discount" | "other">().notNull().default("other"),
+});
+export type InvoiceLine = typeof invoiceLines.$inferSelect;
+
+export const folioItems = pgTable("folio_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  bookingId: uuid("booking_id").notNull(),
+  description: text("description").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  unitPriceRappen: integer("unit_price_rappen").notNull(),
+  vatKind: text("vat_kind").$type<"stay" | "standard" | "none">().notNull().default("standard"),
+  invoiceId: uuid("invoice_id"),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type FolioItem = typeof folioItems.$inferSelect;
+
+export const onsitePayments = pgTable("onsite_payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  bookingId: uuid("booking_id").notNull(),
+  amountRappen: integer("amount_rappen").notNull(),
+  method: text("method").$type<"cash" | "card" | "twint" | "bank" | "other">().notNull(),
+  note: text("note").notNull().default(""),
+  receivedOn: date("received_on", { mode: "string" }).notNull(),
+  actor: text("actor").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type OnsitePayment = typeof onsitePayments.$inferSelect;
