@@ -2,7 +2,7 @@ import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import QRCode from "qrcode";
 import { db, rows, type Executor } from "../db/client";
 import {
-  bookingExtras, bookingRooms, bookings, folioItems, guests, hotels, invoiceLines, invoices, onsitePayments, roomTypes,
+  bookingExtras, bookingRooms, bookings, folioItems, groups as groupsTable, guests, hotels, invoiceLines, invoices, onsitePayments, roomTypes,
   type Booking, type FolioItem, type Hotel, type Invoice, type InvoiceLine, type InvoiceRecipient, type OnsitePayment,
 } from "../db/schema";
 import { addDays, diffDays, todayIn } from "../domain/dates";
@@ -150,6 +150,17 @@ function recipientFromGuest(g?: { firstName: string; lastName: string; email: st
   return g ? { name: `${g.firstName} ${g.lastName}`.trim(), email: g.email, country: "CH" } : { country: "CH" };
 }
 
+/** Gehört die Buchung zu einer Gruppe mit Firma/Rechnungsadresse, geht die Rechnung an diese (SPEC 18.1); sonst an den Gast */
+async function recipientForBooking(ex: Executor, booking: Booking, g?: { firstName: string; lastName: string; email: string } | null): Promise<InvoiceRecipient> {
+  if (booking.groupId) {
+    const [grp] = await ex.select().from(groupsTable).where(and(eq(groupsTable.id, booking.groupId), eq(groupsTable.hotelId, booking.hotelId)));
+    if (grp && (grp.company || grp.contactName)) {
+      return { company: grp.company || undefined, name: grp.contactName || undefined, street: grp.street || undefined, zip: grp.zip || undefined, city: grp.city || undefined, email: grp.contactEmail || g?.email || undefined, country: "CH" };
+    }
+  }
+  return recipientFromGuest(g);
+}
+
 /** Entwurf aus der Buchung. Gibt es schon einen Entwurf, wird er zurückgegeben. Pro Buchung nur eine gültige (nicht gutgeschriebene) Rechnung. */
 export async function createInvoiceDraft(hotel: Hotel, bookingId: string, actor: string): Promise<Invoice> {
   return db().transaction(async (tx) => {
@@ -165,7 +176,7 @@ export async function createInvoiceDraft(hotel: Hotel, bookingId: string, actor:
     const [g] = booking.guestId ? await tx.select().from(guests).where(eq(guests.id, booking.guestId)) : [];
     const folio = await tx.select().from(folioItems).where(and(eq(folioItems.bookingId, bookingId), isNull(folioItems.invoiceId))).orderBy(asc(folioItems.createdAt));
     const lines = await bookingLines(tx, hotel, booking, folio);
-    const [inv] = await tx.insert(invoices).values({ hotelId: hotel.id, bookingId, recipient: recipientFromGuest(g), createdBy: actor }).returning();
+    const [inv] = await tx.insert(invoices).values({ hotelId: hotel.id, bookingId, recipient: await recipientForBooking(tx, booking, g), createdBy: actor }).returning();
     await tx.insert(invoiceLines).values(lines.map((l, i) => ({ ...l, invoiceId: inv.id, hotelId: hotel.id, position: i })));
     if (folio.length) await tx.update(folioItems).set({ invoiceId: inv.id }).where(and(eq(folioItems.bookingId, bookingId), isNull(folioItems.invoiceId)));
     const vb = vatBreakdown(lines);

@@ -267,6 +267,8 @@ export const bookings = pgTable("bookings", {
   channexBookingId: uuid("channex_booking_id").unique(),
   otaReservationCode: text("ota_reservation_code"),
   guestNotes: text("guest_notes"),
+  /** Gruppe, zu der die Buchung gehört (SPEC 18.1) */
+  groupId: uuid("group_id"),
   overbooked: boolean("overbooked").notNull().default(false),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
@@ -722,6 +724,33 @@ export const guestProfiles = pgTable("guest_profiles", {
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 export type GuestProfile = typeof guestProfiles.$inferSelect;
+
+export const groups = pgTable("groups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: text("name").notNull(),
+  company: text("company").notNull().default(""),
+  contactName: text("contact_name").notNull().default(""),
+  contactEmail: text("contact_email").notNull().default(""),
+  street: text("street").notNull().default(""),
+  zip: text("zip").notNull().default(""),
+  city: text("city").notNull().default(""),
+  arrival: date("arrival", { mode: "string" }).notNull(),
+  departure: date("departure", { mode: "string" }).notNull(),
+  releaseOn: date("release_on", { mode: "string" }),
+  status: text("status").$type<"active" | "released" | "cancelled">().notNull().default("active"),
+  note: text("note").notNull().default(""),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type Group = typeof groups.$inferSelect;
+
+export const groupBlockDays = pgTable("group_block_days", {
+  groupId: uuid("group_id").notNull(),
+  roomTypeId: uuid("room_type_id").notNull(),
+  night: date("night", { mode: "string" }).notNull(),
+  rooms: integer("rooms").notNull(),
+}, (t) => [primaryKey({ columns: [t.groupId, t.roomTypeId, t.night] })]);
 
 export const housekeepingTasks = pgTable("housekeeping_tasks", {
   id: uuid("id").primaryKey().defaultRandom(),

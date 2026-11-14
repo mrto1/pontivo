@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { and, desc, eq, gte, lte, sql, type SQL } from "drizzle-orm";
-import { db, rows, type Tx } from "../db/client";
+import { db, rows, type Executor, type Tx } from "../db/client";
 import { auditLog, bookingExtras, bookingRooms, bookings, extras, guests, hotels, payments, ratePlans, roomTypes, type Booking, type Hotel } from "../db/schema";
 import { addDays, isDay, nightsOf, todayIn, zonedToUtc } from "../domain/dates";
 import { newPublicToken, newReference } from "../domain/ids";
@@ -10,6 +10,7 @@ import { enqueueEmail } from "../email/enqueue";
 import { audit } from "./audit";
 import { enqueueAvailability } from "./outbox";
 import { searchOffers } from "./search";
+import { consumeBlock } from "./group-blocks";
 import { enqueueUpsellOffer } from "./upsell";
 import { BookingError, releaseNights, reserveNights, RollbackSoldOut } from "./bookings";
 
@@ -86,20 +87,27 @@ export function bookingErrorText(code: string): string {
   return REJECT_TEXT[code] ?? `Nicht möglich (${code}).`;
 }
 
-export async function createAdminBooking(hotel: Hotel, input: AdminBookingInput, actor: string, now = new Date()): Promise<Booking> {
+export async function createAdminBooking(hotel: Hotel, input: AdminBookingInput, actor: string, now = new Date(), opts: { groupId?: string } = {}): Promise<Booking> {
   const v = adminBookingSchema.parse(input);
-  const search = await searchOffers(hotel, { checkin: v.checkin, checkout: v.checkout, adults: v.adults, children: v.children, childrenAges: v.childrenAges }, {
-    lang: v.guest.language, roomTypeId: v.roomTypeId, ratePlanId: v.ratePlanId, now,
-  });
-  if (!search.ok) throw new BookingError(search.error, 400);
-  const offer = search.offers[0];
-  if (!offer) throw new BookingError(search.rejected[0]?.reason ?? "offer_not_found", search.rejected[0]?.reason === "sold_out" ? 409 : 400);
-  const extraDefs = await db().select().from(extras).where(and(eq(extras.hotelId, hotel.id), eq(extras.active, true))).orderBy(extras.sortOrder, extras.createdAt);
-  const mand = resolveExtras(extraDefs, [], { roomTypeId: v.roomTypeId, nights: nightsOf(v.checkin, v.checkout).length, persons: v.adults + v.children });
+  // Preis und Pflicht-Extras; bei Gruppenbuchungen erst in der Transaktion (nach dem Entnehmen aus dem Block ist das Zimmer wieder frei)
+  const prepare = async (ex: Executor | Tx) => {
+    const search = await searchOffers(hotel, { checkin: v.checkin, checkout: v.checkout, adults: v.adults, children: v.children, childrenAges: v.childrenAges }, {
+      lang: v.guest.language, roomTypeId: v.roomTypeId, ratePlanId: v.ratePlanId, now, ex,
+    });
+    if (!search.ok) throw new BookingError(search.error, 400);
+    const offer = search.offers[0];
+    if (!offer) throw new BookingError(search.rejected[0]?.reason ?? "offer_not_found", search.rejected[0]?.reason === "sold_out" ? 409 : 400);
+    const extraDefs = await ex.select().from(extras).where(and(eq(extras.hotelId, hotel.id), eq(extras.active, true))).orderBy(extras.sortOrder, extras.createdAt);
+    const mand = resolveExtras(extraDefs, [], { roomTypeId: v.roomTypeId, nights: nightsOf(v.checkin, v.checkout).length, persons: v.adults + v.children });
+    return { offer, mand };
+  };
+  const pre = opts.groupId ? null : await prepare(db());
 
   for (let attempt = 0; ; attempt++) {
     try {
       return await db().transaction(async (tx) => {
+        if (opts.groupId) await consumeBlock(tx, hotel.id, opts.groupId, v.roomTypeId, v.checkin, v.checkout);
+        const { offer, mand } = pre ?? (await prepare(tx));
         if (!(await reserveNights(tx, v.roomTypeId, v.checkin, v.checkout))) throw new RollbackSoldOut();
         const [g] = await tx.insert(guests).values({
           hotelId: hotel.id, firstName: v.guest.firstName, lastName: v.guest.lastName, email: v.guest.email, phone: v.guest.phone || null, language: v.guest.language,
@@ -108,7 +116,7 @@ export async function createAdminBooking(hotel: Hotel, input: AdminBookingInput,
           hotelId: hotel.id, reference: newReference(), publicToken: newPublicToken(), source: "admin", status: "confirmed", confirmedAt: now,
           checkin: v.checkin, checkout: v.checkout, adults: v.adults, children: v.children, childrenAges: v.childrenAges, language: v.guest.language,
           guestId: g.id, roomsTotalRappen: offer.roomsTotalRappen, extrasRappen: mand.totalRappen, touristTaxRappen: offer.touristTaxRappen,
-          totalRappen: offer.totalRappen, platformFeeRappen: 0, guestNotes: v.guest.notes || null,
+          totalRappen: offer.totalRappen, platformFeeRappen: 0, guestNotes: v.guest.notes || null, groupId: opts.groupId ?? null,
         }).returning();
         await tx.insert(bookingRooms).values({
           bookingId: b.id, hotelId: hotel.id, roomTypeId: v.roomTypeId, ratePlanId: v.ratePlanId, adults: v.adults, children: v.children,

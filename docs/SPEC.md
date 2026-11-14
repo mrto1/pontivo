@@ -608,6 +608,18 @@ Reihenfolge: 17.1 Housekeeping, 17.2 Gäste-Notizen und Tags, 17.3 Berichte, 17.
 - `render()` fügt die Einleitung nach der Anrede und den Schluss nach den Absätzen ein; der Betreff ersetzt den Standardbetreff. Alles andere (Beträge, Daten, Links, Bedingungen) bleibt unverändert. Ohne eigene Texte unverändertes Verhalten.
 - Seite `/admin/<hotel>/mail-texte` (Manager): Reiter je Mail, Felder je Sprache des Betriebs, Vorschau mit Beispieldaten. Änderungen im `audit_log` (`mail.texts`).
 
+## 18. PMS Stufe C: Schweiz und Vernetzung
+
+Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Export, 18.4 Stripe Terminal, 18.5 Nuki. Alles als Modul abschaltbar (16.1).
+
+### 18.1 Gruppen (Modul `groups`, Standard aus)
+- Tabellen: `groups` (Name, Firma/Rechnungsadresse, Kontakt, Anreise/Abreise, Freigabefrist, Status `active`/`released`/`cancelled`), `group_block_days` (Zimmertyp × Nacht → noch nicht vergebene Blockzimmer), `bookings.group_id`.
+- **Block:** reservierte Zimmer werden in `inventory_days.booked` mitgezählt (Verfügbarkeit, Channex, iCal unverändert), mit Outbox-Eintrag und `audit_log` in derselben Transaktion (`src/services/group-blocks.ts`). Erhöhen nur, soweit frei; verringern nur um freie Blockzimmer.
+- **Teilnehmer (Rooming-Liste):** Buchung über `createAdminBooking(..., { groupId })`; in derselben Transaktion wird pro Nacht ein Blockzimmer entnommen und danach normal reserviert, der Bestand bleibt gleich. Zeitraum innerhalb der Gruppenzeit. Rooming-Liste als CSV.
+- **Freigabe:** manuell oder täglich 04:05 für Blöcke mit Freigabefrist ≤ heute (`releaseDueGroups`); alle freien Blockzimmer gehen zurück in den Verkauf, Status `released`.
+- **Rechnung:** Entwürfe von Teilnehmer-Buchungen gehen an die Firma/Kontaktperson der Gruppe. Eine Sammelrechnung ist nicht Teil von 18.1.
+- Seiten `/admin/<hotel>/groups` (Liste, Neu) und `.../groups/<id>` (Block, Teilnehmer, Freigabe); Rolle Rezeption hat Zugang (Bereich `groups`).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

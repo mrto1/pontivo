@@ -16,6 +16,7 @@ import { env } from "../env";
 import { expireHolds } from "../services/bookings";
 import { sendDueEmails } from "../email/send";
 import { extendHorizon } from "../services/inventory";
+import { releaseDueGroups } from "../services/groups";
 import { OutboxState, runOutboxOnce } from "../integrations/channex/outbox-worker";
 import { pullFeed } from "../integrations/channex/feed";
 import { enqueueCheckinLinks, purgeExpiredRegistrations } from "../services/guests";
@@ -33,6 +34,7 @@ const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "emails", cron: "* * * * *", run: () => sendDueEmails() },
   { name: "push", cron: "* * * * *", run: () => sendDuePushes() },
   { name: "horizon", cron: "15 3 * * *", run: () => extendHorizon() },
+  { name: "groups-release", cron: "5 4 * * *", run: () => releaseDueGroups() },
   { name: "channex-feed", cron: "*/15 * * * *", run: () => pullFeed() },
   { name: "guests-checkin", cron: "*/10 * * * *", run: () => enqueueCheckinLinks() },
   { name: "guests-purge", cron: "30 2 * * *", run: () => purgeExpiredRegistrations() },
