@@ -84,6 +84,8 @@ export type HotelContent = {
   invoicing?: Partial<import("../domain/invoice").InvoicingSettings>;
   /** eigene Texte für Gäste-Mails (SPEC 17.5): Mail → Sprache → Betreff/Einleitung/Schluss */
   mailTexts?: import("../domain/mail-texts").MailTexts;
+  /** Kontenzuordnung für das Buchungsjournal (SPEC 18.3) */
+  accounting?: { accounts?: Partial<import("../domain/accounting-export").AccountMap> };
 };
 
 export type HotelDocument = { url: string; title: Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>; bytes: number };

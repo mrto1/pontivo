@@ -14,7 +14,7 @@ export const ROLE_LABEL: Record<Role, string> = {
 export const ROLE_AREAS: Record<LimitedRole, readonly string[]> = {
   reception: ["layout", "home", "calendar", "bookings", "frontdesk", "plan", "housekeeping", "guests", "guestbook", "inquiries", "vouchers", "invoices", "groups"],
   housekeeping: ["layout", "home", "housekeeping"],
-  accounting: ["layout", "home", "invoices", "statistics"],
+  accounting: ["layout", "home", "invoices", "statistics", "accountingexport"],
 };
 
 export const isLimitedRole = (r: Role | null): r is LimitedRole => r === "reception" || r === "housekeeping" || r === "accounting";

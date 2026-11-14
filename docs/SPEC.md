@@ -623,6 +623,11 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 ### 18.2 Kurtaxe-Quartalsabrechnung
 - Kurtaxe-Liste (14.5) zusätzlich pro Quartal (`YYYY-Qn`): `touristTaxQuarter` fasst die drei Monatslisten zusammen (Buchung über Monatsgrenzen einmal, Nächte summiert), Monatssummen darunter. Ansicht, CSV und Druck (mit Zeile für Ort/Datum/Unterschrift) unter Gäste → Kurtaxe-Liste, Umschalter Monat/Quartal; nur Manager; Export im `audit_log`.
 
+### 18.3 Buchhaltung-Export (Modul `accountingexport`, braucht `invoicing`, Standard aus)
+- Allgemeines Buchungsjournal als CSV (Semikolon, UTF-8 mit BOM): Datum, Beleg, Text, Soll, Haben, Betrag, MWST-Satz, Referenz (`src/domain/accounting-export.ts`). Kein Format eines bestimmten Programms (bexio/Abacus-Format nicht belegt, siehe `QUESTIONS.md`).
+- Inhalt: ausgestellte Rechnungen und Gutschriften (Ausstelldatum; Ertrag netto je Konto und MWST-Satz, MWST getrennt, Kurtaxe auf eigenes Konto, Debitoren Soll), Zahlungen (Zahldatum): Stripe (netto nach Rückerstattung) und Zahlungen vor Ort je Zahlart. Negative Beträge: positiv mit vertauschten Konten.
+- Kontenzuordnung je Betrieb (`hotels.content.accounting.accounts`), Vorschlag nach Kontenrahmen KMU. Zeitraum Monat, Quartal oder Jahr. Seite `/admin/<hotel>/buchhaltung` (Vorschau, Konten, CSV); Export im `audit_log`; Rolle Buchhaltung hat Zugang (Bereich `accountingexport`).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.
