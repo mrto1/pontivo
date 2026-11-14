@@ -8,7 +8,7 @@ import { formatChf } from "../domain/money";
  * WICHTIG: Vor dem produktiven Einsatz juristisch prüfen lassen (QUESTIONS.md). Inklusive Auftragsbearbeitung (DSG).
  */
 // ASSUMPTION: Nur Deutsch; französische und italienische Fassung folgen nach der juristischen Prüfung.
-export const HOST_TERMS_VERSION = "2026-11-13b";
+export const HOST_TERMS_VERSION = "2026-11-14";
 export const DEFAULT_MONTHLY_MINIMUM_RAPPEN = 1900;
 
 export function hostTerms(): LegalDoc {
@@ -55,7 +55,12 @@ export function hostTerms(): LegalDoc {
         `Das Modul ist jederzeit kündbar mit Wirkung auf Ende des laufenden Monats, unabhängig von der Kündigung des übrigen Vertrags.`,
         `Antworten des Chats werden mit Hilfe künstlicher Intelligenz erzeugt und können Fehler enthalten. ${p.name} gewährleistet nicht, dass sie richtig, vollständig oder aktuell sind; der Gastgeber bleibt für seine Inhalte verantwortlich und weist die Gäste im Chat auf diese Einschränkung hin (der Chat zeigt den Hinweis automatisch an). Gesprächstexte werden nicht gespeichert; es werden nur Anzahl und Umfang der Gespräche gezählt. Der Gastgeber informiert seine Gäste über den Einsatz des Chats in der bereitgestellten Datenschutzerklärung (wird bei eingeschaltetem Modul automatisch ergänzt).`,
       ] },
-      { h: "8. Schlussbestimmungen", p: [
+      { h: "8. Optionales Modul «Upselling»", p: [
+        `Der Gastgeber kann das Modul «Upselling» im Admin einschalten. ${p.name} versendet dann im Namen des Gastgebers an Gäste, die dem Erhalt von Angeboten zugestimmt haben, vor der Anreise eine E-Mail mit den vom Gastgeber erfassten Zusatzangeboten. Die Gäste bezahlen diese Angebote über Stripe direkt an den Gastgeber.`,
+        `${p.name} erhält für jeden bezahlten Verkauf eine Provision von 5 % des Verkaufsbetrags, die bei der Zahlung automatisch einbehalten wird. Es gibt keine Grundgebühr. Die Provision wird bei der Bestätigung des Gastgebers festgehalten; Änderungen kündigt ${p.name} wie nach Ziffer 2 mit mindestens 60 Tagen Frist an. Wird eine Zahlung vom Gastgeber oder von Stripe zurückerstattet, richtet sich die Rückerstattung der Provision nach den Regeln von Stripe.`,
+        `Der Gastgeber ist für Inhalt, Preise, Verfügbarkeit und Erbringung seiner Angebote sowie für die rechtlich korrekte Preisangabe verantwortlich. Er kann das Modul jederzeit ausschalten; bereits bezahlte Bestellungen bleiben bestehen und sind zu erbringen.`,
+      ] },
+      { h: "9. Schlussbestimmungen", p: [
         `Änderungen dieser Bedingungen werden mindestens 30 Tage im Voraus per E-Mail mitgeteilt. Es gilt Schweizer Recht. Gerichtsstand ist der Sitz von ${p.name}.`,
       ] },
     ],

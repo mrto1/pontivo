@@ -1,7 +1,8 @@
 import { cancelPendingVoucher, markVoucherPaid } from "../../services/vouchers";
+import { cancelPendingUpsell, markUpsellPaid } from "../../services/upsell";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import { bookings, guests, hotels, inboundEvents, payments, vouchers } from "../../db/schema";
+import { bookings, guests, hotels, inboundEvents, payments, upsellOrders, vouchers } from "../../db/schema";
 import { env, requireEnv } from "../../env";
 import { confirmBooking, releaseHold } from "../../services/bookings";
 import { markBalancePaid } from "../../services/balance";
@@ -86,7 +87,24 @@ async function voucherForSession(session: Stripe.Checkout.Session, account: stri
   return v;
 }
 
+/** Upselling-Bestellung zur Session: nur, wenn das Ereignis vom Konto des Hotels kommt */
+async function upsellForSession(session: Stripe.Checkout.Session, account: string | undefined) {
+  const id = session.metadata?.upsell_order_id;
+  if (!id) return null;
+  const [o] = await db().select().from(upsellOrders).where(eq(upsellOrders.id, id));
+  if (!o) return null;
+  const [h] = await db().select().from(hotels).where(eq(hotels.id, o.hotelId));
+  if (!h || !account || h.stripeAccountId !== account) throw new Error(`Ereignis von Konto ${account} passt nicht zum Hotel der Upselling-Bestellung ${id}`);
+  return o;
+}
+
 async function onPaid(session: Stripe.Checkout.Session, account: string) {
+  const upsell = await upsellForSession(session, account);
+  if (upsell) {
+    const pi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+    await markUpsellPaid(upsell.id, { sessionId: session.id, paymentIntentId: pi });
+    return;
+  }
   const voucher = await voucherForSession(session, account);
   if (voucher) {
     const piId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
@@ -143,6 +161,8 @@ async function processEvent(event: Stripe.Event) {
       return;
     }
     case "checkout.session.async_payment_failed": {
+      const uf = await upsellForSession(event.data.object as Stripe.Checkout.Session, account);
+      if (uf) return cancelPendingUpsell(uf.id);
       const vf = await voucherForSession(event.data.object as Stripe.Checkout.Session, account);
       if (vf) return cancelPendingVoucher(vf.id);
       const failed = event.data.object as Stripe.Checkout.Session;
@@ -152,6 +172,8 @@ async function processEvent(event: Stripe.Event) {
       return;
     }
     case "checkout.session.expired": {
+      const ue = await upsellForSession(event.data.object as Stripe.Checkout.Session, account);
+      if (ue) return cancelPendingUpsell(ue.id);
       const v = await voucherForSession(event.data.object as Stripe.Checkout.Session, account);
       if (v) return cancelPendingVoucher(v.id);
       const expired = event.data.object as Stripe.Checkout.Session;

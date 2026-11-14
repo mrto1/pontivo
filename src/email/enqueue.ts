@@ -27,7 +27,10 @@ export type TemplateName =
   | "balance_due"
   | "balance_reminder"
   | "balance_paid"
-  | "hotel_balance_open";
+  | "hotel_balance_open"
+  | "upsell_offer"
+  | "upsell_paid"
+  | "hotel_upsell_sold";
 
 /** SPEC 10: E-Mails nur über die Outbox. Gleiche Kombination booking/template/to wird nur einmal eingereiht. */
 export async function enqueueEmail(

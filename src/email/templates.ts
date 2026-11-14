@@ -7,6 +7,7 @@ import { planName, roomName } from "../domain/i18n-names";
 import { CI } from "../i18n/checkin";
 import { env } from "../env";
 import { tr } from "../domain/blocks";
+import { U } from "../i18n/upsell";
 
 /**
  * E-Mail-Texte (SPEC 10): an Gäste in allen Website-Sprachen, an das Hotel DE/EN.
@@ -223,6 +224,22 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
       return wrap(c, l, de ? "Ihr Login-Link" : "Your login link",
         [de ? "Klicken Sie auf den Link, um sich anzumelden. Er ist 15 Minuten gültig und nur einmal verwendbar." : "Click the link to sign in. It is valid for 15 minutes and can be used once."],
         [], { href: String(c.data.link), label: de ? "Anmelden" : "Sign in" });
+    case "upsell_offer": {
+      const u = U[gl];
+      return wrap(c, gl, u.mailSubject(c.hotel.name), [hi + ",", u.mailText], summary(c, gl), b ? { href: `${c.baseUrl}/b/${b.publicToken}/upsell`, label: u.mailButton } : undefined);
+    }
+    case "upsell_paid": {
+      const u = U[gl];
+      const lines = (c.data.lines as { name: Partial<Record<Locale, string>>; quantity: number; amountRappen: number }[] | undefined) ?? [];
+      return wrap(c, gl, u.paidSubject(c.hotel.name), [hi + ",", u.paidText(money("amountRappen"))],
+        [...lines.map((x) => `${x.quantity}× ${tr(x.name, gl)}: ${formatChf(x.amountRappen)}`), ...summary(c, gl)], link);
+    }
+    case "hotel_upsell_sold": {
+      const lines = (c.data.lines as { name: Partial<Record<Locale, string>>; quantity: number; amountRappen: number }[] | undefined) ?? [];
+      return wrap(c, l, `${de ? "Extras verkauft" : "Extras sold"} ${ref} – ${money("amountRappen")}`,
+        [de ? `${c.guestName ?? "Ein Gast"} hat Extras über ${money("amountRappen")} gekauft (Buchung ${ref}). Bitte bereitstellen.` : `${c.guestName ?? "A guest"} bought extras worth ${money("amountRappen")} (booking ${ref}). Please prepare them.`],
+        lines.map((x) => `${x.quantity}× ${tr(x.name, l)}: ${formatChf(x.amountRappen)}`));
+    }
     case "voucher_purchased": {
       const x = X[gl];
       return wrap(c, gl, x.vSubject(c.hotel.name),

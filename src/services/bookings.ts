@@ -19,6 +19,7 @@ import { enqueueEmail } from "../email/enqueue";
 import { getPaymentProvider } from "../payments/provider";
 import { isBookable } from "./hotels";
 import { searchOffers } from "./search";
+import { enqueueUpsellOffer } from "./upsell";
 import { pushForBooking } from "../push/service";
 import { env } from "../env";
 
@@ -362,6 +363,7 @@ async function enqueueBookingEmails(tx: Tx, booking: Booking, now: Date) {
       const at = zonedToUtc(addDays(booking.checkin, -3), "10:00", hotel.timezone);
       await enqueueEmail(tx, { hotelId: hotel.id, bookingId: booking.id, template: "pre_arrival", to: guest.email, language: booking.language, data, sendAfter: at < now ? now : at });
     }
+    await enqueueUpsellOffer(tx, hotel, booking, guest, now);
     if (guest.marketingConsent) {
       const at = zonedToUtc(addDays(booking.checkout, 1), "10:00", hotel.timezone);
       await enqueueEmail(tx, { hotelId: hotel.id, bookingId: booking.id, template: "post_stay", to: guest.email, language: booking.language, data, sendAfter: at });
@@ -500,7 +502,7 @@ export async function cancelBooking(
       await creditVoucher(tx, booking.voucherId, booking.hotelId, booking.id, voucherBack, `Storno ${booking.reference}`, opts.actor);
     }
     // Ausstehende Erinnerungen nicht mehr senden
-    await tx.execute(sql`UPDATE email_outbox SET status = 'cancelled' WHERE booking_id = ${bookingId} AND status = 'pending' AND template IN ('pre_arrival','post_stay','checkin_link','balance_due','balance_reminder')`);
+    await tx.execute(sql`UPDATE email_outbox SET status = 'cancelled' WHERE booking_id = ${bookingId} AND status = 'pending' AND template IN ('pre_arrival','post_stay','checkin_link','balance_due','balance_reminder','upsell_offer')`);
     const [guest] = booking.guestId ? await tx.select().from(guests).where(eq(guests.id, booking.guestId)) : [];
     const data = { bookingId, refundRappen: refunded, voucherBackRappen: voucherBack, feeRappen: preview.feeRappen, feeOpenRappen: feeOpen };
     if (guest) await enqueueEmail(tx, { hotelId: hotel.id, bookingId, template: "booking_cancelled", to: guest.email, language: booking.language, data });

@@ -516,6 +516,16 @@ Abnahme KI-Chat:
 - Konten (Soll Durchlaufkonto Stripe, Haben je Ertragsart) aus Umgebungsvariablen `BANANA_ACCOUNT_*`, müssen zum eigenen Kontenplan passen. Die Bankseite kommt aus dem Kontoauszug der Bank, nicht von Pontivo.
 - Abnahme: `tests/integration/accounting.test.ts`.
 
+## 14d. Modul „Upselling“ (provisionsbasiert, zuschaltbar über `hotel_modules.module='upsell'`)
+
+Das Hotel erfasst Zusatzangebote (`upsell_items`: Name/Beschreibung DE/EN, Preis in Rappen, Einheit pro Buchung/Nacht/Person/Person und Nacht, Höchstmenge). Gäste einer **bestätigten** Buchung, die dem Erhalt von Angeboten zugestimmt haben (`guests.marketing_consent`), bekommen **7 Tage vor Anreise, 10:00 Hotelzeit** die Mail `upsell_offer` (liegt der Zeitpunkt in der Vergangenheit: sofort, solange die Anreise noch bevorsteht). Sie führt auf `/b/<token>/upsell`.
+
+- **Preise nur serverseitig:** Der Gast sendet nur Angebots-ID und Menge. Menge 0 wird ignoriert; unbekannt, inaktiv, doppelt, negativ oder über dem Maximum (pro Person: Personenzahl) wird abgelehnt (`priceSelection`).
+- **Zahlung:** Stripe Checkout als Direct Charge auf das Konto des Hotels (`createPaymentCheckout`), Metadaten `upsell_order_id`. **Provision 5 %** (`UPSELL_PROVISION_BPS = 500`) als `application_fee_amount`, in der Bestellung festgehalten (`fee_bps`, `fee_rappen`). Keine Grundgebühr. Die Herkunft steht in `upsell_orders.source` (`email`, später `chat`).
+- **Webhook:** `checkout.session.completed` → `markUpsellPaid` (idempotent, Bestätigung an Gast, Hinweis an Hotel, Push, Audit). Ereignisse eines fremden Kontos werden abgelehnt; abgelaufene/gescheiterte Zahlung → Bestellung `cancelled`.
+- **Einschalten:** Admin → Upselling, mit bestätigter Provision (Bedingungen Ziffer 8), nur bei eingerichteter Online-Zahlung. Ausschalten sofort; geplante Angebots-Mails werden storniert. Bei Stornierung oder Verschiebung einer Buchung werden Angebots-Mails gelöscht bzw. neu geplant.
+- **Nicht enthalten:** Rückerstattungen (im Stripe-Dashboard des Hotels), Berücksichtigung der Provision im Monatsbericht, Angebote je Zimmertyp.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

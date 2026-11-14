@@ -10,6 +10,7 @@ import { enqueueEmail } from "../email/enqueue";
 import { audit } from "./audit";
 import { enqueueAvailability } from "./outbox";
 import { searchOffers } from "./search";
+import { enqueueUpsellOffer } from "./upsell";
 import { BookingError, releaseNights, reserveNights, RollbackSoldOut } from "./bookings";
 
 /** Buchungsliste eines Hotels (immer nach hotel_id gefiltert, SPEC 0.5) */
@@ -136,7 +137,7 @@ export async function createAdminBooking(hotel: Hotel, input: AdminBookingInput,
 async function scheduleGuestEmails(tx: Tx, hotel: Hotel, b: Booking, opts: { confirmation: boolean; now: Date }) {
   const [g] = b.guestId ? await tx.select().from(guests).where(eq(guests.id, b.guestId)) : [];
   // Löschen statt «cancelled»: der Job für den Check-in-Link legt ihn nur an, wenn noch keiner existiert
-  await tx.execute(sql`DELETE FROM email_outbox WHERE booking_id = ${b.id} AND status = 'pending' AND template IN ('pre_arrival','post_stay','checkin_link')`);
+  await tx.execute(sql`DELETE FROM email_outbox WHERE booking_id = ${b.id} AND status = 'pending' AND template IN ('pre_arrival','post_stay','checkin_link','upsell_offer')`);
   if (!g?.email) return;
   const data = { bookingId: b.id };
   if (opts.confirmation) await enqueueEmail(tx, { hotelId: hotel.id, bookingId: b.id, template: "booking_confirmed", to: g.email, language: b.language, data });
@@ -144,6 +145,7 @@ async function scheduleGuestEmails(tx: Tx, hotel: Hotel, b: Booking, opts: { con
     const at = zonedToUtc(addDays(b.checkin, -3), "10:00", hotel.timezone);
     await enqueueEmail(tx, { hotelId: hotel.id, bookingId: b.id, template: "pre_arrival", to: g.email, language: b.language, data, sendAfter: at < opts.now ? opts.now : at });
   }
+  await enqueueUpsellOffer(tx, hotel, b, g, opts.now);
   if (g.marketingConsent) {
     await enqueueEmail(tx, { hotelId: hotel.id, bookingId: b.id, template: "post_stay", to: g.email, language: b.language, data, sendAfter: zonedToUtc(addDays(b.checkout, 1), "10:00", hotel.timezone) });
   }

@@ -657,3 +657,34 @@ export const icalFeedNights = pgTable(
   },
   (t) => [primaryKey({ columns: [t.feedId, t.night] })],
 );
+
+export const upsellItems = pgTable("upsell_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: jsonb("name").$type<L10n>().notNull().default({}),
+  description: jsonb("description").$type<L10n>().notNull().default({}),
+  priceRappen: integer("price_rappen").notNull(),
+  unit: text("unit").$type<"per_booking" | "per_night" | "per_person" | "per_person_night">().notNull(),
+  maxQuantity: integer("max_quantity").notNull().default(1),
+  active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type UpsellItem = typeof upsellItems.$inferSelect;
+
+export const upsellOrders = pgTable("upsell_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  bookingId: uuid("booking_id").notNull(),
+  lines: jsonb("lines").$type<{ name: L10n; quantity: number; amountRappen: number }[]>().notNull(),
+  amountRappen: integer("amount_rappen").notNull(),
+  feeRappen: integer("fee_rappen").notNull(),
+  feeBps: integer("fee_bps").notNull(),
+  source: text("source").notNull().default("email"),
+  status: text("status").$type<"pending" | "paid" | "cancelled">().notNull().default("pending"),
+  stripeSessionId: text("stripe_session_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  paidAt: ts("paid_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type UpsellOrder = typeof upsellOrders.$inferSelect;
