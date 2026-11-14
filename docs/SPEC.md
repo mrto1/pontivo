@@ -548,6 +548,36 @@ Das Hotel kann im Admin einschalten, dass der Chat auf der **Website** (nicht au
 - **Kosten/Missbrauch:** höchstens 4 Modellaufrufe pro Gästenachricht (`MAX_TOOL_ROUNDS`), gleiche Gesprächs-Kontingente und Rate-Limits wie der normale Chat.
 - **Nicht enthalten:** Zahlungslink direkt aus dem Chat, Buchung mit Extras/Gutschein im Chat, Mail/WhatsApp/Voice.
 
+## 16. PMS Stufe A: Rezeption und Rechnung (Konzept: `docs/PMS-KONZEPT.md`)
+
+Freigegeben am 14.11.2026. Alles modular (16.1), additiv zum bestehenden Bestand, keine Hotel-Sonderlogik. Annahmen in `QUESTIONS.md`. Rechnung/MWST vor dem produktiven Einsatz von einem Treuhänder prüfen lassen.
+
+### 16.1 Modul-Register
+- `src/domain/modules.ts`: Liste der ein-/ausschaltbaren Module (`frontdesk`, `invoicing`, `vouchers`, `inquiries`) mit Schlüssel, Beschreibung, Abhängigkeiten, Standard (alle an) und Menüpunkten. Gespeichert in `hotel_modules(hotel_id, module, enabled)`; **keine Zeile = Standard**. Die feste CHECK-Liste der Tabelle entfällt (Migration 0027).
+- Kostenpflichtige Module (`ai_chat`, `upsell`) behalten ihren eigenen Einschalt-Ablauf und stehen nicht im Register.
+- Ausgeschaltet: Menüpunkt weg (`adminNav(hotel, setup, hidden)`), Seite per Adresse 404 (`requireModule`), Daten bleiben. Hat ein Sammelpunkt nur noch einen Reiter, wird er ein einfacher Punkt.
+- Seite **Funktionen** (Admin, Rolle manager): Schalter pro Modul. Ausschalten nicht möglich, solange ein abhängiges Modul läuft; Einschalten nicht, solange eine Abhängigkeit fehlt. Jeder Wechsel im `audit_log`.
+
+### 16.2 Zimmer, Zimmerplan, Tagesliste (Modul `frontdesk`)
+- Tabelle `rooms` (Hotel, Zimmertyp, Nummer, Etage, aktiv, Notiz, Sortierung; Nummer pro Hotel eindeutig). `booking_rooms.room_id` (leer = nur Zimmertyp, wie bisher). **Optional**: ohne Zimmer läuft alles wie heute.
+- Die Verfügbarkeit (Zähler pro Zimmertyp, Channex, iCal) ändert sich nicht. Die Zuweisung ist eine zweite Schicht.
+- Zuweisung nur auf ein Zimmer **desselben Zimmertyps** und nur, wenn das Zimmer in diesen Nächten nicht schon bei einer anderen Buchung (`hold`, `confirmed`) zugewiesen ist. Manuell (Auswahl bei der Buchung oder im Zimmerplan) und «Automatisch zuweisen» (nächste 14 Tage, nicht zugewiesene Buchungen, Zimmer mit der kürzesten Lücke zuerst, bestehende Zuweisungen bleiben).
+- Zimmerplan: Zeilen = Zimmer nach Typ, Spalten = 14 Tage ab einem Datum (blätterbar), Balken pro Buchung (Name, Buchungsnummer, Link), oben Zeile «Nicht zugewiesen». Sperre eines Zimmers (`active = false`) zeigt es ausgegraut. Kein Drag & Drop in v1.
+- Tagesliste «Heute»: Anreisen (Zimmer, Check-in-Status, Restzahlung offen), Abreisen (offene Posten/Rechnung), im Haus. Zimmer anlegen: Knopf «Zimmer 1…n anlegen» aus `room_count`.
+- Jede Zuweisung im `audit_log`; Mandantentrennung über `hotel_id`.
+
+### 16.3 Rechnung und Kasse (Modul `invoicing`)
+- Einstellungen pro Betrieb (`hotels.content.invoicing`): MWST-pflichtig ja/nein, MWST-Nummer, Satz Beherbergung (Standard 3,8 %), Satz übrige Leistungen (8,1 %), IBAN, Zahlungsfrist in Tagen, Fusszeile. Nicht MWST-pflichtig = Rechnungen ohne MWST.
+- Tabellen: `invoices` (Nummer lückenlos pro Betrieb und Jahr, Art `invoice`/`credit_note`, Datum, Empfänger, Summen, Status `draft`/`issued`, Verweis auf Buchung und bei Gutschrift auf die Rechnung), `invoice_lines` (Beschreibung, Menge, Einzelpreis, Betrag inkl. MWST, MWST-Satz in Basispunkten, Kategorie), `invoice_counters`, `folio_items` (Posten auf der Buchung, z. B. Minibar, bis sie fakturiert sind), `onsite_payments` (Zahlung vor Ort: bar, Karte, TWINT, Bank; Betrag, Datum, Notiz, Nutzer).
+- **Rechnung aus Buchung:** Zeilen aus Übernachtungen (`booking_rooms`), Extras (`booking_extras`), Kurtaxe (ohne MWST), offenen Posten (`folio_items`). Abzug Gutschein. Bereits bezahlte Beträge (Stripe, vor Ort) erscheinen als Zahlungen, der offene Betrag wird ausgewiesen. Ist nichts offen, heisst das Dokument **Quittung**.
+- **Unveränderlich:** Entwurf ist änderbar (Empfänger, Zeilen), «Ausstellen» vergibt die Nummer und sperrt. Korrektur nur per **Gutschrift** (eigene Nummer, negative Beträge).
+- MWST: Preise sind Bruttopreise; MWST = Betrag × Satz / (10000 + Satz), pro Satz gerundet und ausgewiesen.
+- **QR-Rechnung** (Swiss Payment Standards) für offene Beträge: Zahlteil mit QR-Code, Konto = IBAN des Betriebs, Referenztyp `NON`, Rechnungsnummer unter «Zusätzliche Informationen». Nur wenn IBAN gesetzt und Betrag offen.
+- **Druckansicht** `/admin/<hotel>/invoices/<id>/print` (A4, Browser «Als PDF speichern»); Versand per Mail später.
+- **Zahlung vor Ort:** Eintrag in `onsite_payments`; schliesst eine offene Restzahlung (`balance_onsite_at` wie bisher) und die Rechnung. Rückbuchungen nur per Gutschrift/Erfassung eines negativen Betrags mit Notiz.
+- Admin: Reiter «Rechnungen» (Liste, Entwurf aus Buchung, Posten erfassen, Ausstellen, Gutschrift, Zahlung erfassen).
+- Nicht in Stufe A: Sammelrechnungen für Gruppen, automatischer Versand, Buchungen auf Firmenkonto, Mahnwesen, CAMT-Abgleich.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

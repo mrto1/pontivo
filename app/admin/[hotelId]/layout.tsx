@@ -1,6 +1,8 @@
 import { requireHotel } from "@/src/auth/guard";
 import { hotelsForUser } from "@/src/auth/session";
 import { adminNav } from "@/src/admin/nav";
+import { hiddenNavKeys } from "@/src/domain/modules";
+import { moduleRows } from "@/src/services/modules";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { SectionTabs } from "@/components/admin/SectionTabs";
 
@@ -9,7 +11,7 @@ export default async function HotelAdminLayout({ children, params }: { children:
   const { hotel, user, role } = await requireHotel(hotelId);
   // Während der Einrichtung: schlanke Navigation
   const setup = !!hotel.onboarding.startedAt && !hotel.onboarding.completedAt;
-  const nav = adminNav(hotel, setup);
+  const nav = adminNav(hotel, setup, hiddenNavKeys(await moduleRows(hotel.id)));
   const home = `/admin/${hotel.id}`;
   const others = (await hotelsForUser(user.id)).filter((x) => x.hotel.id !== hotel.id);
   return (

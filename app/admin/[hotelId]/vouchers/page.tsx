@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { feePercentText } from "@/src/domain/fee";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
+import { requireModule } from "@/src/services/modules";
 import { atLeast } from "@/src/auth/session";
 import { listVouchers, redeemVoucher, updateVoucherSettings, voucherSettings, vouchersAvailable, VoucherError } from "@/src/services/vouchers";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
@@ -53,6 +54,7 @@ export default async function Vouchers({ params, searchParams }: { params: Promi
   const { hotelId } = await params;
   const sp = await searchParams;
   const { hotel, role } = await requireHotel(hotelId);
+  await requireModule(hotel.id, "vouchers");
   const canEdit = atLeast(role, "manager");
   const set = voucherSettings(hotel);
   const list = await listVouchers(hotel.id, sp.q);

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
+import { requireModule } from "@/src/services/modules";
 import { atLeast } from "@/src/auth/session";
 import { listInquiries, setInquiryStatus } from "@/src/services/inquiries";
 import { formatDay } from "@/src/i18n/dict";
@@ -18,6 +19,7 @@ async function toggle(f: FormData) {
 export default async function Inquiries({ params }: { params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
   const { hotel, role } = await requireHotel(hotelId);
+  await requireModule(hotel.id, "inquiries");
   const canEdit = atLeast(role, "manager");
   const list = await listInquiries(hotel.id);
   const open = list.filter((x) => x.status === "new").length;

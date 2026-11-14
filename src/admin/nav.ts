@@ -9,7 +9,23 @@ export type NavItem = { key: string; label: string; href: string; external?: boo
 export type NavGroup = { title: string; items: NavItem[] };
 export type Nav = { primary: NavItem[]; groups: NavGroup[] };
 
-export function adminNav(hotel: { id: string; slug: string; primaryDomain: string | null }, setup: boolean): Nav {
+/** `hidden`: Menüpunkte ausgeschalteter Module (src/domain/modules.ts). Hat ein Sammelpunkt nur noch einen Reiter, bleibt er ein einfacher Punkt. */
+export function adminNav(hotel: { id: string; slug: string; primaryDomain: string | null }, setup: boolean, hidden: ReadonlySet<string> = new Set()): Nav {
+  const nav = baseNav(hotel, setup);
+  if (!hidden.size) return nav;
+  const prune = (items: NavItem[]) =>
+    items.flatMap((i) => {
+      if (hidden.has(i.key)) return [];
+      if (!i.tabs) return [i];
+      const tabs = i.tabs.filter((t) => !hidden.has(t.key));
+      if (!tabs.length) return [];
+      if (tabs.length === 1) return [{ ...i, key: tabs[0].key, href: tabs[0].href, tabs: undefined }];
+      return [{ ...i, tabs }];
+    });
+  return { primary: prune(nav.primary), groups: nav.groups.map((g) => ({ ...g, items: prune(g.items) })).filter((g) => g.items.length) };
+}
+
+function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null }, setup: boolean): Nav {
   const base = `/admin/${hotel.id}`;
   const link = (key: string, label: string, path = key): NavItem => ({ key, label, href: `${base}/${path}` });
   if (setup) {
@@ -23,7 +39,7 @@ export function adminNav(hotel: { id: string; slug: string; primaryDomain: strin
     primary: [
       { key: "home", label: "Übersicht", href: base },
       link("calendar", "Kalender"),
-      link("bookings", "Buchungen"),
+      { ...link("bookings", "Buchungen"), tabs: [link("bookings", "Buchungen"), link("frontdesk", "Heute"), link("plan", "Zimmerplan"), link("invoices", "Rechnungen")] },
       { ...link("guests", "Gäste"), tabs: [link("guests", "Gäste"), link("inquiries", "Anfragen"), link("vouchers", "Gutscheine")] },
     ],
     groups: [
@@ -36,6 +52,7 @@ export function adminNav(hotel: { id: string; slug: string; primaryDomain: strin
         title: "Konto",
         items: [
           link("settings", "Einstellungen"),
+          link("funktionen", "Funktionen"),
           { key: "view", label: "Website ansehen", href: hotel.primaryDomain ? `//${hotel.primaryDomain}` : `/h/${hotel.slug}/de`, external: true },
         ],
       },
