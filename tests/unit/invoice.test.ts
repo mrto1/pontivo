@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_INVOICING, ibanValid, isQrIban, isSwissIban, swissQrPayload, vatBps, vatBreakdown, vatOf } from "../../src/domain/invoice";
+import { DEFAULT_INVOICING, ibanValid, isQrIban, isSwissIban, qrReference, formatQrReference, swissQrPayload, vatBps, vatBreakdown, vatOf } from "../../src/domain/invoice";
 
 describe("MWST", () => {
   it("Anteil im Bruttobetrag", () => {
@@ -59,5 +59,20 @@ describe("IBAN und QR-Rechnung", () => {
     expect(l[18]).toBe("");
     expect(l.slice(20, 27)).toEqual(["", "", "", "", "", "", ""]);
     expect(l).toHaveLength(31);
+  });
+});
+
+describe("QR-Referenz", () => {
+  it("27 Ziffern mit korrekter Prüfziffer (Beispiel aus dem SIX-Standard)", () => {
+    expect(qrReference("21000000000313947143000901")).toBe("210000000003139471430009017");
+    const ref = qrReference("2026-0001");
+    expect(ref).toHaveLength(27);
+    expect(ref.slice(0, 26)).toBe("00000000000000000020260001");
+    expect(formatQrReference("210000000003139471430009017")).toBe("21 00000 00003 13947 14300 09017");
+  });
+  it("QRR im Payload mit QR-IBAN", () => {
+    const l = swissQrPayload({ iban: "CH4431999123000889012", creditor: { name: "H", zip: "3000", city: "Bern", country: "CH" }, amountRappen: 100, message: "x", qrReference: qrReference("2026-0001") }).split("\n");
+    expect(l[27]).toBe("QRR");
+    expect(l[28]).toBe(qrReference("2026-0001"));
   });
 });

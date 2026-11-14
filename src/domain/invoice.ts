@@ -11,11 +11,13 @@ export type InvoicingSettings = {
   /** übrige Leistungen, Basispunkte (8,1 %) */
   standardBps: number;
   iban: string;
+  /** optional: QR-IBAN des Kontos (dann QR-Referenz statt «NON») */
+  qrIban: string;
   paymentDays: number;
   footer: string;
 };
 
-export const DEFAULT_INVOICING: InvoicingSettings = { vatLiable: false, vatNumber: "", stayBps: 380, standardBps: 810, iban: "", paymentDays: 30, footer: "", };
+export const DEFAULT_INVOICING: InvoicingSettings = { vatLiable: false, vatNumber: "", stayBps: 380, standardBps: 810, iban: "", qrIban: "", paymentDays: 30, footer: "", };
 
 /** Satz in Basispunkten für eine Art von Leistung; nicht MWST-pflichtig = 0 */
 export function vatBps(s: InvoicingSettings, kind: VatKind): number {
@@ -66,11 +68,26 @@ export function ibanValid(raw: string): boolean {
 /** Schweizer/liechtensteinische IBAN (21 Zeichen), für die QR-Rechnung */
 export const isSwissIban = (raw: string) => /^(CH|LI)\d{19}$/.test(cleanIban(raw)) && ibanValid(raw);
 
-/** QR-IBAN (Institutskennung 30000–31999) braucht eine QR-Referenz; das unterstützen wir nicht (v1: normale IBAN, Referenztyp NON) */
+/** QR-IBAN (Institutskennung 30000–31999) braucht eine QR-Referenz (Referenztyp QRR) */
 export function isQrIban(raw: string): boolean {
   const iid = Number(cleanIban(raw).slice(4, 9));
   return iid >= 30000 && iid <= 31999;
 }
+
+const MOD10 = [0, 9, 4, 6, 8, 2, 7, 1, 3, 5];
+
+/** QR-Referenz (27 Ziffern): Rechnungsnummer nur als Ziffern, links mit Nullen auf 26 Stellen, plus Prüfziffer (Modulo 10 rekursiv) */
+export function qrReference(invoiceNumber: string): string {
+  const digits = invoiceNumber.replace(/\D/g, "");
+  if (!digits || digits.length > 26) throw new Error("Rechnungsnummer ungeeignet für QR-Referenz");
+  const body = digits.padStart(26, "0");
+  let carry = 0;
+  for (const d of body) carry = MOD10[(carry + Number(d)) % 10];
+  return body + String((10 - carry) % 10);
+}
+
+/** Darstellung wie auf dem Zahlteil: 2 Ziffern, dann Gruppen zu 5 */
+export const formatQrReference = (ref: string) => `${ref.slice(0, 2)} ${ref.slice(2).replace(/(.{5})/g, "$1 ").trim()}`;
 
 export type QrAddress = { name: string; street?: string; zip: string; city: string; country: string };
 
@@ -78,9 +95,9 @@ const clip = (s: string | undefined, n: number) => (s ?? "").replace(/[\r\n]+/g,
 
 /**
  * Inhalt des QR-Codes der QR-Rechnung (Swiss Payment Standards, Version 2.x, SPC 0200).
- * Konto = IBAN (Referenztyp NON, Rechnungsnummer unter «Zusätzliche Informationen»); Betrag leer = offen.
+ * Konto = IBAN (Referenztyp NON; mit QR-IBAN und qrReference: QRR, Rechnungsnummer unter «Zusätzliche Informationen»); Betrag leer = offen.
  */
-export function swissQrPayload(a: { iban: string; creditor: QrAddress; amountRappen: number | null; debtor?: QrAddress | null; message: string }): string {
+export function swissQrPayload(a: { iban: string; creditor: QrAddress; amountRappen: number | null; debtor?: QrAddress | null; message: string; qrReference?: string }): string {
   const addr = (x: QrAddress) => ["S", clip(x.name, 70), clip(x.street, 70), "", clip(x.zip, 16), clip(x.city, 35), clip(x.country, 2).toUpperCase()];
   const empty7 = ["", "", "", "", "", "", ""];
   const lines = [
@@ -89,7 +106,7 @@ export function swissQrPayload(a: { iban: string; creditor: QrAddress; amountRap
     ...empty7,
     a.amountRappen === null ? "" : (a.amountRappen / 100).toFixed(2), "CHF",
     ...(a.debtor && a.debtor.name && a.debtor.zip && a.debtor.city ? addr(a.debtor) : empty7),
-    "NON", "", clip(a.message, 140),
+    a.qrReference ? "QRR" : "NON", a.qrReference ?? "", clip(a.message, 140),
     "EPD",
   ];
   return lines.join("\n");

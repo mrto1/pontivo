@@ -52,6 +52,7 @@ describe("Rechnung (SPEC 16.3)", () => {
     await expect(updateInvoicingSettings(s.hotel, { vatLiable: true }, "t")).rejects.toThrow(/MWST-Nummer/);
     await expect(updateInvoicingSettings(s.hotel, { iban: "CH00 0000" }, "t")).rejects.toThrow(/IBAN/);
     await expect(updateInvoicingSettings(s.hotel, { iban: "CH4431999123000889012" }, "t")).rejects.toThrow(/QR-IBAN|IBAN/);
+    await expect(updateInvoicingSettings(s.hotel, { qrIban: "CH9300762011623852957" }, "t")).rejects.toThrow(/QR-IBAN/);
     await updateInvoicingSettings(s.hotel, { vatLiable: true, vatNumber: "CHE-123.456.789 MWST", iban: IBAN }, "t");
     const hotel = await reload(s);
     const b = await book(s);

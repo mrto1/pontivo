@@ -7,7 +7,7 @@ import {
 } from "../db/schema";
 import { addDays, diffDays, todayIn } from "../domain/dates";
 import {
-  cleanIban, DEFAULT_INVOICING, isQrIban, isSwissIban, swissQrPayload, vatBps, vatBreakdown,
+  cleanIban, DEFAULT_INVOICING, qrReference, isQrIban, isSwissIban, swissQrPayload, vatBps, vatBreakdown,
   type InvoicingSettings, type VatKind,
 } from "../domain/invoice";
 import { tr } from "../domain/blocks";
@@ -27,13 +27,15 @@ export async function updateInvoicingSettings(hotel: Hotel, input: Partial<Invoi
   const next: InvoicingSettings = { ...cur, ...input };
   const iban = cleanIban(next.iban);
   if (iban && !isSwissIban(iban)) throw new InvoiceError("Die IBAN ist ungültig (erwartet: Schweizer oder liechtensteinische IBAN).");
-  if (iban && isQrIban(iban)) throw new InvoiceError("Das ist eine QR-IBAN. Bitte die normale IBAN des Kontos angeben (QR-Referenz wird noch nicht unterstützt).");
+  if (iban && isQrIban(iban)) throw new InvoiceError("Das ist eine QR-IBAN. Bitte hier die normale IBAN eintragen und die QR-IBAN im Feld «QR-IBAN» (optional).");
+  const qrIban = cleanIban(next.qrIban ?? "");
+  if (qrIban && !(isSwissIban(qrIban) && isQrIban(qrIban))) throw new InvoiceError("Die QR-IBAN ist ungültig (Schweizer IBAN mit Institutskennung 30000 bis 31999).");
   for (const [k, v, max] of [["Satz Beherbergung", next.stayBps, 2500], ["Satz übrige Leistungen", next.standardBps, 2500]] as const) {
     if (!Number.isInteger(v) || v < 0 || v > max) throw new InvoiceError(`${k}: ungültiger Wert.`);
   }
   if (!Number.isInteger(next.paymentDays) || next.paymentDays < 0 || next.paymentDays > 120) throw new InvoiceError("Zahlungsfrist: 0 bis 120 Tage.");
   if (next.vatLiable && !next.vatNumber.trim()) throw new InvoiceError("Für MWST-pflichtige Betriebe braucht die Rechnung die MWST-Nummer (z. B. CHE-123.456.789 MWST).");
-  const clean: InvoicingSettings = { ...next, iban, vatNumber: next.vatNumber.trim().slice(0, 40), footer: next.footer.trim().slice(0, 500) };
+  const clean: InvoicingSettings = { ...next, iban, qrIban, vatNumber: next.vatNumber.trim().slice(0, 40), footer: next.footer.trim().slice(0, 500) };
   await db().update(hotels).set({ content: { ...hotel.content, invoicing: clean }, updatedAt: new Date() }).where(eq(hotels.id, hotel.id));
   await audit(db(), { hotelId: hotel.id, actor, action: "invoicing.settings", entity: "hotel", entityId: hotel.id, details: { vatLiable: clean.vatLiable } });
 }
@@ -276,7 +278,7 @@ export async function invoiceView(hotel: Hotel, invoiceId: string): Promise<Invo
   let qrNote: string | null = null;
   const set = invoicingSettings(hotel);
   if (invoice.status === "issued" && invoice.kind === "invoice" && open > 0) {
-    if (!set.iban) qrNote = "Keine IBAN hinterlegt: Die QR-Rechnung fehlt (Einstellungen → Rechnung).";
+    if (!set.iban && !set.qrIban) qrNote = "Keine IBAN hinterlegt: Die QR-Rechnung fehlt (Einstellungen → Rechnung).";
     else if (!hotel.postalCode || !hotel.city) qrNote = "Adresse des Betriebs unvollständig (PLZ/Ort): Die QR-Rechnung fehlt.";
     else qrSvg = await qrSvgFor(hotel, invoice, open, set);
   }
@@ -286,7 +288,8 @@ export async function invoiceView(hotel: Hotel, invoiceId: string): Promise<Invo
 export function qrPayloadFor(hotel: Hotel, invoice: Invoice, openRappen: number, set: InvoicingSettings): string {
   const r = invoice.recipient;
   return swissQrPayload({
-    iban: set.iban,
+    iban: set.qrIban || set.iban,
+    qrReference: set.qrIban && invoice.number ? qrReference(invoice.number) : undefined,
     creditor: { name: hotel.name, street: hotel.addressLine ?? "", zip: hotel.postalCode ?? "", city: hotel.city ?? "", country: "CH" },
     amountRappen: openRappen,
     debtor: r.zip && r.city && (r.company || r.name) ? { name: r.company || r.name || "", street: r.street, zip: r.zip, city: r.city, country: r.country || "CH" } : null,

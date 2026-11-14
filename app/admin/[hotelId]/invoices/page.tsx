@@ -19,7 +19,7 @@ async function save(f: FormData) {
   try {
     await updateInvoicingSettings(c.hotel, {
       vatLiable: f.get("vatLiable") === "on", vatNumber: s(f, "vatNumber"), stayBps: bps(s(f, "stay") || "3.8"), standardBps: bps(s(f, "standard") || "8.1"),
-      iban: s(f, "iban"), paymentDays: Number(s(f, "days")) || 0, footer: s(f, "footer"),
+      iban: s(f, "iban"), qrIban: s(f, "qrIban"), paymentDays: Number(s(f, "days")) || 0, footer: s(f, "footer"),
     }, c.actor);
   } catch (e) {
     if (!(e instanceof InvoiceError)) throw e;
@@ -77,6 +77,7 @@ export default async function Invoices({ params, searchParams }: { params: Promi
               <div><label>Satz Beherbergung %</label><input name="stay" inputMode="decimal" defaultValue={(set.stayBps / 100).toString()} /></div>
               <div><label>Satz übrige Leistungen %</label><input name="standard" inputMode="decimal" defaultValue={(set.standardBps / 100).toString()} /></div>
               <div><label>IBAN (für die QR-Rechnung)</label><input name="iban" defaultValue={set.iban} placeholder="CH93 0076 2011 6238 5295 7" /></div>
+              <div><label>QR-IBAN (optional)</label><input name="qrIban" defaultValue={set.qrIban} placeholder="CH44 3199 9123 0008 8901 2" /><p className="muted small">Nur wenn Ihre Bank Ihnen eine QR-IBAN gegeben hat. Dann trägt jede Rechnung eine QR-Referenz, und Zahlungen lassen sich automatisch zuordnen.</p></div>
               <div><label>Zahlungsfrist (Tage)</label><input name="days" type="number" min={0} max={120} defaultValue={set.paymentDays} /></div>
               <div><label>Fusszeile (optional)</label><input name="footer" defaultValue={set.footer} maxLength={500} placeholder="z. B. Danke für Ihren Besuch" /></div>
             </div>

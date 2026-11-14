@@ -3,7 +3,7 @@ import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { invoiceView, invoicingSettings } from "@/src/services/invoicing";
 import { formatChf } from "@/src/domain/money";
-import { formatBps } from "@/src/domain/invoice";
+import { formatBps, formatQrReference, qrReference } from "@/src/domain/invoice";
 import { formatDay } from "@/src/i18n/dict";
 import { PrintButton } from "@/components/public/PrintButton";
 
@@ -23,6 +23,8 @@ export default async function PrintInvoice({ params }: { params: Promise<{ hotel
   const receipt = !credit && v.openRappen <= 0;
   const title = credit ? "Gutschrift" : receipt ? "Quittung" : "Rechnung";
   const r = inv.recipient;
+  const account = set.qrIban || set.iban;
+  const qrRef = set.qrIban && inv.number ? formatQrReference(qrReference(inv.number)) : null;
   const address = [[hotel.addressLine], [hotel.postalCode, hotel.city].filter(Boolean).join(" ")].flat().filter(Boolean);
   return (
     <div className="invoice-sheet">
@@ -95,7 +97,8 @@ export default async function PrintInvoice({ params }: { params: Promise<{ hotel
           <div>
             <h4>Empfangsschein</h4>
             <div className="lbl">Konto / Zahlbar an</div>
-            <p>{set.iban.replace(/(.{4})/g, "$1 ").trim()}<br />{hotel.name}<br />{hotel.addressLine}<br />{hotel.postalCode} {hotel.city}</p>
+            <p>{account.replace(/(.{4})/g, "$1 ").trim()}<br />{hotel.name}<br />{hotel.addressLine}<br />{hotel.postalCode} {hotel.city}</p>
+            {qrRef ? <><div className="lbl">Referenz</div><p>{qrRef}</p></> : null}
             {r.name || r.company ? <><div className="lbl">Zahlbar durch</div><p>{r.company || r.name}<br />{r.street}<br />{r.zip} {r.city}</p></> : null}
             <div className="lbl">Währung / Betrag</div><p>CHF {formatChf(v.openRappen)}</p>
           </div>
@@ -107,7 +110,8 @@ export default async function PrintInvoice({ params }: { params: Promise<{ hotel
             </div>
             <div>
               <div className="lbl" style={{ marginTop: 8 }}>Konto / Zahlbar an</div>
-              <p>{set.iban.replace(/(.{4})/g, "$1 ").trim()}<br />{hotel.name}<br />{hotel.addressLine}<br />{hotel.postalCode} {hotel.city}</p>
+              <p>{account.replace(/(.{4})/g, "$1 ").trim()}<br />{hotel.name}<br />{hotel.addressLine}<br />{hotel.postalCode} {hotel.city}</p>
+              {qrRef ? <><div className="lbl">Referenz</div><p>{qrRef}</p></> : null}
               <div className="lbl">Zusätzliche Informationen</div><p>Rechnung {inv.number}</p>
               {r.name || r.company ? <><div className="lbl">Zahlbar durch</div><p>{r.company || r.name}<br />{r.street}<br />{r.zip} {r.city}</p></> : null}
             </div>
