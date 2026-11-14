@@ -593,6 +593,10 @@ Reihenfolge: 17.1 Housekeeping, 17.2 Gäste-Notizen und Tags, 17.3 Berichte, 17.
 - Karte «Notiz zum Gast» auf der Buchung (Rolle staff). Seite «Kartei» (`/admin/<hotel>/guestbook`): Gäste mit Anzahl bestätigter Aufenthalte, letzter Anreise, Tags, Notiz; Suche über Name, E-Mail, Tag, Notiz; Filter nach Tag.
 - Im `audit_log` steht nur «geändert» mit Anzahl Tags, nie der Inhalt. Formular weist darauf hin, keine heiklen Daten zu notieren.
 
+### 17.3 Statistik (Modul `statistics`, Standard an)
+- Seite `/admin/<hotel>/statistics` mit Zeitraum «Dieser Monat / Letzter Monat / Dieses Jahr / Letzte 12 Monate» (wie Übersicht). Kennzahlen: Belegung (verkaufte / verfügbare Zimmernächte), ADR (Zimmerumsatz / verkaufte Nächte), RevPAR (Zimmerumsatz / verfügbare Nächte), Zimmerumsatz; Tabellen nach Monat, Herkunft (Kanal) und Zimmertyp.
+- Reine Logik `src/domain/stats.ts` (`computeStats`), Daten aus `booking_rooms.nightly_prices` bestätigter Buchungen (`src/services/statistics.ts`), jede Abfrage nach `hotel_id`.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.
