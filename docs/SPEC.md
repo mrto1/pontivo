@@ -634,6 +634,11 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 - Ein Leser verarbeitet eine Zahlung zugleich; Betrag höchstens der offene Betrag; Abbruch über `cancel_action`; Ereignis eines fremden Kontos wird abgelehnt.
 - Oberflächen: Menü «Kartenterminal» (Leser registrieren, Verlauf, nur Inhaber/Manager) und Karte «Kartenzahlung am Terminal» in «Rechnung & Kasse» der Buchung.
 
+### 18.5 Zutritt mit Nuki (Modul `access`, braucht `frontdesk`, Standard aus)
+- Nuki Web API (Swagger 4.26.0), Token je Betrieb (verschlüsselt, `hotels.content.nuki`). Schlösser werden von Nuki geladen (`door_locks`) und einer Eingangstür (alle Gäste) oder einem Zimmer zugeordnet.
+- Je bestätigte Buchung ein Keypad-Code (Typ 13) pro Eingangstür und pro zugewiesenem Zimmer (`door_codes`, Code verschlüsselt), gültig von Check-in-Zeit bis Check-out-Zeit des Betriebs. Stündlicher Job: Codes 3 Tage vor Anreise erstellen; bei Storno zurückziehen; nach Abreise löschen. Fehler bleiben sichtbar (Status `error`) und lassen sich per Knopf wiederholen.
+- Seite `/admin/<hotel>/zutritt` (Inhaber/Manager: Token, Schlösser, Zuordnung); Karte «Zutritt» auf der Buchung (Code, Status, Gültigkeit, erstellen, zurückziehen). Codes erscheinen nicht in Gäste-Mails und nicht im KI-Prompt.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

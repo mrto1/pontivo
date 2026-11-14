@@ -5,7 +5,7 @@
 import { sql } from "drizzle-orm";
 import { DEFAULT_PLATFORM_FEE_BPS } from "../domain/fee";
 import {
-  pgTable, uuid, text, char, integer, boolean, timestamp, time, date, jsonb, bigserial, primaryKey,
+  pgTable, uuid, text, char, integer, boolean, timestamp, time, date, jsonb, bigserial, bigint, primaryKey,
 } from "drizzle-orm/pg-core";
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -86,6 +86,8 @@ export type HotelContent = {
   mailTexts?: import("../domain/mail-texts").MailTexts;
   /** Kontenzuordnung für das Buchungsjournal (SPEC 18.3) */
   accounting?: { accounts?: Partial<import("../domain/accounting-export").AccountMap> };
+  /** Nuki Web API: Token verschlüsselt (SPEC 18.5) */
+  nuki?: { tokenEnc?: string };
 };
 
 export type HotelDocument = { url: string; title: Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>; bytes: number };
@@ -870,3 +872,30 @@ export const terminalPayments = pgTable("terminal_payments", {
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 export type TerminalPayment = typeof terminalPayments.$inferSelect;
+
+export const doorLocks = pgTable("door_locks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  nukiSmartlockId: bigint("nuki_smartlock_id", { mode: "number" }).notNull(),
+  name: text("name").notNull(),
+  roomId: uuid("room_id"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type DoorLock = typeof doorLocks.$inferSelect;
+
+export const doorCodes = pgTable("door_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  bookingId: uuid("booking_id").notNull(),
+  lockId: uuid("lock_id").notNull(),
+  codeEnc: text("code_enc").notNull(),
+  authName: text("auth_name").notNull(),
+  nukiAuthId: text("nuki_auth_id"),
+  status: text("status").$type<"pending" | "active" | "revoked" | "expired" | "error">().notNull().default("pending"),
+  error: text("error"),
+  validFrom: ts("valid_from").notNull(),
+  validUntil: ts("valid_until").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+export type DoorCode = typeof doorCodes.$inferSelect;

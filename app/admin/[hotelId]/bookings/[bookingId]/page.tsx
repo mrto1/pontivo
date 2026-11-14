@@ -9,6 +9,7 @@ import { addDays, nightsOf, todayIn } from "@/src/domain/dates";
 import { bookingExtrasOf } from "@/src/services/extras";
 import { moduleOn } from "@/src/services/modules";
 import { CashCard } from "./CashCard";
+import { AccessCard } from "./AccessCard";
 import { GuestNoteCard } from "./GuestNoteCard";
 
 export const dynamic = "force-dynamic";
@@ -178,6 +179,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
       ) : null}
 
       {(await moduleOn(hotel.id, "guestnotes")) ? <GuestNoteCard hotelId={hotel.id} bookingId={b.id} email={g?.email ?? null} msg={sp.note} /> : null}
+      {(await moduleOn(hotel.id, "access")) ? <AccessCard hotel={hotel} bookingId={b.id} status={b.status} /> : null}
       {(await moduleOn(hotel.id, "invoicing")) ? <CashCard hotel={hotel} bookingId={b.id} status={b.status} /> : null}
 
       <h3>Verlauf</h3>
