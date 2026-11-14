@@ -11,7 +11,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const LABEL: Record<CleanStatus, string> = { dirty: "schmutzig", clean: "sauber", inspected: "geprüft" };
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<void>) {
-  const c = await requireHotel(s(f, "hotelId"), "staff");
+  const c = await requireHotel(s(f, "hotelId"), "staff", "housekeeping");
   await requireModule(c.hotel.id, "housekeeping");
   let msg = "";
   try { await fn(c); } catch (e) { if (!(e instanceof HousekeepingError)) throw e; msg = e.message; }
@@ -38,7 +38,7 @@ async function task(f: FormData) {
 export default async function Housekeeping({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId);
+  const { hotel } = await requireHotel(hotelId, "staff", "housekeeping");
   await requireModule(hotel.id, "housekeeping");
   const today = todayIn(hotel.timezone);
   const day = sp.day && isDay(sp.day) ? sp.day : today;

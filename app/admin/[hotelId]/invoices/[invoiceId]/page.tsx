@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { atLeast } from "@/src/auth/session";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { createCreditNote, deleteDraft, InvoiceError, invoiceView, issueInvoice, sendInvoiceEmail, updateDraft } from "@/src/services/invoicing";
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>, id: string) => Promise<string | { to: string }>) {
-  const c = await requireHotel(s(f, "hotelId"), "staff");
+  const c = await requireHotel(s(f, "hotelId"), "staff", "invoices");
   await requireModule(c.hotel.id, "invoicing");
   const id = s(f, "invoiceId");
   let out: string | { to: string };
@@ -65,7 +66,7 @@ async function credit(f: FormData) {
 export default async function InvoicePage({ params, searchParams }: { params: Promise<{ hotelId: string; invoiceId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId, invoiceId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId);
+  const { hotel, role } = await requireHotel(hotelId, "staff", "invoices");
   await requireModule(hotel.id, "invoicing");
   const v = await invoiceView(hotel, invoiceId);
   if (!v) notFound();
@@ -133,7 +134,7 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
       <div className="inline-form">
         {draft ? <form action={discard}>{hid}<button className="btn secondary small">Entwurf verwerfen</button></form> : null}
         {!draft ? <form action={mail}>{hid}<button className="btn secondary small">{inv.emailedAt ? "Erneut per E-Mail senden" : "Per E-Mail senden"}</button></form> : null}
-        {!draft && !isCredit && role !== "staff" ? <form action={credit}>{hid}<button className="btn secondary small">Gutschrift erstellen (Rechnung stornieren)</button></form> : null}
+        {!draft && !isCredit && atLeast(role, "manager") ? <form action={credit}>{hid}<button className="btn secondary small">Gutschrift erstellen (Rechnung stornieren)</button></form> : null}
       </div>
     </div>
   );

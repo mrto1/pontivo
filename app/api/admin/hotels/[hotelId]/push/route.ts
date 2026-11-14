@@ -1,13 +1,13 @@
 import { cookies } from "next/headers";
-import { readSessionValue, roleIn, SESSION_COOKIE } from "@/src/auth/session";
+import { atLeast, readSessionValue, roleIn, SESSION_COOKIE } from "@/src/auth/session";
 import { hasSubscription, pushConfigured, removeSubscription, saveSubscription, vapidPublicKey } from "@/src/push/service";
 
 export const dynamic = "force-dynamic";
 
-/** Jedes Mitglied des Hotels darf Mitteilungen für das eigene Gerät ein- und ausschalten */
+/** Mitarbeitende und höher (nicht die eingeschränkten Rollen, die keine Buchungsmeldungen bekommen sollen) dürfen Mitteilungen für das eigene Gerät ein- und ausschalten */
 async function member(hotelId: string) {
   const userId = readSessionValue((await cookies()).get(SESSION_COOKIE)?.value);
-  if (!userId || !(await roleIn(userId, hotelId))) return null;
+  if (!userId || !atLeast(await roleIn(userId, hotelId), "staff")) return null;
   return userId;
 }
 

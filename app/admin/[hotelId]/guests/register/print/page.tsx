@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function PrintRegister({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, actor } = await requireHotel(hotelId, "staff");
+  const { hotel, actor } = await requireHotel(hotelId, "staff", "guests");
   if (!isDay(sp.from ?? "") || !isDay(sp.to ?? "") || sp.from! > sp.to!) notFound();
   const list = await registerRows(hotel.id, sp.from!, sp.to!);
   await logRegisterExport(hotel.id, sp.from!, sp.to!, "pdf", list.length, actor);

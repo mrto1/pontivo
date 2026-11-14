@@ -18,7 +18,7 @@ async function toggle(f: FormData) {
 
 export default async function Inquiries({ params }: { params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
-  const { hotel, role } = await requireHotel(hotelId);
+  const { hotel, role } = await requireHotel(hotelId, "staff", "inquiries");
   await requireModule(hotel.id, "inquiries");
   const canEdit = atLeast(role, "manager");
   const list = await listInquiries(hotel.id);

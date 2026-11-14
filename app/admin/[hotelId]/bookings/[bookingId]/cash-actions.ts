@@ -10,7 +10,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function run(f: FormData, min: "staff" | "manager", fn: (c: Awaited<ReturnType<typeof requireHotel>>, bookingId: string) => Promise<string | { to: string }>) {
   const hotelId = s(f, "hotelId"), bookingId = s(f, "bookingId");
-  const c = await requireHotel(hotelId, min);
+  const c = await requireHotel(hotelId, min, "bookings");
   await requireModule(c.hotel.id, "invoicing");
   let out: string | { to: string };
   try {

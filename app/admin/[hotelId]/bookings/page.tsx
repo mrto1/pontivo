@@ -11,7 +11,7 @@ const SOURCE = ["", "direct", "booking_com", "expedia", "airbnb", "other_ota", "
 export default async function Bookings({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId);
+  const { hotel } = await requireHotel(hotelId, "staff", "bookings");
   const f = {
     from: sp.from && isDay(sp.from) ? sp.from : undefined,
     to: sp.to && isDay(sp.to) ? sp.to : undefined,

@@ -597,6 +597,12 @@ Reihenfolge: 17.1 Housekeeping, 17.2 Gäste-Notizen und Tags, 17.3 Berichte, 17.
 - Seite `/admin/<hotel>/statistics` mit Zeitraum «Dieser Monat / Letzter Monat / Dieses Jahr / Letzte 12 Monate» (wie Übersicht). Kennzahlen: Belegung (verkaufte / verfügbare Zimmernächte), ADR (Zimmerumsatz / verkaufte Nächte), RevPAR (Zimmerumsatz / verfügbare Nächte), Zimmerumsatz; Tabellen nach Monat, Herkunft (Kanal) und Zimmertyp.
 - Reine Logik `src/domain/stats.ts` (`computeStats`), Daten aus `booking_rooms.nightly_prices` bestätigter Buchungen (`src/services/statistics.ts`), jede Abfrage nach `hotel_id`.
 
+### 17.4 Rollen pro Modul
+- Neue Rollen in `hotel_members.role`: `reception` (Rezeption), `housekeeping` (Reinigung), `accounting` (Buchhaltung). Pure Logik in `src/domain/roles.ts`.
+- **Sicher als Standard:** `requireHotel(hotelId, min, area?)`. Eingeschränkte Rollen erfüllen nie eine Mindestrolle, sie kommen nur auf Seiten/Aktionen, die einen Bereich (`area` = Menü-Schlüssel) angeben, der in `ROLE_AREAS` für die Rolle steht, und nur wo «staff» genügt. Alles andere ist 404.
+- Bereiche: Rezeption: home, calendar, bookings, frontdesk, plan, housekeeping, guests, guestbook, inquiries, vouchers, invoices. Reinigung: housekeeping. Buchhaltung: invoices, statistics. Das Menü zeigt nur diese Punkte; `home` leitet auf die Startseite der Rolle weiter (`LANDING`).
+- Zuweisung unter Einstellungen → Mitglieder (Inhaber). Rollenwechsel im `audit_log` (`member.add`).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

@@ -39,7 +39,7 @@ async function moveAction(formData: FormData) {
   "use server";
   const hotelId = String(formData.get("hotelId"));
   const bookingId = String(formData.get("bookingId"));
-  const { actor } = await requireHotel(hotelId, "staff");
+  const { actor } = await requireHotel(hotelId, "staff", "bookings");
   let msg = "Aufenthalt verschoben";
   try {
     const b = await moveBooking(hotelId, bookingId, String(formData.get("checkin")), { actor, notifyGuest: formData.get("notify") === "on" });
@@ -54,7 +54,7 @@ async function balanceOnsiteAction(formData: FormData) {
   "use server";
   const hotelId = String(formData.get("hotelId"));
   const bookingId = String(formData.get("bookingId"));
-  const { actor } = await requireHotel(hotelId, "staff");
+  const { actor } = await requireHotel(hotelId, "staff", "bookings");
   let msg = "Restbetrag als erhalten markiert";
   try {
     await markBalanceOnsite(hotelId, bookingId, actor);
@@ -68,7 +68,7 @@ async function noShowAction(formData: FormData) {
   "use server";
   const hotelId = String(formData.get("hotelId"));
   const bookingId = String(formData.get("bookingId"));
-  const { actor } = await requireHotel(hotelId, "staff");
+  const { actor } = await requireHotel(hotelId, "staff", "bookings");
   let msg = "Als No-Show markiert";
   try {
     await markNoShow(hotelId, bookingId, actor);
@@ -81,7 +81,7 @@ async function noShowAction(formData: FormData) {
 export default async function BookingDetail({ params, searchParams }: { params: Promise<{ hotelId: string; bookingId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId, bookingId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId);
+  const { hotel, role } = await requireHotel(hotelId, "staff", "bookings");
   const d = await bookingDetail(hotel.id, bookingId);
   if (!d) notFound();
   const { booking: b, guest: g } = d;

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
+import { isLimitedRole, LANDING } from "@/src/domain/roles";
 import { atLeast } from "@/src/auth/session";
 import { bpsOf, formatChf } from "@/src/domain/money";
 import { overview, PERIOD_LABEL, PERIODS, setOtaCommission, type Period } from "@/src/services/overview";
@@ -20,7 +21,8 @@ const chf0 = (r: number) => formatChf(Math.round(r / 100) * 100).replace(/\.00$/
 export default async function Overview({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId);
+  const { hotel, role } = await requireHotel(hotelId, "staff", "home");
+  if (isLimitedRole(role)) redirect(`/admin/${hotel.id}/${LANDING[role]}`);
   // Einrichtung begonnen, noch nicht abgeschlossen → Assistent
   if (hotel.onboarding.startedAt && !hotel.onboarding.completedAt && atLeast(role, "manager")) redirect(`/admin/${hotel.id}/einrichten`);
   // Zahlen zu Umsatz und Gebühren nur für Inhaber und Geschäftsführung (wie die Abrechnung)

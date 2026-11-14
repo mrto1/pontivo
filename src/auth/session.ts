@@ -58,7 +58,8 @@ export async function consumeLoginToken(token: string, now = new Date()): Promis
   return row?.userId ?? null;
 }
 
-export type Role = "owner" | "manager" | "staff";
+import { atLeast as atLeastRole, type Role } from "../domain/roles";
+export type { Role };
 
 export async function getUser(userId: string) {
   const [u] = await db().select().from(users).where(eq(users.id, userId));
@@ -91,7 +92,4 @@ export async function roleIn(userId: string, hotelId: string): Promise<Role | nu
   return (m?.role as Role) ?? null;
 }
 
-const RANK: Record<Role, number> = { staff: 1, manager: 2, owner: 3 };
-export function atLeast(role: Role | null, min: Role): boolean {
-  return role !== null && RANK[role] >= RANK[min];
-}
+export const atLeast = atLeastRole;

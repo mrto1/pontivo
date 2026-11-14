@@ -31,7 +31,7 @@ async function save(f: FormData) {
 export default async function Invoices({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId);
+  const { hotel, role } = await requireHotel(hotelId, "staff", "invoices");
   await requireModule(hotel.id, "invoicing");
   const manager = atLeast(role, "manager");
   const set = invoicingSettings(hotel);

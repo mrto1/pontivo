@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client";
+import { ROLE_LABEL, type Role } from "../domain/roles";
 import { hotelMembers, hotels, touristTaxRules, users, type Hotel } from "../db/schema";
 import { todayIn } from "../domain/dates";
 import { env } from "../env";
@@ -100,7 +101,8 @@ export async function listMembers(hotelId: string) {
     .where(eq(hotelMembers.hotelId, hotelId));
 }
 
-export async function addMember(hotelId: string, email: string, role: "owner" | "manager" | "staff", actor: string) {
+export async function addMember(hotelId: string, email: string, role: Role, actor: string) {
+  if (!(role in ROLE_LABEL)) throw new Error("Unbekannte Rolle.");
   const e = z.string().trim().email().parse(email).toLowerCase();
   const [u] = await db().insert(users).values({ email: e }).onConflictDoUpdate({ target: users.email, set: { email: e } }).returning();
   await db().insert(hotelMembers).values({ hotelId, userId: u.id, role }).onConflictDoUpdate({ target: [hotelMembers.hotelId, hotelMembers.userId], set: { role } });

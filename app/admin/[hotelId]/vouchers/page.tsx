@@ -38,7 +38,7 @@ async function saveSettings(f: FormData) {
 
 async function redeem(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff");
+  const c = await requireHotel(s(f, "hotelId"), "staff", "vouchers");
   let msg: string;
   try {
     const v = await redeemVoucher(c.hotel, s(f, "code"), chf(s(f, "amount")), s(f, "note"), c.actor);
@@ -53,7 +53,7 @@ async function redeem(f: FormData) {
 export default async function Vouchers({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId);
+  const { hotel, role } = await requireHotel(hotelId, "staff", "vouchers");
   await requireModule(hotel.id, "vouchers");
   const canEdit = atLeast(role, "manager");
   const set = voucherSettings(hotel);

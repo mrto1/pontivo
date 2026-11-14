@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function Guestbook({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId);
+  const { hotel } = await requireHotel(hotelId, "staff", "guestbook");
   await requireModule(hotel.id, "guestnotes");
   const q = (sp.q ?? "").slice(0, 80);
   const tag = (sp.tag ?? "").slice(0, 24);

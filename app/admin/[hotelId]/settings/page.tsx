@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
+import { ROLE_LABEL, type Role } from "@/src/domain/roles";
 import { taxRuleFor } from "@/src/services/hotels";
 import { ZodError } from "zod";
 import { addMember, confirmTouristTax, setDeposit, goLiveProblems, listMembers, removeMember, setHotelStatus, updateHotelSettings } from "@/src/services/settings";
@@ -113,7 +114,7 @@ async function memberAdd(f: FormData) {
   "use server";
   const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
   try {
-    await addMember(hotel.id, s(f, "email"), (s(f, "role") || "staff") as "owner" | "manager" | "staff", actor);
+    await addMember(hotel.id, s(f, "email"), (s(f, "role") || "staff") as Role, actor);
   } catch (e) {
     back(hotel.id, `Fehler: ${(e as Error).message}`);
   }
@@ -282,7 +283,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
             <tbody>
               {members.map((m) => (
                 <tr key={m.user.id}>
-                  <td>{m.user.email}</td><td>{m.role}</td>
+                  <td>{m.user.email}</td><td>{ROLE_LABEL[m.role as Role] ?? m.role}</td>
                   <td><form action={memberRemove}>{hidden}<input type="hidden" name="userId" value={m.user.id} /><button className="btn secondary small">Entfernen</button></form></td>
                 </tr>
               ))}
@@ -291,10 +292,10 @@ export default async function Settings({ params, searchParams }: { params: Promi
           <form action={memberAdd} className="inline-form">
             {hidden}
             <div><label>E-Mail</label><input name="email" type="email" required /></div>
-            <div><label>Rolle</label><select name="role" defaultValue="staff"><option value="owner">Inhaber</option><option value="manager">Manager</option><option value="staff">Mitarbeitende</option></select></div>
+            <div><label>Rolle</label><select name="role" defaultValue="staff"><option value="owner">Inhaber</option><option value="manager">Manager</option><option value="staff">Mitarbeitende</option><option value="reception">Rezeption (ohne Statistik und Preise)</option><option value="housekeeping">Reinigung (nur Reinigungsliste)</option><option value="accounting">Buchhaltung (nur Rechnungen und Statistik)</option></select></div>
             <button className="btn">Hinzufügen</button>
           </form>
-          <p className="muted small">Inhaber: alles. Manager: alles ausser Mitglieder und Stripe. Mitarbeitende: Kalender und Buchungen lesen, No-Show.</p>
+          <p className="muted small">Inhaber: alles. Manager: alles ausser Mitglieder und Stripe. Mitarbeitende: Kalender und Buchungen lesen, No-Show. Rezeption: Tagesgeschäft ohne Statistik, Abrechnung und Einstellungen. Reinigung: nur die Reinigungsliste. Buchhaltung: nur Rechnungen und Statistik.</p>
         </section>
       ) : null}
     </div>

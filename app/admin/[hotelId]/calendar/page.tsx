@@ -88,7 +88,7 @@ function Weekdays() {
 export default async function Calendar({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId);
+  const { hotel, role } = await requireHotel(hotelId, "staff", "calendar");
   const today = todayIn(hotel.timezone);
   const from = sp.from && isDay(sp.from) ? sp.from : today;
   const cal = await calendarData(hotel.id, from, DAYS);

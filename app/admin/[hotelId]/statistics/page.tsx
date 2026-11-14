@@ -15,7 +15,7 @@ const pct = (n: number) => `${n.toLocaleString("de-CH", { minimumFractionDigits:
 export default async function Statistik({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId);
+  const { hotel } = await requireHotel(hotelId, "staff", "statistics");
   await requireModule(hotel.id, "statistics");
   const period: Period = (PERIODS as readonly string[]).includes(sp.period ?? "") ? (sp.period as Period) : "month";
   const s = await statistics(hotel.id, period, todayIn(hotel.timezone));

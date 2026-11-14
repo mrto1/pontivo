@@ -16,7 +16,7 @@ const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<string>) {
-  const c = await requireHotel(s(f, "hotelId"), "staff");
+  const c = await requireHotel(s(f, "hotelId"), "staff", "plan");
   await requireModule(c.hotel.id, "frontdesk");
   let msg: string;
   try {
@@ -90,7 +90,7 @@ function cells(bs: PlanBooking[], from: string, hotelId: string) {
 export default async function Plan({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId);
+  const { hotel, role } = await requireHotel(hotelId, "staff", "plan");
   await requireModule(hotel.id, "frontdesk");
   const today = todayIn(hotel.timezone);
   const from = sp.from && isDay(sp.from) ? sp.from : today;

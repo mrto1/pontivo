@@ -33,7 +33,7 @@ function List({ title, rows, hotelId, empty }: { title: string; rows: DayRow[]; 
 export default async function Heute({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId);
+  const { hotel } = await requireHotel(hotelId, "staff", "frontdesk");
   await requireModule(hotel.id, "frontdesk");
   const today = todayIn(hotel.timezone);
   const day = sp.day && isDay(sp.day) ? sp.day : today;

@@ -29,7 +29,7 @@ async function verify(f: FormData) {
 export default async function Guests({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId);
+  const { hotel, role } = await requireHotel(hotelId, "staff", "guests");
   const enabled = await guestsModuleEnabled(hotel.id);
   const rule = await cantonRule(hotel.canton);
   const today = todayIn(hotel.timezone);

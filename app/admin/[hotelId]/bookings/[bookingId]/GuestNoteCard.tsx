@@ -6,7 +6,7 @@ import { GuestNoteError, MAX_NOTE, profileOf, saveProfile } from "@/src/services
 async function save(f: FormData) {
   "use server";
   const hotelId = String(f.get("hotelId")), bookingId = String(f.get("bookingId")), email = String(f.get("email"));
-  const c = await requireHotel(hotelId, "staff");
+  const c = await requireHotel(hotelId, "staff", "bookings");
   await requireModule(c.hotel.id, "guestnotes");
   let msg = "Notiz gespeichert.";
   try { await saveProfile(c.hotel.id, email, { note: String(f.get("note") ?? ""), tags: String(f.get("tags") ?? "") }, c.actor); } catch (e) { if (!(e instanceof GuestNoteError)) throw e; msg = e.message; }

@@ -16,7 +16,7 @@ const LANG_NAMES: Record<string, string> = { de: "Deutsch", en: "Englisch", fr: 
 async function createAction(formData: FormData) {
   "use server";
   const hotelId = String(formData.get("hotelId"));
-  const { hotel, actor } = await requireHotel(hotelId, "staff");
+  const { hotel, actor } = await requireHotel(hotelId, "staff", "bookings");
   const s = (k: string) => String(formData.get(k) ?? "").trim();
   const [roomTypeId, ratePlanId] = s("offer").split("|");
   const children = Number(s("children") || 0);
@@ -42,7 +42,7 @@ async function createAction(formData: FormData) {
 export default async function NewBooking({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff");
+  const { hotel } = await requireHotel(hotelId, "staff", "bookings");
   const rts = await db().select().from(roomTypes).where(and(eq(roomTypes.hotelId, hotel.id), eq(roomTypes.active, true))).orderBy(asc(roomTypes.sortOrder));
   const rps = await db().select().from(ratePlans).where(and(eq(ratePlans.hotelId, hotel.id), eq(ratePlans.active, true))).orderBy(asc(ratePlans.createdAt));
   const today = todayIn(hotel.timezone);
