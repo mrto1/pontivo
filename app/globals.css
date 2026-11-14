@@ -509,3 +509,15 @@ fieldset:has(input[value="booking_only"]:checked) .mode-url { display: block; }
   .site:has(.sticky-book) .chat-panel { bottom: 12px; }
 }
 @media print { .chat-fab, .chat-panel { display: none !important; } }
+
+/* Zimmerplan (Admin) */
+table.plan { border-collapse: collapse; width: 100%; min-width: 900px; font-size: 13px; }
+table.plan th, table.plan td { border: 1px solid var(--line); padding: 4px 6px; text-align: center; white-space: nowrap; }
+table.plan th:first-child { text-align: left; position: sticky; left: 0; background: var(--bg, #fff); min-width: 90px; }
+table.plan th.we { background: rgba(0,0,0,.04); }
+table.plan .plan-type { text-align: left; background: rgba(0,0,0,.06); }
+table.plan .plan-free { min-width: 46px; }
+table.plan .plan-bar { background: #cfe7dc; text-align: left; overflow: hidden; text-overflow: ellipsis; max-width: 0; }
+table.plan .plan-bar.hold { background: #f4e6b8; }
+table.plan .plan-bar a { color: inherit; text-decoration: none; font-weight: 600; }
+table.plan tr.plan-off { opacity: .55; }

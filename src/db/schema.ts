@@ -306,6 +306,8 @@ export const bookingRooms = pgTable("booking_rooms", {
   bookingId: uuid("booking_id").notNull(),
   hotelId: uuid("hotel_id").notNull(),
   roomTypeId: uuid("room_type_id").notNull(),
+  /** zugewiesenes Zimmer (SPEC 16.2), leer = nur Zimmertyp */
+  roomId: uuid("room_id"),
   ratePlanId: uuid("rate_plan_id"),
   adults: integer("adults").notNull(),
   children: integer("children").notNull().default(0),
@@ -688,3 +690,16 @@ export const upsellOrders = pgTable("upsell_orders", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type UpsellOrder = typeof upsellOrders.$inferSelect;
+
+export const rooms = pgTable("rooms", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  roomTypeId: uuid("room_type_id").notNull(),
+  number: text("number").notNull(),
+  floor: text("floor").notNull().default(""),
+  note: text("note").notNull().default(""),
+  active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type Room = typeof rooms.$inferSelect;
