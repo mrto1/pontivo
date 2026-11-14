@@ -89,6 +89,15 @@ const G: Record<Locale, GuestMsg> = {
   },
 };
 
+/** Rechnung per E-Mail (SPEC 16.3) */
+const IM: Record<Locale, { invoiceWord: string; creditWord: string; invoiceText: string; creditText: string; amount: string; open: string }> = {
+  de: { invoiceWord: "Rechnung", creditWord: "Gutschrift", invoiceText: "anbei erhalten Sie die Rechnung zu Ihrem Aufenthalt. Über den Link können Sie sie ansehen, ausdrucken oder als PDF speichern.", creditText: "wir haben eine Gutschrift zu Ihrer Rechnung ausgestellt. Über den Link können Sie sie ansehen, ausdrucken oder als PDF speichern.", amount: "Betrag", open: "Rechnung ansehen" },
+  en: { invoiceWord: "Invoice", creditWord: "Credit note", invoiceText: "please find the invoice for your stay at the link below. You can view it, print it or save it as a PDF.", creditText: "we have issued a credit note for your invoice. You can view it, print it or save it as a PDF at the link below.", amount: "Amount", open: "View invoice" },
+  fr: { invoiceWord: "Facture", creditWord: "Note de crédit", invoiceText: "vous trouverez la facture de votre séjour via le lien ci-dessous. Vous pouvez la consulter, l'imprimer ou l'enregistrer en PDF.", creditText: "nous avons établi une note de crédit pour votre facture. Le lien vous permet de la consulter, de l'imprimer ou de l'enregistrer en PDF.", amount: "Montant", open: "Voir la facture" },
+  it: { invoiceWord: "Fattura", creditWord: "Nota di credito", invoiceText: "trovate la fattura del vostro soggiorno al link qui sotto. Potete vederla, stamparla o salvarla come PDF.", creditText: "abbiamo emesso una nota di credito per la vostra fattura. Con il link potete vederla, stamparla o salvarla come PDF.", amount: "Importo", open: "Vedi la fattura" },
+  nl: { invoiceWord: "Factuur", creditWord: "Creditnota", invoiceText: "via de link hieronder vindt u de factuur voor uw verblijf. U kunt hem bekijken, afdrukken of als pdf opslaan.", creditText: "wij hebben een creditnota voor uw factuur opgesteld. Via de link kunt u hem bekijken, afdrukken of als pdf opslaan.", amount: "Bedrag", open: "Factuur bekijken" },
+};
+
 /** Anzahlung und Restzahlung (SPEC 5.9) */
 const B: Record<Locale, {
   paidNow: string; open: string; dueSubject: (r: string) => string; dueText: (amount: string, date: string) => string; remSubject: (r: string) => string;
@@ -186,6 +195,13 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
       const first = template === "balance_due";
       return wrap(c, gl, first ? bm.dueSubject(ref) : bm.remSubject(ref), [hi + ",", first ? bm.dueText(amount, date) : bm.remText(amount, date)], summary(c, gl),
         b ? { href: `${c.baseUrl}/b/${b.publicToken}`, label: bm.pay } : undefined);
+    }
+    case "invoice_sent": {
+      const n = String(c.data.number ?? "");
+      const credit = c.data.kind === "credit_note";
+      const href = b && c.data.invoiceId ? `${c.baseUrl}/b/${b.publicToken}/rechnung/${c.data.invoiceId}` : undefined;
+      const m = IM[gl];
+      return wrap(c, gl, `${credit ? m.creditWord : m.invoiceWord} ${n} – ${c.hotel.name}`, [hi + ",", credit ? m.creditText : m.invoiceText], [`${m.amount}: ${money("totalRappen")}`], href ? { href, label: m.open } : undefined);
     }
     case "balance_paid":
       return wrap(c, gl, B[gl].paidSubject(ref), [hi + ",", B[gl].paidText(money("amountRappen"))], summary(c, gl), link);

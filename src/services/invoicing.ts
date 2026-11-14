@@ -12,6 +12,7 @@ import {
 } from "../domain/invoice";
 import { tr } from "../domain/blocks";
 import { audit } from "./audit";
+import { emailOutbox } from "../db/schema";
 
 /**
  * Rechnung und Kasse (SPEC 16.3): Entwurf aus Buchung, Ausstellen (unveränderlich, lückenlose Nummer), Gutschrift,
@@ -219,6 +220,7 @@ export async function issueInvoice(hotel: Hotel, invoiceId: string, actor: strin
     const number = await nextNumber(tx, hotel.id, Number(today.slice(0, 4)));
     const [done] = await tx.update(invoices).set({ status: "issued", number, issuedOn: today, dueOn: addDays(today, set.paymentDays), issuedAt: now }).where(eq(invoices.id, invoiceId)).returning();
     await audit(tx, { hotelId: hotel.id, actor, action: "invoice.issue", entity: "invoice", entityId: invoiceId, details: { number, total: done.totalRappen } });
+    if (set.autoSend) await queueInvoiceMail(tx, hotel, done, actor);
     return done;
   });
 }
@@ -241,7 +243,39 @@ export async function createCreditNote(hotel: Hotel, invoiceId: string, actor: s
     await tx.insert(invoiceLines).values(lines.map((l) => ({ invoiceId: cn.id, hotelId: hotel.id, position: l.position, description: l.description, quantity: l.quantity, unitPriceRappen: l.unitPriceRappen, amountRappen: -l.amountRappen, vatBps: l.vatBps, category: l.category })));
     await tx.update(folioItems).set({ invoiceId: null }).where(eq(folioItems.invoiceId, orig.id));
     await audit(tx, { hotelId: hotel.id, actor, action: "invoice.credit_note", entity: "invoice", entityId: cn.id, details: { number, creditOf: orig.number } });
+    if (invoicingSettings(hotel).autoSend) await queueInvoiceMail(tx, hotel, cn, actor);
     return cn;
+  });
+}
+
+// ---------------------------------------------------------------- E-Mail
+
+/**
+ * Reiht die Mail mit dem Link zur Rechnung ein (Empfänger-Adresse der Rechnung, sonst die des Gastes).
+ * Gibt false zurück, wenn keine Adresse bekannt ist. Erneutes Senden überschreibt den früheren Eintrag (Unique: Buchung/Vorlage/Adresse).
+ */
+async function queueInvoiceMail(ex: Executor, hotel: Hotel, inv: Invoice, actor: string): Promise<boolean> {
+  if (inv.status !== "issued" || !inv.bookingId) return false;
+  const [b] = await ex.select().from(bookings).where(and(eq(bookings.id, inv.bookingId), eq(bookings.hotelId, hotel.id)));
+  if (!b) return false;
+  const [g] = b.guestId ? await ex.select().from(guests).where(eq(guests.id, b.guestId)) : [];
+  const to = (inv.recipient.email || g?.email || "").trim();
+  if (!to) return false;
+  const data = { invoiceId: inv.id, number: inv.number, kind: inv.kind, totalRappen: inv.totalRappen };
+  await ex.insert(emailOutbox).values({ hotelId: hotel.id, bookingId: b.id, template: "invoice_sent", toEmail: to, language: b.language, data, sendAfter: new Date() })
+    .onConflictDoUpdate({ target: [emailOutbox.bookingId, emailOutbox.template, emailOutbox.toEmail], set: { data, status: "pending", attempts: 0, sentAt: null, sendAfter: new Date(), language: b.language } });
+  await ex.update(invoices).set({ emailedAt: new Date() }).where(eq(invoices.id, inv.id));
+  await audit(ex, { hotelId: hotel.id, actor, action: "invoice.email", entity: "invoice", entityId: inv.id, details: { number: inv.number } });
+  return true;
+}
+
+/** Manuell: Rechnung (oder Gutschrift) jetzt per E-Mail senden */
+export async function sendInvoiceEmail(hotel: Hotel, invoiceId: string, actor: string): Promise<void> {
+  await db().transaction(async (tx) => {
+    const [inv] = await tx.select().from(invoices).where(and(eq(invoices.id, invoiceId), eq(invoices.hotelId, hotel.id)));
+    if (!inv) throw new InvoiceError("Rechnung nicht gefunden.");
+    if (inv.status !== "issued") throw new InvoiceError("Nur ausgestellte Rechnungen können gesendet werden.");
+    if (!(await queueInvoiceMail(tx, hotel, inv, actor))) throw new InvoiceError("Keine E-Mail-Adresse bekannt. Bitte beim Empfänger eine E-Mail-Adresse eintragen (geht nur im Entwurf; sonst Gast-Adresse in der Buchung ergänzen).");
   });
 }
 

@@ -723,6 +723,7 @@ export const invoices = pgTable("invoices", {
   createdBy: text("created_by").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
   issuedAt: ts("issued_at"),
+  emailedAt: ts("emailed_at"),
 });
 export type Invoice = typeof invoices.$inferSelect;
 export type InvoiceRecipient = { name?: string; company?: string; street?: string; zip?: string; city?: string; country?: string; vatId?: string; email?: string };

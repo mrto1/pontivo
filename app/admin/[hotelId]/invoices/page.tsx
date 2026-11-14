@@ -19,7 +19,7 @@ async function save(f: FormData) {
   try {
     await updateInvoicingSettings(c.hotel, {
       vatLiable: f.get("vatLiable") === "on", vatNumber: s(f, "vatNumber"), stayBps: bps(s(f, "stay") || "3.8"), standardBps: bps(s(f, "standard") || "8.1"),
-      iban: s(f, "iban"), qrIban: s(f, "qrIban"), paymentDays: Number(s(f, "days")) || 0, footer: s(f, "footer"),
+      iban: s(f, "iban"), qrIban: s(f, "qrIban"), paymentDays: Number(s(f, "days")) || 0, footer: s(f, "footer"), autoSend: f.get("autoSend") === "on",
     }, c.actor);
   } catch (e) {
     if (!(e instanceof InvoiceError)) throw e;
@@ -72,6 +72,7 @@ export default async function Invoices({ params, searchParams }: { params: Promi
           <input type="hidden" name="hotelId" value={hotel.id} />
           <fieldset className="plain stack" disabled={!manager}>
             <label className="check"><input type="checkbox" name="vatLiable" defaultChecked={set.vatLiable} />Wir sind MWST-pflichtig (Rechnungen mit MWST)</label>
+            <label className="check"><input type="checkbox" name="autoSend" defaultChecked={set.autoSend} />Rechnung beim Ausstellen automatisch per E-Mail senden (wenn eine Adresse bekannt ist)</label>
             <div className="form-grid">
               <div><label>MWST-Nummer</label><input name="vatNumber" defaultValue={set.vatNumber} placeholder="CHE-123.456.789 MWST" /></div>
               <div><label>Satz Beherbergung %</label><input name="stay" inputMode="decimal" defaultValue={(set.stayBps / 100).toString()} /></div>

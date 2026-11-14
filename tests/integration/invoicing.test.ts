@@ -1,12 +1,12 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { closeDb, db } from "../../src/db/client";
-import { bookings, hotels, invoices, onsitePayments } from "../../src/db/schema";
+import { bookings, emailOutbox, hotels, invoices, onsitePayments } from "../../src/db/schema";
 import { confirmBooking, createDirectBooking } from "../../src/services/bookings";
 import { markBalanceOnsite } from "../../src/services/balance";
 import {
   addFolioItem, bookingBalance, createCreditNote, createInvoiceDraft, deleteDraft, deleteFolioItem, InvoiceError, invoiceView, issueInvoice,
-  recordOnsitePayment, updateDraft, updateInvoicingSettings, listFolio,
+  recordOnsitePayment, sendInvoiceEmail, updateDraft, updateInvoicingSettings, listFolio,
 } from "../../src/services/invoicing";
 import { vatOf } from "../../src/domain/invoice";
 import { addDays } from "../../src/domain/dates";
@@ -145,5 +145,33 @@ describe("Rechnung (SPEC 16.3)", () => {
     expect((await bookingBalance(db(), s.hotel.id, b.id)).openRappen).toBe(0);
     const all = await db().select().from(invoices).where(eq(invoices.hotelId, other.hotel.id));
     expect(all).toHaveLength(0);
+  });
+
+  it("E-Mail: manuell senden, automatisch beim Ausstellen (Einstellung), Link mit Buchungstoken", async () => {
+    const s = await setup();
+    const b = await book(s);
+    const d1 = await createInvoiceDraft(s.hotel, b.id, "t");
+    await updateDraft(s.hotel.id, d1.id, { recipient: { name: "Gast", email: "gast@example.ch" }, note: "" }, "t");
+    const i1 = await issueInvoice(s.hotel, d1.id, "t");
+    // ohne Einstellung: keine Mail
+    expect(await db().select().from(emailOutbox).where(eq(emailOutbox.bookingId, b.id))).toSatisfy((r: { template: string }[]) => !r.some((x) => x.template === "invoice_sent"));
+    await sendInvoiceEmail(s.hotel, i1.id, "t");
+    await sendInvoiceEmail(s.hotel, i1.id, "t"); // erneut: überschreibt, kein Duplikat
+    const mails = (await db().select().from(emailOutbox).where(eq(emailOutbox.bookingId, b.id))).filter((x) => x.template === "invoice_sent");
+    expect(mails).toHaveLength(1);
+    expect(mails[0].toEmail).toBe("gast@example.ch");
+    expect(mails[0].data).toMatchObject({ invoiceId: i1.id, number: i1.number });
+    const { render } = await import("../../src/email/templates");
+    const r = render("invoice_sent", "de", { hotel: s.hotel, booking: b, data: mails[0].data, baseUrl: "https://x" });
+    expect(r.text).toContain(`/b/${b.publicToken}/rechnung/${i1.id}`);
+    // Entwurf kann nicht gesendet werden
+    await db().update(invoices).set({ status: "draft" }).where(eq(invoices.id, i1.id));
+    await expect(sendInvoiceEmail(s.hotel, i1.id, "t")).rejects.toThrow(InvoiceError);
+    await db().update(invoices).set({ status: "issued" }).where(eq(invoices.id, i1.id));
+    // Gutschrift mit autoSend
+    await updateInvoicingSettings(s.hotel, { autoSend: true }, "t");
+    const cn = await createCreditNote(await reload(s), i1.id, "t");
+    const after = (await db().select().from(emailOutbox).where(eq(emailOutbox.bookingId, b.id))).filter((x) => x.template === "invoice_sent");
+    expect(after[0].data).toMatchObject({ invoiceId: cn.id, kind: "credit_note" });
   });
 });

@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
-import { createCreditNote, deleteDraft, InvoiceError, invoiceView, issueInvoice, updateDraft } from "@/src/services/invoicing";
+import { createCreditNote, deleteDraft, InvoiceError, invoiceView, issueInvoice, sendInvoiceEmail, updateDraft } from "@/src/services/invoicing";
 import { formatChf } from "@/src/domain/money";
 import { formatBps } from "@/src/domain/invoice";
 import { formatDay } from "@/src/i18n/dict";
@@ -38,6 +38,10 @@ async function issue(f: FormData) {
 }
 async function updateIfPresent(f: FormData, c: Awaited<ReturnType<typeof requireHotel>>, id: string) {
   if (f.has("name")) await updateDraft(c.hotel.id, id, { recipient: { name: s(f, "name"), company: s(f, "company"), street: s(f, "street"), zip: s(f, "zip"), city: s(f, "city"), country: s(f, "country"), vatId: s(f, "vatId"), email: s(f, "email") }, note: s(f, "note") }, c.actor);
+}
+async function mail(f: FormData) {
+  "use server";
+  await act(f, async (c, id) => { await sendInvoiceEmail(c.hotel, id, c.actor); return "E-Mail wird gesendet."; });
 }
 async function discard(f: FormData) {
   "use server";
@@ -122,11 +126,13 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
         {!isCredit ? (
           <p className="small">Bezahlt: {formatChf(v.paidRappen)} · <strong>{v.openRappen > 0 ? `offen ${formatChf(v.openRappen)}` : "bezahlt"}</strong>{inv.dueOn && v.openRappen > 0 ? ` · fällig am ${formatDay(inv.dueOn, "de")}` : ""}</p>
         ) : null}
+        {inv.emailedAt ? <p className="small muted">Per E-Mail gesendet am {inv.emailedAt.toLocaleString("de-CH", { timeZone: hotel.timezone })}.</p> : null}
         {v.qrNote ? <p className="notice warn small">{v.qrNote}</p> : null}
       </section>
 
       <div className="inline-form">
         {draft ? <form action={discard}>{hid}<button className="btn secondary small">Entwurf verwerfen</button></form> : null}
+        {!draft ? <form action={mail}>{hid}<button className="btn secondary small">{inv.emailedAt ? "Erneut per E-Mail senden" : "Per E-Mail senden"}</button></form> : null}
         {!draft && !isCredit && role !== "staff" ? <form action={credit}>{hid}<button className="btn secondary small">Gutschrift erstellen (Rechnung stornieren)</button></form> : null}
       </div>
     </div>

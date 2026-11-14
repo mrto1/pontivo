@@ -567,7 +567,7 @@ Freigegeben am 14.11.2026. Alles modular (16.1), additiv zum bestehenden Bestand
 - Jede Zuweisung im `audit_log`; Mandantentrennung über `hotel_id`.
 
 ### 16.3 Rechnung und Kasse (Modul `invoicing`)
-- Einstellungen pro Betrieb (`hotels.content.invoicing`): MWST-pflichtig ja/nein, MWST-Nummer, Satz Beherbergung (Standard 3,8 %), Satz übrige Leistungen (8,1 %), IBAN, Zahlungsfrist in Tagen, Fusszeile. Nicht MWST-pflichtig = Rechnungen ohne MWST.
+- Einstellungen pro Betrieb (`hotels.content.invoicing`): MWST-pflichtig ja/nein, MWST-Nummer, Satz Beherbergung (Standard 3,8 %), Satz übrige Leistungen (8,1 %), IBAN, Zahlungsfrist, automatischer E-Mail-Versand (aus) in Tagen, Fusszeile. Nicht MWST-pflichtig = Rechnungen ohne MWST.
 - Tabellen: `invoices` (Nummer lückenlos pro Betrieb und Jahr, Art `invoice`/`credit_note`, Datum, Empfänger, Summen, Status `draft`/`issued`, Verweis auf Buchung und bei Gutschrift auf die Rechnung), `invoice_lines` (Beschreibung, Menge, Einzelpreis, Betrag inkl. MWST, MWST-Satz in Basispunkten, Kategorie), `invoice_counters`, `folio_items` (Posten auf der Buchung, z. B. Minibar, bis sie fakturiert sind), `onsite_payments` (Zahlung vor Ort: bar, Karte, TWINT, Bank; Betrag, Datum, Notiz, Nutzer).
 - **Rechnung aus Buchung:** Zeilen aus Übernachtungen (`booking_rooms`), Extras (`booking_extras`), Kurtaxe (ohne MWST), offenen Posten (`folio_items`). Abzug Gutschein. Bereits bezahlte Beträge (Stripe, vor Ort) erscheinen als Zahlungen, der offene Betrag wird ausgewiesen. Ist nichts offen, heisst das Dokument **Quittung**.
 - **Unveränderlich:** Entwurf ist änderbar (Empfänger, Zeilen), «Ausstellen» vergibt die Nummer und sperrt. Korrektur nur per **Gutschrift** (eigene Nummer, negative Beträge).

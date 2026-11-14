@@ -15,9 +15,11 @@ export type InvoicingSettings = {
   qrIban: string;
   paymentDays: number;
   footer: string;
+  /** Rechnung beim Ausstellen automatisch per E-Mail senden (wenn eine Empfänger-Adresse bekannt ist) */
+  autoSend: boolean;
 };
 
-export const DEFAULT_INVOICING: InvoicingSettings = { vatLiable: false, vatNumber: "", stayBps: 380, standardBps: 810, iban: "", qrIban: "", paymentDays: 30, footer: "", };
+export const DEFAULT_INVOICING: InvoicingSettings = { vatLiable: false, vatNumber: "", stayBps: 380, standardBps: 810, iban: "", qrIban: "", paymentDays: 30, footer: "", autoSend: false };
 
 /** Satz in Basispunkten für eine Art von Leistung; nicht MWST-pflichtig = 0 */
 export function vatBps(s: InvoicingSettings, kind: VatKind): number {
