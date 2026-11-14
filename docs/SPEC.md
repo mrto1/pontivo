@@ -538,6 +538,16 @@ Alles wird aus den vorhandenen Hotel-Daten erzeugt, pro Hotel automatisch, ohne 
 - Erreichbar über die Hotel-Domain und für die Vorschau unter `/h/<slug>/sitemap.xml` und `/h/<slug>/llms.txt`.
 - **Später (Zusatzpaket):** Destinations-Paket (Gemeinde/Region: Inhalte zu Ausflügen, Events, Anreise für mehrere Betriebe).
 
+## 14f. Buchender KI-Chat (Option im Modul «KI-Chat», `settings.bookingEnabled`)
+
+Das Hotel kann im Admin einschalten, dass der Chat auf der **Website** (nicht auf der persönlichen Buchungsseite) Verfügbarkeit und Preise prüft. Voraussetzung: Modul läuft, Online-Zahlung eingerichtet.
+
+- **Werkzeuge** (Anthropic Tool Use, `src/services/chat-booking.ts`): `check_stay` (Daten, Personen) → Optionen mit **serverseitig berechnetem** Gesamtpreis (`searchOffers`); `show_offer` (`option_id`) → Server prüft Verfügbarkeit und Preis **neu** und erzeugt eine **Angebotskarte** (nie vom Modell).
+- **Buchung:** Die Karte führt auf das normale Buchungsformular `/<lang>/book?…&plan=…` (Name, AGB, Anzahlung/Zahlung per Stripe Checkout). Der Chat erfasst **keine Personendaten** und löst keine Zahlung aus. Gebunden ist der Gast erst nach der Zahlung dort.
+- **Regeln im Prompt:** Preise nur aus Werkzeugen, nichts selbst rechnen, keine Zusagen, keine Namen/E-Mail/Karten im Chat.
+- **Kosten/Missbrauch:** höchstens 4 Modellaufrufe pro Gästenachricht (`MAX_TOOL_ROUNDS`), gleiche Gesprächs-Kontingente und Rate-Limits wie der normale Chat.
+- **Nicht enthalten:** Zahlungslink direkt aus dem Chat, Buchung mit Extras/Gutschein im Chat, Mail/WhatsApp/Voice.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

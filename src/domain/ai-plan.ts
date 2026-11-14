@@ -27,6 +27,8 @@ export type AiModuleSettings = {
   endsAt?: string | null;
   /** Monat der ersten Aktivierung überhaupt: kostenlos, wird nie zurückgesetzt */
   freeMonth?: string;
+  /** Buchender Chat (SPEC 14f): prüft Verfügbarkeit und Preise, zeigt Angebotskarten. Nur auf Wunsch des Hotels. */
+  bookingEnabled?: boolean;
 };
 
 /** Anzahl angebrochener Zusatzpakete für die Gespräche eines Monats */

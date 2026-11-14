@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
-import { AiModuleError, aiInsights, aiModuleRow, aiUsageSummary, cancelAiChat, enableAiChat, offeredPlans, setAiBudget } from "@/src/services/ai-module";
+import { AiModuleError, aiInsights, aiModuleRow, aiUsageSummary, cancelAiChat, enableAiChat, offeredPlans, setAiBooking, setAiBudget } from "@/src/services/ai-module";
 import { moduleActiveOn } from "@/src/domain/ai-plan";
 import { todayIn } from "@/src/domain/dates";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
@@ -31,6 +31,19 @@ async function cancel(f: FormData) {
   const c = await requireHotel(s(f, "hotelId"), "owner");
   await cancelAiChat(c.hotel, c.actor);
   back(c.hotel.id, "Gekündigt. Der Chat läuft noch bis Ende des Monats.");
+}
+
+async function booking(f: FormData) {
+  "use server";
+  const c = await requireHotel(s(f, "hotelId"), "owner");
+  let msg = f.get("on") === "1" ? "Der Chat prüft jetzt Verfügbarkeit und Preise und zeigt Angebote." : "Der Chat beantwortet wieder nur Fragen zum Haus.";
+  try {
+    await setAiBooking(c.hotel, f.get("on") === "1", c.actor);
+  } catch (e) {
+    if (!(e instanceof AiModuleError)) throw e;
+    msg = `Nicht gespeichert: ${e.message}`;
+  }
+  back(c.hotel.id, msg);
 }
 
 async function budget(f: FormData) {
@@ -110,6 +123,12 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
               </table>
             </section>
           ) : null}
+
+          <section className="card stack">
+            <h2>Buchender Chat {m.settings.bookingEnabled ? <span className="badge" style={{ marginLeft: 8 }}>an</span> : null}</h2>
+            <p className="small">Wenn eingeschaltet, prüft der Chat auf Wunsch der Gäste Verfügbarkeit und Gesamtpreis (immer die echten, serverseitig berechneten Preise) und zeigt eine Angebotskarte. Gebucht wird auf Ihrem normalen Buchungsformular mit Namen, AGB und Zahlung; im Chat werden keine Personendaten erfasst. Jede Rückfrage mit Preisprüfung braucht mehrere KI-Aufrufe, das Gesprächskontingent zählt aber wie bisher pro Gespräch.</p>
+            <form action={booking}>{hidden}<input type="hidden" name="on" value={m.settings.bookingEnabled ? "0" : "1"} /><button className="btn secondary small" disabled={!isOwner}>{m.settings.bookingEnabled ? "Ausschalten" : "Einschalten"}</button></form>
+          </section>
 
           {t.packSize > 0 ? (
             <section className="card stack">

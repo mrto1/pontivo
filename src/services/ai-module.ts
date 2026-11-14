@@ -129,3 +129,14 @@ export async function hotelsWithAiModule(): Promise<string[]> {
   return rows<{ hotel_id: string }>(await db().execute(sql`SELECT hotel_id FROM hotel_modules WHERE module = ${AI_MODULE} AND settings ? 'terms'`)).map((r) => r.hotel_id);
 }
 
+
+/** Buchender Chat an/aus (SPEC 14f). Braucht das laufende Modul und eingerichtete Online-Zahlung. */
+export async function setAiBooking(hotel: Hotel, on: boolean, actor: string): Promise<void> {
+  await db().transaction(async (tx) => {
+    const [cur] = await tx.select().from(hotelModules).where(and(eq(hotelModules.hotelId, hotel.id), eq(hotelModules.module, AI_MODULE))).for("update");
+    const s = (cur?.settings ?? {}) as AiModuleSettings;
+    if (!cur?.enabled || !s.terms) throw new AiModuleError("Das Modul ist nicht eingeschaltet.");
+    await tx.update(hotelModules).set({ settings: { ...s, bookingEnabled: on } }).where(and(eq(hotelModules.hotelId, hotel.id), eq(hotelModules.module, AI_MODULE)));
+    await audit(tx, { hotelId: hotel.id, actor, action: on ? "module.ai_chat.booking_on" : "module.ai_chat.booking_off", entity: "hotel", entityId: hotel.id, details: {} });
+  });
+}
