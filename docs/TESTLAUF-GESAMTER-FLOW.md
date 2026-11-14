@@ -3,12 +3,38 @@
 Eine Geschichte, in der Reihenfolge. Du spielst alle Rollen: Gast, Rezeption, Reinigung, Chef, Treuhänder.
 Bei jedem Schritt steht **Erwartet**. Weicht es ab: Schritt-Nummer, was du siehst, was du erwartet hast, notieren.
 
-## 0. Vorbereitung (einmal, 10 Minuten)
-1. Server aktualisieren: `ssh ubuntu@pontivo.ch`, dann `cd /opt/pontivo`, `git pull`, `cd deploy`, `./deploy.sh` (bei «permission denied» mit `sudo`).
-2. Admin öffnen, einloggen. **Konto → Funktionen:** einschalten: Rezeption, Housekeeping, Gäste-Notizen, Gruppen, Buchhaltung-Export. (Kartenterminal und Zutritt nur, wenn du Hardware hast.)
-3. **Einstellungen:** Adresse des Betriebs, IBAN (Rechnung), Check-in/Check-out-Zeit ausgefüllt? Stripe im Test-Modus verbunden?
-4. **Angebot → Zimmer:** mindestens 2 Zimmertypen mit Preis. **Zimmerplan/Heute:** Zimmer mit Nummern angelegt (z. B. 101, 102).
-5. Zweites Browserfenster (privat/Inkognito) für den Gast bereithalten. Testkarte: `4242 4242 4242 4242`, beliebiges Ablaufdatum in der Zukunft, beliebige CVC.
+## 0. Onboarding eines neuen Gastgebers (Start des ganzen Tests)
+Du bist ein fremder Gastgeber, der Pontivo zum ersten Mal sieht. Benutze dafür eine **neue E-Mail-Adresse** (z. B. eine Alias-Adresse) und das Inkognito-Fenster. Dieser Betrieb ist ab Phase 1 dein Testhotel.
+
+**Server vorher aktualisieren:** `ssh ubuntu@pontivo.ch`, `cd /opt/pontivo`, `git pull`, `cd deploy`, `./deploy.sh` (bei «permission denied» mit `sudo`).
+
+### 0.1 Registrieren
+1. `https://pontivo.ch` öffnen. **Erwartet:** Startseite mit Rechner und Preis (1.9 %, mindestens CHF 19 im Monat). Knopf «Registrieren» oben rechts.
+2. Registrieren: **Was vermieten Sie?** (z. B. Hotel), **Brauchen Sie eine Website?** «Ja, Website mit Buchung», Name des Betriebs, Kanton, Gemeinde, dein Name, E-Mail, Haken bei den Bedingungen. **Erwartet:** Danke-Seite.
+3. Mail abwarten. **Erwartet:** Willkommensmail mit Login-Link (Absender buchung@… oder info@pontivo.ch); in Spam prüfen. Link öffnen. **Erwartet:** du landest direkt im Admin, im Assistenten «Einrichten».
+4. Nach 1–2 Tagen (optional): Erinnerungsmail, wenn du nicht weitergemacht hast.
+5. Absichtlich falsch: Registrierung ohne Haken bei den Bedingungen oder mit leerer E-Mail. **Erwartet:** verständliche Fehlermeldung, nichts angelegt.
+
+### 0.2 Einrichtungs-Assistent (Menü «Einrichten», Schritte in dieser Reihenfolge)
+Oben steht, wie viele Schritte erledigt sind. «Überspringen» gibt es bei freiwilligen Schritten.
+1. **Angaben zum Betrieb:** Adresse, PLZ, Ort, Telefon. **Erwartet:** «Speichern und weiter» springt zum nächsten offenen Schritt.
+2. **Kurtaxe:** Satz der Gemeinde wird vorgeschlagen; bestätigen («Satz bestätigen») oder «In meiner Gemeinde gibt es keine Kurtaxe».
+3. **Zimmer und Preise:** mindestens 2 Zimmertypen mit Personenzahl und Preis, z. B. Einzelzimmer CHF 120, Doppelzimmer CHF 180. **Erwartet:** «Hinzufügen», dann «Weiter zu den Fotos».
+4. **Fotos:** mindestens ein Foto hochladen (Titelbild). **Erwartet:** erscheint in der Liste.
+5. **Infos zur Ankunft** (freiwillig): Text Deutsch und Englisch, z. B. «Schlüsselbox links neben der Tür».
+6. **Zahlungen empfangen:** Stripe verbinden. Im Test-Modus: «Konto eröffnen» und mit Stripe-Testdaten durchklicken, danach «Status prüfen». **Erwartet:** Schritt wird grün, sobald Stripe Zahlungen freigibt (Karte, TWINT).
+7. **Karte für die Grundgebühr:** Testkarte `4242 4242 4242 4242` hinterlegen. **Erwartet:** Kartenbezeichnung erscheint. Nur Inhaber sieht diesen Schritt.
+8. **Online gehen:** Es werden die noch offenen Pflichtpunkte aufgelistet. Erst wenn alle erledigt sind, geht «Online gehen». **Erwartet:** Betrieb steht auf «live»; Mail ans Hotel; Hotelseite `https://pontivo.ch/h/<slug>/de` ist öffentlich erreichbar.
+9. Wer «nur das Buchungssystem» gewählt hat: zusätzlicher Schritt «Auf Website einbauen» (Link, Widget); «Prüfen» findet den Hinweis auf der eigenen Website.
+10. Absichtlich: zu «Online gehen» springen, bevor Pflichtpunkte erledigt sind. **Erwartet:** Hinweis, was noch fehlt, kein Livegang.
+
+### 0.3 Nach dem Livegang
+1. **Übersicht:** Betrieb live, keine offenen Einrichtungspunkte mehr.
+2. **Website:** Layout und Schrift wählen (u. a. Redaktion, Galerie), Logo und Farbe setzen, Vorschau ansehen.
+3. **Funktionen** (Konto → Funktionen): einschalten: Rezeption, Housekeeping, Gäste-Notizen, Gruppen, Buchhaltung-Export. (Kartenterminal und Zutritt nur mit Hardware.)
+4. **Einstellungen:** IBAN für die QR-Rechnung, Check-in-/Check-out-Zeit, MWST-Angaben (falls MWST-pflichtig).
+5. **Zimmerplan/Heute:** einzelne Zimmer mit Nummern anlegen (z. B. 101, 102), Zimmertypen zuordnen.
+6. Zweites Browserfenster (Inkognito) für den Gast bereithalten. Testkarte: `4242 4242 4242 4242`, beliebiges Ablaufdatum in der Zukunft, beliebige CVC.
 
 ## 1. Der Gast bucht (Inkognito-Fenster)
 1. Hotelseite öffnen: `https://pontivo.ch/h/<dein-slug>/de`. **Erwartet:** Seite lädt, Suchleiste sichtbar.
