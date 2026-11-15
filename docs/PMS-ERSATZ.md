@@ -134,7 +134,7 @@ Beim Einrichten (und auf der Startseite) drei Fragen: Zimmerzahl, «Haben Sie ei
 - **Läuft daneben** (z. B. über 40 Zimmer, Spezialwünsche; Direktbuchung und Kanäle trotzdem nutzbar).
 Die Seite verspricht nie mehr, als die Antwort hergibt.
 
-### 4.2 Einarbeitung
+### 4.2 Einarbeitung (gebaut: SPEC 19.17; Bilder und Support-Angaben offen)
 - Checkliste «Erste Woche» pro Rolle (Rezeption, Reinigung, Buchhaltung): 5 bis 8 Aufgaben mit Link.
 - Hilfeseiten pro Modul (ein Absatz, ein Bild) direkt neben der Funktion.
 - Optional: Einrichtungshilfe gegen Entgelt (Migration begleiten), nicht Pflicht.

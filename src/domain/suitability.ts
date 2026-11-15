@@ -1,6 +1,6 @@
 /**
  * Eignungs-Check (SPEC 19.14, PMS-ERSATZ 4.1): drei Fragen, drei Antworten. Reine Logik.
- * Die Antwort verspricht nie mehr, als Pontivo heute kann: Kassenmodul und Datenübernahme sind noch in Vorbereitung.
+ * Die Antwort verspricht nie mehr, als Pontivo heute kann: Kassenschnittstelle und Kassenmodul gibt es, die Datenübernahme ist noch in Vorbereitung.
  */
 export const MAX_ROOMS = 40;
 export const SOFTWARE = ["none", "small", "large", "channel"] as const;
@@ -28,7 +28,7 @@ export function suitability(i: { rooms: number; restaurantWithPos: boolean; soft
   if (i.restaurantWithPos) {
     return {
       fit: "with_pos", title: "Passt, mit Kassen-Schnittstelle oder Kassenmodul",
-      text: "Pontivo ersetzt die Hotelseite. Für das Restaurant sind eine Schnittstelle zu Ihrer Kasse und ein eigenes Kassenmodul in Entwicklung. Bis dahin läuft Ihre Kasse daneben, Restaurantposten buchen Sie von Hand aufs Zimmer.",
+      text: "Pontivo ersetzt die Hotelseite. Für das Restaurant haben Sie zwei Wege: Ihre Kasse behalten und Posten über die Kassen-Schnittstelle aufs Zimmer buchen lassen (Ihr Kassenanbieter muss sie anbinden), oder das Kassenmodul von Pontivo nutzen (Bestellen am Tisch, bar, Karte und TWINT, aufs Zimmer, auch ohne Internet). Karte und TWINT bestätigt das Personal von Hand, Bons drucken und die Anbindung eines Kartenterminals gibt es noch nicht. Ihr Treuhänder sollte das Kassenmodul vor dem Einsatz prüfen.",
       reasons: ["Restaurant mit eigener Kasse."],
     };
   }

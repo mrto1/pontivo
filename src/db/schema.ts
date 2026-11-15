@@ -1348,3 +1348,14 @@ export const posDayCloses = pgTable("pos_day_closes", {
   closedAt: ts("closed_at").notNull().defaultNow(),
 });
 export type PosDayClose = typeof posDayCloses.$inferSelect;
+
+export const onboardingTasks = pgTable(
+  "onboarding_tasks",
+  {
+    hotelId: uuid("hotel_id").notNull(),
+    userId: uuid("user_id").notNull(),
+    taskKey: text("task_key").notNull(),
+    doneAt: ts("done_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.hotelId, t.userId, t.taskKey] })],
+);

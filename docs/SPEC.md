@@ -803,6 +803,11 @@ Grundlage: `docs/PMS-ERSATZ.md` 5.3 (Treuhänder-/Kassenvorgaben). Diese Stufe: 
 - **Abgelehnte Vorgänge** (z. B. Zeile von einem anderen Gerät schon bezahlt) werden einzeln abgelehnt und halten die übrigen nicht auf. Eine abgelehnte Zahlung hinterlässt eine Lücke in den Bon-Nummern; der Grund steht im Protokoll (`pos.sync_rejected`) und im Kassenabschluss. Der Kassenabschluss warnt ausserdem bei Geräten mit nicht übertragenen Vorgängen.
 - ASSUMPTION: Karte/TWINT offline sind vom Personal bestätigt (keine Terminal-Anbindung). Rabatt, Storno und Gegenbon gehen nur online (Manager-Seiten). Eine Bestellung hat keinen festen Besitzer: zwei Geräte können dieselbe bezahlen, das zweite wird abgelehnt.
 
+### 19.17 Einarbeitung (PMS-ERSATZ 4.2)
+- **Erste Woche** (`/admin/<hotel>/erste-woche`, Menü «Konto», alle Rollen): Checkliste je Rolle (Inhaber/Manager/Mitarbeitende 8, Rezeption 7, Reinigung 4, Buchhaltung 6, Service 5 Aufgaben) mit Link zur Seite. Aufgaben ausgeschalteter Funktionen entfallen. Erledigt-Stand je Person und Betrieb in `onboarding_tasks` (Migration 0056); abhaken nur für Aufgaben der eigenen Liste. Inhalt in `src/domain/guide.ts`.
+- **Hilfe** (`/admin/<hotel>/hilfe`): je eingeschaltete Funktion Beschreibung (aus dem Modul-Register), ein Satz «So fangen Sie an» und Link zur Seite. Kein Bild (offen, siehe `QUESTIONS.md`).
+- **Einrichtungshilfe:** nur ein Hinweis auf der Hilfeseite (freiwillig, nach Aufwand, Preis vorab). ASSUMPTION: Kontakt ist die Absenderadresse der Mails (`EMAIL_FROM`), bis der Betreiber eine Support-Adresse und Preise festlegt.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

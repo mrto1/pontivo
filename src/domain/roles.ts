@@ -12,10 +12,10 @@ export const ROLE_LABEL: Record<Role, string> = {
 
 /** Bereiche = Schlüssel der Menüpunkte (src/admin/nav.ts) plus «layout» (Rahmen) und «home» (leitet weiter) */
 export const ROLE_AREAS: Record<LimitedRole, readonly string[]> = {
-  reception: ["layout", "home", "mypontivo", "calendar", "bookings", "frontdesk", "plan", "housekeeping", "resources", "guests", "guestbook", "inquiries", "inbox", "vouchers", "invoices", "dayclose", "groups"],
-  housekeeping: ["layout", "home", "mypontivo", "housekeeping"],
-  accounting: ["layout", "home", "mypontivo", "invoices", "dayclose", "debtors", "owners", "statistics", "hesta", "accountingexport"],
-  service: ["layout", "home", "mypontivo", "restaurant", "kasse"],
+  reception: ["layout", "home", "mypontivo", "firstweek", "help", "calendar", "bookings", "frontdesk", "plan", "housekeeping", "resources", "guests", "guestbook", "inquiries", "inbox", "vouchers", "invoices", "dayclose", "groups"],
+  housekeeping: ["layout", "home", "mypontivo", "firstweek", "help", "housekeeping"],
+  accounting: ["layout", "home", "mypontivo", "firstweek", "help", "invoices", "dayclose", "debtors", "owners", "statistics", "hesta", "accountingexport"],
+  service: ["layout", "home", "mypontivo", "firstweek", "help", "restaurant", "kasse"],
 };
 
 export const isLimitedRole = (r: Role | null): r is LimitedRole => r === "reception" || r === "housekeeping" || r === "accounting" || r === "service";
