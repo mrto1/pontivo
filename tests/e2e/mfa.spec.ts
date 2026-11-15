@@ -7,7 +7,7 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
   const email = `mfa-${id}@example.ch`;
   const cdp = await context.newCDPSession(page);
   await cdp.send("WebAuthn.enable");
-  const authOptions = { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true };
+  const authOptions = { protocol: "ctap2" as const, transport: "internal" as const, hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true };
   let { authenticatorId } = await cdp.send("WebAuthn.addVirtualAuthenticator", { options: authOptions });
 
   // Das Autofill-Angebot (Conditional UI) würde mit simulierter Anwesenheit sofort anmelden; Browser warten dort auf die Auswahl.
