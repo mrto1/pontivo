@@ -899,3 +899,31 @@ export const doorCodes = pgTable("door_codes", {
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 export type DoorCode = typeof doorCodes.$inferSelect;
+
+export const userPasskeys = pgTable("user_passkeys", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  credentialId: text("credential_id").notNull().unique(),
+  publicKey: text("public_key").notNull(),
+  counter: bigint("counter", { mode: "number" }).notNull().default(0),
+  transports: text("transports"),
+  name: text("name").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  lastUsedAt: ts("last_used_at"),
+});
+
+export const userTotp = pgTable("user_totp", {
+  userId: uuid("user_id").primaryKey(),
+  secretEnc: text("secret_enc").notNull(),
+  confirmedAt: ts("confirmed_at"),
+  lastStep: bigint("last_step", { mode: "number" }).notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const userRecoveryCodes = pgTable("user_recovery_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull(),
+  codeHash: text("code_hash").notNull(),
+  usedAt: ts("used_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});

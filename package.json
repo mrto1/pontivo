@@ -18,6 +18,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.3",
     "@stripe/connect-js": "^3.5.0",
     "@stripe/react-connect-js": "^3.5.0",
     "date-fns": "^4.4.0",

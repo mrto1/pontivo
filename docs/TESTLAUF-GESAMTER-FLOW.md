@@ -38,6 +38,16 @@ Oben steht, wie viele Schritte erledigt sind. «Überspringen» gibt es bei frei
 5. **Zimmerplan/Heute:** einzelne Zimmer mit Nummern anlegen (z. B. 101, 102), Zimmertypen zuordnen.
 6. Zweites Browserfenster (Inkognito) für den Gast bereithalten. Testkarte: `4242 4242 4242 4242`, beliebiges Ablaufdatum in der Zukunft, beliebige CVC.
 
+### 0.4 Sicherheit: Passkey und Authenticator-App
+1. Angemeldet: unten auf «Sicherheit: Passkey und Authenticator» (oder Menü «Mehr», «Sicherheit») klicken.
+2. «Passkey hinzufügen»: Gerät fragt nach Fingerabdruck, Gesicht oder Code. Der Passkey erscheint in der Liste.
+3. Abmelden, auf der Login-Seite «Mit Passkey anmelden» → Anmeldung ohne E-Mail.
+4. «Authenticator-App einrichten»: QR-Code mit Google/Microsoft Authenticator, 2FAS oder Aegis scannen, den 6-stelligen Code eingeben. Die 10 Wiederherstellungscodes notieren.
+5. Abmelden, per E-Mail-Link anmelden → jetzt kommt «Zweiter Faktor». Falscher Code wird abgelehnt, richtiger Code oder ein Wiederherstellungscode meldet an (jeder Wiederherstellungscode nur einmal).
+6. Per Passkey anmelden → kein Code nötig.
+7. Zurück in «Sicherheit»: 2FA mit gültigem Code ausschalten.
+Hinweis: Passkeys gelten nur für die Domain, auf der sie angelegt wurden (lokal localhost, Server pontivo.ch).
+
 ## 1. Der Gast bucht (Inkognito-Fenster)
 1. Hotelseite öffnen: `https://pontivo.ch/h/<dein-slug>/de`. **Erwartet:** Seite lädt, Suchleiste sichtbar.
 2. Anreise **morgen**, Abreise in 3 Tagen, 2 Erwachsene, «Verfügbarkeit prüfen». **Erwartet:** Zimmertypen mit Preis.

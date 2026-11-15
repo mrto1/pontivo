@@ -41,7 +41,8 @@ export default async function AdminHome() {
       )}
       <p className="small muted">Umsatz = bestätigte Buchungen dieses Monats (nach Bestätigungsdatum), ohne Abzüge.</p>
       {canAdd ? <p><a className="btn secondary small" href="/admin/neu">Weiteren Betrieb anlegen</a></p> : null}
-      <form action="/api/auth/logout" method="post" style={{ marginTop: 24 }}><button className="btn secondary small">Abmelden</button></form>
+      <p style={{ marginTop: 24 }}><a href="/admin/konto">Sicherheit: Passkey und Authenticator</a></p>
+      <form action="/api/auth/logout" method="post" style={{ marginTop: 8 }}><button className="btn secondary small">Abmelden</button></form>
     </main>
   );
 }

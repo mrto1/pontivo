@@ -639,6 +639,12 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 - Je bestätigte Buchung ein Keypad-Code (Typ 13) pro Eingangstür und pro zugewiesenem Zimmer (`door_codes`, Code verschlüsselt), gültig von Check-in-Zeit bis Check-out-Zeit des Betriebs. Stündlicher Job: Codes 3 Tage vor Anreise erstellen; bei Storno zurückziehen; nach Abreise löschen. Fehler bleiben sichtbar (Status `error`) und lassen sich per Knopf wiederholen.
 - Seite `/admin/<hotel>/zutritt` (Inhaber/Manager: Token, Schlösser, Zuordnung); Karte «Zutritt» auf der Buchung (Code, Status, Gültigkeit, erstellen, zurückziehen). Codes erscheinen nicht in Gäste-Mails und nicht im KI-Prompt.
 
+### 18.6 Anmeldung: Passkey und Authenticator-App
+- **Passkey (WebAuthn, `@simplewebauthn`):** Anmeldung ohne E-Mail-Eingabe über «Mit Passkey anmelden» (auffindbare Anmeldedaten, Gerätesperre Pflicht). Verwaltung auf `/admin/konto` («Sicherheit»): hinzufügen, benennen, entfernen. Tabelle `user_passkeys`. Relying Party = Host von `APP_BASE_URL` (Passkeys gelten nur für diese Domain).
+- **Authenticator-App (TOTP, RFC 6238, optional, je Benutzer):** Einrichtung mit QR-Code und Bestätigungscode, danach 10 Wiederherstellungscodes (einmalig angezeigt, nur als Hash gespeichert). Geheimnis verschlüsselt (AES-256-GCM, wie 14.7). Ein Code gilt nur einmal (`last_step`), ±1 Schritt Toleranz.
+- **Ablauf:** E-Mail-Link mit aktiver 2FA → zweite Seite `/admin/login/2fa` (Code oder Wiederherstellungscode), erst danach Sitzung (Zwischenzustand: signiertes Cookie, 5 Minuten, höchstens 5 Versuche je Benutzer). Anmeldung per Passkey ersetzt die 2. Stufe (Gerätebesitz plus Gerätesperre). Ausschalten, neue Wiederherstellungscodes nur mit gültigem Code.
+- Der E-Mail-Link bleibt immer möglich (Fallback). Kein Zwang zu 2FA in dieser Version (siehe QUESTIONS).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

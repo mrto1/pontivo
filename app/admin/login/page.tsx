@@ -4,6 +4,7 @@ import { currentUserId } from "@/src/auth/guard";
 import { clientIp, rateLimit } from "@/src/lib/rate-limit";
 import { headers } from "next/headers";
 import { env } from "@/src/env";
+import { PasskeyLogin } from "@/components/admin/PasskeyLogin";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<Re
           Entwicklung (kein E-Mail-Versand konfiguriert): <a href={sp.dev}>Hier anmelden</a>
         </p>
       ) : null}
+      <PasskeyLogin />
       <form action={requestLink} className="card stack">
         <div>
           <label htmlFor="email">E-Mail</label>

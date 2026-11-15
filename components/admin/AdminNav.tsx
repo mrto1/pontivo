@@ -68,6 +68,7 @@ export function AdminNav({ nav, home, hotelId, userLabel }: { nav: Nav; home: st
               {iosHint ? <p className="muted small">Zum Installieren: Teilen-Symbol, dann «Zum Home-Bildschirm».</p> : null}
               <PushToggle hotelId={hotelId} />
               <p className="muted small">{userLabel}</p>
+              <a href="/admin/konto">Sicherheit (Passkey, 2FA)</a>
               <form action="/api/auth/logout" method="post"><button className="btn secondary small">Abmelden</button></form>
             </div>
           </div>

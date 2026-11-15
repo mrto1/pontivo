@@ -34,6 +34,31 @@ export function readSessionValue(value: string | undefined | null, now = Date.no
   return userId;
 }
 
+/** Kurzlebiger signierter Wert (WebAuthn-Challenge, ausstehende 2FA): base64url(JSON).signatur */
+export function signShort<T extends Record<string, unknown>>(data: T, ttlSec: number, now = Date.now()): string {
+  const body = Buffer.from(JSON.stringify({ ...data, exp: Math.floor(now / 1000) + ttlSec })).toString("base64url");
+  return `${body}.${sign(body)}`;
+}
+
+export function readShort<T extends Record<string, unknown>>(value: string | undefined | null, now = Date.now()): (T & { exp: number }) | null {
+  if (!value) return null;
+  const [body, sig] = value.split(".");
+  if (!body || !sig) return null;
+  const a = Buffer.from(sig), b = Buffer.from(sign(body));
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    const d = JSON.parse(Buffer.from(body, "base64url").toString());
+    return typeof d.exp === "number" && d.exp * 1000 >= now ? d : null;
+  } catch { return null; }
+}
+
+export const MFA_COOKIE = "hb_mfa";
+export const WEBAUTHN_COOKIE = "hb_wa";
+
+export function sessionCookieOptions() {
+  return { httpOnly: true, sameSite: "lax" as const, secure: env().APP_BASE_URL.startsWith("https://"), path: "/", maxAge: SESSION_DAYS * 86400 };
+}
+
 /**
  * Magic-Link anfordern. Gibt den Link zurück (für Entwicklung ohne E-Mail-Versand), sonst null.
  * Unbekannte E-Mail-Adressen erhalten keinen Link, die Antwort an den Client ist trotzdem gleich.
