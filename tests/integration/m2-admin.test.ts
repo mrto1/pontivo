@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { db, closeDb } from "../../src/db/client";
-import { emailOutbox, hotels } from "../../src/db/schema";
+import { emailOutbox, hotelMembers, hotels, users } from "../../src/db/schema";
 import { atLeast, consumeLoginToken, createSessionValue, hotelsForUser, readSessionValue, requestLoginLink, roleIn } from "../../src/auth/session";
 import { createUser } from "../../src/services/setup";
 import { listBookings, bookingDetail } from "../../src/services/admin-bookings";
@@ -92,6 +92,10 @@ describe("Kurtaxe bestätigen und live schalten", () => {
     expect(await goLiveProblems(h.hotel)).toContain("Kurtaxe-Satz für die Gemeinde ist nicht bestätigt.");
     await expect(setHotelStatus(h.hotel, "live", "x")).rejects.toThrow();
     await confirmTouristTax(h.hotel, { adultRappen: 150, reducedRappen: null, freeUnderAge: 12, reducedUnderAge: null }, "user:x");
+    // Inhaber-Adresse noch unbestätigt: nicht live
+    await createUser(`owner-${Date.now()}@example.ch`, { hotelId: h.hotel.id, role: "owner" });
+    expect((await goLiveProblems(h.hotel)).join(" ")).toContain("E-Mail-Adresse des Inhabers");
+    for (const m of await db().select().from(hotelMembers).where(eq(hotelMembers.hotelId, h.hotel.id))) await db().update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, m.userId));
     expect(await goLiveProblems(h.hotel)).toEqual([]);
     await setHotelStatus(h.hotel, "live", "x");
     const [fresh] = await db().select().from(hotels).where(eq(hotels.id, h.hotel.id));

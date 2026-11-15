@@ -5,7 +5,12 @@ import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { AccountExistsError, CANTONS, PROPERTY_LABEL, PROPERTY_TYPES, registerHost } from "@/src/services/onboarding";
 import { getHotelByHost } from "@/src/services/hotels";
-import { clientIp, rateLimit } from "@/src/lib/rate-limit";
+import { clientIp } from "@/src/lib/rate-limit";
+import { checkPublicForm, limitByIpAndEmail } from "@/src/lib/public-form";
+import { DisposableEmailError } from "@/src/services/onboarding";
+import { FormGuard } from "@/components/FormGuard";
+import { Turnstile } from "@/components/Turnstile";
+import { turnstileEnabled } from "@/src/integrations/turnstile";
 import { env } from "@/src/env";
 import { requestLoginLink } from "@/src/auth/session";
 import { currentUserId } from "@/src/auth/guard";
@@ -18,8 +23,16 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 async function register(f: FormData) {
   "use server";
   const h = await headers();
-  if (s(f, "website")) redirect("/registrieren/danke"); // Spam-Falle
-  if (!rateLimit(`register:${clientIp(new Request("http://x", { headers: h }))}`, 3)) redirect("/registrieren?error=" + encodeURIComponent("Zu viele Versuche. Bitte in einer Minute nochmals."));
+  const ip = clientIp(new Request("http://x", { headers: h }));
+  // Bots (Honeypot, zu schnell) sehen dieselbe «Danke»-Seite, es passiert aber nichts
+  const check = await checkPublicForm(f, ip, { minMs: 3000 });
+  if (check === "bot") redirect("/registrieren/danke");
+  if (check === "retry") redirect("/registrieren?error=" + encodeURIComponent("Das ging zu schnell oder die Seite war zu lange offen. Bitte das Formular nochmals absenden."));
+  if (check === "turnstile") redirect("/registrieren?error=" + encodeURIComponent("Die Sicherheitsprüfung ist fehlgeschlagen. Bitte die Seite neu laden und nochmals versuchen."));
+  // je IP 5 Registrierungen pro 10 Minuten, je E-Mail-Adresse 3 pro Stunde (Datenbank)
+  if (!(await limitByIpAndEmail("register", ip, s(f, "email"), { ipLimit: 5, ipWindowMs: 600_000, emailLimit: 3, emailWindowMs: 3_600_000 }))) {
+    redirect("/registrieren?error=" + encodeURIComponent("Zu viele Versuche. Bitte später nochmals."));
+  }
   let link: string | null = null;
   try {
     const r = await registerHost({
@@ -35,6 +48,7 @@ async function register(f: FormData) {
       const dev0 = existing && env().NODE_ENV !== "production" && !env().POSTMARK_SERVER_TOKEN;
       redirect(dev0 ? `/registrieren/danke?dev=${encodeURIComponent(existing)}` : "/registrieren/danke");
     }
+    if (e instanceof DisposableEmailError) redirect("/registrieren?error=" + encodeURIComponent("Bitte eine dauerhafte E-Mail-Adresse verwenden (Wegwerf-Adressen sind nicht möglich)."));
     if (e instanceof ZodError) redirect("/registrieren?error=" + encodeURIComponent(e.issues.map((i) => i.message).join(" · ")));
     throw e;
   }
@@ -90,7 +104,8 @@ export default async function Register({ searchParams }: { searchParams: Promise
           </div>
           <div><label htmlFor="contactName">Ihr Name</label><input id="contactName" name="contactName" required maxLength={120} autoComplete="name" /></div>
           <div><label htmlFor="email">E-Mail</label><input id="email" name="email" type="email" required maxLength={200} autoComplete="email" /></div>
-          <div className="hp" aria-hidden="true"><label>Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
+          <FormGuard />
+          {turnstileEnabled() ? <Turnstile siteKey={env().TURNSTILE_SITE_KEY!} /> : null}
           <label className="check"><input type="checkbox" name="terms" required /><span>Ich akzeptiere die <a href="/gastgeber-bedingungen" target="_blank">Bedingungen für Gastgeber</a> ({feePercentText()} %, mindestens CHF 19 pro Monat).</span></label>
           <button className="btn">Registrieren und Login-Link erhalten</button>
           <p className="small muted">Schon registriert? <a href="/admin/login">Anmelden</a></p>

@@ -653,6 +653,13 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 - Löschen verlangt das Eintippen von Name bzw. E-Mail. Hinweis bei live oder mit Rechnungen: Rechnungen sind in der Schweiz 10 Jahre aufzubewahren. Protokoll: `audit_log` ohne Betriebsbezug (`hotel.deleted`, `user.deleted`, `user.security_reset`).
 - Nicht enthalten: Löschen oder Kündigen bei Stripe und Channex (separat).
 
+### 18.8 Missbrauchsschutz für Registrierung und Login
+- **Cloudflare Turnstile** (Siteverify auf dem Server, Token einmalig, Hostname geprüft) auf `/registrieren` und `/admin/login`. Ohne `TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY` aus. Ist Cloudflare nicht erreichbar, wird nicht durchgelassen (fail-closed). Nicht auf Formularen hinter dem Login und nicht auf Gäste-Formularen auf fremden Domains: die kostenlose Turnstile-Stufe erlaubt höchstens 10 Hostnamen je Widget, Hotel-Domains lassen sich so nicht abdecken.
+- **Honeypot und Mindestzeit** (ohne Drittanbieter, `src/lib/form-guard.ts`, Komponente `FormGuard`): verstecktes Feld und signierter Zeitstempel (Registrierung 3 s, Login 1 s, Ablauf nach 2 Stunden). Honeypot: stille «Danke»-Antwort; zu schnell: Meldung «bitte nochmals absenden».
+- **Begrenzung in der Datenbank** (`rate_limits`, atomar, `src/lib/rate-limit-db.ts`): Registrierung je IP 5 pro 10 Minuten und je E-Mail 3 pro Stunde, Login-Link je IP 10 pro 10 Minuten und je Adresse 5 pro Stunde, 2FA-Versuche je Benutzer 5 pro 5 Minuten. E-Mail-Adressen stehen nur als Hash in der Tabelle. In Entwicklung und Tests ist die IP-Grenze 20-fach. Beim Login-Link bleibt die Antwort bei Überschreitung gleich («Link ist unterwegs»).
+- **E-Mail-Bestätigung:** `users.email_verified_at` wird beim Einlösen eines Anmelde-Links gesetzt. Ein Betrieb darf erst live gehen (`goLiveProblems`), wenn mindestens ein Inhaber bestätigt ist.
+- **Wegwerf-Adressen** werden bei der Registrierung abgelehnt (Liste des Pakets `disposable-email-domains`, MIT, plus eigene Ergänzungen).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

@@ -112,6 +112,7 @@ export const users = pgTable("users", {
   name: text("name"),
   isPlatformAdmin: boolean("is_platform_admin").notNull().default(false),
   emailLoginDisabled: boolean("email_login_disabled").notNull().default(false),
+  emailVerifiedAt: ts("email_verified_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -927,4 +928,10 @@ export const userRecoveryCodes = pgTable("user_recovery_codes", {
   codeHash: text("code_hash").notNull(),
   usedAt: ts("used_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  windowStart: ts("window_start").notNull(),
+  count: integer("count").notNull(),
 });

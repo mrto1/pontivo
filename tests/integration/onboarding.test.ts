@@ -1,6 +1,7 @@
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { db, closeDb } from "../../src/db/client";
+import { consumeLoginToken } from "../../src/auth/session";
 import { auditLog, bookings, emailOutbox, hotelMembers, hotels, platformCharges, users } from "../../src/db/schema";
 import { addUnit, detectEmbed, goLiveFromWizard, markEmbedded, nextOpenStep, onboardingReminders, onboardingSteps, OnboardingError, registerHost, setArrivalInfo, updateBasics } from "../../src/services/onboarding";
 import { confirmTouristTax } from "../../src/services/settings";
@@ -50,7 +51,7 @@ describe("Selbst-Registrierung und Einrichtung", () => {
   });
 
   it("Assistent: Schritte bis live; fester Anreisetag; Endreinigung im Preis; Karte vor dem Live-Gang", async () => {
-    const { hotel } = await register();
+    const { hotel, loginLink } = await register();
     let steps = await onboardingSteps(hotel);
     expect(steps.filter((s) => s.done).map((s) => s.key)).toEqual(["zahlungen"]); // Fake-Zahlung
 
@@ -86,6 +87,9 @@ describe("Selbst-Registrierung und Einrichtung", () => {
     await expect(finishCardSetup(await fresh(h.id), "fake_setup_other", "t")).rejects.toThrow();
     expect((await finishCardSetup(await fresh(h.id), sessionId, "t")).label).toContain("4242");
 
+    // Ohne bestätigte E-Mail-Adresse (Link aus der Willkommensmail) kein Live-Gang
+    await expect(goLiveFromWizard(await fresh(h.id), "t")).rejects.toThrow(/E-Mail-Adresse/);
+    expect(await consumeLoginToken(new URL(loginLink!).searchParams.get("token")!)).toBeTruthy();
     await goLiveFromWizard(await fresh(h.id), "t");
     const live = await fresh(h.id);
     expect(live.status).toBe("live");

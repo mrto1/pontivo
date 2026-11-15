@@ -89,6 +89,12 @@ docker compose --env-file .env.production -f docker-compose.prod.yml exec app no
 
 Dann auf https://pontivo.ch/admin/login anmelden (Login-Link per E-Mail, dafür braucht es Postmark).
 
+## 6b. Bot-Schutz (Cloudflare Turnstile)
+1. Kostenloses Konto auf https://dash.cloudflare.com anlegen (die Domain muss nicht bei Cloudflare liegen), links «Turnstile», «Add widget».
+2. Hostname **pontivo.ch** eintragen (Unterdomains sind mit abgedeckt), Modus «Managed». Kostenlose Pläne erlauben höchstens 10 Hostnamen je Widget und keine Platzhalter.
+3. **Site Key** und **Secret Key** in `deploy/.env.production` als `TURNSTILE_SITE_KEY` und `TURNSTILE_SECRET_KEY` eintragen, dann `sudo ./deploy.sh`. Den Secret Key nie weitergeben.
+4. Test: Registrierung und Login funktionieren; ohne die Schlüssel ist die Prüfung aus.
+
 ## 7. E-Mail-Versand (Postmark)
 
 1. Konto bei postmarkapp.com, Server «Pontivo» anlegen, **Server API Token** → `POSTMARK_SERVER_TOKEN`.

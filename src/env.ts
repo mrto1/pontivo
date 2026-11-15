@@ -12,6 +12,9 @@ const schema = z.object({
   CHANNEX_BASE_URL: z.string().default("https://staging.channex.io/api/v1"),
   CHANNEX_API_KEY: z.string().optional(),
   CHANNEX_WEBHOOK_SECRET: z.string().optional(),
+  // Cloudflare Turnstile (Bot-Schutz für Registrierung und Login). Ohne beide Schlüssel ist die Prüfung aus.
+  TURNSTILE_SITE_KEY: z.string().optional(),
+  TURNSTILE_SECRET_KEY: z.string().optional(),
   POSTMARK_SERVER_TOKEN: z.string().optional(),
   // Passwort (Basic Auth) bzw. Token (Header x-webhook-token) für den Postmark-Webhook für Bounces/Spam-Beschwerden
   POSTMARK_WEBHOOK_SECRET: z.string().optional(),

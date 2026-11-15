@@ -31,6 +31,7 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
   await page.fill("#contactName", "Ruth Keller");
   await page.fill("#email", email);
   await page.locator("input[name=terms]").check();
+  await page.waitForTimeout(3200); // Mindestzeit des Formular-Schutzes (Bots senden sofort)
   await page.getByRole("button", { name: /Registrieren und Login-Link/ }).click();
   await page.getByRole("link", { name: "Hier anmelden" }).click();
   await expect(page).toHaveURL(/\/admin/);
@@ -60,6 +61,7 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
   await presence(false);
   await page.goto("/admin/login");
   await page.fill("#email", email);
+  await page.waitForTimeout(1100); // Mindestzeit des Formular-Schutzes
   await page.getByRole("button", { name: "Login-Link senden" }).click();
   await page.getByRole("link", { name: "Hier anmelden" }).click();
   await expect(page.getByRole("heading", { name: "Zweiter Faktor" })).toBeVisible();
@@ -70,6 +72,7 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
   await presence(false);
   await page.goto("/admin/login");
   await page.fill("#email", email);
+  await page.waitForTimeout(1100); // Mindestzeit des Formular-Schutzes
   await page.getByRole("button", { name: "Login-Link senden" }).click();
   await page.getByRole("link", { name: "Hier anmelden" }).click();
   await page.fill("#code", "000000");
@@ -99,12 +102,16 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
   await page.getByPlaceholder(/Name/).fill("Zweites Gerät");
   await page.getByTestId("passkey-add").click();
   await expect(page.getByText("Zweites Gerät")).toBeVisible();
-  await page.getByRole("button", { name: "Nur Passkey erlauben" }).click();
-  await expect(page.getByText("eingeschaltet. Der E-Mail-Link funktioniert")).toBeVisible();
+  // nach dem Neuladen kann der Klick vor der Hydration verloren gehen: wiederholen, bis die Seite reagiert
+  await expect(async () => {
+    await page.getByRole("button", { name: "Nur Passkey erlauben" }).click({ timeout: 2000 });
+    await expect(page.getByText("eingeschaltet. Der E-Mail-Link funktioniert")).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
   await context.clearCookies();
   await presence(false);
   await page.goto("/admin/login");
   await page.fill("#email", email);
+  await page.waitForTimeout(1100); // Mindestzeit des Formular-Schutzes
   await page.getByRole("button", { name: "Login-Link senden" }).click();
   await expect(page.getByText("Falls die Adresse bei uns registriert ist")).toBeVisible();
   await expect(page.getByRole("link", { name: "Hier anmelden" })).toHaveCount(0);

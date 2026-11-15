@@ -77,6 +77,10 @@ export async function goLiveProblems(hotel: Hotel): Promise<string[]> {
   if (env().PAYMENT_PROVIDER === "stripe" && !(hotel.stripeAccountId && hotel.stripeChargesEnabled)) {
     problems.push("Stripe-Konto ist noch nicht freigeschaltet (charges_enabled).");
   }
+  // Mindestens ein Inhaber muss seine E-Mail-Adresse über den Anmelde-Link bestätigt haben
+  const owners = await db().select({ at: users.emailVerifiedAt }).from(hotelMembers).innerJoin(users, eq(users.id, hotelMembers.userId))
+    .where(and(eq(hotelMembers.hotelId, hotel.id), eq(hotelMembers.role, "owner")));
+  if (!owners.some((o) => o.at)) problems.push("Die E-Mail-Adresse des Inhabers ist noch nicht bestätigt (einmal über den Login-Link aus der E-Mail anmelden).");
   const rule = await taxRuleFor(hotel, todayIn(hotel.timezone));
   if (!rule || (rule.status === "needs_confirmation") || (rule.adultRappen === null)) {
     problems.push("Kurtaxe-Satz für die Gemeinde ist nicht bestätigt.");

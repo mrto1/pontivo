@@ -24,6 +24,7 @@
     "@stripe/react-connect-js": "^3.5.0",
     "date-fns": "^4.4.0",
     "date-fns-tz": "^3.2.0",
+    "disposable-email-domains": "^1.0.62",
     "drizzle-orm": "^0.45.4",
     "next": "^16.4.5",
     "pg": "^8.23.1",

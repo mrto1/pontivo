@@ -11,6 +11,7 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
   await page.fill("#contactName", "Ruth Keller");
   await page.fill("#email", `ruth-${id}@example.ch`);
   await page.locator("input[name=terms]").check();
+  await page.waitForTimeout(3200); // Mindestzeit des Formular-Schutzes (Bots senden sofort)
   await page.getByRole("button", { name: /Registrieren und Login-Link/ }).click();
   await expect(page.getByRole("heading", { name: "Fast geschafft" })).toBeVisible();
   await page.getByRole("link", { name: "Hier anmelden" }).click();

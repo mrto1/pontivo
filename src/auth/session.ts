@@ -85,7 +85,10 @@ export async function consumeLoginToken(token: string, now = new Date()): Promis
   if (!row) return null;
   // ein vor dem Abschalten ausgestellter Link gilt nicht mehr
   const [u] = await db().select({ off: users.emailLoginDisabled }).from(users).where(eq(users.id, row.userId));
-  return u && !u.off ? row.userId : null;
+  if (!u || u.off) return null;
+  // Wer den Link aus dem Postfach einlöst, hat die E-Mail-Adresse bewiesen
+  await db().update(users).set({ emailVerifiedAt: now }).where(and(eq(users.id, row.userId), isNull(users.emailVerifiedAt)));
+  return row.userId;
 }
 
 import { atLeast as atLeastRole, type Role } from "../domain/roles";

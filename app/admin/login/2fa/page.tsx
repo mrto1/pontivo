@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { clientIp, rateLimit } from "@/src/lib/rate-limit";
+import { clientIp } from "@/src/lib/rate-limit";
+import { rateLimitDb } from "@/src/lib/rate-limit-db";
 import { createSessionValue, MFA_COOKIE, readShort, SESSION_COOKIE, sessionCookieOptions } from "@/src/auth/session";
 import { verifySecondFactor } from "@/src/services/mfa";
 
@@ -12,7 +13,7 @@ async function submit(formData: FormData) {
   const p = readShort<{ u: string }>(jar.get(MFA_COOKIE)?.value);
   if (!p) redirect("/admin/login?error=link");
   const ip = clientIp(new Request("http://x", { headers: await headers() }));
-  if (!rateLimit(`2fa:${p.u}`, 5, 300_000) || !rateLimit(`2fa-ip:${ip}`, 20, 300_000)) redirect("/admin/login/2fa?error=rate");
+  if (!(await rateLimitDb(`2fa:${p.u}`, 5, 300_000)) || !(await rateLimitDb(`2fa-ip:${ip}`, 20, 300_000))) redirect("/admin/login/2fa?error=rate");
   if (!(await verifySecondFactor(p.u, String(formData.get("code") ?? "")))) redirect("/admin/login/2fa?error=code");
   jar.set(SESSION_COOKIE, createSessionValue(p.u), sessionCookieOptions());
   jar.delete({ name: MFA_COOKIE, path: "/admin/login" });

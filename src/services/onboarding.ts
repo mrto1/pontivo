@@ -7,6 +7,7 @@ import { DEFAULT_MONTHLY_MINIMUM_RAPPEN, HOST_TERMS_VERSION } from "../legal/hos
 import { enqueueEmail } from "../email/enqueue";
 import { requestLoginLink } from "../auth/session";
 import { env } from "../env";
+import { isDisposableEmail } from "../domain/disposable-email";
 import { audit } from "./audit";
 import { goLiveProblems, setHotelStatus } from "./settings";
 import { createRatePlan, createRoomType } from "./rooms";
@@ -70,6 +71,10 @@ async function uniqueHotelSlug(name: string): Promise<string> {
  * Willkommensmail und Login-Link. Gibt den Login-Link zurück (für die Entwicklung ohne Mailversand).
  */
 /** Die E-Mail-Adresse hat schon ein Konto: kein zweites Konto und kein zweiter Entwurf (weitere Betriebe: angemeldet über /admin/neu) */
+export class DisposableEmailError extends Error {
+  constructor() { super("Wegwerf-E-Mail-Adresse"); }
+}
+
 export class AccountExistsError extends Error {
   constructor(readonly email: string) { super("Für diese E-Mail-Adresse gibt es schon ein Konto."); }
 }
@@ -79,6 +84,7 @@ export async function registerHost(input: RegisterInput, now = new Date(), opts:
   if (!opts.allowExisting) {
     const [ex] = await db().select({ id: users.id }).from(users).where(eq(users.email, v.email.trim().toLowerCase()));
     if (ex) throw new AccountExistsError(v.email.trim().toLowerCase());
+    if (isDisposableEmail(v.email)) throw new DisposableEmailError();
   }
   const slug = await uniqueHotelSlug(v.name);
   const hotel = await db().transaction(async (tx) => {
