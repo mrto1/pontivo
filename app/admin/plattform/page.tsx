@@ -84,6 +84,7 @@ export default async function Plattform({ searchParams }: { searchParams: Promis
     <main className="wrap admin-main">
       <p><a href="/admin">← Übersicht</a></p>
       <h1>Plattform-Verwaltung</h1>
+      <p><a className="btn secondary small" href="/admin/plattform/website">Texte der Pontivo-Website bearbeiten</a></p>
       <p className="muted">Nur für Pontivo-Admins. Löschen ist endgültig und nimmt alle Daten mit (Buchungen, Rechnungen, Gäste, Mails). Zur Bestätigung den Namen bzw. die E-Mail eintippen.</p>
       {sp.done ? <p className="notice">{sp.done}</p> : null}
       {sp.error && sp.error !== "confirm" && sp.error !== "user" ? <p className="notice warn">{sp.error}</p> : null}

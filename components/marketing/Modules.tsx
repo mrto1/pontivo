@@ -1,4 +1,5 @@
 import s from "./marketing.module.css";
+import type { ResolvedSite } from "@/src/domain/pontivo-site";
 
 /**
  * Bausteine-Übersicht der Pontivo-Seite: Baukasten-Grafik, Funktionsgruppen, Ablauf vom Klick bis zur Buchhaltung.
@@ -152,22 +153,19 @@ const FLOW: { icon: keyof typeof ICONS; t: string; d: string }[] = [
   { icon: "table", t: "Buchhaltung", d: "Buchungsliste für Ihren Treuhänder" },
 ];
 
-export function Bausteine({ staticSite }: { staticSite?: boolean }) {
+export function Bausteine({ staticSite, site }: { staticSite?: boolean; site: ResolvedSite }) {
   return (
     <>
       <section className={s.section} id="bausteine">
-        <h2 className={s.h2}>Ein Baukasten: Sie nehmen, was Sie brauchen</h2>
-        <p className={s.intro}>
-          Der Kern, also Direktbuchung und Zahlung, ist immer dabei. Alles andere schalten Sie mit einem Klick ein oder aus. Ein Chalet braucht keine Rezeption, ein Hotel mit Team schon.
-          Ausgeschaltetes verschwindet aus dem Menü, Ihre Daten bleiben erhalten.
-        </p>
+        <h2 className={s.h2}>{site.text("bausteine.title")}</h2>
+        <p className={s.intro}>{site.text("bausteine.intro")}</p>
         <div className={s.buildWrap}><BuildGraphic /></div>
         <p className={s.buildNote}>Beispiel: Ein kleines Hotel schaltet Rezeption, Rechnung, Kurtaxe und Statistik ein. Das Chalet nebenan nur Rechnung und Kurtaxe.</p>
       </section>
 
       <section className={s.section} id="funktionen">
-        <h2 className={s.h2}>Alles, was ein kleines Haus braucht</h2>
-        <p className={s.intro}>Von der ersten Buchung bis zur Buchhaltung, an einem Ort und aus einer Hand.</p>
+        <h2 className={s.h2}>{site.text("funktionen.title")}</h2>
+        <p className={s.intro}>{site.text("funktionen.intro")}</p>
         {GROUPS.map((g) => (
           <div key={g.id} className={s.group}>
             <h3 className={s.groupTitle}>{g.title}</h3>
@@ -191,8 +189,8 @@ export function Bausteine({ staticSite }: { staticSite?: boolean }) {
       </section>
 
       <section className={s.section} id="ablauf-gast">
-        <h2 className={s.h2}>Vom Klick bis zur Buchhaltung</h2>
-        <p className={s.intro}>Eine Buchung läuft durch alle Stationen, ohne dass Sie etwas doppelt erfassen.</p>
+        <h2 className={s.h2}>{site.text("ablaufgast.title")}</h2>
+        <p className={s.intro}>{site.text("ablaufgast.intro")}</p>
         <ol className={s.flow}>
           {FLOW.map((f, i) => (
             <li key={f.t}>

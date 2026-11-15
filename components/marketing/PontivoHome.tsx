@@ -3,6 +3,7 @@ import s from "./marketing.module.css";
 import { DEFAULT_PLATFORM_FEE_BPS } from "@/src/domain/fee";
 import { SavingsCalculator } from "./SavingsCalculator";
 import { AlpineBand, Bausteine } from "./Modules";
+import { resolveSite, type ResolvedSite } from "@/src/domain/pontivo-site";
 
 const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["700", "800"], variable: "--pv-display", display: "swap" });
 const body = Instrument_Sans({ subsets: ["latin"], weight: ["400", "600", "700"], variable: "--pv-body", display: "swap" });
@@ -37,7 +38,8 @@ export type Contact = {
 /** Link auf eine Plattform-Seite (statisch: Datei mit .html) */
 export const pageHref = (path: string, staticSite?: boolean) => (staticSite ? (path === "/" ? "index.html" : `${path.slice(1)}.html`) : path);
 
-export function PontivoHome({ contact, children }: { contact: Contact; children?: React.ReactNode }) {
+export function PontivoHome({ contact, site: siteIn, children }: { contact: Contact; site?: ResolvedSite; children?: React.ReactNode }) {
+  const site = siteIn ?? resolveSite(null, { name: contact.name, fee: FEE_PERCENT, email: contact.email });
   const portalFee = BOOKING * PORTAL;
   const ourFee = (BOOKING * FEE_PERCENT) / 100;
   const mail = contact.email ? `mailto:${contact.email}?subject=${encodeURIComponent("Pontivo für unseren Betrieb")}` : "#kontakt";
@@ -64,14 +66,12 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
 
         <section className={s.hero}>
           <div>
-            <h1 className={s.heroTitle}>Ihre Gäste buchen direkt bei Ihnen. Die Provision bleibt im Haus.</h1>
-            <p className={s.heroLead}>
-              {contact.name} bringt Online-Buchung mit TWINT und Kartenzahlung auf Ihre bestehende Website – oder gibt Ihnen eine neue. Für Hotels, B&amp;Bs und Ferienwohnungen. Booking.com läuft weiter und wird automatisch abgeglichen. Sie zahlen {FEE_PERCENT} % pro Direktbuchung, mindestens CHF 19 im Monat – sonst nichts.
-            </p>
+            <h1 className={s.heroTitle}>{site.text("hero.title")}</h1>
+            <p className={s.heroLead}>{site.text("hero.lead")}</p>
             <div className={s.heroActions}>
-              {st ? <a className={s.btn} href={mail}>Gespräch vereinbaren</a> : (<>
-                <a className={s.btn} href="/registrieren">Jetzt selbst einrichten</a>
-                <a className={s.btnGhost} href={mail}>Gespräch vereinbaren</a>
+              {st ? <a className={s.btn} href={mail}>{site.text("hero.ctaSecond")}</a> : (<>
+                <a className={s.btn} href="/registrieren">{site.text("hero.ctaMain")}</a>
+                <a className={s.btnGhost} href={mail}>{site.text("hero.ctaSecond")}</a>
               </>)}
               {contact.demoUrl && !st ? <a className={s.btnGhost} href={contact.demoUrl}>Demo-Hotel ansehen</a> : null}
             </div>
@@ -107,67 +107,52 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
         <AlpineBand />
 
         <section className={s.section} id="wege">
-          <h2 className={s.h2}>Passend zu Ihrer heutigen Website</h2>
-          <p className={s.intro}>Sie entscheiden, wie viel {contact.name} übernimmt. Buchung, Zahlung und der Abgleich mit Booking.com sind bei allen drei Wegen gleich.</p>
+          <h2 className={s.h2}>{site.text("wege.title")}</h2>
+          <p className={s.intro}>{site.text("wege.intro")}</p>
           <div className={s.paths}>
             <article className={`${s.path} ${s.pathMain}`}>
-              <h3>Ihre Website bleibt, die Buchung kommt von uns</h3>
-              <p>Auf Ihrer Website erscheint ein Knopf «Jetzt buchen» oder eine Suchleiste mit Daten und Personen. Die Buchungsseite trägt Ihr Logo und Ihre Farben.</p>
-              <ul>
-                <li>Funktioniert mit Wix, WordPress, Jimdo und jeder anderen Website</li>
-                <li>Einfachste Variante: den bestehenden «Buchen»-Link umstellen</li>
-                <li>Kein Relaunch, keine neue Agentur</li>
-              </ul>
+              <h3>{site.text("wege.1.title")}</h3>
+              <p>{site.text("wege.1.text")}</p>
+              <ul>{site.lines("wege.1.bullets").map((b) => <li key={b}>{b}</li>)}</ul>
             </article>
             <article className={s.path}>
-              <h3>Neue Website mit Buchung</h3>
-              <p>Für Hotels ohne Online-Buchung oder mit veralteter Seite: Startseite, Zimmer mit Fotos und Buchung auf Deutsch und Englisch, unter Ihrer Domain.</p>
+              <h3>{site.text("wege.2.title")}</h3>
+              <p>{site.text("wege.2.text")}</p>
             </article>
             <article className={s.path}>
-              <h3>Wechsel von Ihrer heutigen Buchungsmaschine</h3>
-              <p>Statt einer festen Monatsgebühr zahlen Sie nur bei einer Buchung. Dazu TWINT, Abgleich mit Booking.com und alles an einem Ort.</p>
+              <h3>{site.text("wege.3.title")}</h3>
+              <p>{site.text("wege.3.text")}</p>
             </article>
           </div>
         </section>
 
-        <Bausteine staticSite={st} />
+        <Bausteine staticSite={st} site={site} />
 
         <section className={s.section} id="ablauf">
-          <h2 className={s.h2}>In drei Schritten zur eigenen Direktbuchung</h2>
-          <p className={s.intro}>Sie müssen nichts installieren und keine neue Software lernen. Wir richten alles ein und bleiben Ihr Ansprechpartner.</p>
+          <h2 className={s.h2}>{site.text("ablauf.title")}</h2>
+          <p className={s.intro}>{site.text("ablauf.intro")}</p>
           <ol className={s.steps}>
-            <li>
-              <h3>Kennenlernen</h3>
-              <p>Wir schauen Ihre heutige Website und Ihre Buchungswege an und zeigen Ihnen am Beispiel, wie Ihre Seite aussehen würde.</p>
-            </li>
-            <li>
-              <h3>Wir richten ein</h3>
-              <p>Zimmer, Preise, Fotos, Zahlungskonto und Abgleich mit Booking.com – und je nach Weg den Buchungs-Knopf auf Ihrer Website oder die neue Website.</p>
-            </li>
-            <li>
-              <h3>Gäste buchen direkt</h3>
-              <p>Wer Sie auf Google oder Ihrer Website findet, bucht direkt bei Ihnen und bezahlt sofort. Das Geld kommt direkt auf Ihr Konto.</p>
-            </li>
+            {[1, 2, 3].map((i) => (
+              <li key={i}>
+                <h3>{site.text(`step.${i}.title`)}</h3>
+                <p>{site.text(`step.${i}.text`)}</p>
+              </li>
+            ))}
           </ol>
         </section>
 
         <section className={s.section}>
-          <h2 className={s.h2}>Was Sie davon haben</h2>
+          <h2 className={s.h2}>{site.text("vorteile.title")}</h2>
           <dl className={s.benefits}>
-            <div className={s.benefit}><dt>{FEE_PERCENT} % statt 15–18 %</dt><dd>Für jede Buchung, die direkt statt übers Portal kommt, bleibt der Grossteil der Provision bei Ihnen.</dd></div>
-            <div className={s.benefit}><dt>Geld direkt auf Ihr Konto</dt><dd>Die Zahlung läuft über Stripe auf Ihr eigenes Konto. Wir halten nie Geld Ihrer Gäste.</dd></div>
-            <div className={s.benefit}><dt>TWINT, Karte, Apple Pay, Google Pay</dt><dd>Gäste bezahlen so, wie sie es gewohnt sind – auch auf dem Handy in wenigen Sekunden.</dd></div>
-            <div className={s.benefit}><dt>Booking.com läuft weiter</dt><dd>Freie Zimmer und Preise werden automatisch abgeglichen. Buchungen aus dem Portal erscheinen ebenfalls bei Ihnen. Doppelbuchungen werden sofort gemeldet.</dd></div>
-            <div className={s.benefit}><dt>Kurtaxe richtig berechnet</dt><dd>Die Kurtaxe Ihrer Gemeinde wird je nach Alter der Gäste automatisch ausgewiesen.</dd></div>
-            <div className={s.benefit}><dt>Stornos ohne Telefonate</dt><dd>Gäste stornieren selbst über ihren Buchungslink. Die Rückerstattung nach Ihren Bedingungen läuft automatisch.</dd></div>
-            <div className={s.benefit}><dt>Alles an einem Ort</dt><dd>Kalender, Preise, Buchungen und Monatsabrechnung – einfach genug, dass auch Mitarbeitende damit arbeiten.</dd></div>
-            <div className={s.benefit}><dt>Günstiger direkt anbieten ist erlaubt</dt><dd>Seit Dezember 2022 dürfen Schweizer Hotels auf der eigenen Website tiefere Preise verlangen als auf Portalen.</dd></div>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className={s.benefit}><dt>{site.text(`benefit.${i}.title`)}</dt><dd>{site.text(`benefit.${i}.text`)}</dd></div>
+            ))}
           </dl>
         </section>
 
         <section className={s.section} id="rechner">
-          <h2 className={s.h2}>Rechnen Sie selbst</h2>
-          <p className={s.intro}>Schieben Sie die Regler auf Ihre Zahlen. Der Rechner zeigt, wie viel Provision zusätzlich bei Ihnen bleibt.</p>
+          <h2 className={s.h2}>{site.text("rechner.title")}</h2>
+          <p className={s.intro}>{site.text("rechner.intro")}</p>
           <SavingsCalculator feePercent={FEE_PERCENT} />
         </section>
 
@@ -175,14 +160,9 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
           <div className={s.price}>
             <div className={s.priceFig}>{FEE_PERCENT} %</div>
             <div>
-              <h2 className={s.h2}>Sie zahlen nur, wenn Gäste direkt buchen</h2>
+              <h2 className={s.h2}>{site.text("preis.title")}</h2>
               <ul className={s.priceList}>
-                <li>{FEE_PERCENT} % pro Direktbuchung, automatisch bei der Zahlung abgezogen</li>
-                <li>Mindestens CHF 19 pro Monat: Liegen die {FEE_PERCENT} % darunter, wird nur die Differenz belastet</li>
-                <li>Keine Einrichtungsgebühr, monatlich kündbar</li>
-                <li>Bei Stornierung wird die Gebühr anteilig zurückerstattet</li>
-                <li>Buchungen über Booking.com &amp; Co. kosten bei uns nichts</li>
-                <li>Zahlungsgebühren von Stripe gehen wie bei jedem Kartenterminal zu Ihren Lasten</li>
+                {[1, 2, 3, 4, 5, 6].map((i) => <li key={i}>{site.text(`preis.${i}`)}</li>)}
               </ul>
               <p className={s.fieldHint}>Alle Einzelheiten: <a href={pageHref("/gastgeber-bedingungen", st)}>Bedingungen für Gastgeber</a>. Preise ohne MWST, sofern geschuldet.</p>
             </div>
@@ -190,58 +170,20 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
         </section>
 
         <section className={`${s.section} ${s.faq}`} id="fragen">
-          <h2 className={s.h2}>Häufige Fragen</h2>
-          <details>
-            <summary>Muss ich alle Funktionen nutzen?</summary>
-            <p>Nein. Direktbuchung und Zahlung sind der Kern. Rezeption, Housekeeping, Rechnung, Gruppen, Kartenterminal und mehr schalten Sie einzeln ein oder aus. Was Sie nicht brauchen, sehen Sie nicht, und Ihre Daten bleiben erhalten.</p>
-          </details>
-          <details>
-            <summary>Ersetzt {contact.name} meine Hotelsoftware?</summary>
-            <p>Für kleine Häuser kann es das: Rezeption, Zimmerplan, Reinigung, Rechnung mit QR-Rechnung, Kurtaxe und Buchhaltungs-Export sind eingebaut. Brauchen Sie mehr, etwa für ein grosses Haus mit Restaurant und Kasse, bleibt Ihre bisherige Software daneben bestehen.</p>
-          </details>
-          <details>
-            <summary>Muss ich Booking.com kündigen?</summary>
-            <p>Nein. Booking.com bleibt ein wichtiger Kanal für neue Gäste. {contact.name} sorgt dafür, dass Gäste, die Sie bereits kennen oder auf Google finden, direkt buchen können.</p>
-          </details>
-          <details>
-            <summary>Darf ich auf meiner Website günstiger sein als auf Booking.com?</summary>
-            <p>Ja. Seit dem 1. Dezember 2022 sind Klauseln verboten, die Schweizer Hotels daran hindern, auf der eigenen Website tiefere Preise anzubieten.</p>
-          </details>
-          <details>
-            <summary>Was passiert mit meiner bestehenden Website?</summary>
-            <p>Sie bleibt, wenn Sie möchten. Wir fügen nur einen Buchungs-Knopf oder eine Suchleiste ein, oder Sie stellen Ihren bestehenden «Buchen»-Link um. Wünschen Sie eine neue Website, übernehmen wir Ihre Inhalte und Fotos unter Ihrer bisherigen Domain.</p>
-          </details>
-          <details>
-            <summary>Ich habe schon eine Buchungsmaschine. Lohnt sich ein Wechsel?</summary>
-            <p>Das hängt davon ab, was Sie heute zahlen und wie viele Direktbuchungen Sie haben. Wir rechnen es im ersten Gespräch mit Ihren Zahlen durch – mit {contact.name} zahlen Sie nur, wenn tatsächlich gebucht wird.</p>
-          </details>
-          <details>
-            <summary>Ich habe schon eine Hotelsoftware oder einen Channel-Manager. Geht das trotzdem?</summary>
-            <p>In vielen Fällen ja. Wir prüfen im ersten Gespräch, wie Ihre Software angebunden werden kann.</p>
-          </details>
-          <details>
-            <summary>Wo sind die Daten meiner Gäste?</summary>
-            <p>Gastdaten bearbeiten wir in Ihrem Auftrag nach Schweizer Datenschutzgesetz. Kartendaten sehen weder wir noch Sie – die verarbeitet ausschliesslich der Zahlungsdienst Stripe.</p>
-          </details>
-          <details>
-            <summary>Wie kann ich kündigen?</summary>
-            <p>Jederzeit per E-Mail mit 30 Tagen Frist auf Ende eines Monats. Es gibt keine Mindestlaufzeit und keine Einrichtungsgebühr. Bestehende Buchungen Ihrer Gäste werden bis zur Abreise normal abgewickelt, und Sie können Ihre Daten während 30 Tagen exportieren.</p>
-          </details>
-          <details>
-            <summary>Was passiert bei Stornierungen, Rückerstattungen und Rückbuchungen?</summary>
-            <p>Storniert ein Gast, gilt die Stornoregel Ihres Betriebs; die Rückerstattung läuft automatisch über Stripe, und unsere Gebühr von {FEE_PERCENT} % wird anteilig zurückerstattet. Ficht ein Gast eine Kartenzahlung an (Rückbuchung), klären Sie das als Verkäufer direkt in Ihrem Stripe-Konto, wir unterstützen Sie dabei. Fragen zu einer Abrechnung von {contact.name} beantworten wir per E-Mail{contact.email ? ` an ${contact.email}` : ""}; zu Unrecht belastete Beträge erstatten wir zurück.</p>
-          </details>
-          <details>
-            <summary>Wer ist Vertragspartner des Gastes?</summary>
-            <p>Immer Ihr Hotel. {contact.name} stellt nur die Technik zur Verfügung und ist weder Reiseveranstalter noch Vermittler mit eigener Provision auf Ihren Zimmerpreis.</p>
-          </details>
+          <h2 className={s.h2}>{site.text("fragen.title")}</h2>
+          {site.faq.map((f) => (
+            <details key={f.q}>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
         </section>
 
         <section className={s.section} id="kontakt">
           <div className={s.contact}>
             <div>
-              <h2 className={s.h2}>Schauen wir uns Ihr Hotel gemeinsam an</h2>
-              <p>Im ersten Gespräch zeigen wir Ihnen, wie Ihre Website mit Direktbuchung aussehen würde und was Sie damit sparen. Unverbindlich und kostenlos.</p>
+              <h2 className={s.h2}>{site.text("kontakt.title")}</h2>
+              <p>{site.text("kontakt.text")}</p>
             </div>
             <div className={s.contactLinks}>
               {contact.email ? <a className={s.btn} href={mail}>E-Mail schreiben</a> : null}
@@ -254,7 +196,7 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
 
         <footer className={s.foot}>
           <span>© {new Date().getFullYear()} {contact.name}</span>
-          <span>Direktbuchung für Hotels und Ferienwohnungen in der Schweiz</span>
+          <span>{site.text("foot.tagline")}</span>
           <nav className={s.footLinks} aria-label="Rechtliches">
             <a href={pageHref("/impressum", st)}>Impressum</a>
             <a href={pageHref("/datenschutz", st)}>Datenschutz</a>
