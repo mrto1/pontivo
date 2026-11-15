@@ -11,6 +11,7 @@ import { roomDescription, roomName } from "@/src/domain/i18n-names";
 import { addDays, todayIn } from "@/src/domain/dates";
 import { LOCALE_TAGS, t, type Locale } from "@/src/i18n/dict";
 import { SearchBar } from "./SearchBar";
+import { PowField } from "./PowField";
 
 function Paras({ text }: { text: string }) {
   return <RichText text={text} />;
@@ -233,6 +234,7 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
             <p id="anfrage-gesendet" className="notice target-only">{d.inqSent}</p>
             <p id="anfrage-fehler" className="notice warn target-only">{d.inqError}</p>
             <form className="card form-grid inquiry" action="/api/inquiry" method="post">
+              <PowField />
               <input type="hidden" name="hotel" value={hotel.slug} />
               <input type="hidden" name="lang" value={lang} />
               <input type="hidden" name="page" value={pageSlug} />
@@ -267,6 +269,7 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
             <p id="gutschein-fehler" className="notice warn target-only">{d.error}</p>
             {ok ? (
               <form className="card form-grid voucher-form" action="/api/vouchers" method="post">
+                <PowField />
                 <input type="hidden" name="hotel" value={hotel.slug} />
                 <input type="hidden" name="lang" value={lang} />
                 <input type="hidden" name="back" value={here} />

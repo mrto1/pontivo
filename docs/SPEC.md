@@ -667,6 +667,12 @@ Die Texte der Pontivo-Startseite stehen als Standard im Code (`src/domain/pontiv
 Seite `/admin/<hotelId>/mypontivo` ersetzt das frühere App-/Sicherheitsfeld im «Mehr»-Menü. Oben: eigene E-Mail-Adresse und Rolle. Bereiche: Webseite-Vorschau, Pontivo-App (Installation, Mitteilungen mit Erklärung), Sicherheit (Passkeys, Authenticator-App, «Nur Passkey»), Weiteres (Abmelden).
 E-Mail-Adresse ändern: Link (60 Minuten, einmalig) an die NEUE Adresse, Hinweis an die ALTE; mit aktiver Authenticator-App zusätzlich Code nötig; höchstens 3 Anträge pro Stunde; Wegwerf-Adressen gesperrt; ob die neue Adresse schon vergeben ist, wird nicht verraten. Nach Bestätigung gilt die neue Adresse als verifiziert, offene Login-Links sind ungültig. Tabelle `email_changes`.
 
+### 18.11 Schutz der Gäste-Formulare auf Hotel-Websites
+Gilt für Buchung, Anfrage, Gutschein-Kauf und KI-Chat (Chat-Weiterleitung). Kein Konto des Hotels und kein Drittanbieter nötig, funktioniert auf jeder Domain (Turnstile geht dort nicht: höchstens 10 Domains pro Widget, keine Wildcards).
+- **Rechenaufgabe (Proof of Work):** `GET /api/pow` liefert eine signierte Aufgabe (Salt, 16 Nullbits, 10 Minuten gültig). Der Browser sucht `nonce` mit SHA-256(salt+nonce) ab 16 Nullbits (ca. 1 Sekunde, unsichtbar) und schickt `<aufgabe>.<nonce>` als `_pow` (Formulare) bzw. `pow` (Buchung, JSON). Jede Aufgabe gilt nur einmal (Tabelle `rate_limits`, Schlüssel `pow:<salt>`). Chat: eine gelöste Aufgabe wird per `POST /api/pow` gegen einen 30-Minuten-Pass getauscht.
+- **Zusätzlich:** Honeypot (`website`), Grenzen je IP und je E-Mail-Adresse in der Datenbank (Buchung 30/10 pro Stunde, Anfrage, Gutschein und Chat-Weiterleitung 20/5 pro Stunde), bestehende In-Memory-Grenzen bleiben.
+- Ein/Aus: `POW_REQUIRED` (`1` an, `0` aus; Standard: nur in Produktion). Ohne JavaScript lassen sich die geschützten Formulare nicht absenden.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

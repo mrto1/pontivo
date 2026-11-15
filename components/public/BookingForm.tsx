@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { t, type Locale } from "@/src/i18n/dict";
 import { extraAmount, extraMaxQuantity, perPerson, type ExtraUnit } from "@/src/domain/extras";
 import { formatChf } from "@/src/domain/money";
+import { solvePow } from "./pow-client";
 
 export type FormExtra = { id: string; name: string; description: string; priceRappen: number; unit: ExtraUnit; maxQuantity: number; mandatory: boolean; active: boolean; roomTypeIds: string[] };
 
@@ -40,10 +41,13 @@ export function BookingForm(props: {
     setBusy(true);
     setError(null);
     const f = new FormData(e.currentTarget);
+    let pow = "";
+    try { pow = await solvePow(); } catch { /* Server meldet den Fehler */ }
     const res = await fetch("/api/bookings", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
+        pow,
         hotel: props.hotelSlug,
         room_type_id: props.roomTypeId,
         rate_plan_id: props.ratePlanId,

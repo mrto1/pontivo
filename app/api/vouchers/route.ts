@@ -4,6 +4,8 @@ import { resolvePublicHotel } from "@/src/services/hotels";
 import { buyVoucher, VoucherError } from "@/src/services/vouchers";
 import { decimalToRappen } from "@/src/domain/money";
 import { safeBack } from "@/src/lib/back";
+import { checkPow } from "@/src/lib/pow";
+import { limitByIpAndEmail } from "@/src/lib/public-form";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,9 @@ export async function POST(req: Request) {
   const fail = () => Response.redirect(new URL(`${back}#gutschein-fehler`, req.url), 303);
   if (s("website")) return fail();
   if (!rateLimit(`voucher:${clientIp(req)}`, 5)) return fail();
+  // Rechenaufgabe (SPEC 18.11), dann Grenzen je IP und E-Mail in der Datenbank
+  if (!(await checkPow(s("_pow")))) return fail();
+  if (!(await limitByIpAndEmail("voucher", clientIp(req), s("buyerEmail"), { ipLimit: 20, ipWindowMs: 3_600_000, emailLimit: 5, emailWindowMs: 3_600_000 }))) return fail();
   const hotel = await resolvePublicHotel(req.headers.get("host"), s("hotel"));
   if (!hotel) return new Response("Not found", { status: 404 });
   let amount: number;

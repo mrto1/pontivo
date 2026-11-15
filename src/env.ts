@@ -15,6 +15,8 @@ const schema = z.object({
   // Cloudflare Turnstile (Bot-Schutz für Registrierung und Login). Ohne beide Schlüssel ist die Prüfung aus.
   TURNSTILE_SITE_KEY: z.string().optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),
+  /** Rechenaufgabe (Proof of Work) für öffentliche Gäste-Formulare: "1" erzwingen, "0" aus; Standard: nur in Produktion */
+  POW_REQUIRED: z.string().optional(),
   POSTMARK_SERVER_TOKEN: z.string().optional(),
   // Passwort (Basic Auth) bzw. Token (Header x-webhook-token) für den Postmark-Webhook für Bounces/Spam-Beschwerden
   POSTMARK_WEBHOOK_SECRET: z.string().optional(),

@@ -2,17 +2,20 @@ import { clientIp, rateLimit } from "@/src/lib/rate-limit";
 import { resolvePublicHotel } from "@/src/services/hotels";
 import { chatLocale, handleChat } from "@/src/services/chat";
 import { CHAT_TEXT } from "@/src/i18n/chat";
+import { checkPass } from "@/src/lib/pow";
 
 export const dynamic = "force-dynamic";
 
 /** KI-Chat (SPEC 14b). Body: { hotel, session?, messages, lang, token? }. Antwort: { status, reply?, session?, forward? } */
 export async function POST(req: Request) {
-  let b: { hotel?: string; session?: string | null; messages?: unknown; lang?: string; token?: string | null };
+  let b: { pass?: string; hotel?: string; session?: string | null; messages?: unknown; lang?: string; token?: string | null };
   try {
     b = await req.json();
   } catch {
     return Response.json({ status: "invalid" }, { status: 400 });
   }
+  // Rechenaufgabe (SPEC 18.11): der Chat kostet Geld, deshalb nur mit gelöstem Pass
+  if (!checkPass(b.pass)) return Response.json({ status: "pow" }, { status: 400 });
   const hotel = await resolvePublicHotel(req.headers.get("host"), b.hotel ?? null);
   if (!hotel) return Response.json({ status: "off" }, { status: 404 });
   const lang = chatLocale(hotel, String(b.lang ?? "de"));

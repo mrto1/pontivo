@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { ChatText } from "@/src/i18n/chat";
+import { getPowPass } from "./pow-client";
 
 type Msg = { role: "user" | "assistant"; content: string };
 type Card = { title: string; body: string };
@@ -35,7 +36,7 @@ export function ChatWidget({ hotel, locale, token, text }: { hotel: string; loca
     try {
       const r = await fetch("/api/chat", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ hotel, session, messages: next, lang: locale, token }),
+        body: JSON.stringify({ hotel, session, messages: next, lang: locale, token, pass: await getPowPass() }),
       });
       const j = (await r.json()) as { status: string; reply?: string; session?: string; forward?: boolean; arrival?: boolean; cards?: Offer[] };
       if (j.session) setSession(j.session);
@@ -67,7 +68,7 @@ export function ChatWidget({ hotel, locale, token, text }: { hotel: string; loca
     try {
       const r = await fetch("/api/chat/forward", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ hotel, name, email, transcript: msgs, lang: locale }),
+        body: JSON.stringify({ hotel, name, email, transcript: msgs, lang: locale, pass: await getPowPass() }),
       });
       setFwd(r.ok ? "done" : "fail");
     } catch {
