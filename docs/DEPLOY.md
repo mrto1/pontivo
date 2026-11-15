@@ -195,3 +195,12 @@ Einmal einrichten:
 3. Manuell, auch für frühere Monate: `docker compose --env-file .env.production -f docker-compose.prod.yml run --rm worker npm run export:banana -- 2026-11`
 
 Nicht in der Datei: Stripe-Gebühren, Server- und Anthropic-Kosten (Aufwand, Belege selbst ablegen) und die Bankseite (kommt aus dem Kontoauszug der Bank).
+
+## Testkonto samt Betrieb löschen (nur für Tests)
+Löscht ein Konto und seine Betriebe vollständig, mit allen Buchungen, Gästen und Mails (nicht rückgängig). Ohne `--yes` zeigt das Skript nur, was gelöscht würde. Betriebe mit weiteren Mitgliedern oder Status «live» bleiben (live nur mit `--include-live`), Plattform-Admins werden nie gelöscht.
+```bash
+cd /opt/pontivo/deploy
+sudo docker compose --env-file .env.production -f docker-compose.prod.yml exec app node --import tsx scripts/delete-test-account.ts test@example.ch
+sudo docker compose --env-file .env.production -f docker-compose.prod.yml exec app node --import tsx scripts/delete-test-account.ts test@example.ch --yes
+```
+Hinweis: Stripe-Konto und Channex-Property des Testbetriebs werden dabei nicht mitgelöscht, sie gehören bei Stripe/Channex separat entfernt.
