@@ -6,7 +6,7 @@ Stand 15.11.2026. Entwurf zur Entscheidung, noch nicht in `docs/SPEC.md` (dort e
 
 Aussage an Kunden (Startseite, FAQ): *Bei kleinen und mittleren Häusern ersetzt Pontivo in der Regel die bisherige Hotelsoftware. Wer ein Restaurant mit eigener Kasse hat oder etwas braucht, das wir noch nicht haben, lässt die alte Software daneben weiterlaufen.*
 
-Damit das stimmt, braucht es vier Dinge: einen **Umzug**, der in einem Nachmittag machbar ist (Abschnitt 2), die **fehlenden Funktionen** (3), ein **Produkt drumherum** aus Onboarding, Support und Notfallplan (4) und für Restaurants eine **eigene Kasse** als Zusatzmodul (5). Reihenfolge und Aufwand: Abschnitt 6.
+Damit das stimmt, braucht es vier Dinge: einen **Umzug**, der in einem Nachmittag machbar ist (Abschnitt 2), die **fehlenden Funktionen** (3), ein **Produkt drumherum** aus Onboarding, Support und Notfallplan (4) und für Restaurants eine **eigene Kasse** als Zusatzmodul (5). Reihenfolge und Aufwand: Abschnitt 6, ergänzt durch den Marktvergleich in Abschnitt 9.
 
 Zielgruppe bleibt: Hotel garni, B&B, Ferienwohnungen, Berggasthaus, bis ca. 40 Zimmer.
 
@@ -218,3 +218,39 @@ Parallel (nicht programmieren, sondern klären): Treuhänder/Anwalt (4.4), Backu
 6. Preis des Kassenmoduls und Verteilung auf Mehrwert gegen Fixpreis.
 7. Welche Fremdkassen sollen zuerst über `PosBridge` angebunden werden?
 8. Destination Gästekarte: welche Destinationen, welche Schnittstellen?
+
+## 9. Marktvergleich: was Mitbewerber haben und was uns noch fehlt
+
+Grundlage: Funktionslisten der Hersteller (Stand 15.11.2026) für Protel, Arhon, Hogatex, Smoobu, Lodgify, Amenitiz, HotelFriend, Little Hotelier. **Einschränkung:** Herstellerseiten, keine Tests. Zu Hogatex lag keine brauchbare Funktionsliste vor, Lodgify wurde nicht gelesen. Ob Pontivo etwas hat, wurde im Code geprüft. Vor jeder Umsetzung die Funktion beim Mitbewerber kurz selbst ansehen.
+
+### 9.1 Gedeckt
+Direktbuchung mit Stripe und TWINT, Anzahlung/Rest, Website-Baukasten, Channel-Manager über Channex und iCal, Zimmerplan mit Zimmerzuweisung, Housekeeping, Rechnung mit QR-Rechnung und MWST, Kurtaxe, Meldeschein und Online-Check-in, Gruppen, Gutscheine, Upselling, Kartenterminal (Stripe), Statistik (Belegung, ADR, RevPAR), mehrere Betriebe, Rollen, Nuki, Banana-Export. Zusätzlich: KI-Chat, GEO, Passkeys und 2FA.
+
+### 9.2 Lücken, wie sie ins Konstrukt passen
+
+| Lücke | Gesehen bei | Modul / Ort | Entwurf | Aufwand |
+| --- | --- | --- | --- | --- |
+| **eHESTA** (Pflichtmeldung Beherbergungsstatistik) | Arhon | Erweiterung `guests` (Meldung) | Meldung aus erfassten Aufenthalten ableiten. **Format und Zugang des Bundesamts zuerst klären** (offene Frage), nicht raten. | M, Format offen |
+| **Tages- und Nachtabschluss** | Protel | Erweiterung `invoicing` | Tabelle `day_closes` (Datum, Summen je Zahlungsart und MWST-Satz, Kassendifferenz, Zeitstempel, Benutzer). Abgeschlossene Tage sind gesperrt, Korrektur nur durch Gegenbuchung am Folgetag. Wird später auch vom Kassenmodul (`pos`) gebraucht. | S–M |
+| **Weitere Zahlungsanbieter** (z. B. Saferpay, Datatrans) | Arhon | `PaymentProvider` (Schnittstelle vorhanden, `src/payments/provider`) | Pro Betrieb ein Anbieter wählbar, eigenes Händlerkonto des Hotels. **Folge fürs Geschäftsmodell:** Die Plattformgebühr (Application Fee) gibt es nur bei Stripe Connect. Bei anderen Anbietern stattdessen Monatsrechnung. Entscheid nötig. | M je Anbieter |
+| **Gemeinsamer Posteingang** (E-Mail, Portal-Nachrichten, SMS, WhatsApp) | Little Hotelier, Amenitiz | neues Modul `inbox` | Alle Nachrichten zu einem Gast in einem Verlauf, mit Antwortvorlagen. Portal-Nachrichten über Channex (**Doku in SPEC 13 vorher lesen**), SMS/WhatsApp über einen Anbieter gegen Weitergabe der Kosten. | L |
+| **Preisempfehlung / dynamische Preise** | Protel, Smoobu | Erweiterung Tarife, Modul `pricing_rules` | V1 regelbasiert und nachvollziehbar, ohne KI: Auslastungsstufen (ab X % Belegung +Y %), Last-Minute, Wochentag, Ereignisdaten, mit Mindest- und Höchstpreis. Hotel sieht den Vorschlag und bestätigt oder erlaubt Automatik innerhalb des Rahmens. Schreibt `rates_days` mit Outbox und Audit (Regel in `CLAUDE.md`). | M |
+| **Bewertungen einholen** | Little Hotelier | Erweiterung Mail-Texte (`post_stay`) | Nach dem Aufenthalt zuerst interne Zufriedenheitsfrage (1 bis 5). Gute Bewertungen bekommen den Link zur Bewertungsseite des Hotels (Einstellung), schlechte gehen intern ans Hotel. | S |
+| **Newsletter mit Segmenten** | Protel, HotelFriend | neues Modul `marketing` | Nur an Gäste mit Einwilligung (`marketing_consent` vorhanden), Segmente nach Tags, Land, Aufenthalt, Abmeldelink in jeder Mail (DSG/UWG). | M |
+| **Gästeportal ausbauen** (statt eigener App) | Protel, HotelFriend | Erweiterung `/b/<token>` | Die Buchungsseite des Gastes bekommt Info, Services, Upsell und Chat. Keine native App. | S–M |
+| **Eigentümerportal und Abrechnung** | Verwalter-Software | neues Modul `owners` | Lesezugang für Eigentümer pro Objekt, Abrechnung (Umsatz minus Kommission minus Kosten) als PDF und Monatsmail. Wichtig für Verwaltungsfirmen von Ferienwohnungen. | M–L |
+| **Event- und Seminargeschäft** | Protel | `resources` + `inquiries` (Abschnitt 3) | Angebot als PDF, Raumbuchung, Posten aufs Zimmer. | M |
+| **Offene API, Webhooks, Marktplatz** | Protel | Stufe D im PMS-Konzept | API-Schlüssel pro Betrieb, Webhooks, `PosBridge` (Abschnitt 5.5) als erster Schritt. | L |
+| **Zentrale Gästeführung über mehrere Betriebe** | Protel | Erweiterung `portfolio` | Gäste einer Kette zusammenführen. Nur für Gruppen mit mehreren Betrieben, später. | M |
+| Telefonanlage, Schlüsselkarten, TV | Protel | `KeyProvider` und Partner | Nur grosse Häuser, bewusst nicht Ziel. | L, später |
+
+### 9.3 Reihenfolge (Ergänzung zu Abschnitt 6)
+1. **Vor dem Satz «ersetzt Ihre Software»** (Vertrauen und Pflicht): Umzug (E1), eHESTA, Tagesabschluss, mindestens ein Schweizer Zahlungsanbieter, rechtliche Abnahme (4.4).
+2. **Danach, grösster Nutzen für kleine Häuser:** Bewertungen einholen, Preisempfehlung, gemeinsamer Posteingang, Eigentümerabrechnung (für Verwalter).
+3. **Danach:** Newsletter, Gästeportal ausbauen, offene API, Events/Seminare.
+4. **Nur auf Nachfrage:** zentrale Gästeführung, Schlüsselkarten, TV.
+
+### 9.4 Positionierung
+- **Gegen Arhon und Hogatex (Schweiz):** Pflichtmeldungen (eHESTA), Zahlungsanbieter und Kassenanbindung nachziehen. Vorsprung: Direktbuchung, KI-Chat, Website, Passkeys.
+- **Gegen Smoobu, Lodgify, Little Hotelier (günstig, International):** Preisempfehlung, Posteingang, Eigentümerabrechnung nachziehen. Vorsprung: Schweizer Recht (QR-Rechnung, Kurtaxe, Meldeschein) ab Werk.
+- **Gegen Protel (gross):** nicht konkurrieren bei Kasse, Spa, Events, Marktplatz. Aussage bleibt: «bei kleinen und mittleren Häusern».

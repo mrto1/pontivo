@@ -128,3 +128,8 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Preis des Kassenmoduls (Fixpreis pro Monat?).
 - Welche Fremdkassen zuerst über PosBridge anbinden?
 - Gästekarte der Destination: welche Destinationen und Schnittstellen?
+- eHESTA: Format, Zugang und Fristen der Meldung an das Bundesamt für Statistik (vor dem Bauen Doku lesen).
+- Weitere Zahlungsanbieter (Saferpay, Datatrans): Plattformgebühr ohne Stripe Connect? Monatsrechnung statt Application Fee?
+- Gemeinsamer Posteingang: welche Kanäle (Channex-Nachrichten, SMS, WhatsApp) und wer trägt die Fremdkosten?
+- Preisempfehlung: nur Vorschlag, oder Automatik innerhalb Mindest- und Höchstpreis?
+- Eigentümerabrechnung: Zielgruppe Verwaltungsfirmen bestätigen?
