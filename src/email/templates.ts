@@ -8,6 +8,7 @@ import { CI } from "../i18n/checkin";
 import { env } from "../env";
 import { tr } from "../domain/blocks";
 import { U } from "../i18n/upsell";
+import { F } from "../i18n/feedback";
 import { fillPlaceholders, isMailTemplate, mailTextFor } from "../domain/mail-texts";
 
 /**
@@ -251,8 +252,18 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
       return wrap(c, gl, `${ci.title} – ${c.hotel.name}`, [hi + ",", ci.linkText], summary(c, gl),
         b ? { href: `${c.baseUrl}/b/${b.publicToken}/checkin`, label: ci.linkButton } : undefined);
     }
-    case "post_stay":
+    case "post_stay": {
+      // Bewertungen einholen (SPEC 19.2): Modul an → Knopf zur Bewertungsfrage, «wieder buchen» als Zeile darunter
+      if (c.data.feedback && b) {
+        const f = F[gl];
+        return wrap(c, gl, m.postSubject(c.hotel.name), [hi + ",", f.mailText, `${f.bookAgain}: ${c.baseUrl}`], [], { href: `${c.baseUrl}/b/${b.publicToken}/feedback`, label: f.mailButton });
+      }
       return wrap(c, gl, m.postSubject(c.hotel.name), [hi + ",", m.postText], [], { href: c.baseUrl, label: m.bookAgain });
+    }
+    case "feedback_alert":
+      return wrap(c, l, de ? `Rückmeldung eines Gastes (${String(c.data.score)} von 5)` : `Guest feedback (${String(c.data.score)} of 5)`,
+        [de ? `Ein Gast hat nach dem Aufenthalt ${String(c.data.score)} von 5 Punkten gegeben. Bitte melden Sie sich bei Bedarf beim Gast.` : `A guest gave ${String(c.data.score)} out of 5 after the stay. Please get in touch if needed.`,
+          String(c.data.comment || (de ? "(kein Kommentar)" : "(no comment)"))], summary(c, l));
     case "overbooking_alert":
       return wrap(c, l, `${de ? "ÜBERBUCHUNG" : "OVERBOOKING"} ${b?.reference ?? ""}`,
         [de ? "Eine Buchung aus einem Portal hat eine Überbuchung erzeugt. Bitte sofort prüfen." : "A channel booking caused an overbooking. Please check immediately."], summary(c, l));

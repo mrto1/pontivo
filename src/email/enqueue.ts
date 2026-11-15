@@ -17,6 +17,7 @@ export type TemplateName =
   | "booking_cancelled"
   | "pre_arrival"
   | "post_stay"
+  | "feedback_alert"
   | "overbooking_alert"
   | "checkin_link"
   | "late_payment_refunded"

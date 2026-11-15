@@ -688,6 +688,13 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - Seite `/admin/<hotel>/invoices/tagesabschluss` (Reiter «Tagesabschluss», Menüschlüssel `dayclose`, Rollen `staff` und eingeschränkt `reception`, `accounting`), Druckansicht über den Browser.
 - ASSUMPTION: Pro Tag genau ein Abschluss; kein Zwang, frühere Tage zuerst abzuschliessen.
 
+### 19.2 Bewertungen einholen (Modul `feedback`, Standard aus)
+- Mit dem Modul bekommt die Nachher-Mail (`post_stay`, wie bisher nur an Gäste mit Einwilligung, 1 Tag nach Abreise) statt «wieder buchen» den Knopf «Aufenthalt bewerten» (Mail-Daten `feedback: true`, beim Einreihen gesetzt). Zeile «Beim nächsten Mal direkt buchen» steht darunter.
+- Seite `/b/<token>/feedback` (persönlicher Buchungslink, `noindex`): Note 1 bis 5 und freiwilliger Kommentar; eine Rückmeldung pro Buchung (`stay_feedback`, eindeutig je Buchung). Texte in allen fünf Website-Sprachen (`src/i18n/feedback.ts`).
+- Einstellungen (`hotels.content.feedback`): Link zur öffentlichen Bewertungsseite (nur `https`) und Mindestnote (2 bis 5, Standard 4). Ab Mindestnote **und** gesetztem Link zeigt die Danke-Seite den Link, sonst nur den Dank. Unter der Mindestnote geht eine Mail (`feedback_alert`) mit Note und Kommentar ans Haus, der Gast sieht keinen öffentlichen Link.
+- Admin: Reiter «Bewertungen» unter «Gäste» (Menüschlüssel `feedback`): Einstellungen (Rolle manager), Liste mit Durchschnitt.
+- ASSUMPTION: Gleiche Einwilligung wie die Nachher-Mail. Der Link zur Bewertungsseite wird nur bei guter Note gezeigt (Bewertungsportale verbieten gezieltes Filtern teilweise; Haus prüft die Regeln seines Portals).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

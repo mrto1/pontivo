@@ -15,6 +15,7 @@ import { quoteCancellation, type CancelQuote } from "../domain/cancellation";
 import { newPublicToken, newReference } from "../domain/ids";
 import { enqueueAvailability } from "./outbox";
 import { audit } from "./audit";
+import { moduleOn } from "./modules";
 import { enqueueEmail } from "../email/enqueue";
 import { getPaymentProvider } from "../payments/provider";
 import { isBookable } from "./hotels";
@@ -366,7 +367,7 @@ async function enqueueBookingEmails(tx: Tx, booking: Booking, now: Date) {
     await enqueueUpsellOffer(tx, hotel, booking, guest, now);
     if (guest.marketingConsent) {
       const at = zonedToUtc(addDays(booking.checkout, 1), "10:00", hotel.timezone);
-      await enqueueEmail(tx, { hotelId: hotel.id, bookingId: booking.id, template: "post_stay", to: guest.email, language: booking.language, data, sendAfter: at });
+      await enqueueEmail(tx, { hotelId: hotel.id, bookingId: booking.id, template: "post_stay", to: guest.email, language: booking.language, data: { ...data, feedback: await moduleOn(hotel.id, "feedback") }, sendAfter: at });
     }
   }
   await enqueueEmail(tx, { hotelId: hotel.id, bookingId: booking.id, template: "hotel_new_booking", to: hotel.contactEmail, language: hotel.defaultLanguage, data });

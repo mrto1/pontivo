@@ -8,6 +8,7 @@ import { resolveExtras } from "../domain/extras";
 import { LOCALES } from "../i18n/dict";
 import { enqueueEmail } from "../email/enqueue";
 import { audit } from "./audit";
+import { moduleOn } from "./modules";
 import { enqueueAvailability } from "./outbox";
 import { searchOffers } from "./search";
 import { consumeBlock } from "./group-blocks";
@@ -155,7 +156,7 @@ async function scheduleGuestEmails(tx: Tx, hotel: Hotel, b: Booking, opts: { con
   }
   await enqueueUpsellOffer(tx, hotel, b, g, opts.now);
   if (g.marketingConsent) {
-    await enqueueEmail(tx, { hotelId: hotel.id, bookingId: b.id, template: "post_stay", to: g.email, language: b.language, data, sendAfter: zonedToUtc(addDays(b.checkout, 1), "10:00", hotel.timezone) });
+    await enqueueEmail(tx, { hotelId: hotel.id, bookingId: b.id, template: "post_stay", to: g.email, language: b.language, data: { ...data, feedback: await moduleOn(hotel.id, "feedback") }, sendAfter: zonedToUtc(addDays(b.checkout, 1), "10:00", hotel.timezone) });
   }
 }
 

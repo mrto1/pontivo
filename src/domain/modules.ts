@@ -26,6 +26,7 @@ export const MODULES: ModuleDef[] = [
   { key: "terminal", label: "Kartenterminal", description: "Kartenzahlung am Empfang mit einem Stripe-Kartenleser (WisePOS E / S700). Die Zahlung wird automatisch auf die Buchung gebucht. Hardware und Kartengebühren siehe Stripe.", deps: ["invoicing"], defaultOn: false, navKeys: ["terminal"] },
   { key: "access", label: "Zutritt (Nuki)", description: "Keypad-Codes für Nuki-Türschlösser: pro Buchung automatisch ein Code für Eingang und Zimmer, gültig von Check-in bis Check-out, danach gelöscht. Braucht Nuki-Hardware (Keypad, ggf. Bridge) und ein Nuki-Web-Konto.", deps: ["frontdesk"], defaultOn: false, navKeys: ["access"] },
   { key: "invoicing", label: "Rechnung & Kasse", description: "Rechnungen und Quittungen mit MWST und QR-Rechnung, Zahlungen vor Ort verbuchen, Tagesabschluss mit Kassenzählung.", deps: [], defaultOn: true, navKeys: ["invoices", "dayclose"] },
+  { key: "feedback", label: "Bewertungen", description: "Nach dem Aufenthalt fragen die Gäste, wie es war. Zufriedene Gäste bekommen den Link zu Ihrer Bewertungsseite, unzufriedene schreiben Ihnen direkt. Gesendet wird mit der Nachher-Mail.", deps: [], defaultOn: false, navKeys: ["feedback"] },
   { key: "vouchers", label: "Gutscheine", description: "Gutscheine online verkaufen und im Haus einlösen.", deps: [], defaultOn: true, navKeys: ["vouchers"] },
   { key: "inquiries", label: "Anfragen", description: "Anfragen von der Website und aus dem Chat (z. B. Gruppen, Sonderwünsche).", deps: [], defaultOn: true, navKeys: ["inquiries"] },
 ];

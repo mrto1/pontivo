@@ -86,6 +86,8 @@ export type HotelContent = {
   mailTexts?: import("../domain/mail-texts").MailTexts;
   /** Kontenzuordnung für das Buchungsjournal (SPEC 18.3) */
   accounting?: { accounts?: Partial<import("../domain/accounting-export").AccountMap> };
+  /** Bewertungen einholen (SPEC 19.2): Link zur öffentlichen Bewertungsseite und ab welcher Note er gezeigt wird */
+  feedback?: { reviewUrl?: string; minScore?: number };
   /** Nuki Web API: Token verschlüsselt (SPEC 18.5) */
   nuki?: { tokenEnc?: string };
 };
@@ -973,3 +975,14 @@ export const dayCloses = pgTable("day_closes", {
   closedAt: ts("closed_at").notNull().defaultNow(),
 });
 export type DayClose = typeof dayCloses.$inferSelect;
+
+export const stayFeedback = pgTable("stay_feedback", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  bookingId: uuid("booking_id").notNull().unique(),
+  score: integer("score").notNull(),
+  comment: text("comment").notNull().default(""),
+  publicLinkShown: boolean("public_link_shown").notNull().default(false),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type StayFeedback = typeof stayFeedback.$inferSelect;
