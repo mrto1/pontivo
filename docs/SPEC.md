@@ -647,6 +647,12 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 - **«Nur Passkey» (freiwillig, `users.email_login_disabled`):** schaltet die E-Mail-Link-Anmeldung für das Konto ab (kein Link, bereits ausgestellte Links ungültig). Nur mit mindestens 2 Passkeys einschaltbar; solange aktiv, darf die Zahl der Passkeys nicht unter 2 sinken.
 - Kein Zwang zu 2FA oder «Nur Passkey» in dieser Version (siehe QUESTIONS).
 
+### 18.7 Plattform-Verwaltung (nur Plattform-Admin)
+- Seite `/admin/plattform` (404 für alle anderen): alle Betriebe (Status, Mitglieder, Anzahl Buchungen und Rechnungen) und alle Benutzer (Betriebe, Passkeys, 2FA).
+- Aktionen: Betrieb pausieren/online (mit den üblichen Live-Prüfungen), Mitglied hinzufügen/entfernen, Login-Link senden, Sicherheit eines Benutzers zurücksetzen (Passkeys, 2FA, Wiederherstellungscodes, «Nur Passkey» aus; Support-Weg bei verlorenem Gerät), Betrieb endgültig löschen (alle abhängigen Daten über die Fremdschlüssel, Benutzer bleiben), Benutzer endgültig löschen (Betriebe bleiben; Plattform-Admins nie).
+- Löschen verlangt das Eintippen von Name bzw. E-Mail. Hinweis bei live oder mit Rechnungen: Rechnungen sind in der Schweiz 10 Jahre aufzubewahren. Protokoll: `audit_log` ohne Betriebsbezug (`hotel.deleted`, `user.deleted`, `user.security_reset`).
+- Nicht enthalten: Löschen oder Kündigen bei Stripe und Channex (separat).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

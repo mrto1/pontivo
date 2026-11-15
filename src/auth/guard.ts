@@ -27,3 +27,10 @@ export async function requireHotel(hotelId: string, min: FullRole = "staff", are
   if (!hotel) notFound();
   return { user, role: role!, hotel, actor: `user:${user.id}` };
 }
+
+/** Nur Plattform-Admin (Betreiber von Pontivo), sonst 404 */
+export async function requirePlatformAdmin() {
+  const user = await requireUser();
+  if (!user.isPlatformAdmin) notFound();
+  return user;
+}
