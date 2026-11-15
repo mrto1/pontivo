@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { requireModule } from "@/src/services/modules";
-import { assignRoom, autoAssign, createRoom, deleteRoom, FrontdeskError, listRooms, planBookings, seedRooms, setRoomActive, type PlanBooking } from "@/src/services/frontdesk";
+import { assignRoom, autoAssign, createRoom, deleteRoom, FrontdeskError, listRooms, moveRoom, planBookings, seedRooms, setRoomActive, type PlanBooking } from "@/src/services/frontdesk";
 import { addDays, diffDays, isDay, todayIn, weekday } from "@/src/domain/dates";
 import { formatDay } from "@/src/i18n/dict";
 import { db } from "@/src/db/client";
@@ -31,6 +31,10 @@ async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>
 async function assign(f: FormData) {
   "use server";
   await act(f, async (c) => { await assignRoom(c.hotel.id, s(f, "bookingRoomId"), s(f, "roomId") || null, c.actor); return "Zimmer zugewiesen."; });
+}
+async function move(f: FormData) {
+  "use server";
+  await act(f, async (c) => { await moveRoom(c.hotel.id, s(f, "bookingRoomId"), s(f, "roomId"), s(f, "day"), s(f, "reason"), c.actor); return "Zimmerwechsel gespeichert."; });
 }
 async function auto(f: FormData) {
   "use server";
@@ -187,6 +191,14 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
                           {hid}{fromField}<input type="hidden" name="bookingRoomId" value={b.bookingRoomId} />
                           <select name="roomId" defaultValue={b.roomId ?? ""}><option value="">(keines)</option>{options.map((r) => <option key={r.id} value={r.id}>{r.number}</option>)}</select>
                           <button className="btn secondary small">Speichern</button>
+                        </form>
+                        <form action={move} className="inline-form">
+                          {hid}{fromField}<input type="hidden" name="bookingRoomId" value={b.bookingRoomId} />
+                          <span className="small">Wechsel ab</span>
+                          <input type="date" name="day" min={b.checkin} max={b.checkout} required />
+                          <select name="roomId" required>{options.filter((r) => r.id !== b.roomId).map((r) => <option key={r.id} value={r.id}>{r.number}</option>)}</select>
+                          <input name="reason" placeholder="Grund (optional)" maxLength={200} />
+                          <button className="btn secondary small">Zimmer wechseln</button>
                         </form>
                       </td>
                     </tr>

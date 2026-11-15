@@ -1,6 +1,6 @@
 import { and, asc, eq, gt, inArray, lt, ne, sql } from "drizzle-orm";
 import { db, rows, type Executor } from "../db/client";
-import { bookingRooms, bookings, guests, roomTypes, rooms, type Room } from "../db/schema";
+import { bookingRooms, bookings, guests, roomMoves, roomTypes, rooms, type Room } from "../db/schema";
 import { addDays, diffDays } from "../domain/dates";
 import { audit } from "./audit";
 
@@ -68,11 +68,13 @@ export async function deleteRoom(hotelId: string, roomId: string, actor: string)
 
 // ---------------------------------------------------------------- Zuweisung
 
-/** Hat das Zimmer in diesem Zeitraum schon eine andere Buchung (hold/confirmed)? */
+/** Hat das Zimmer in diesem Zeitraum schon eine andere Buchung (hold/confirmed)? Berücksichtigt Zimmerwechsel (View room_stays). */
 async function roomBusy(ex: Executor, hotelId: string, roomId: string, checkin: string, checkout: string, exceptBookingRoomId?: string): Promise<boolean> {
-  const conds = [eq(bookingRooms.hotelId, hotelId), eq(bookingRooms.roomId, roomId), inArray(bookings.status, [...ACTIVE]), lt(bookings.checkin, checkout), gt(bookings.checkout, checkin)];
-  if (exceptBookingRoomId) conds.push(ne(bookingRooms.id, exceptBookingRoomId));
-  const r = await ex.select({ id: bookingRooms.id }).from(bookingRooms).innerJoin(bookings, eq(bookings.id, bookingRooms.bookingId)).where(and(...conds)).limit(1);
+  const r = rows<{ x: number }>(await ex.execute(sql`
+    SELECT 1 AS x FROM room_stays rs JOIN bookings b ON b.id = rs.booking_id
+     WHERE rs.hotel_id = ${hotelId} AND rs.room_id = ${roomId} AND b.status IN ('hold','confirmed')
+       AND rs.from_day < ${checkout}::date AND rs.to_day > ${checkin}::date
+       ${exceptBookingRoomId ? sql`AND rs.booking_room_id <> ${exceptBookingRoomId}` : sql``} LIMIT 1`));
   return r.length > 0;
 }
 
@@ -82,6 +84,8 @@ export async function assignRoom(hotelId: string, bookingRoomId: string, roomId:
     const [br] = await tx.select({ br: bookingRooms, checkin: bookings.checkin, checkout: bookings.checkout, status: bookings.status }).from(bookingRooms)
       .innerJoin(bookings, eq(bookings.id, bookingRooms.bookingId)).where(and(eq(bookingRooms.id, bookingRoomId), eq(bookingRooms.hotelId, hotelId)));
     if (!br) throw new FrontdeskError("Buchung nicht gefunden.");
+    const [moved] = await tx.select({ id: roomMoves.id }).from(roomMoves).where(eq(roomMoves.bookingRoomId, bookingRoomId)).limit(1);
+    if (moved) throw new FrontdeskError("Diese Buchung hat schon einen Zimmerwechsel. Weitere Wechsel über «Zimmer wechseln».");
     if (roomId) {
       // Zimmerzeile sperren, damit zwei gleichzeitige Zuweisungen nicht dasselbe Zimmer belegen
       const [room] = await tx.select().from(rooms).where(and(eq(rooms.id, roomId), eq(rooms.hotelId, hotelId))).for("update");
@@ -92,6 +96,37 @@ export async function assignRoom(hotelId: string, bookingRoomId: string, roomId:
     await tx.update(bookingRooms).set({ roomId }).where(eq(bookingRooms.id, bookingRoomId));
     await audit(tx, { hotelId, actor, action: roomId ? "room.assign" : "room.unassign", entity: "booking", entityId: br.br.bookingId, details: { bookingRoomId, roomId } });
   });
+}
+
+/**
+ * Zimmerwechsel mitten im Aufenthalt: ab `moveDay` (Nacht) in ein anderes Zimmer desselben Zimmertyps.
+ * Das alte Zimmer ist ab diesem Tag frei und wird dort als Abreise gereinigt (View room_stays); die Verfügbarkeit nach Zimmertyp ändert sich nicht.
+ * ASSUMPTION: Nur innerhalb desselben Zimmertyps (keine Preisfolge). Up-/Downgrade: Differenz manuell als Posten buchen.
+ */
+export async function moveRoom(hotelId: string, bookingRoomId: string, toRoomId: string, moveDay: string, reason: string, actor: string): Promise<void> {
+  await db().transaction(async (tx) => {
+    const [br] = await tx.select({ br: bookingRooms, checkin: bookings.checkin, checkout: bookings.checkout, status: bookings.status }).from(bookingRooms)
+      .innerJoin(bookings, eq(bookings.id, bookingRooms.bookingId)).where(and(eq(bookingRooms.id, bookingRoomId), eq(bookingRooms.hotelId, hotelId))).for("update");
+    if (!br) throw new FrontdeskError("Buchung nicht gefunden.");
+    if (br.status !== "confirmed") throw new FrontdeskError("Nur bestätigte Buchungen können das Zimmer wechseln.");
+    if (!br.br.roomId) throw new FrontdeskError("Der Buchung ist noch kein Zimmer zugewiesen.");
+    if (br.br.roomId === toRoomId) throw new FrontdeskError("Das ist schon das aktuelle Zimmer.");
+    if (!(moveDay > br.checkin && moveDay < br.checkout)) throw new FrontdeskError("Der Wechsel muss zwischen Anreise und Abreise liegen (frühestens die zweite Nacht).");
+    const [last] = await tx.select({ d: sql<string>`max(${roomMoves.moveDay})::text` }).from(roomMoves).where(eq(roomMoves.bookingRoomId, bookingRoomId));
+    if (last?.d && moveDay <= last.d) throw new FrontdeskError("Der Wechsel muss nach dem letzten Wechsel liegen.");
+    const [room] = await tx.select().from(rooms).where(and(eq(rooms.id, toRoomId), eq(rooms.hotelId, hotelId))).for("update");
+    if (!room || !room.active) throw new FrontdeskError("Zimmer nicht verfügbar.");
+    if (room.roomTypeId !== br.br.roomTypeId) throw new FrontdeskError("Das Zimmer gehört zu einem anderen Zimmertyp.");
+    if (await roomBusy(tx, hotelId, toRoomId, moveDay, br.checkout, bookingRoomId)) throw new FrontdeskError("Das Zimmer ist in diesen Nächten schon vergeben.");
+    await tx.insert(roomMoves).values({ hotelId, bookingRoomId, fromRoomId: br.br.roomId, toRoomId, moveDay, reason: reason.trim().slice(0, 200), createdBy: actor });
+    await tx.update(bookingRooms).set({ roomId: toRoomId }).where(eq(bookingRooms.id, bookingRoomId));
+    await audit(tx, { hotelId, actor, action: "room.move", entity: "booking", entityId: br.br.bookingId, details: { bookingRoomId, from: br.br.roomId, to: toRoomId, moveDay, reason } });
+  });
+}
+
+export async function listMoves(hotelId: string, bookingId: string) {
+  return db().select({ m: roomMoves }).from(roomMoves).innerJoin(bookingRooms, eq(bookingRooms.id, roomMoves.bookingRoomId))
+    .where(and(eq(roomMoves.hotelId, hotelId), eq(bookingRooms.bookingId, bookingId))).orderBy(asc(roomMoves.moveDay)).then((r) => r.map((x) => x.m));
 }
 
 /**
@@ -110,8 +145,8 @@ export async function autoAssign(hotelId: string, today: string, actor: string, 
     for (const c of cands) {
       if (await roomBusy(db(), hotelId, c.id, t.checkin, t.checkout)) continue;
       const [prev] = rows<{ d: string | null }>(await db().execute(sql`
-        SELECT max(b.checkout)::text AS d FROM booking_rooms br JOIN bookings b ON b.id = br.booking_id
-         WHERE br.hotel_id = ${hotelId} AND br.room_id = ${c.id} AND b.status IN ('hold','confirmed') AND b.checkout <= ${t.checkin}`));
+        SELECT max(rs.to_day)::text AS d FROM room_stays rs JOIN bookings b ON b.id = rs.booking_id
+         WHERE rs.hotel_id = ${hotelId} AND rs.room_id = ${c.id} AND b.status IN ('hold','confirmed') AND rs.to_day <= ${t.checkin}`));
       const gap = prev?.d ? diffDays(prev.d, t.checkin) : 10_000;
       if (!best || gap < best.gap) best = { id: c.id, gap };
     }
@@ -142,7 +177,20 @@ export async function planBookings(hotelId: string, from: string, days: number):
   }).from(bookingRooms).innerJoin(bookings, eq(bookings.id, bookingRooms.bookingId)).leftJoin(guests, eq(guests.id, bookings.guestId))
     .where(and(eq(bookingRooms.hotelId, hotelId), inArray(bookings.status, [...ACTIVE]), lt(bookings.checkin, to), gt(bookings.checkout, from)))
     .orderBy(asc(bookings.checkin));
-  return r.map((x) => ({ bookingRoomId: x.bookingRoomId, bookingId: x.bookingId, reference: x.reference, status: x.status, checkin: x.checkin, checkout: x.checkout, roomId: x.roomId, roomTypeId: x.roomTypeId, guest: [x.first, x.last].filter(Boolean).join(" ") || x.reference, persons: x.adults + x.children, source: x.source }));
+  const base = r.map((x) => ({ bookingRoomId: x.bookingRoomId, bookingId: x.bookingId, reference: x.reference, status: x.status, checkin: x.checkin, checkout: x.checkout, roomId: x.roomId, roomTypeId: x.roomTypeId, guest: [x.first, x.last].filter(Boolean).join(" ") || x.reference, persons: x.adults + x.children, source: x.source }));
+  // Zimmerwechsel: ein Buchungszimmer erscheint als mehrere Abschnitte (je Zimmer), Datum = Abschnitt (SPEC 19.5)
+  const moves = r.length ? await db().select().from(roomMoves).where(and(eq(roomMoves.hotelId, hotelId), inArray(roomMoves.bookingRoomId, r.map((x) => x.bookingRoomId)))).orderBy(asc(roomMoves.moveDay)) : [];
+  if (!moves.length) return base;
+  const out: PlanBooking[] = [];
+  for (const b of base) {
+    const mv = moves.filter((m) => m.bookingRoomId === b.bookingRoomId);
+    if (!mv.length) { out.push(b); continue; }
+    let from = b.checkin;
+    let room: string | null = mv[0].fromRoomId;
+    for (const m of mv) { out.push({ ...b, roomId: room, checkin: from, checkout: m.moveDay }); from = m.moveDay; room = m.toRoomId; }
+    out.push({ ...b, roomId: room, checkin: from, checkout: b.checkout });
+  }
+  return out;
 }
 
 export type DayRow = { bookingId: string; reference: string; guest: string; persons: number; checkin: string; checkout: string; rooms: string[]; typeNames: string[]; status: string };

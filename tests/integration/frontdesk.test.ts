@@ -3,7 +3,8 @@ import { eq } from "drizzle-orm";
 import { closeDb, db } from "../../src/db/client";
 import { bookingRooms, bookings, rooms } from "../../src/db/schema";
 import { confirmBooking, createDirectBooking } from "../../src/services/bookings";
-import { assignRoom, autoAssign, createRoom, dayLists, deleteRoom, FrontdeskError, listRooms, planBookings, seedRooms, setRoomActive } from "../../src/services/frontdesk";
+import { assignRoom, autoAssign, createRoom, dayLists, deleteRoom, FrontdeskError, listMoves, listRooms, moveRoom, planBookings, seedRooms, setRoomActive } from "../../src/services/frontdesk";
+import { generateTasks } from "../../src/services/housekeeping";
 import { addDays, todayIn } from "../../src/domain/dates";
 import { guest, inDays, makeHotel } from "../helpers";
 
@@ -88,5 +89,49 @@ describe("Rezeption (SPEC 16.2)", () => {
     await expect(deleteRoom(s.hotel.id, s.rooms[0].id, "t")).rejects.toBeInstanceOf(FrontdeskError);
     await deleteRoom(s.hotel.id, s.rooms[1].id, "t");
     expect((await db().select().from(rooms).where(eq(rooms.hotelId, s.hotel.id)))).toHaveLength(1);
+  });
+});
+
+describe("Zimmerwechsel (SPEC 19.5)", () => {
+  it("Wechsel ab Tag X: altes Zimmer ab dann frei, neues belegt, Plan zeigt zwei Abschnitte, Reinigung im alten Zimmer", async () => {
+    const s = await setup(3);
+    const a = await book(s, 20, 4); // Nächte 20..23
+    const [r1, r2, r3] = s.rooms;
+    await assignRoom(s.hotel.id, a.br.id, r1.id, "t");
+    const day = inDays(22);
+    await moveRoom(s.hotel.id, a.br.id, r2.id, day, "Lärm", "t");
+    expect((await listMoves(s.hotel.id, a.booking.id)).map((m) => [m.fromRoomId, m.toRoomId, m.moveDay])).toEqual([[r1.id, r2.id, day]]);
+    // altes Zimmer ab Tag 22 frei, vorher belegt; neues erst ab Tag 22 belegt
+    const other = await book(s, 22, 2);
+    await assignRoom(s.hotel.id, other.br.id, r1.id, "t");
+    const early = await book(s, 20, 2);
+    await expect(assignRoom(s.hotel.id, early.br.id, r1.id, "t")).rejects.toThrow(/schon vergeben/);
+    await assignRoom(s.hotel.id, early.br.id, r2.id, "t"); // r2 erst ab Tag 22 belegt
+    const third = await book(s, 22, 1);
+    await expect(assignRoom(s.hotel.id, third.br.id, r2.id, "t")).rejects.toThrow(/schon vergeben/);
+    await assignRoom(s.hotel.id, third.br.id, r3.id, "t");
+    const plan = (await planBookings(s.hotel.id, inDays(19), 8)).filter((p) => p.bookingId === a.booking.id).sort((x, y) => x.checkin.localeCompare(y.checkin));
+    expect(plan.map((p) => [p.roomId, p.checkin, p.checkout])).toEqual([[r1.id, inDays(20), day], [r2.id, day, inDays(24)]]);
+    // Abreise aus dem alten Zimmer am Wechseltag → Reinigungsauftrag dort
+    await generateTasks(s.hotel.id, day);
+    const dirty = (await db().select().from(rooms).where(eq(rooms.id, r1.id)))[0];
+    expect(dirty.cleanStatus).toBe("dirty");
+  });
+
+  it("Regeln: Typ, Datum, Reihenfolge, Zuweisung nach Wechsel gesperrt", async () => {
+    const s = await setup(3);
+    const a = await book(s, 20, 4);
+    const [r1, r2, r3] = s.rooms;
+    await expect(moveRoom(s.hotel.id, a.br.id, r2.id, inDays(22), "", "t")).rejects.toThrow(/kein Zimmer zugewiesen/);
+    await assignRoom(s.hotel.id, a.br.id, r1.id, "t");
+    await expect(moveRoom(s.hotel.id, a.br.id, r1.id, inDays(22), "", "t")).rejects.toThrow(/aktuelle Zimmer/);
+    await expect(moveRoom(s.hotel.id, a.br.id, r2.id, inDays(20), "", "t")).rejects.toThrow(/zwischen Anreise und Abreise/);
+    await expect(moveRoom(s.hotel.id, a.br.id, r2.id, inDays(24), "", "t")).rejects.toThrow(/zwischen Anreise und Abreise/);
+    await moveRoom(s.hotel.id, a.br.id, r2.id, inDays(22), "", "t");
+    await expect(moveRoom(s.hotel.id, a.br.id, r3.id, inDays(22), "", "t")).rejects.toThrow(/nach dem letzten Wechsel/);
+    await moveRoom(s.hotel.id, a.br.id, r3.id, inDays(23), "", "t"); // zweiter Wechsel
+    await expect(assignRoom(s.hotel.id, a.br.id, r1.id, "t")).rejects.toThrow(/Zimmerwechsel/);
+    const plan = (await planBookings(s.hotel.id, inDays(19), 8)).filter((p) => p.bookingId === a.booking.id);
+    expect(plan).toHaveLength(3);
   });
 });

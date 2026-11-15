@@ -1034,3 +1034,16 @@ export const pricingProposals = pgTable("pricing_proposals", {
   decidedBy: text("decided_by"),
 });
 export type PricingProposal = typeof pricingProposals.$inferSelect;
+
+export const roomMoves = pgTable("room_moves", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  bookingRoomId: uuid("booking_room_id").notNull(),
+  fromRoomId: uuid("from_room_id").notNull(),
+  toRoomId: uuid("to_room_id").notNull(),
+  moveDay: date("move_day", { mode: "string" }).notNull(),
+  reason: text("reason").notNull().default(""),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type RoomMove = typeof roomMoves.$inferSelect;

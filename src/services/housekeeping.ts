@@ -21,9 +21,11 @@ export type BoardRoom = {
  */
 export async function generateTasks(hotelId: string, day: string, actor = "system", stayEvery = 0): Promise<number> {
   return db().transaction(async (tx) => {
-    const base = await tx.select({ roomId: bookingRooms.roomId, bookingId: bookings.id, checkin: bookings.checkin, checkout: bookings.checkout })
-      .from(bookingRooms).innerJoin(bookings, eq(bookings.id, bookingRooms.bookingId))
-      .where(and(eq(bookings.hotelId, hotelId), eq(bookings.status, "confirmed"), sql`${bookingRooms.roomId} IS NOT NULL`, sql`${bookings.checkin} <= ${day}`, sql`${bookings.checkout} >= ${day}`));
+    // Abschnitte je Zimmer inkl. Zimmerwechsel (View room_stays): Ende eines Abschnitts = Abreise aus diesem Zimmer
+    const base = rows<{ roomId: string; bookingId: string; checkin: string; checkout: string }>(await tx.execute(sql`
+      SELECT rs.room_id AS "roomId", rs.booking_id AS "bookingId", rs.from_day::text AS checkin, rs.to_day::text AS checkout
+        FROM room_stays rs JOIN bookings b ON b.id = rs.booking_id
+       WHERE rs.hotel_id = ${hotelId} AND b.status = 'confirmed' AND rs.from_day <= ${day}::date AND rs.to_day >= ${day}::date`));
     let created = 0;
     for (const b of base) {
       const kind = b.checkout === day ? "checkout" : stayEvery > 0 && b.checkin < day && ((Date.parse(day) - Date.parse(b.checkin)) / 86400000) % stayEvery === 0 ? "stay" : null;
@@ -41,9 +43,10 @@ export async function generateTasks(hotelId: string, day: string, actor = "syste
 
 export async function board(hotelId: string, day: string): Promise<BoardRoom[]> {
   const rs = await db().select({ r: rooms, typeName: roomTypes.name }).from(rooms).innerJoin(roomTypes, eq(roomTypes.id, rooms.roomTypeId)).where(eq(rooms.hotelId, hotelId)).orderBy(asc(rooms.sortOrder), asc(rooms.number));
-  const stays = await db().select({ roomId: bookingRooms.roomId, checkin: bookings.checkin, checkout: bookings.checkout, first: guests.firstName, last: guests.lastName, reference: bookings.reference })
-    .from(bookingRooms).innerJoin(bookings, eq(bookings.id, bookingRooms.bookingId)).leftJoin(guests, eq(guests.id, bookings.guestId))
-    .where(and(eq(bookings.hotelId, hotelId), eq(bookings.status, "confirmed"), sql`${bookingRooms.roomId} IS NOT NULL`, sql`${bookings.checkin} <= ${day}`, sql`${bookings.checkout} >= ${day}`));
+  const stays = rows<{ roomId: string; checkin: string; checkout: string; first: string | null; last: string | null; reference: string }>(await db().execute(sql`
+    SELECT rs.room_id AS "roomId", rs.from_day::text AS checkin, rs.to_day::text AS checkout, g.first_name AS first, g.last_name AS last, b.reference
+      FROM room_stays rs JOIN bookings b ON b.id = rs.booking_id LEFT JOIN guests g ON g.id = b.guest_id
+     WHERE rs.hotel_id = ${hotelId} AND b.status = 'confirmed' AND rs.from_day <= ${day}::date AND rs.to_day >= ${day}::date`));
   const tasks = await db().select().from(housekeepingTasks).where(and(eq(housekeepingTasks.hotelId, hotelId), eq(housekeepingTasks.day, day)));
   const issues = await db().select().from(roomIssues).where(and(eq(roomIssues.hotelId, hotelId), eq(roomIssues.status, "open"))).orderBy(asc(roomIssues.createdAt));
   return rs.map(({ r, typeName }) => {

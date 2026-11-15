@@ -710,6 +710,13 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - Gast sieht «Halbpension/Vollpension inbegriffen» in allen fünf Sprachen. Admin: Auswahl «Verpflegung» im Tarif.
 - ASSUMPTION: Kinder zählen als Personen für den Verpflegungswert; Channex bekommt weiter nur «Frühstück ja/nein» (kein neues API-Feld erfunden).
 
+### 19.5 Zimmerwechsel (Teil von Modul `frontdesk`)
+- Tabelle `room_moves` (Buchungszimmer, altes und neues Zimmer, Wechseltag, Grund, Benutzer). `booking_rooms.room_id` bleibt das aktuelle Zimmer; die View `room_stays` liefert die Belegung je Zimmer und Zeitraum (Nächte [von, bis)) inklusive Wechsel.
+- Wechsel nur bei bestätigter Buchung mit zugewiesenem Zimmer, Wechseltag zwischen Anreise (ausgeschlossen) und Abreise (ausgeschlossen), nach dem letzten Wechsel, in ein aktives Zimmer **desselben Zimmertyps**, das ab dem Wechseltag frei ist. Mehrere Wechsel sind möglich; danach ist `assignRoom` für diese Buchung gesperrt.
+- Wirkung: Doppelbelegungsprüfung, Auto-Zuweisung, Zimmerplan (zwei oder mehr Abschnitte) und Reinigung (Abreise aus dem alten Zimmer am Wechseltag, dort «schmutzig») folgen `room_stays`. Verfügbarkeit nach Zimmertyp, Channex und Preise ändern sich nicht. Audit `room.move`.
+- Admin: Zimmerplan → «Zugewiesenes Zimmer ändern» → «Zimmer wechseln».
+- ASSUMPTION: Kein Wechsel in einen anderen Zimmertyp (Up-/Downgrade mit Preisfolge folgt bei Bedarf; bis dahin Differenz als Posten auf die Rechnung). Zutrittscodes (Nuki) und die Tagesliste zeigen das aktuelle Zimmer.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.
