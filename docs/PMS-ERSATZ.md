@@ -255,3 +255,11 @@ Direktbuchung mit Stripe und TWINT, Anzahlung/Rest, Website-Baukasten, Channel-M
 - **Gegen Arhon und Hogatex (Schweiz):** Pflichtmeldungen (eHESTA) und Kassenanbindung nachziehen (weitere Zahlungsanbieter zurückgestellt). Vorsprung: Direktbuchung, KI-Chat, Website, Passkeys.
 - **Gegen Smoobu, Lodgify, Little Hotelier (günstig, International):** Preisempfehlung (regelbasiert, dazu KI als Zusatz), Posteingang, Eigentümerabrechnung nachziehen. Vorsprung: Schweizer Recht (QR-Rechnung, Kurtaxe, Meldeschein) ab Werk.
 - **Gegen Protel (gross):** nicht konkurrieren bei Kasse, Spa, Events, Marktplatz. Aussage bleibt: «bei kleinen und mittleren Häusern».
+
+### 9.5 Weitere Zahlungsanbieter: zurückgestellt (Entscheid 15.11.2026)
+Es bleibt bei Stripe. Erst bauen, wenn zwei bis drei Interessenten sagen «ohne unseren Anbieter nicht». Falls es so weit kommt, der vorgemerkte Weg:
+- **Hotel behält seinen eigenen Vertrag** (Saferpay oder Datatrans). Pontivo bekommt keinen Vertrag und keine Fixkosten. Neuer Zahlungsweg hinter der bestehenden `PaymentProvider`-Schnittstelle, Zugangsdaten des Hotels verschlüsselt gespeichert.
+- **Saferpay zuerst** (öffentliche Preisliste und kostenlose Test-Umgebung: CHF 19.90/Monat, ab CHF 0.17 je Transaktion, laut Preisliste von Worldline). Datatrans nur auf konkrete Nachfrage (Preise nur auf Offerte).
+- **Kein Marktplatz-Modell:** Das Saferpay-Marketplace-Modell würde Pontivo zum Plattformbetreiber machen (Konto auf Multipart Captures umstellen, SIX-Verträge pro Hotel, Kosten und Freigabe offen). Zu aufwendig für den Nutzen.
+- **Plattformgebühr per Monatsrechnung** mit QR-Rechnung (`platform_charges` und Mindestgebühr vorhanden). Folge: Ausstände und Mahnen liegen bei uns.
+- **Vor dem Bauen:** Saferpay-Entwickler-Doku lesen (SPEC 13), TWINT-Unterstützung prüfen, Rückerstattung, Anzahlung/Rest, Webhooks und Storno je Anbieter eigens testen.
