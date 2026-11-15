@@ -784,6 +784,16 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - **Idempotent** über `external_id` (eindeutig je Betrieb): gleiche Anfrage → 200 mit `duplicate: true`, nichts doppelt; gleiche ID mit anderem Inhalt oder anderer Buchung → 409 `conflict`. Neu → 201. Audit `folio.add` mit Akteur `api:<Schlüssel>`.
 - ASSUMPTION: Posten auf einer schon ausgestellten Rechnung erscheinen erst in einer neuen Rechnung bzw. nach Gutschrift und Neuausstellung (wie von Hand erfasste Posten); keine Webhooks zurück an die Kasse, kein Abruf des Zimmerstands und keine Stornierung über die API (Gutschrift = negativer Posten mit neuer `external_id`). Welche Kassen zuerst angebunden werden, ist offen (QUESTIONS.md).
 
+### 19.16 Restaurant und Kasse (Modul `pos`, Standard aus, braucht `invoicing`)
+Grundlage: `docs/PMS-ERSATZ.md` 5.3 (Treuhänder-/Kassenvorgaben). Diese Stufe: Datenmodell und Dienst (`src/services/pos.ts`, `src/domain/pos.ts`, Migration `0053_pos.sql`). Oberfläche und Offline-Betrieb folgen.
+- **Stamm:** `pos_items` (Preis in Rappen, MWST-Satz vor Ort und ausser Haus, Tagesangebot), `pos_tables`, `pos_devices` (Kürzel `^[A-Z0-9]{1,6}$`, z. B. `T1`).
+- **Bestellung:** `pos_orders` (Client-UUID, idempotent), `pos_order_lines` (append-only). Satz je Zeile aus dem Artikel und der Art (`dine_in`/`takeaway`); nicht MWST-pflichtige Betriebe: 0. Rabatt nur mit Grund. Ungezahlte Zeilen werden mit Grund durch Gegenzeile storniert, bezahlte nur per Gegenbon.
+- **Bezahlen:** `pay()` bucht eine Auswahl von Zeilen (Teilmengen, Getrennt-Zahlen) mit Zahlarten `cash|card|twint|room` (Summe = Bonbetrag, Trinkgeld getrennt). «aufs Zimmer» ist nur als einzige Zahlart möglich und bucht `folio_items` mit eigenem MWST-Satz (`vat_bps_override`), Trinkgeld ohne MWST. Wiederholung mit derselben `receiptId` ändert nichts.
+- **Bons (`pos_receipts`):** unveränderbar (Trigger verbietet UPDATE/DELETE auch auf Zeilen, Zahlungen, Tagesabschlüssen). Nummer `T1-000042` je Gerät lückenlos (`UNIQUE(device_id, bon_no)`), Lücken werden geprüft. Hash-Kette über alle Bons des Betriebs (`seq`, `prev_hash`, `hash` = SHA-256 über feste, schlüsselsortierte Felder); `verifyHotel()` meldet den ersten fehlerhaften Bon.
+- **Gegenbon** (`reverseReceipt`, Manager, mit Grund): neuer Bon mit negativen Beträgen; Zimmerbuchungen werden negativ gegengebucht; gesperrt, sobald die Posten auf einer Rechnung stehen.
+- **Tagesabschluss:** `closeDay` mit gezähltem Bargeld; Z-Bericht (Summen je Zahlart und MWST-Satz, erwartetes Bargeld, Differenz) unveränderbar; ein Tag nur einmal. Bons mit geschlossenem Geschäftstag zählen am nächsten offenen Tag (`late`). Gerätezeit nur, wenn plausibel (höchstens 60 s in der Zukunft, jünger als 7 Tage). Export CSV je Zeitraum.
+- ASSUMPTION: Karte/TWINT ist in V1 vom Personal bestätigt (keine Terminal-Anbindung); Barverkäufe sind nicht Teil von `onsite_payments`. Offene Punkte für den Treuhänder: Nummernkreis je Gerät, MWST-Sätze je Posten, Art. 70 MWSTG, kantonale Vorgaben.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

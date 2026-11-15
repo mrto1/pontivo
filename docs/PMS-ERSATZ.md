@@ -166,11 +166,16 @@ Treuhänder/Anwalt bestätigt: Rechnungsinhalt und MWST, QR-Rechnung (echter Sca
 - **Aufs Zimmer:** schreibt in die bestehenden `folio_items` der Buchung (Leistungsart «Restaurant», MWST-Satz der Zeile). Die Hotelrechnung enthält die Posten automatisch.
 - Zahlung per Karte über das bestehende Terminal (`terminal_payments`), bar als `onsite_payments`.
 
-### 5.3 Rechtlich und fachlich (vor dem Bauen mit Treuhänder klären)
-- MWST-Sätze je Posten (Verzehr vor Ort, Take-away, Getränke) und Ausweis auf dem Bon.
-- **Unveränderlichkeit:** Bons und Tagesabschlüsse werden nie geändert oder gelöscht, nur durch Gegenbuchung storniert (`pos_order_lines` append-only, Hash-Kette optional).
-- Aufbewahrung 10 Jahre, Export für die Revision.
-- Anforderungen der Kantone oder der ESTV an Kassensysteme: **Anforderungen klären, nicht raten.**
+### 5.3 Rechtlich und fachlich (recherchiert 15.11.2026, Treuhänder bestätigt noch nicht)
+Quellen: Art. 957a und 958f OR, GeBüV (SR 221.431) Art. 3, 6, 9, 10, MWST-Info 16 der ESTV (Ziff. 1.3 bis 1.6, 2.1, 2.3), Art. 26 MWSTG. Kein Rechtsrat; ein Treuhänder bestätigt vor dem ersten Einsatz.
+- **Keine Kassenpflicht und keine Zertifizierung** in der Schweiz (keine Fiskalisierung wie in DE/AT). Verlangt ist ein ordnungsgemässes Kassenbuch.
+- **Unveränderbarkeit** (Art. 958f Abs. 4 OR): Buchungen und Belege dürfen nicht geändert werden können. Integrität (Art. 3 GeBüV): Änderungen müssen erkennbar sein. Korrekturen nur als Gegenbuchung. Umsetzung: `pos_order_lines`, `pos_receipts`, `pos_day_closes` sind append-only (Datenbank-Trigger sperren UPDATE und DELETE), Bons in einer **Hash-Kette** (Änderung nachweisbar).
+- **Zeitnah, lückenlos, chronologisch** (MWST-Info 16, Ziff. 1.6.3, 1.6.4): bei Restaurants mit viel Bargeld Kassenbuch mit Tagestotal, täglich. Umsetzung: Tagesabschluss (Z-Bericht) mit Zählprotokoll; Offline-Bestellungen werden zeitnah synchronisiert, Gerätezeit und Serverzeit werden gespeichert.
+- **Beleg zu jeder Buchung, Spur Beleg → Bücher → MWST-Abrechnung** (Ziff. 1.3, 1.5): Bons gelten als Belege. Umsetzung: jede Zahlung hat einen Bon mit eindeutiger Nummer.
+- **Nummerierung:** «fortlaufende Belegnummer» nennt die Praxisliteratur; einen eigenen Gesetzesartikel dafür fand die Recherche nicht. Umsetzung: Nummernkreis je Gerät, lückenlos (`<Gerät>-<Nr>`). **Treuhänder bestätigen lassen.**
+- **Bon-Inhalt:** Kassenzettel gelten als Rechnung (Ziff. 2.1); bis CHF 400 inkl. MWST darf der Empfänger fehlen (Art. 57 MWSTV, Ziff. 2.3). Angaben nach Art. 26 MWSTG: Leistungserbringer mit MWST-Hinweis und -Nummer, Datum, Leistung, Entgelt, Steuersatz und -betrag.
+- **Aufbewahrung 10 Jahre** (Art. 958f OR), Einsicht und Prüfung innert angemessener Frist (Art. 6 GeBüV), Export für die Revision, Datenmigrationen protokolliert (Art. 10 GeBüV). Umsetzung: kein Löschen, Export als CSV je Zeitraum.
+- **Noch offen (Treuhänder):** MWST-Sätze je Posten (vor Ort, Take-away, Getränke, Beherbergung), MWST-Aufbewahrung nach Art. 70 MWSTG, kantonale Vorgaben, Nummernkreis je Gerät.
 
 ### 5.4 Technik und Betrieb
 - **Offline-Fähigkeit:** Bestellungen werden lokal in der App zwischengespeichert und nach Verbindungsabbruch synchronisiert (Warteschlange, eindeutige Bon-Nummern pro Gerät, Zusammenführung). Ohne Offline ist Service mit WLAN-Ausfall nicht tragbar. ASSUMPTION: Das ist die schwierigste Anforderung und braucht eigene Tests (Netz unterbrechen, doppelt senden, zwei Geräte).

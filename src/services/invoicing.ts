@@ -154,7 +154,7 @@ async function bookingLines(ex: Executor, hotel: Hotel, booking: Booking, folio:
     lines[0] = { ...lines[0], amountRappen: lines[0].amountRappen + tax, unitPriceRappen: lines[0].unitPriceRappen + tax };
   }
   if (booking.voucherRappen > 0) lines.push({ description: "Gutschein", quantity: 1, unitPriceRappen: -booking.voucherRappen, amountRappen: -booking.voucherRappen, vatBps: 0, category: "discount" });
-  for (const f of folio) lines.push({ description: f.description, quantity: f.quantity, unitPriceRappen: f.unitPriceRappen, amountRappen: f.quantity * f.unitPriceRappen, vatBps: vatBps(set, f.vatKind), category: f.unitPriceRappen < 0 ? "discount" : "extra" });
+  for (const f of folio) lines.push({ description: f.description, quantity: f.quantity, unitPriceRappen: f.unitPriceRappen, amountRappen: f.quantity * f.unitPriceRappen, vatBps: f.vatBpsOverride != null ? (set.vatLiable ? f.vatBpsOverride : 0) : vatBps(set, f.vatKind), category: f.unitPriceRappen < 0 ? "discount" : "extra" });
   return lines;
 }
 

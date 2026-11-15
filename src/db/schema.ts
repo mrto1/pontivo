@@ -846,6 +846,8 @@ export const folioItems = pgTable("folio_items", {
   /** Beleg-ID der fremden Kasse (PosBridge, SPEC 19.15), eindeutig je Betrieb */
   externalId: text("external_id"),
   source: text("source"),
+  /** MWST-Satz in Basispunkten, wenn er von der Art abweicht (Restaurant: 2,6 % Take-away usw., SPEC 19.16) */
+  vatBpsOverride: integer("vat_bps_override"),
   createdBy: text("created_by").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
@@ -1228,3 +1230,118 @@ export const apiKeys = pgTable("api_keys", {
   revokedAt: ts("revoked_at"),
 });
 export type ApiKey = typeof apiKeys.$inferSelect;
+
+// ---------------------------------------------------------------- Restaurant und Kasse (SPEC 19.16)
+export const posItems = pgTable("pos_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  category: text("category").notNull().default(""),
+  name: text("name").notNull(),
+  priceRappen: integer("price_rappen").notNull(),
+  vatDineInBps: integer("vat_dine_in_bps").notNull().default(810),
+  vatTakeawayBps: integer("vat_takeaway_bps").notNull().default(810),
+  dailySpecial: boolean("daily_special").notNull().default(false),
+  active: boolean("active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type PosItem = typeof posItems.$inferSelect;
+
+export const posTables = pgTable("pos_tables", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: text("name").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+});
+export type PosTable = typeof posTables.$inferSelect;
+
+export const posDevices = pgTable("pos_devices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  code: text("code").notNull(),
+  label: text("label").notNull().default(""),
+  lastBon: integer("last_bon").notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type PosDevice = typeof posDevices.$inferSelect;
+
+export const posOrders = pgTable("pos_orders", {
+  id: uuid("id").primaryKey(),
+  hotelId: uuid("hotel_id").notNull(),
+  tableId: uuid("table_id"),
+  deviceId: uuid("device_id"),
+  label: text("label").notNull().default(""),
+  openedBy: text("opened_by").notNull(),
+  openedAt: ts("opened_at").notNull().defaultNow(),
+  deviceAt: ts("device_at"),
+});
+export type PosOrder = typeof posOrders.$inferSelect;
+
+export const posOrderLines = pgTable("pos_order_lines", {
+  id: uuid("id").primaryKey(),
+  hotelId: uuid("hotel_id").notNull(),
+  orderId: uuid("order_id").notNull(),
+  itemId: uuid("item_id"),
+  description: text("description").notNull(),
+  quantity: integer("quantity").notNull(),
+  unitPriceRappen: integer("unit_price_rappen").notNull(),
+  vatBps: integer("vat_bps").notNull(),
+  mode: text("mode").$type<"dine_in" | "takeaway">().notNull().default("dine_in"),
+  reversesLineId: uuid("reverses_line_id"),
+  reason: text("reason").notNull().default(""),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  deviceAt: ts("device_at"),
+});
+export type PosOrderLine = typeof posOrderLines.$inferSelect;
+
+export type PosReceiptItem = { lineId: string; description: string; quantity: number; unitPriceRappen: number; vatBps: number };
+export type PosVatRow = { bps: number; grossRappen: number; vatRappen: number; netRappen: number };
+export const posReceipts = pgTable("pos_receipts", {
+  id: uuid("id").primaryKey(),
+  hotelId: uuid("hotel_id").notNull(),
+  orderId: uuid("order_id").notNull(),
+  deviceId: uuid("device_id").notNull(),
+  bonNo: integer("bon_no").notNull(),
+  number: text("number").notNull(),
+  seq: bigint("seq", { mode: "number" }).notNull(),
+  kind: text("kind").$type<"sale" | "reversal">().notNull().default("sale"),
+  reversesReceiptId: uuid("reverses_receipt_id"),
+  items: jsonb("items").$type<PosReceiptItem[]>().notNull(),
+  totalRappen: integer("total_rappen").notNull(),
+  vat: jsonb("vat").$type<PosVatRow[]>().notNull(),
+  tipRappen: integer("tip_rappen").notNull().default(0),
+  businessDay: date("business_day", { mode: "string" }).notNull(),
+  late: boolean("late").notNull().default(false),
+  cashier: text("cashier").notNull(),
+  paidAt: ts("paid_at").notNull().defaultNow(),
+  deviceAt: ts("device_at"),
+  prevHash: text("prev_hash").notNull(),
+  hash: text("hash").notNull(),
+});
+export type PosReceipt = typeof posReceipts.$inferSelect;
+
+export const posPayments = pgTable("pos_payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  receiptId: uuid("receipt_id").notNull(),
+  method: text("method").$type<"cash" | "card" | "twint" | "room">().notNull(),
+  amountRappen: integer("amount_rappen").notNull(),
+  bookingId: uuid("booking_id"),
+  folioItemIds: uuid("folio_item_ids").array().notNull().default([]),
+});
+export type PosPayment = typeof posPayments.$inferSelect;
+
+export const posDayCloses = pgTable("pos_day_closes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  day: date("day", { mode: "string" }).notNull(),
+  report: jsonb("report").$type<Record<string, unknown>>().notNull(),
+  countedCashRappen: integer("counted_cash_rappen").notNull(),
+  differenceRappen: integer("difference_rappen").notNull(),
+  note: text("note").notNull().default(""),
+  closedBy: text("closed_by").notNull(),
+  closedAt: ts("closed_at").notNull().defaultNow(),
+});
+export type PosDayClose = typeof posDayCloses.$inferSelect;
