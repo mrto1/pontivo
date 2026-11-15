@@ -161,7 +161,7 @@
 .lake { stroke: var(--pv-keep); stroke-width: 3; opacity: .5; }
 
 .buildWrap { background: var(--pv-white); border-radius: 18px; padding: 20px; box-shadow: 0 1px 0 var(--pv-line), 0 18px 40px -28px rgba(19, 38, 46, 0.35); margin: 28px 0 14px; overflow-x: auto; }
-.buildSvg { display: block; width: 100%; min-width: 620px; height: auto; font-family: var(--pv-body), system-ui, sans-serif; }
+.buildSvg { display: block; width: 100%; min-width: 680px; height: auto; font-family: var(--pv-body), system-ui, sans-serif; }
 .gCore { fill: var(--pv-keep); }
 .gCoreText { fill: #fff; font-family: var(--pv-display), sans-serif; font-weight: 800; font-size: 19px; }
 .gLink { stroke: var(--pv-keep); stroke-width: 3; stroke-dasharray: 2 7; stroke-linecap: round; }

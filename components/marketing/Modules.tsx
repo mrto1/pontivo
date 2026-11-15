@@ -102,30 +102,31 @@ const GROUPS: Group[] = [
 
 /** Baukasten: ein Kern, Bausteine docken an, jeder Baustein hat einen Schalter */
 function BuildGraphic() {
+  const W = 176;
   const tiles = [
-    { x: 24, y: 22, w: 150, t: "Rezeption", on: true }, { x: 190, y: 22, w: 150, t: "Housekeeping", on: true },
-    { x: 24, y: 118, w: 150, t: "Rechnung", on: true }, { x: 190, y: 118, w: 150, t: "Gruppen", on: false },
-    { x: 486, y: 22, w: 150, t: "Kurtaxe", on: true }, { x: 652, y: 22, w: 150, t: "Nuki", on: false },
-    { x: 486, y: 118, w: 150, t: "Statistik", on: true }, { x: 652, y: 118, w: 150, t: "Terminal", on: false },
+    { x: 16, y: 22, t: "Rezeption", on: true }, { x: 204, y: 22, t: "Housekeeping", on: true },
+    { x: 16, y: 118, t: "Rechnung", on: true }, { x: 204, y: 118, t: "Gruppen", on: false },
+    { x: 520, y: 22, t: "Kurtaxe", on: true }, { x: 708, y: 22, t: "Nuki", on: false },
+    { x: 520, y: 118, t: "Statistik", on: true }, { x: 708, y: 118, t: "Terminal", on: false },
   ];
   return (
-    <svg className={s.buildSvg} viewBox="0 0 826 208" role="img" aria-label="Baukasten: Der Kern Direktbuchung in der Mitte, rundherum Bausteine, die einzeln ein- und ausgeschaltet werden">
-      <rect x="356" y="52" width="114" height="104" rx="18" className={s.gCore} />
-      <text x="413" y="98" textAnchor="middle" className={s.gCoreText}>Direkt-</text>
-      <text x="413" y="120" textAnchor="middle" className={s.gCoreText}>buchung</text>
+    <svg className={s.buildSvg} viewBox="0 0 900 208" role="img" aria-label="Baukasten: Der Kern Direktbuchung in der Mitte, rundherum Bausteine, die einzeln ein- und ausgeschaltet werden">
+      {/* Verbindungen zuerst, damit sie hinter den Kacheln liegen */}
       {tiles.map((t) => {
-        const left = t.x < 400;
-        const cx = left ? t.x + t.w : t.x;
-        return (
-          <g key={t.t}>
-            <path d={`M${cx} ${t.y + 32} H${left ? 356 : 470}`} className={s.gLink} />
-            <rect x={t.x} y={t.y} width={t.w} height="64" rx="14" className={t.on ? s.gTileOn : s.gTileOff} />
-            <text x={t.x + 16} y={t.y + 38} className={t.on ? s.gTileText : s.gTileTextOff}>{t.t}</text>
-            <rect x={t.x + t.w - 46} y={t.y + 22} width="30" height="18" rx="9" className={t.on ? s.gSwitchOn : s.gSwitchOff} />
-            <circle cx={t.on ? t.x + t.w - 25 : t.x + t.w - 37} cy={t.y + 31} r="6.5" className={s.gKnob} />
-          </g>
-        );
+        const left = t.x < 450;
+        return <path key={"l" + t.t} d={`M${left ? 100 : 800} ${t.y + 32} H${left ? 400 : 500}`} className={s.gLink} />;
       })}
+      <rect x="400" y="52" width="100" height="104" rx="18" className={s.gCore} />
+      <text x="450" y="98" textAnchor="middle" className={s.gCoreText}>Direkt-</text>
+      <text x="450" y="120" textAnchor="middle" className={s.gCoreText}>buchung</text>
+      {tiles.map((t) => (
+        <g key={t.t}>
+          <rect x={t.x} y={t.y} width={W} height="64" rx="14" className={t.on ? s.gTileOn : s.gTileOff} />
+          <text x={t.x + 14} y={t.y + 38} className={t.on ? s.gTileText : s.gTileTextOff}>{t.t}</text>
+          <rect x={t.x + W - 44} y={t.y + 23} width="30" height="18" rx="9" className={t.on ? s.gSwitchOn : s.gSwitchOff} />
+          <circle cx={t.on ? t.x + W - 23 : t.x + W - 35} cy={t.y + 32} r="6.5" className={s.gKnob} />
+        </g>
+      ))}
     </svg>
   );
 }
