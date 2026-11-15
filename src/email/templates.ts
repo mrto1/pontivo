@@ -245,6 +245,14 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
       const due = c.data.dueOn ? formatDay(String(c.data.dueOn), gl) : "";
       return wrap(c, gl, `${dm.words[lvl]} ${String(c.data.number ?? "")} – ${c.hotel.name}`, [hi + ",", dm.texts[lvl]], [`${dm.open}: ${money("openRappen")}`, ...(due ? [`${dm.due}: ${due}`] : [])], href ? { href, label: dm.link } : undefined);
     }
+    case "owner_statement": {
+      // Eigentümerabrechnung (SPEC 19.10), Sprache des Hotels
+      const n = (k: string) => formatChf(Number(c.data[k] ?? 0));
+      const month = String(c.data.month ?? "");
+      return wrap(c, l, `${de ? "Abrechnung" : "Statement"} ${month} – ${c.hotel.name}`,
+        [`${de ? "Guten Tag" : "Hello"} ${String(c.data.ownerName ?? "")},`, de ? `Ihre Abrechnung für ${month}:` : `Your statement for ${month}:`],
+        [`${de ? "Umsatz Übernachtungen" : "Room revenue"}: ${n("revenueRappen")}`, `${de ? "Kommission" : "Commission"}: −${n("commissionRappen")}`, `${de ? "Kosten" : "Costs"}: −${n("costsRappen")}`, `${de ? "Auszahlung" : "Payout"}: ${n("netRappen")}`]);
+    }
     case "balance_paid":
       return wrap(c, gl, B[gl].paidSubject(ref), [hi + ",", B[gl].paidText(money("amountRappen"))], summary(c, gl), link);
     case "hotel_balance_open":

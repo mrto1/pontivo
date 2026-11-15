@@ -748,6 +748,12 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - **Antworten und Abschliessen** über die Channex-API (`POST /message_threads/{id}/messages`, `/close`); Fehler werden angezeigt, nichts wird lokal als gesendet gespeichert. Audit `inbox.reply`, `inbox.close`. Eine neue Gästenachricht öffnet eine abgeschlossene Unterhaltung wieder.
 - ASSUMPTION: Webhook-Feldnamen (`payload.message_thread_id`, `payload.id`, `payload.message`, `payload.sender`) nach Channex-Doku, nicht gegen Staging geprüft; Absender «guest» = Gast, alles andere = Hotel. Anhänge werden nur gezählt, nicht angezeigt. Kein Nachladen des Verlaufs vor der Aktivierung, keine Übersetzung, keine Vorlagen.
 
+### 19.10 Eigentümerabrechnung (Modul `owners`, Standard aus, braucht `invoicing`)
+- Für Verwalter von Ferienwohnungen. **Eigentümer** (`owners`: Name, E-Mail, Kommission des Hauses in Prozent, Objekte = Zimmertypen, aktiv). Ein Objekt gehört höchstens einem aktiven Eigentümer. Seite `/admin/<hotel>/owners` (Reiter «Eigentümer» bei den Rechnungen, Menüschlüssel `owners`, Rolle `staff` zum Ansehen, `manager` zum Ändern, eingeschränkt `accounting`).
+- **Abrechnung je Monat** (`src/domain/owners.ts`, `src/services/owners.ts`): Umsatz = Übernachtungspreise (`booking_rooms.nightly_prices`) bestätigter Buchungen für die Objekte des Eigentümers, Nächte im Monat. Kommission = Umsatz × Satz (gerundet auf Rappen). Kosten = manuell erfasste Posten (`owner_costs`, Beschreibung, Betrag). Auszahlung = Umsatz − Kommission − Kosten (kann negativ sein).
+- **Ausgabe:** Druckansicht `/admin/<hotel>/owners/<eigentümer>/<JJJJ-MM>` (Browser «Drucken» → PDF) und Mail `owner_statement` an die Adresse des Eigentümers, je Monat einmal; der versendete Stand wird gespeichert (`owner_statements`). Audit `owner.*`.
+- ASSUMPTION: Umsatz ohne Kurtaxe, Zusatzleistungen und MWST-Ausweis; Stornierte Buchungen zählen nicht; kein Eigentümer-Login (Lesezugang für Eigentümer) und kein automatischer Monatsversand in V1, kein PDF-Anhang (QUESTIONS.md).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

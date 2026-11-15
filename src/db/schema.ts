@@ -1120,3 +1120,41 @@ export const inboxMessages = pgTable("inbox_messages", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type InboxMessage = typeof inboxMessages.$inferSelect;
+
+export const owners = pgTable("owners", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull().default(""),
+  commissionBps: integer("commission_bps").notNull().default(0),
+  roomTypeIds: uuid("room_type_ids").array().notNull().default([]),
+  note: text("note").notNull().default(""),
+  active: boolean("active").notNull().default(true),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type Owner = typeof owners.$inferSelect;
+
+export const ownerCosts = pgTable("owner_costs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  ownerId: uuid("owner_id").notNull(),
+  month: text("month").notNull(),
+  description: text("description").notNull(),
+  amountRappen: integer("amount_rappen").notNull(),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type OwnerCost = typeof ownerCosts.$inferSelect;
+
+export const ownerStatements = pgTable("owner_statements", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  ownerId: uuid("owner_id").notNull(),
+  month: text("month").notNull(),
+  revenueRappen: integer("revenue_rappen").notNull(),
+  commissionRappen: integer("commission_rappen").notNull(),
+  costsRappen: integer("costs_rappen").notNull(),
+  netRappen: integer("net_rappen").notNull(),
+  sentTo: text("sent_to").notNull(),
+  sentAt: ts("sent_at").notNull().defaultNow(),
+});

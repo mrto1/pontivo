@@ -35,7 +35,8 @@ export type TemplateName =
   | "upsell_paid"
   | "hotel_upsell_sold"
   | "invoice_sent"
-  | "dunning";
+  | "dunning"
+  | "owner_statement";
 
 /** SPEC 10: E-Mails nur über die Outbox. Gleiche Kombination booking/template/to wird nur einmal eingereiht. */
 export async function enqueueEmail(

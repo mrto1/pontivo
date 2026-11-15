@@ -148,3 +148,5 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 ## HESTA (SPEC 19.8)
 - Gibt es für Softwarehersteller eine Schnittstelle oder Dateivorlage zur Datenlieferung an eHESTA (BFS)? Die öffentlichen Seiten nennen nur das Online-Formular. BFS-Kontakt: https://www.bfs.admin.ch/de/kontakt-hilfe. Bis zur Antwort liefert Pontivo nur die Zahlen zum Erfassen.
 - Welche Variablen und Gliederung verlangt das BFS genau (Herkunft nach Ländergruppen, Betten, geöffnete Tage)?
+
+- Eigentümerabrechnung (SPEC 19.10): Wie rechnen Verwalter ab (Kommission auf Brutto oder Netto, MWST-Ausweis, Kurtaxe, Reinigungsgebühr)? Braucht der Eigentümer einen eigenen Login (Lesezugang) und einen automatischen Monatsversand mit PDF?
