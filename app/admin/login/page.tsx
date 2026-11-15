@@ -26,7 +26,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<Re
   return (
     <main className="wrap" style={{ maxWidth: 420, padding: "80px 16px" }}>
       <h1>Anmelden</h1>
-      <p className="muted">Am einfachsten mit Passkey. Alternativ senden wir Ihnen einen Login-Link per E-Mail (15 Minuten gültig). Wer «nur Passkey» eingeschaltet hat, erhält keinen Link.</p>
+      <p className="muted">Melden Sie sich mit Passkey oder mit einem Login-Link per E-Mail an (15 Minuten gültig). Wer die Zwei-Faktor-Anmeldung eingeschaltet hat, gibt danach den Code der Authenticator-App ein. Wer «nur Passkey» eingeschaltet hat, erhält keinen Link.</p>
       {sp.error ? <p className="notice warn">Der Link ist ungültig oder abgelaufen. Bitte neu anfordern.</p> : null}
       {sp.sent ? <p className="notice">Falls die Adresse bei uns registriert ist, ist der Link unterwegs.</p> : null}
       {sp.dev ? (

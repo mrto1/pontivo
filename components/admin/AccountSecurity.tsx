@@ -63,7 +63,7 @@ export function AccountSecurity({ passkeys, totpOn, codesLeft, passkeyOnly }: { 
 
       <section className="card stack">
         <h2>Passkeys</h2>
-        <p className="muted small">Anmelden mit Fingerabdruck, Gesicht oder Gerätecode, ohne Passwort und ohne E-Mail-Link. Ein Passkey ist bereits ein sicherer Anmeldeweg für sich; die Authenticator-App ergänzt den E-Mail-Link, falls Sie ihn weiter nutzen.</p>
+        <p className="muted small">Anmelden mit Fingerabdruck, Gesicht oder Gerätecode, ohne Passwort und ohne E-Mail-Link. Passkey und E-Mail-Link sind gleichwertige Anmeldewege.</p>
         {pks.length ? (
           <ul>
             {pks.map((p) => (
@@ -89,7 +89,7 @@ export function AccountSecurity({ passkeys, totpOn, codesLeft, passkeyOnly }: { 
 
       <section className="card stack">
         <h2>Zwei-Faktor-Anmeldung (Authenticator-App)</h2>
-        <p className="muted small">Optional. Beim Anmelden per E-Mail-Link fragen wir zusätzlich den 6-stelligen Code einer App wie Google Authenticator, Microsoft Authenticator, 2FAS oder Aegis ab.</p>
+        <p className="muted small">Optional. Bei jeder Anmeldung (Passkey oder E-Mail-Link) fragen wir zusätzlich den 6-stelligen Code einer App wie Google Authenticator, Microsoft Authenticator, 2FAS oder Aegis ab.</p>
         {!on && !setup ? <div><button className="btn" onClick={begin}>Authenticator-App einrichten</button></div> : null}
         {setup ? (
           <div className="stack">

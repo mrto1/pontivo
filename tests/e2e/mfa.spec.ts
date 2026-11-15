@@ -79,9 +79,15 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
   await page.getByRole("button", { name: "Anmelden" }).click();
   await expect(page).toHaveURL(/\/admin(?!\/login)/);
 
-  // Passkey-Anmeldung braucht trotz aktiver 2FA keinen Code
+  // 2FA gilt auch für den Passkey-Weg: erst der Code, dann die Sitzung
   await context.clearCookies();
   await passkeyLogin();
+  await expect(page.getByRole("heading", { name: "Zweiter Faktor" })).toBeVisible();
+  await page.goto("/admin");
+  await expect(page).toHaveURL(/\/admin\/login/);
+  await passkeyLogin();
+  await page.fill("#code", recovery[1]);
+  await page.getByRole("button", { name: "Anmelden" }).click();
   await expect(page).toHaveURL(/\/admin(?!\/login)/);
 
   // Nur Passkey: braucht 2 Passkeys, danach gibt es keinen E-Mail-Link mehr
@@ -104,6 +110,8 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
   await expect(page.getByRole("link", { name: "Hier anmelden" })).toHaveCount(0);
   await presence(true);
   await page.getByTestId("passkey-login").click();
+  await page.fill("#code", recovery[2]);
+  await page.getByRole("button", { name: "Anmelden" }).click();
   await expect(page).toHaveURL(/\/admin(?!\/login)/);
 
   // Autofill-Weg: Passkey wird ohne Knopf angeboten und beim Laden der Login-Seite verwendet (hier mit simulierter Auswahl)
@@ -111,5 +119,7 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
   await page.evaluate(() => sessionStorage.setItem("cond", "1"));
   await presence(true);
   await page.goto("/admin/login");
+  await page.fill("#code", recovery[3]);
+  await page.getByRole("button", { name: "Anmelden" }).click();
   await expect(page).toHaveURL(/\/admin(?!\/login)/);
 });
