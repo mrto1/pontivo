@@ -2,7 +2,7 @@ import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import QRCode from "qrcode";
 import { db, rows, type Executor } from "../db/client";
 import {
-  bookingExtras, bookingRooms, bookings, folioItems, groups as groupsTable, guests, hotels, invoiceLines, invoices, onsitePayments, ratePlans, roomTypes,
+  bookingExtras, bookingRooms, bookings, companies, folioItems, groups as groupsTable, guests, hotels, invoiceLines, invoices, onsitePayments, ratePlans, roomTypes,
   type Booking, type FolioItem, type Hotel, type Invoice, type InvoiceLine, type InvoiceRecipient, type OnsitePayment,
 } from "../db/schema";
 import { addDays, diffDays, todayIn } from "../domain/dates";
@@ -164,6 +164,11 @@ function recipientFromGuest(g?: { firstName: string; lastName: string; email: st
 
 /** Gehört die Buchung zu einer Gruppe mit Firma/Rechnungsadresse, geht die Rechnung an diese (SPEC 18.1); sonst an den Gast */
 async function recipientForBooking(ex: Executor, booking: Booking, g?: { firstName: string; lastName: string; email: string } | null): Promise<InvoiceRecipient> {
+  // Firmenkunde (SPEC 19.7): Rechnung auf Rechnung an die Firma
+  if (booking.companyId) {
+    const [co] = await ex.select().from(companies).where(and(eq(companies.id, booking.companyId), eq(companies.hotelId, booking.hotelId)));
+    if (co) return { company: co.name, street: co.street || undefined, zip: co.zip || undefined, city: co.city || undefined, country: co.country || "CH", vatId: co.vatId || undefined, email: co.email || undefined };
+  }
   if (booking.groupId) {
     const [grp] = await ex.select().from(groupsTable).where(and(eq(groupsTable.id, booking.groupId), eq(groupsTable.hotelId, booking.hotelId)));
     if (grp && (grp.company || grp.contactName)) {
@@ -188,7 +193,7 @@ export async function createInvoiceDraft(hotel: Hotel, bookingId: string, actor:
     const [g] = booking.guestId ? await tx.select().from(guests).where(eq(guests.id, booking.guestId)) : [];
     const folio = await tx.select().from(folioItems).where(and(eq(folioItems.bookingId, bookingId), isNull(folioItems.invoiceId))).orderBy(asc(folioItems.createdAt));
     const lines = await bookingLines(tx, hotel, booking, folio);
-    const [inv] = await tx.insert(invoices).values({ hotelId: hotel.id, bookingId, recipient: await recipientForBooking(tx, booking, g), createdBy: actor }).returning();
+    const [inv] = await tx.insert(invoices).values({ hotelId: hotel.id, bookingId, companyId: booking.companyId, recipient: await recipientForBooking(tx, booking, g), createdBy: actor }).returning();
     await tx.insert(invoiceLines).values(lines.map((l, i) => ({ ...l, invoiceId: inv.id, hotelId: hotel.id, position: i })));
     if (folio.length) await tx.update(folioItems).set({ invoiceId: inv.id }).where(and(eq(folioItems.bookingId, bookingId), isNull(folioItems.invoiceId)));
     const vb = vatBreakdown(lines);
@@ -242,7 +247,9 @@ export async function issueInvoice(hotel: Hotel, invoiceId: string, actor: strin
     const today = todayIn(hotel.timezone, now);
     await assertOpenDay(tx, hotel.id, today);
     const number = await nextNumber(tx, hotel.id, Number(today.slice(0, 4)));
-    const [done] = await tx.update(invoices).set({ status: "issued", number, issuedOn: today, dueOn: addDays(today, set.paymentDays), issuedAt: now }).where(eq(invoices.id, invoiceId)).returning();
+    // Firmenkunde mit eigener Zahlungsfrist (SPEC 19.7)
+    const [co] = inv.companyId ? await tx.select({ d: companies.paymentDays }).from(companies).where(and(eq(companies.id, inv.companyId), eq(companies.hotelId, hotel.id))) : [];
+    const [done] = await tx.update(invoices).set({ status: "issued", number, issuedOn: today, dueOn: addDays(today, co?.d ?? set.paymentDays), issuedAt: now }).where(eq(invoices.id, invoiceId)).returning();
     await audit(tx, { hotelId: hotel.id, actor, action: "invoice.issue", entity: "invoice", entityId: invoiceId, details: { number, total: done.totalRappen } });
     if (set.autoSend) await queueInvoiceMail(tx, hotel, done, actor);
     return done;

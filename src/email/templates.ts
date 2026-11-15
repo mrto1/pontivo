@@ -100,6 +100,15 @@ const IM: Record<Locale, { invoiceWord: string; creditWord: string; invoiceText:
   nl: { invoiceWord: "Factuur", creditWord: "Creditnota", invoiceText: "via de link hieronder vindt u de factuur voor uw verblijf. U kunt hem bekijken, afdrukken of als pdf opslaan.", creditText: "wij hebben een creditnota voor uw factuur opgesteld. Via de link kunt u hem bekijken, afdrukken of als pdf opslaan.", amount: "Bedrag", open: "Factuur bekijken" },
 };
 
+/** Zahlungserinnerung und Mahnungen (SPEC 19.7) */
+const DM: Record<Locale, { words: [string, string, string]; texts: [string, string, string]; open: string; due: string; link: string }> = {
+  de: { words: ["Zahlungserinnerung", "1. Mahnung", "2. Mahnung"], texts: ["unsere Rechnung ist noch offen. Vielleicht ist die Zahlung bei Ihnen untergegangen; falls Sie bereits bezahlt haben, betrachten Sie diese Nachricht bitte als gegenstandslos.", "trotz unserer Zahlungserinnerung ist die Rechnung noch offen. Wir bitten Sie, den Betrag innert 10 Tagen zu überweisen.", "die Rechnung ist trotz Mahnung noch offen. Bitte überweisen Sie den Betrag umgehend, sonst müssen wir weitere Schritte einleiten."], open: "Offener Betrag", due: "Fällig seit", link: "Rechnung ansehen" },
+  en: { words: ["Payment reminder", "First reminder", "Second reminder"], texts: ["our invoice is still open. The payment may have been overlooked; if you have already paid, please disregard this message.", "despite our payment reminder the invoice is still open. Please transfer the amount within 10 days.", "the invoice is still open despite our reminder. Please transfer the amount immediately, otherwise we will have to take further steps."], open: "Amount due", due: "Due since", link: "View invoice" },
+  fr: { words: ["Rappel de paiement", "1er rappel", "2e rappel"], texts: ["notre facture est encore ouverte. Le paiement a peut-être été oublié; si vous avez déjà payé, veuillez ignorer ce message.", "malgré notre rappel, la facture est encore ouverte. Nous vous prions de verser le montant dans les 10 jours.", "la facture reste ouverte malgré le rappel. Veuillez verser le montant immédiatement, sinon nous devrons engager d'autres démarches."], open: "Montant dû", due: "Échue depuis le", link: "Voir la facture" },
+  it: { words: ["Promemoria di pagamento", "1° sollecito", "2° sollecito"], texts: ["la nostra fattura risulta ancora aperta. Forse il pagamento è sfuggito; se ha già pagato, consideri questo messaggio superfluo.", "nonostante il promemoria la fattura è ancora aperta. La preghiamo di versare l'importo entro 10 giorni.", "la fattura è ancora aperta nonostante il sollecito. La preghiamo di versare subito l'importo, altrimenti dovremo adottare ulteriori misure."], open: "Importo aperto", due: "Scaduta dal", link: "Vedere la fattura" },
+  nl: { words: ["Betalingsherinnering", "1e aanmaning", "2e aanmaning"], texts: ["onze factuur staat nog open. Misschien is de betaling over het hoofd gezien; als u al betaald heeft, kunt u dit bericht negeren.", "ondanks onze herinnering staat de factuur nog open. Wij verzoeken u het bedrag binnen 10 dagen over te maken.", "de factuur staat ondanks de aanmaning nog open. Maak het bedrag direct over, anders moeten wij verdere stappen ondernemen."], open: "Openstaand bedrag", due: "Vervallen sinds", link: "Factuur bekijken" },
+};
+
 /** Anzahlung und Restzahlung (SPEC 5.9) */
 const B: Record<Locale, {
   paidNow: string; open: string; dueSubject: (r: string) => string; dueText: (amount: string, date: string) => string; remSubject: (r: string) => string;
@@ -228,6 +237,13 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
       const href = b && c.data.invoiceId ? `${c.baseUrl}/b/${b.publicToken}/rechnung/${c.data.invoiceId}` : undefined;
       const m = IM[gl];
       return wrap(c, gl, `${credit ? m.creditWord : m.invoiceWord} ${n} – ${c.hotel.name}`, [hi + ",", credit ? m.creditText : m.invoiceText], [`${m.amount}: ${money("totalRappen")}`], href ? { href, label: m.open } : undefined);
+    }
+    case "dunning": {
+      const lvl = Math.min(3, Math.max(1, Number(c.data.level ?? 1))) - 1;
+      const dm = DM[gl];
+      const href = b && c.data.invoiceId ? `${c.baseUrl}/b/${b.publicToken}/rechnung/${c.data.invoiceId}` : undefined;
+      const due = c.data.dueOn ? formatDay(String(c.data.dueOn), gl) : "";
+      return wrap(c, gl, `${dm.words[lvl]} ${String(c.data.number ?? "")} – ${c.hotel.name}`, [hi + ",", dm.texts[lvl]], [`${dm.open}: ${money("openRappen")}`, ...(due ? [`${dm.due}: ${due}`] : [])], href ? { href, label: dm.link } : undefined);
     }
     case "balance_paid":
       return wrap(c, gl, B[gl].paidSubject(ref), [hi + ",", B[gl].paidText(money("amountRappen"))], summary(c, gl), link);

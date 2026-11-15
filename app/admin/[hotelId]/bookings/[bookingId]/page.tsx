@@ -8,6 +8,7 @@ import { formatChf } from "@/src/domain/money";
 import { addDays, nightsOf, todayIn } from "@/src/domain/dates";
 import { bookingExtrasOf } from "@/src/services/extras";
 import { moduleOn } from "@/src/services/modules";
+import { DebtorError, listCompanies, setBookingCompany } from "@/src/services/debtors";
 import { CashCard } from "./CashCard";
 import { AccessCard } from "./AccessCard";
 import { GuestNoteCard } from "./GuestNoteCard";
@@ -62,6 +63,18 @@ async function balanceOnsiteAction(formData: FormData) {
   } catch (e) {
     msg = e instanceof BookingError ? `Nicht möglich: ${e.message}` : String(e);
   }
+  redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}`);
+}
+
+async function companyAction(formData: FormData) {
+  "use server";
+  const hotelId = String(formData.get("hotelId"));
+  const bookingId = String(formData.get("bookingId"));
+  const { hotel, actor } = await requireHotel(hotelId, "staff", "debtors");
+  if (!(await moduleOn(hotel.id, "debtors"))) notFound();
+  let msg = "Firma gespeichert.";
+  try { await setBookingCompany(hotel.id, bookingId, String(formData.get("companyId") ?? "") || null, actor); }
+  catch (e) { if (!(e instanceof DebtorError)) throw e; msg = `Nicht gespeichert: ${e.message}`; }
   redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}`);
 }
 
@@ -181,6 +194,20 @@ export default async function BookingDetail({ params, searchParams }: { params: 
 
       {(await moduleOn(hotel.id, "guestnotes")) ? <GuestNoteCard hotelId={hotel.id} bookingId={b.id} email={g?.email ?? null} msg={sp.note} /> : null}
       {(await moduleOn(hotel.id, "access")) ? <AccessCard hotel={hotel} bookingId={b.id} status={b.status} /> : null}
+      {(await moduleOn(hotel.id, "debtors")) ? (
+        <section className="card stack">
+          <h2>Rechnung auf Firma</h2>
+          <form action={companyAction} className="inline-form">
+            <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="bookingId" value={b.id} />
+            <select name="companyId" defaultValue={b.companyId ?? ""}>
+              <option value="">(Gast bezahlt selbst)</option>
+              {(await listCompanies(hotel.id, true)).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <button className="btn secondary small">Speichern</button>
+          </form>
+          <p className="muted small">Die Rechnung geht an die Firma, mit deren Zahlungsfrist. Firmen pflegen Sie unter Rechnungen → Debitoren.</p>
+        </section>
+      ) : null}
       {(await moduleOn(hotel.id, "invoicing")) ? <CashCard hotel={hotel} bookingId={b.id} status={b.status} /> : null}
 
       <h3>Verlauf</h3>

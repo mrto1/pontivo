@@ -726,6 +726,14 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - Rechnung: eine Übernachtungszeile je Zimmer. Admin-Detail, Gästeseite und Mails nennen alle Zimmer («2 × Doppelzimmer, Einzelzimmer»).
 - ASSUMPTION: Die Stornoregel des ersten Zimmers gilt für die ganze Buchung. Ein Gast kann online nur gleiche Zimmer buchen; gemischte Zimmer erfasst die Rezeption. Keine Teilstornierung einzelner Zimmer (Stornieren oder Ändern geht für die ganze Buchung).
 
+### 19.7 Debitoren (Modul `debtors`, Standard aus, braucht `invoicing`)
+- **Firmenkunden** (`companies`: Name, Adresse, MWST-Nr., E-Mail für Rechnungen, eigene Zahlungsfrist, aktiv). Eine Buchung wird in der Buchung einer Firma zugeordnet (`bookings.company_id`), solange keine gültige Rechnung ausgestellt ist. Die Rechnung (`invoices.company_id`) geht dann an die Firma; Fälligkeit = Ausstellung + Firmenfrist, sonst Standardfrist der Rechnungseinstellungen.
+- **Offene Rechnungen:** ausgestellte, nicht gutgeschriebene Rechnungen mit Restbetrag > 0 (Rechnungstotal minus Online- und Vor-Ort-Zahlungen der Buchung, wie in der Rechnungsansicht). Alterung: nicht fällig, 1–30, 31–60, über 60 Tage. Seite `/admin/<hotel>/invoices/debitoren` (Reiter «Debitoren», Menüschlüssel `debtors`, Rolle `staff` und eingeschränkt `accounting`).
+- **Zahlungseingang:** Teil- oder Ganzzahlung zur Rechnung wird als Zahlung vor Ort mit Art «Überweisung» auf die Buchung gebucht (gleiche Regeln: Tagesabschluss-Sperre; liegt das Valuta in einem abgeschlossenen Tag, gilt heute und das Valuta steht in der Notiz).
+- **Bankdatei camt.054** (ISO 20022): Gutschriften (CRDT) mit Betrag, Buchungsdatum und QR-Referenz (`CdtrRefInf/Ref`) werden über die Referenz der Rechnungsnummer (`qrReference`) zugeordnet und verbucht. Jeder Eintrag nur einmal (`bank_entries`, eindeutig je Bankreferenz). Nicht zuordenbare Einträge werden gemeldet und nicht gespeichert (ein späterer Import versucht es erneut).
+- **Mahnwesen:** Stufen Zahlungserinnerung (ab 5 Tagen nach Fälligkeit), 1. Mahnung (ab 20), 2. Mahnung (ab 35). Nur der Reihe nach, nur auf Knopfdruck, nur wenn offen. Mail `dunning` in fünf Sprachen mit Link zur Rechnung an die Adresse der Rechnung (sonst des Gastes); je Stufe ein Eintrag in `invoice_dunnings`, Audit `invoice.dunning`.
+- ASSUMPTION: Keine Mahngebühren und keine automatische Mahnung (Haus entscheidet je Fall). Fristen der Stufen fest. camt.054-Felder nach ISO-20022-Standard (nicht gegen eine Bankdatei geprüft; mit der ersten echten Datei testen). Keine Mehrfachzahlung über mehrere Rechnungen; keine Sammelrechnung mehrerer Buchungen (QUESTIONS.md).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

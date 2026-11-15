@@ -250,6 +250,8 @@ export const bookings = pgTable("bookings", {
   status: text("status").notNull(),
   checkin: date("checkin", { mode: "string" }).notNull(),
   checkout: date("checkout", { mode: "string" }).notNull(),
+  /** Firmenkunde, dem die Buchung in Rechnung gestellt wird (SPEC 19.7) */
+  companyId: uuid("company_id"),
   adults: integer("adults").notNull(),
   children: integer("children").notNull().default(0),
   childrenAges: jsonb("children_ages").$type<number[]>().notNull().default([]),
@@ -802,6 +804,8 @@ export const invoices = pgTable("invoices", {
   issuedOn: date("issued_on", { mode: "string" }),
   dueOn: date("due_on", { mode: "string" }),
   recipient: jsonb("recipient").$type<InvoiceRecipient>().notNull().default({}),
+  /** Firmenkunde (SPEC 19.7), Rechnung auf Rechnung */
+  companyId: uuid("company_id"),
   creditOf: uuid("credit_of"),
   totalRappen: integer("total_rappen").notNull().default(0),
   vatRappen: integer("vat_rappen").notNull().default(0),
@@ -1047,3 +1051,44 @@ export const roomMoves = pgTable("room_moves", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type RoomMove = typeof roomMoves.$inferSelect;
+
+export const companies = pgTable("companies", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: text("name").notNull(),
+  street: text("street").notNull().default(""),
+  zip: text("zip").notNull().default(""),
+  city: text("city").notNull().default(""),
+  country: text("country").notNull().default("CH"),
+  vatId: text("vat_id").notNull().default(""),
+  email: text("email").notNull().default(""),
+  /** Zahlungsfrist in Tagen, leer = Einstellung des Betriebs */
+  paymentDays: integer("payment_days"),
+  note: text("note").notNull().default(""),
+  active: boolean("active").notNull().default(true),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type Company = typeof companies.$inferSelect;
+
+export const invoiceDunnings = pgTable("invoice_dunnings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  invoiceId: uuid("invoice_id").notNull(),
+  level: integer("level").notNull(),
+  sentOn: date("sent_on", { mode: "string" }).notNull(),
+  sentTo: text("sent_to").notNull(),
+  sentBy: text("sent_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const bankEntries = pgTable("bank_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  dedupeKey: text("dedupe_key").notNull(),
+  bookedOn: date("booked_on", { mode: "string" }).notNull(),
+  amountRappen: integer("amount_rappen").notNull(),
+  reference: text("reference").notNull().default(""),
+  invoiceId: uuid("invoice_id"),
+  status: text("status").$type<"matched" | "unmatched" | "ignored">().notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
