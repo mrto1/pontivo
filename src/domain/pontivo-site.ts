@@ -416,7 +416,7 @@ export const DEFAULT_FAQ: FaqItem[] = [
   },
   {
     "q": "Ersetzt {name} meine Hotelsoftware?",
-    "a": "Für kleine Häuser kann es das: Rezeption, Zimmerplan, Reinigung, Rechnung mit QR-Rechnung, Kurtaxe und Buchhaltungs-Export sind eingebaut. Brauchen Sie mehr, etwa für ein grosses Haus mit Restaurant und Kasse, bleibt Ihre bisherige Software daneben bestehen."
+    "a": "Bei kleinen und mittleren Häusern in der Regel ja: Rezeption, Zimmerplan, Reinigung, Rechnung mit QR-Rechnung, Kurtaxe und Buchhaltungs-Export sind eingebaut. Haben Sie ein Restaurant mit eigener Kasse oder brauchen Sie etwas, das wir noch nicht haben, läuft Ihre bisherige Software einfach daneben weiter."
   },
   {
     "q": "Muss ich Booking.com kündigen?",
