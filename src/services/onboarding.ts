@@ -69,8 +69,17 @@ async function uniqueHotelSlug(name: string): Promise<string> {
  * Neuer Gastgeber: Betrieb (Entwurf), Benutzer (Inhaber), Annahme der Bedingungen, Mindestgebühr,
  * Willkommensmail und Login-Link. Gibt den Login-Link zurück (für die Entwicklung ohne Mailversand).
  */
-export async function registerHost(input: RegisterInput, now = new Date(), opts: { noLogin?: boolean } = {}) {
+/** Die E-Mail-Adresse hat schon ein Konto: kein zweites Konto und kein zweiter Entwurf (weitere Betriebe: angemeldet über /admin/neu) */
+export class AccountExistsError extends Error {
+  constructor(readonly email: string) { super("Für diese E-Mail-Adresse gibt es schon ein Konto."); }
+}
+
+export async function registerHost(input: RegisterInput, now = new Date(), opts: { noLogin?: boolean; allowExisting?: boolean } = {}) {
   const v = registerSchema.parse(input);
+  if (!opts.allowExisting) {
+    const [ex] = await db().select({ id: users.id }).from(users).where(eq(users.email, v.email.trim().toLowerCase()));
+    if (ex) throw new AccountExistsError(v.email.trim().toLowerCase());
+  }
   const slug = await uniqueHotelSlug(v.name);
   const hotel = await db().transaction(async (tx) => {
     const [h] = await tx.insert(hotels).values({
@@ -299,5 +308,5 @@ export async function updateBasics(hotel: Hotel, input: z.input<typeof basicsSch
 
 /** Weiterer Betrieb für einen angemeldeten Gastgeber: gleiches Konto (E-Mail), neuer Entwurf, Inhaber-Rolle, kein neuer Login-Link */
 export async function addHotelForUser(user: { email: string; name: string | null }, input: Omit<RegisterInput, "email" | "contactName">, now = new Date()) {
-  return registerHost({ ...input, email: user.email, contactName: user.name?.trim() || user.email }, now, { noLogin: true });
+  return registerHost({ ...input, email: user.email, contactName: user.name?.trim() || user.email }, now, { noLogin: true, allowExisting: true });
 }

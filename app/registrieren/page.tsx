@@ -3,10 +3,12 @@ import { feePercentText } from "@/src/domain/fee";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
-import { CANTONS, PROPERTY_LABEL, PROPERTY_TYPES, registerHost } from "@/src/services/onboarding";
+import { AccountExistsError, CANTONS, PROPERTY_LABEL, PROPERTY_TYPES, registerHost } from "@/src/services/onboarding";
 import { getHotelByHost } from "@/src/services/hotels";
 import { clientIp, rateLimit } from "@/src/lib/rate-limit";
 import { env } from "@/src/env";
+import { requestLoginLink } from "@/src/auth/session";
+import { currentUserId } from "@/src/auth/guard";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Registrieren – Direktbuchung für Ihren Betrieb", robots: { index: true } };
@@ -27,6 +29,12 @@ async function register(f: FormData) {
     });
     link = r.loginLink;
   } catch (e) {
+    // Konto gibt es schon: kein zweites Konto. Wir schicken nur einen Login-Link; die Antwort ist dieselbe wie bei einer neuen Adresse (keine Auskunft, ob die Adresse bekannt ist).
+    if (e instanceof AccountExistsError) {
+      const existing = await requestLoginLink(e.email);
+      const dev0 = existing && env().NODE_ENV !== "production" && !env().POSTMARK_SERVER_TOKEN;
+      redirect(dev0 ? `/registrieren/danke?dev=${encodeURIComponent(existing)}` : "/registrieren/danke");
+    }
     if (e instanceof ZodError) redirect("/registrieren?error=" + encodeURIComponent(e.issues.map((i) => i.message).join(" · ")));
     throw e;
   }
@@ -36,6 +44,8 @@ async function register(f: FormData) {
 
 export default async function Register({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   if (await getHotelByHost((await headers()).get("host"))) redirect("/");
+  // Wer angemeldet ist, registriert sich nicht neu: weiterer Betrieb im selben Konto
+  if (await currentUserId()) redirect("/admin/neu");
   const sp = await searchParams;
   const name = env().PLATFORM_NAME;
   return (
