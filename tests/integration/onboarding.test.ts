@@ -42,6 +42,8 @@ describe("Selbst-Registrierung und Einrichtung", () => {
     expect(m.hotel_members.role).toBe("owner");
     expect(m.users.email).toBe(hotel.contactEmail);
     expect(await mails(hotel.id, "host_welcome")).toHaveLength(1);
+    // nur EINE Mail: kein separater login_link
+    expect(await db().select().from(emailOutbox).where(and(eq(emailOutbox.template, "login_link"), eq(emailOutbox.toEmail, hotel.contactEmail)))).toHaveLength(0);
     // gleicher Name → eigener Slug
     const again = await register({ name: hotel.name });
     expect(again.hotel.slug).not.toBe(hotel.slug);

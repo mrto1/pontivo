@@ -38,13 +38,14 @@ export function readSessionValue(value: string | undefined | null, now = Date.no
  * Magic-Link anfordern. Gibt den Link zurück (für Entwicklung ohne E-Mail-Versand), sonst null.
  * Unbekannte E-Mail-Adressen erhalten keinen Link, die Antwort an den Client ist trotzdem gleich.
  */
-export async function requestLoginLink(email: string, now = new Date()): Promise<string | null> {
+export async function requestLoginLink(email: string, now = new Date(), opts: { mail?: boolean } = {}): Promise<string | null> {
   const [u] = await db().select().from(users).where(eq(users.email, email.trim().toLowerCase()));
   if (!u) return null;
   const token = crypto.randomBytes(32).toString("base64url");
   await db().insert(loginTokens).values({ tokenHash: sha256(token), userId: u.id, expiresAt: new Date(now.getTime() + TOKEN_MINUTES * 60_000) });
   const link = `${env().APP_BASE_URL}/api/auth/callback?token=${token}`;
-  await enqueueEmail(db(), { hotelId: null, template: "login_link", to: u.email, data: { link } });
+  // mail: false = Link steckt in einer anderen Mail (Willkommensmail bei der Registrierung), keine zweite Mail
+  if (opts.mail !== false) await enqueueEmail(db(), { hotelId: null, template: "login_link", to: u.email, data: { link } });
   return link;
 }
 

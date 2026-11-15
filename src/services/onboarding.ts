@@ -97,10 +97,11 @@ export async function registerHost(input: RegisterInput, now = new Date(), opts:
       .onConflictDoUpdate({ target: users.email, set: { name: sql`coalesce(${users.name}, ${v.contactName})` } }).returning();
     await tx.insert(hotelMembers).values({ hotelId: h.id, userId: u.id, role: "owner" }).onConflictDoNothing();
     await audit(tx, { hotelId: h.id, actor: `user:${u.id}`, action: "host.register", entity: "hotel", entityId: h.id, details: { propertyType: v.propertyType, terms: HOST_TERMS_VERSION } });
-    await enqueueEmail(tx, { hotelId: h.id, template: "host_welcome", to: v.email, language: "de", data: { contactName: v.contactName, propertyType: v.propertyType, mode: v.mode } });
     return h;
   });
-  const loginLink = opts.noLogin ? null : await requestLoginLink(v.email, now);
+  // Eine einzige Mail: die Willkommensmail enthält den Anmelde-Link (keine zweite «Login-Link»-Mail)
+  const loginLink = opts.noLogin ? null : await requestLoginLink(v.email, now, { mail: false });
+  await enqueueEmail(db(), { hotelId: hotel.id, template: "host_welcome", to: v.email, language: "de", data: { contactName: v.contactName, propertyType: v.propertyType, mode: v.mode, link: loginLink } });
   return { hotel, loginLink };
 }
 

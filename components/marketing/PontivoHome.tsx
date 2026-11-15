@@ -2,6 +2,7 @@ import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
 import s from "./marketing.module.css";
 import { DEFAULT_PLATFORM_FEE_BPS } from "@/src/domain/fee";
 import { SavingsCalculator } from "./SavingsCalculator";
+import { AlpineBand, Bausteine } from "./Modules";
 
 const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["700", "800"], variable: "--pv-display", display: "swap" });
 const body = Instrument_Sans({ subsets: ["latin"], weight: ["400", "600", "700"], variable: "--pv-body", display: "swap" });
@@ -50,6 +51,8 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
           <a className={s.logo} href="/"><Logo />{contact.name}</a>
           <nav className={s.headLinks} aria-label="Hauptnavigation">
             <a href="#wege">Angebot</a>
+            <a href="#bausteine">Bausteine</a>
+            <a href="#funktionen">Funktionen</a>
             <a href="#ablauf">Ablauf</a>
             <a href="#rechner">Rechner</a>
             <a href="#preis">Preis</a>
@@ -101,6 +104,8 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
           </figure>
         </section>
 
+        <AlpineBand />
+
         <section className={s.section} id="wege">
           <h2 className={s.h2}>Passend zu Ihrer heutigen Website</h2>
           <p className={s.intro}>Sie entscheiden, wie viel {contact.name} übernimmt. Buchung, Zahlung und der Abgleich mit Booking.com sind bei allen drei Wegen gleich.</p>
@@ -124,6 +129,8 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
             </article>
           </div>
         </section>
+
+        <Bausteine staticSite={st} />
 
         <section className={s.section} id="ablauf">
           <h2 className={s.h2}>In drei Schritten zur eigenen Direktbuchung</h2>
@@ -184,6 +191,14 @@ export function PontivoHome({ contact, children }: { contact: Contact; children?
 
         <section className={`${s.section} ${s.faq}`} id="fragen">
           <h2 className={s.h2}>Häufige Fragen</h2>
+          <details>
+            <summary>Muss ich alle Funktionen nutzen?</summary>
+            <p>Nein. Direktbuchung und Zahlung sind der Kern. Rezeption, Housekeeping, Rechnung, Gruppen, Kartenterminal und mehr schalten Sie einzeln ein oder aus. Was Sie nicht brauchen, sehen Sie nicht, und Ihre Daten bleiben erhalten.</p>
+          </details>
+          <details>
+            <summary>Ersetzt {contact.name} meine Hotelsoftware?</summary>
+            <p>Für kleine Häuser kann es das: Rezeption, Zimmerplan, Reinigung, Rechnung mit QR-Rechnung, Kurtaxe und Buchhaltungs-Export sind eingebaut. Brauchen Sie mehr, etwa für ein grosses Haus mit Restaurant und Kasse, bleibt Ihre bisherige Software daneben bestehen.</p>
+          </details>
           <details>
             <summary>Muss ich Booking.com kündigen?</summary>
             <p>Nein. Booking.com bleibt ein wichtiger Kanal für neue Gäste. {contact.name} sorgt dafür, dass Gäste, die Sie bereits kennen oder auf Google finden, direkt buchen können.</p>

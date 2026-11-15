@@ -309,9 +309,9 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
     case "host_welcome": {
       const admin = env().APP_BASE_URL;
       return wrap(c, l, de ? `Willkommen bei ${env().PLATFORM_NAME} – so geht es weiter` : `Welcome to ${env().PLATFORM_NAME} – next steps`,
-        de ? [`Guten Tag ${c.data.contactName ?? ""}`.trim() + ",", `schön, dass ${c.hotel.name} dabei ist. Der Einrichtungs-Assistent führt Sie in etwa 20 Minuten durch alles: Angaben, Kurtaxe, ${c.hotel.propertyType === "hotel" || c.hotel.propertyType === "bnb" ? "Zimmer" : "Unterkunft"}, Preise, Fotos und Zahlungen. Sie können jederzeit unterbrechen und später weitermachen.${c.data.mode === "booking_only" ? " Ihre eigene Website bleibt bestehen – am Schluss zeigen wir Ihnen, wie Sie den Link zur Buchung einbauen." : ""}`, "Zum Anmelden erhalten Sie separat einen Login-Link. Später fordern Sie unter dem Link unten jederzeit einen neuen an."]
+        de ? [`Guten Tag ${c.data.contactName ?? ""}`.trim() + ",", `schön, dass ${c.hotel.name} dabei ist. Der Einrichtungs-Assistent führt Sie in etwa 20 Minuten durch alles: Angaben, Kurtaxe, ${c.hotel.propertyType === "hotel" || c.hotel.propertyType === "bnb" ? "Zimmer" : "Unterkunft"}, Preise, Fotos und Zahlungen. Sie können jederzeit unterbrechen und später weitermachen.${c.data.mode === "booking_only" ? " Ihre eigene Website bleibt bestehen – am Schluss zeigen wir Ihnen, wie Sie den Link zur Buchung einbauen." : ""}`, "Der Knopf unten meldet Sie direkt an (der Link ist einmalig und 15 Minuten gültig). Später fordern Sie unter /admin/login jederzeit einen neuen an."]
           : [`Hello ${c.data.contactName ?? ""}`.trim() + ",", `great to have ${c.hotel.name} on board. The setup assistant guides you through everything in about 20 minutes. You can stop at any time and continue later.`],
-        [], { href: `${admin}/admin/login`, label: de ? "Anmelden und einrichten" : "Sign in and set up" });
+        [], { href: (c.data.link as string | undefined) ?? `${admin}/admin/${c.hotel.id}/einrichten`, label: de ? "Anmelden und einrichten" : "Sign in and set up" });
     }
     case "host_onboarding_reminder": {
       const open = (c.data.openSteps as string[] | undefined) ?? [];
