@@ -75,6 +75,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
             <li><strong>Zahlungen aktivieren</strong> – Konto bei Stripe eröffnen, Geld geht direkt an Sie.</li>
             <li><strong>Online gehen</strong> – sofort buchbar. Mit eigener Website: Link oder Knopf «Buchen» einbauen, wir zeigen wie.</li>
           </ol>
+          <p className="small muted">Unsicher, ob es zu Ihrem Haus passt? <a href="/eignung">Drei Fragen, eine ehrliche Antwort</a>.</p>
           <div className="card small">
             <strong>Preis, mit oder ohne Website gleich:</strong> {feePercentText()} % pro Direktbuchung, mindestens CHF 19 pro Monat (ab dem ersten vollen Monat nach dem Live-Gang). Liegen die {feePercentText()} % darunter, wird nur die Differenz belastet. Keine Einrichtungsgebühr, monatlich kündbar.
           </div>

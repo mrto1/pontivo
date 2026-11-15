@@ -772,6 +772,11 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - Bestehend und unverändert: Ankunftsinfos während des Aufenthalts, Online-Check-in, Restzahlung, Stornierung, Chat.
 - ASSUMPTION: Hausinfos sind eine Freitext-Spalte je Sprache (keine Bausteine, keine Bilder); keine eigene App und keine Push-Mitteilungen an Gäste; Zugangscodes gehören weiter nur in die Ankunftsinfos.
 
+### 19.14 Eignungs-Check (Seite `/eignung`, kein Modul)
+- Öffentliche Seite mit drei Fragen (Zimmerzahl, Restaurant mit eigener Kasse, bisherige Software) und einer von drei Antworten: **Passt**, **Passt mit Kassen-Schnittstelle oder Kassenmodul**, **Läuft daneben** (`src/domain/suitability.ts`). Verlinkt von `/registrieren`. Es wird nichts gespeichert (GET-Formular).
+- Regeln: mehr als 40 Zimmer oder eine Software für grosse Häuser → «läuft daneben» (Direktbuchung und Kanäle trotzdem nutzbar); Restaurant mit eigener Kasse → «mit Kassen-Schnittstelle oder Kassenmodul»; sonst «passt».
+- Die Antwort verspricht nur Vorhandenes: Kassenschnittstelle, Kassenmodul und geführte Datenübernahme werden als «in Entwicklung/Vorbereitung» benannt. ASSUMPTION: Schwelle 40 Zimmer aus PMS-ERSATZ (Zielgruppe); sobald diese Funktionen gebaut sind, die Texte anpassen.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.
