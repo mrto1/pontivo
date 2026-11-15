@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
-import { PosError, createDevice, listDevices, listItems, listTables, saveItem, saveTable } from "@/src/services/pos";
+import { PosError, createDevice, listDevices, listItems, listTables, releaseDevice, saveItem, saveTable } from "@/src/services/pos";
 import { formatChf } from "@/src/domain/money";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +34,12 @@ async function table(f: FormData) {
   const c = await guard(f);
   try { await saveTable(c.hotel.id, s(f, "name"), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht angelegt: ${e.message}`); }
   here(c.hotel.id, "Tisch angelegt.");
+}
+async function release(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  try { await releaseDevice(c.hotel.id, s(f, "id"), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht freigegeben: ${e.message}`); }
+  here(c.hotel.id, "Gerät freigegeben. Das nächste Tablet kann es wählen.");
 }
 async function device(f: FormData) {
   "use server";
@@ -73,7 +79,7 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
         </tbody></table> : <p className="muted">Noch kein Artikel.</p>}
       </section>
       <form action={table} className="card stack">{H}<h2>Tische ({tables.length})</h2><p className="small muted">{tables.map((t) => t.name).join(", ")}</p><div><label>Neuer Tisch</label><input name="name" required maxLength={30} /></div><div><button className="btn secondary">Anlegen</button></div></form>
-      <form action={device} className="card stack">{H}<h2>Geräte</h2><p className="small muted">Jedes Gerät hat einen eigenen, lückenlosen Nummernkreis. Die Weboberfläche nutzt «W1».</p><p>{devices.map((d) => `${d.code} (${d.label})`).join(", ") || "noch keines"}</p>
+      <form action={device} className="card stack">{H}<h2>Geräte</h2><p className="small muted">Jedes Gerät hat einen eigenen, lückenlosen Nummernkreis. Die Weboberfläche nutzt «W1».</p>{devices.length ? <table className="table"><tbody>{devices.map((d) => <tr key={d.id}><td>{d.code} {d.label}</td><td>{d.claimedKey ? "belegt" : "frei"}{d.pendingOps ? `, ${d.pendingOps} offen` : ""}</td><td>{d.claimedKey ? <button className="btn secondary small" formNoValidate formAction={release} name="id" value={d.id}>Freigeben</button> : null}</td></tr>)}</tbody></table> : <p>noch keines</p>}
         <div><label>Code (A–Z, 0–9, bis 6 Zeichen)</label><input name="code" required maxLength={6} /></div><div><label>Bezeichnung</label><input name="label" maxLength={60} /></div><div><button className="btn secondary">Gerät anlegen</button></div></form>
     </div>
   );

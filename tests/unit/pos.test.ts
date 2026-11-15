@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { GENESIS_HASH, bonGaps, businessDay, checkSelection, dayReport, effectiveQuantities, hashReceipt, openTotalRappen, outstanding, receiptNumber, selectionTotal, verifyChain, type ChainRecord, type Line } from "../../src/domain/pos";
+import { bonGaps, businessDay, checkSelection, dayReport, effectiveQuantities, openTotalRappen, outstanding, receiptNumber, selectionTotal, type Line } from "../../src/domain/pos";
+import { GENESIS_HASH, hashReceipt, verifyChain, type ChainRecord } from "../../src/domain/pos-chain";
 
 const L = (id: string, q: number, price: number, bps = 810, rev: string | null = null): Line => ({ id, quantity: q, unitPriceRappen: price, vatBps: bps, reversesLineId: rev });
 

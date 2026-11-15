@@ -6,9 +6,10 @@ import {
 } from "../db/schema";
 import { todayIn } from "../domain/dates";
 import {
-  GENESIS_HASH, METHODS, bonGaps, businessDay, checkSelection, dayReport, hashReceipt, openTotalRappen, outstanding, receiptNumber, selectionTotal,
-  verifyChain, type DayReport, type Line, type Method, type Selection,
+  METHODS, bonGaps, businessDay, checkSelection, dayReport, openTotalRappen, outstanding, receiptNumber, selectionTotal,
+  type DayReport, type Line, type Method, type Selection,
 } from "../domain/pos";
+import { GENESIS_HASH, hashReceipt, verifyChain } from "../domain/pos-chain";
 import { audit } from "./audit";
 import { invoicingSettings } from "./invoicing";
 
@@ -93,7 +94,8 @@ export async function openOrder(hotelId: string, i: { id?: string; tableId?: str
   return ex;
 }
 
-export type LineInput = { id?: string; itemId: string; quantity: number; mode?: "dine_in" | "takeaway"; deviceAt?: Date | null };
+/** `snapshot`: Preis, Satz und Text, wie sie dem Gast am Gerät galten (Offline-Kasse); sonst gilt der Artikel jetzt. */
+export type LineInput = { id?: string; itemId: string; quantity: number; mode?: "dine_in" | "takeaway"; deviceAt?: Date | null; snapshot?: { description: string; unitPriceRappen: number; vatBps: number } };
 
 /** Zeilen anhängen (Bestellen und Nachbestellen). Preis und MWST-Satz werden aus dem Artikel übernommen und festgehalten; nicht MWST-pflichtige Betriebe haben Satz 0. */
 export async function addLines(hotel: Hotel, orderId: string, inputs: LineInput[], actor: string): Promise<PosOrderLine[]> {
@@ -108,9 +110,16 @@ export async function addLines(hotel: Hotel, orderId: string, inputs: LineInput[
       const [it] = await tx.select().from(posItems).where(and(eq(posItems.id, i.itemId), eq(posItems.hotelId, hotel.id)));
       if (!it || !it.active) throw new PosError("Artikel nicht verfügbar.");
       const mode = i.mode ?? "dine_in";
-      const bps = vatLiable ? (mode === "takeaway" ? it.vatTakeawayBps : it.vatDineInBps) : 0;
+      let bps = vatLiable ? (mode === "takeaway" ? it.vatTakeawayBps : it.vatDineInBps) : 0;
+      let price = it.priceRappen, text = it.name;
+      if (i.snapshot) {
+        const sn = i.snapshot;
+        if (!Number.isInteger(sn.unitPriceRappen) || sn.unitPriceRappen < 0 || sn.unitPriceRappen > 10_000_000) throw new PosError("Preis ungültig.");
+        if (!Number.isInteger(sn.vatBps) || sn.vatBps < 0 || sn.vatBps > 2500) throw new PosError("MWST-Satz ungültig.");
+        price = sn.unitPriceRappen; text = clean(sn.description, 120) || it.name; bps = vatLiable ? sn.vatBps : 0;
+      }
       const id = i.id ?? crypto.randomUUID();
-      const ins = await tx.insert(posOrderLines).values({ id, hotelId: hotel.id, orderId, itemId: it.id, description: it.name, quantity: i.quantity, unitPriceRappen: it.priceRappen, vatBps: bps, mode, createdBy: actor, deviceAt: i.deviceAt ?? null }).onConflictDoNothing().returning();
+      const ins = await tx.insert(posOrderLines).values({ id, hotelId: hotel.id, orderId, itemId: it.id, description: text, quantity: i.quantity, unitPriceRappen: price, vatBps: bps, mode, createdBy: actor, deviceAt: i.deviceAt ?? null }).onConflictDoNothing().returning();
       if (ins.length) out.push(ins[0]);
       else {
         const [ex] = await tx.select().from(posOrderLines).where(and(eq(posOrderLines.id, id), eq(posOrderLines.hotelId, hotel.id), eq(posOrderLines.orderId, orderId)));
@@ -199,6 +208,7 @@ export async function tablesOverview(hotelId: string) {
 export type PayInput = {
   orderId: string; deviceId: string; selection: Selection[]; payments: { method: Method; amountRappen: number }[]; tipRappen?: number;
   bookingReference?: string; /** vom Gerät vergeben (offline) */ receiptId?: string; bonNo?: number; deviceAt?: Date | null;
+  /** Offline-Bon: der Gast hat schon bezahlt, auch wenn die Buchung nicht mehr gefunden wird (dann ohne Zuordnung, Manager prüft) */ lenientRoom?: boolean;
 };
 
 /** Verkettung der Bons eines Betriebs: nächste Nummer und Hash der vorigen (unter Sperre, damit die Kette ohne Lücke bleibt) */
@@ -259,8 +269,8 @@ export async function pay(hotel: Hotel, i: PayInput, actor: string): Promise<Pos
     let bookingId: string | null = null;
     if (roomPay) {
       const [b] = await tx.select({ id: bookings.id, status: bookings.status }).from(bookings).where(and(eq(bookings.hotelId, hotelId), eq(bookings.reference, (i.bookingReference ?? "").trim().toUpperCase())));
-      if (!b || b.status !== "confirmed") throw new PosError("Buchung für «aufs Zimmer» nicht gefunden oder nicht bestätigt.");
-      bookingId = b.id;
+      if (b && b.status === "confirmed") bookingId = b.id;
+      else if (!i.lenientRoom) throw new PosError("Buchung für «aufs Zimmer» nicht gefunden oder nicht bestätigt.");
     }
     const bonNo = await takeBonNo(tx, device, i.bonNo);
     const number = receiptNumber(device.code, bonNo);
@@ -276,7 +286,7 @@ export async function pay(hotel: Hotel, i: PayInput, actor: string): Promise<Pos
     let folioIds: string[] = [];
     if (roomPay && bookingId) folioIds = await postToRoom(tx, hotelId, bookingId, receipt, items, tip, actor);
     for (const p of i.payments) await tx.insert(posPayments).values({ hotelId, receiptId, method: p.method, amountRappen: p.amountRappen, bookingId, folioItemIds: p.method === "room" ? folioIds : [] });
-    await audit(tx, { hotelId, actor, action: "pos.pay", entity: "pos_receipt", entityId: receiptId, details: { number, totalRappen: t.totalRappen, methods: i.payments.map((p) => p.method) } });
+    await audit(tx, { hotelId, actor, action: "pos.pay", entity: "pos_receipt", entityId: receiptId, details: { number, totalRappen: t.totalRappen, methods: i.payments.map((p) => p.method), ...(roomPay && !bookingId ? { unassignedRoom: i.bookingReference ?? "" } : {}) } });
     return receipt;
   });
 }
@@ -394,4 +404,11 @@ export async function exportCsv(hotelId: string, from: string, to: string): Prom
     r.vat.map((v) => `${(v.bps / 100).toFixed(1)}%:${chf(v.grossRappen)}/${chf(v.vatRappen)}`).join(" "), r.late ? "ja" : "nein", r.cashier, r.hash,
   ].map(q).join(";"));
   return "﻿" + [head.map(q).join(";"), ...lines].join("\r\n") + "\r\n";
+}
+
+/** Gerät wieder freigeben (anderes Tablet übernimmt den Nummernkreis). Nur Manager (Seite prüft die Rolle). */
+export async function releaseDevice(hotelId: string, deviceId: string, actor: string) {
+  const [d] = await db().update(posDevices).set({ claimedKey: null }).where(and(eq(posDevices.id, deviceId), eq(posDevices.hotelId, hotelId))).returning({ code: posDevices.code });
+  if (!d) throw new PosError("Gerät nicht gefunden.");
+  await audit(db(), { hotelId, actor, action: "pos.device_release", entity: "pos_device", entityId: deviceId, details: { code: d.code } });
 }

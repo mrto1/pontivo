@@ -1262,6 +1262,9 @@ export const posDevices = pgTable("pos_devices", {
   code: text("code").notNull(),
   label: text("label").notNull().default(""),
   lastBon: integer("last_bon").notNull().default(0),
+  claimedKey: text("claimed_key"),
+  lastSeenAt: ts("last_seen_at"),
+  pendingOps: integer("pending_ops").notNull().default(0),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type PosDevice = typeof posDevices.$inferSelect;

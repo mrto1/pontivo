@@ -15,14 +15,14 @@ export const ROLE_AREAS: Record<LimitedRole, readonly string[]> = {
   reception: ["layout", "home", "mypontivo", "calendar", "bookings", "frontdesk", "plan", "housekeeping", "resources", "guests", "guestbook", "inquiries", "inbox", "vouchers", "invoices", "dayclose", "groups"],
   housekeeping: ["layout", "home", "mypontivo", "housekeeping"],
   accounting: ["layout", "home", "mypontivo", "invoices", "dayclose", "debtors", "owners", "statistics", "hesta", "accountingexport"],
-  service: ["layout", "home", "mypontivo", "restaurant"],
+  service: ["layout", "home", "mypontivo", "restaurant", "kasse"],
 };
 
 export const isLimitedRole = (r: Role | null): r is LimitedRole => r === "reception" || r === "housekeeping" || r === "accounting" || r === "service";
 export const roleAllowsArea = (r: LimitedRole, area: string) => ROLE_AREAS[r].includes(area);
 
 /** Erste Seite nach dem Anmelden für eingeschränkte Rollen */
-export const LANDING: Record<LimitedRole, string> = { reception: "frontdesk", housekeeping: "housekeeping", accounting: "invoices", service: "restaurant" };
+export const LANDING: Record<LimitedRole, string> = { reception: "frontdesk", housekeeping: "housekeeping", accounting: "invoices", service: "kasse" };
 
 const RANK: Record<FullRole, number> = { staff: 1, manager: 2, owner: 3 };
 /** Eingeschränkte Rollen erfüllen nie eine Mindestrolle, nur den Bereichs-Zugang */

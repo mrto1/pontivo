@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { addDays } from "./dates";
 import { vatBreakdown, type VatRow } from "./invoice";
 
@@ -6,7 +5,6 @@ import { vatBreakdown, type VatRow } from "./invoice";
  * Restaurant und Kasse (SPEC 19.16): reine Logik. Preise sind Bruttopreise (inkl. MWST), Beträge in Rappen.
  * Bons sind unveränderbar (Art. 958f Abs. 4 OR) und in einer Hash-Kette verbunden (Änderungen erkennbar, Art. 3 GeBüV).
  */
-export const GENESIS_HASH = "0".repeat(64);
 export const METHODS = ["cash", "card", "twint", "room"] as const;
 export type Method = (typeof METHODS)[number];
 export const METHOD_LABEL: Record<Method, string> = { cash: "Bar", card: "Karte", twint: "TWINT", room: "Aufs Zimmer" };
@@ -65,35 +63,6 @@ export function selectionTotal(lines: Line[], sel: Selection[]): { totalRappen: 
   return { totalRappen: b.totalRappen, vat: b.rows, vatRappen: b.vatRappen };
 }
 
-// ---------------------------------------------------------------- Hash-Kette
-
-export type ChainRecord = {
-  hotelId: string; number: string; seq: number; kind: string; reversesReceiptId: string | null;
-  items: unknown; totalRappen: number; vat: unknown; tipRappen: number; businessDay: string; cashier: string; paidAt: string;
-};
-
-/** Festes Feldreihenfolge-Format, damit derselbe Bon immer denselben Hash ergibt */
-function stable(v: unknown): unknown {
-  if (Array.isArray(v)) return v.map(stable);
-  if (v && typeof v === "object") return Object.fromEntries(Object.keys(v as object).sort().map((k) => [k, stable((v as Record<string, unknown>)[k])]));
-  return v;
-}
-/** Schlüssel sortiert, weil jsonb in Postgres die Reihenfolge ändert */
-export function canonical(r: ChainRecord): string {
-  return JSON.stringify(stable([r.hotelId, r.number, r.seq, r.kind, r.reversesReceiptId, r.items, r.totalRappen, r.vat, r.tipRappen, r.businessDay, r.cashier, r.paidAt]));
-}
-export const hashReceipt = (prevHash: string, r: ChainRecord) => crypto.createHash("sha256").update(prevHash).update("|").update(canonical(r)).digest("hex");
-
-/** Kette prüfen: gibt die Nummer (seq) des ersten fehlerhaften Bons zurück, sonst null */
-export function verifyChain(rs: (ChainRecord & { prevHash: string; hash: string })[]): number | null {
-  let prev = GENESIS_HASH;
-  const sorted = [...rs].sort((a, b) => a.seq - b.seq);
-  for (const r of sorted) {
-    if (r.prevHash !== prev || hashReceipt(prev, r) !== r.hash) return r.seq;
-    prev = r.hash;
-  }
-  return null;
-}
 
 // ---------------------------------------------------------------- Geschäftstag und Z-Bericht
 
@@ -146,3 +115,4 @@ export function bonGaps(bonNos: number[]): number[] {
   for (let n = 1; n <= max; n++) if (!have.has(n)) gaps.push(n);
   return gaps;
 }
+
