@@ -676,6 +676,18 @@ Gilt für Buchung, Anfrage, Gutschein-Kauf und KI-Chat (Chat-Weiterleitung). Kei
 ### 18.12 Stripe-Konto vorausfüllen
 Beim Eröffnen des verbundenen Kontos gibt Pontivo vorhandene Betriebsangaben mit (`accountPrefill` in `src/integrations/stripe/onboarding.ts`): bei Hotels (Firma) Firmenname, Adresse, Telefon; bei allen die öffentlichen Kontaktangaben (E-Mail, Telefon, Adresse, eigene Domain als Website). Leere Angaben entfallen. Das Stripe-Formular zeigt sie zur Kontrolle; Persönliches (Geburtsdatum, Ausweis, IBAN) füllt Pontivo nie vor. Gilt nur für neu eröffnete Konten.
 
+## 19. PMS Stufe E: Ersetzen (Konzept: `docs/PMS-ERSATZ.md`)
+
+Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funktionen (19.1 ff.), dann Eignungs-Check (PMS-ERSATZ 4.1), dann Restaurant und Kasse (PMS-ERSATZ 5). Migration (PMS-ERSATZ 2) und Einarbeitung (4.2) folgen später. Weitere Zahlungsanbieter sind zurückgestellt (PMS-ERSATZ 9.5). Alle Annahmen in `QUESTIONS.md`.
+
+### 19.1 Tagesabschluss (Teil von Modul `invoicing`)
+- Tabelle `day_closes` (Hotel, Tag, Summen als JSON, erwartetes und gezähltes Bargeld, Differenz, Notiz, Benutzer, Zeitpunkt; ein Abschluss pro Tag und Betrieb). Abschlüsse werden nie geändert oder gelöscht.
+- Summen: Zahlungen vor Ort je Zahlungsart (Rückzahlungen negativ), Online-Zahlungen (Stripe, nach Rückerstattung, Tag in der Zeitzone des Betriebs), ausgestellte Rechnungen und Gutschriften mit Brutto und MWST je Satz.
+- Kassenzählung ist optional; Differenz = gezählt minus erwartet (nur Barzahlungen vor Ort).
+- **Sperre:** Auf einen abgeschlossenen Tag lassen sich keine Zahlungen vor Ort buchen und keine Rechnungen oder Gutschriften ausstellen (Datum = Tag des Abschlusses). Korrekturen auf den heutigen Tag (Gegenbuchung, Gutschrift). Frühere offene Tage bleiben buchbar. Zukünftige Tage lassen sich nicht abschliessen.
+- Seite `/admin/<hotel>/invoices/tagesabschluss` (Reiter «Tagesabschluss», Menüschlüssel `dayclose`, Rollen `staff` und eingeschränkt `reception`, `accounting`), Druckansicht über den Browser.
+- ASSUMPTION: Pro Tag genau ein Abschluss; kein Zwang, frühere Tage zuerst abzuschliessen.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

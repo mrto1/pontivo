@@ -12,6 +12,7 @@ import {
 } from "../domain/invoice";
 import { tr } from "../domain/blocks";
 import { audit } from "./audit";
+import { isDayClosed } from "./day-close";
 import { emailOutbox } from "../db/schema";
 
 /**
@@ -20,6 +21,11 @@ import { emailOutbox } from "../db/schema";
  */
 
 export class InvoiceError extends Error {}
+
+/** Tagesabschluss (SPEC 19.1): auf einen abgeschlossenen Tag darf nichts mehr gebucht werden */
+async function assertOpenDay(ex: Executor, hotelId: string, day: string): Promise<void> {
+  if (await isDayClosed(ex, hotelId, day)) throw new InvoiceError(`Der Tag ${day} ist abgeschlossen. Bitte auf den heutigen Tag buchen (Gegenbuchung bzw. Gutschrift).`);
+}
 
 export const invoicingSettings = (hotel: Pick<Hotel, "content">): InvoicingSettings => ({ ...DEFAULT_INVOICING, ...(hotel.content?.invoicing ?? {}) });
 
@@ -98,6 +104,7 @@ export async function recordOnsitePayment(
   return db().transaction(async (tx) => {
     const [lock] = rows<{ id: string }>(await tx.execute(sql`SELECT id FROM bookings WHERE id = ${bookingId} AND hotel_id = ${hotel.id} FOR UPDATE`));
     if (!lock) throw new InvoiceError("Buchung nicht gefunden.");
+    await assertOpenDay(tx, hotel.id, receivedOn);
     const [pay] = await tx.insert(onsitePayments).values({ hotelId: hotel.id, bookingId, amountRappen: input.amountRappen, method: input.method, note: (input.note ?? "").trim().slice(0, 200), receivedOn, actor }).returning();
     // Deckt die Zahlung die offene Restzahlung (Anzahlung), gilt sie als erledigt: keine Zahlungsaufforderungen mehr
     const [b] = await tx.select().from(bookings).where(eq(bookings.id, bookingId));
@@ -228,6 +235,7 @@ export async function issueInvoice(hotel: Hotel, invoiceId: string, actor: strin
     if (!inv.recipient.name?.trim() && !inv.recipient.company?.trim()) throw new InvoiceError("Bitte zuerst den Empfänger (Name oder Firma) angeben.");
     if (set.vatLiable && !set.vatNumber) throw new InvoiceError("MWST-Nummer fehlt (Einstellungen → Rechnung).");
     const today = todayIn(hotel.timezone, now);
+    await assertOpenDay(tx, hotel.id, today);
     const number = await nextNumber(tx, hotel.id, Number(today.slice(0, 4)));
     const [done] = await tx.update(invoices).set({ status: "issued", number, issuedOn: today, dueOn: addDays(today, set.paymentDays), issuedAt: now }).where(eq(invoices.id, invoiceId)).returning();
     await audit(tx, { hotelId: hotel.id, actor, action: "invoice.issue", entity: "invoice", entityId: invoiceId, details: { number, total: done.totalRappen } });
@@ -246,6 +254,7 @@ export async function createCreditNote(hotel: Hotel, invoiceId: string, actor: s
     if (dup) throw new InvoiceError("Zu dieser Rechnung gibt es schon eine Gutschrift.");
     const lines = await tx.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, invoiceId)).orderBy(asc(invoiceLines.position));
     const today = todayIn(hotel.timezone, now);
+    await assertOpenDay(tx, hotel.id, today);
     const number = await nextNumber(tx, hotel.id, Number(today.slice(0, 4)));
     const [cn] = await tx.insert(invoices).values({
       hotelId: hotel.id, bookingId: orig.bookingId, kind: "credit_note", status: "issued", number, issuedOn: today, dueOn: null, recipient: orig.recipient, creditOf: orig.id,

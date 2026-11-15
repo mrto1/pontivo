@@ -951,3 +951,25 @@ export const emailChanges = pgTable("email_changes", {
   usedAt: ts("used_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+export type DayTotals = {
+  /** Zahlungen vor Ort nach Zahlungsart (Rappen, Rückzahlungen negativ) */
+  onsite: Record<string, number>;
+  /** Online-Zahlungen über Stripe, an diesem Tag eingegangen (Rappen) */
+  online: number;
+  /** Rechnungen und Gutschriften, an diesem Tag ausgestellt */
+  invoices: { count: number; creditNotes: number; grossRappen: number; vatByBps: Record<string, number> };
+};
+export const dayCloses = pgTable("day_closes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  day: date("day", { mode: "string" }).notNull(),
+  totals: jsonb("totals").$type<DayTotals>().notNull(),
+  cashExpectedRappen: integer("cash_expected_rappen").notNull().default(0),
+  cashCountedRappen: integer("cash_counted_rappen"),
+  differenceRappen: integer("difference_rappen").notNull().default(0),
+  note: text("note").notNull().default(""),
+  closedBy: text("closed_by").notNull(),
+  closedAt: ts("closed_at").notNull().defaultNow(),
+});
+export type DayClose = typeof dayCloses.$inferSelect;
