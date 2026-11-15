@@ -129,7 +129,8 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Welche Fremdkassen zuerst über PosBridge anbinden?
 - Gästekarte der Destination: welche Destinationen und Schnittstellen?
 - eHESTA: Format, Zugang und Fristen der Meldung an das Bundesamt für Statistik (vor dem Bauen Doku lesen).
-- Weitere Zahlungsanbieter (Saferpay, Datatrans): Plattformgebühr ohne Stripe Connect? Monatsrechnung statt Application Fee?
+- Weitere Zahlungsanbieter (Saferpay, Datatrans): zurückgestellt (Entscheid 15.11.2026), bleibt bei Stripe.
 - Gemeinsamer Posteingang: welche Kanäle (Channex-Nachrichten, SMS, WhatsApp) und wer trägt die Fremdkosten?
-- Preisempfehlung: nur Vorschlag, oder Automatik innerhalb Mindest- und Höchstpreis?
+- Preisempfehlung: regelbasiert entschieden (15.11.2026). Automatik innerhalb Mindest- und Höchstpreis erlaubt, nur auf Wunsch des Hotels.
+- KI-Preisempfehlung als Zusatzmodul mit Gebühr: Preis, Abo oder Verbrauch, und welche Daten das Modell bekommt (keine externen Wettbewerbspreise ohne klare, erlaubte Quelle).
 - Eigentümerabrechnung: Zielgruppe Verwaltungsfirmen bestätigen?
