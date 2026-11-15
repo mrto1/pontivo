@@ -741,6 +741,13 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - Keine Übermittlung an das BFS: Die Zahlen werden im BFS-Portal (eHESTA) erfasst. Eine technische Schnittstelle ist nicht öffentlich dokumentiert; es wurde nichts erfunden (QUESTIONS.md).
 - ASSUMPTION: Betten = Höchstbelegung der Zimmertypen (Zusatzbetten, gesperrte Zimmer und Saisonbetrieb nicht berücksichtigt); die genauen Variablen und Gliederung (z. B. Herkunft nach BFS-Ländergruppen) liefert das BFS in der Wegleitung.
 
+### 19.9 Posteingang (Modul `inbox`, Standard aus, braucht `channex`)
+- Gästenachrichten von Booking.com, Airbnb und Expedia über die Channex-App «Messages» (Doku: docs.channex.io, Messages Collection; die App muss an der Property installiert sein und kostet bei Channex extra). Seite `/admin/<hotel>/inbox` (Reiter «Posteingang» unter Gäste, Menüschlüssel `inbox`, Rolle `staff` und `reception`).
+- **Eingang:** Webhook `/api/webhooks/channex/messages` (Ereignisse `message`, `message_thread_booking_assigned`, signiert wie SPEC 7.3, `send_data=true`; `scripts/channex-webhook.ts` legt ihn an). Betrieb über `property_id` ↔ `hotels.channex_property_id`; unbekannte Betriebe werden ignoriert. Speicherung idempotent je (Thread, Nachrichten-Id). Buchungszuordnung über `bookings.channex_booking_id`.
+- **Mitteilung** (Push) bei jeder Gästenachricht ohne Namen und Text (nur Portal). Ungelesen-Zähler je Unterhaltung; Öffnen setzt auf gelesen.
+- **Antworten und Abschliessen** über die Channex-API (`POST /message_threads/{id}/messages`, `/close`); Fehler werden angezeigt, nichts wird lokal als gesendet gespeichert. Audit `inbox.reply`, `inbox.close`. Eine neue Gästenachricht öffnet eine abgeschlossene Unterhaltung wieder.
+- ASSUMPTION: Webhook-Feldnamen (`payload.message_thread_id`, `payload.id`, `payload.message`, `payload.sender`) nach Channex-Doku, nicht gegen Staging geprüft; Absender «guest» = Gast, alles andere = Hotel. Anhänge werden nur gezählt, nicht angezeigt. Kein Nachladen des Verlaufs vor der Aktivierung, keine Übersetzung, keine Vorlagen.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

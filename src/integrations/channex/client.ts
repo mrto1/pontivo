@@ -146,6 +146,14 @@ export const channex = {
     call<{ data: { id: string } }>("POST", `/channels/${encodeURIComponent(channelId)}/mappings`, { mapping }),
   deleteMapping: (channelId: string, mappingId: string) =>
     call<unknown>("DELETE", `/channels/${encodeURIComponent(channelId)}/mappings/${encodeURIComponent(mappingId)}`),
+  // Nachrichten (Doku: docs.channex.io/api-v.1-documentation/messages-collection; Messages-App muss an der Property installiert sein)
+  threadMessages: (threadId: string) =>
+    call<{ data: { id: string; attributes: { message?: string | null; attachments?: unknown[]; sender?: string; inserted_at?: string } }[] }>("GET", `/message_threads/${encodeURIComponent(threadId)}/messages`),
+  sendThreadMessage: (threadId: string, message: string) =>
+    call<{ data?: { id?: string } }>("POST", `/message_threads/${encodeURIComponent(threadId)}/messages`, { message: { message } }),
+  closeThread: (threadId: string) => call<unknown>("POST", `/message_threads/${encodeURIComponent(threadId)}/close`),
+  /** nur Booking.com: «keine Antwort nötig», damit die Reaktionszeit stimmt */
+  threadNoReplyNeeded: (threadId: string) => call<unknown>("POST", `/message_threads/${encodeURIComponent(threadId)}/no_reply_needed`),
   executeChannelAction: (id: string, action: string, body?: Record<string, unknown>) =>
     call<unknown>("POST", `/channels/${encodeURIComponent(id)}/execute/${encodeURIComponent(action)}`, body),
 };

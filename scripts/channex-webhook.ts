@@ -52,7 +52,18 @@ if (existing) {
   await api("POST", "/webhooks", { webhook });
   console.log(`Webhook angelegt: ${callback}`);
 }
-const others = hooks.data.filter((h) => h.attributes.callback_url !== callback);
+// Zweiter Webhook für Nachrichten (SPEC 19.9; nur nötig, wenn die Channex-App «Messages» genutzt wird). send_data=true: Nachricht kommt im Body.
+const msgCallback = callback.replace(/\/$/, "") + "/messages";
+const msgHook = { ...webhook, callback_url: msgCallback, event_mask: "message,message_thread_booking_assigned", send_data: true };
+const existingMsg = hooks.data.find((h) => h.attributes.callback_url === msgCallback && h.attributes.is_global);
+if (existingMsg) {
+  await api("PUT", `/webhooks/${existingMsg.id}`, { webhook: msgHook });
+  console.log(`Nachrichten-Webhook aktualisiert: ${msgCallback}`);
+} else {
+  await api("POST", "/webhooks", { webhook: msgHook });
+  console.log(`Nachrichten-Webhook angelegt: ${msgCallback}`);
+}
+const others = hooks.data.filter((h) => h.attributes.callback_url !== callback && h.attributes.callback_url !== msgCallback);
 if (others.length && args.includes("--remove-others")) {
   // z. B. alte Test-Weiterleitungen (smee.io) oder eine frühere Server-Adresse
   for (const h of others) {

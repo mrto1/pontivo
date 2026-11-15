@@ -1092,3 +1092,31 @@ export const bankEntries = pgTable("bank_entries", {
   status: text("status").$type<"matched" | "unmatched" | "ignored">().notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+export const inboxThreads = pgTable("inbox_threads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  channexThreadId: text("channex_thread_id").notNull().unique(),
+  bookingId: uuid("booking_id"),
+  provider: text("provider").notNull().default(""),
+  title: text("title").notNull().default(""),
+  isClosed: boolean("is_closed").notNull().default(false),
+  unread: integer("unread").notNull().default(0),
+  lastMessage: text("last_message").notNull().default(""),
+  lastMessageAt: ts("last_message_at").notNull().defaultNow(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type InboxThread = typeof inboxThreads.$inferSelect;
+
+export const inboxMessages = pgTable("inbox_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  threadId: uuid("thread_id").notNull(),
+  channexMessageId: text("channex_message_id").notNull(),
+  sender: text("sender").notNull(),
+  body: text("body").notNull().default(""),
+  attachments: jsonb("attachments").$type<unknown[]>().notNull().default([]),
+  sentBy: text("sent_by"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type InboxMessage = typeof inboxMessages.$inferSelect;
