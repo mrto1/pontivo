@@ -144,3 +144,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Sammelrechnung: Eine Rechnung für mehrere Buchungen einer Firma (z. B. Monatsrechnung) gibt es nicht; pro Buchung eine Rechnung. Nötig für die ersten Kunden?
 - Mahngebühren und Verzugszins: bewusst weggelassen. Soll das Haus eine Gebühr je Stufe einstellen können (Treuhänder fragen)?
 - camt.054: Mit einer echten Datei der Bank des ersten Kunden prüfen (Referenzfeld, Betragsformat).
+
+## HESTA (SPEC 19.8)
+- Gibt es für Softwarehersteller eine Schnittstelle oder Dateivorlage zur Datenlieferung an eHESTA (BFS)? Die öffentlichen Seiten nennen nur das Online-Formular. BFS-Kontakt: https://www.bfs.admin.ch/de/kontakt-hilfe. Bis zur Antwort liefert Pontivo nur die Zahlen zum Erfassen.
+- Welche Variablen und Gliederung verlangt das BFS genau (Herkunft nach Ländergruppen, Betten, geöffnete Tage)?

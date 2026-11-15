@@ -734,6 +734,13 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - **Mahnwesen:** Stufen Zahlungserinnerung (ab 5 Tagen nach Fälligkeit), 1. Mahnung (ab 20), 2. Mahnung (ab 35). Nur der Reihe nach, nur auf Knopfdruck, nur wenn offen. Mail `dunning` in fünf Sprachen mit Link zur Rechnung an die Adresse der Rechnung (sonst des Gastes); je Stufe ein Eintrag in `invoice_dunnings`, Audit `invoice.dunning`.
 - ASSUMPTION: Keine Mahngebühren und keine automatische Mahnung (Haus entscheidet je Fall). Fristen der Stufen fest. camt.054-Felder nach ISO-20022-Standard (nicht gegen eine Bankdatei geprüft; mit der ersten echten Datei testen). Keine Mehrfachzahlung über mehrere Rechnungen; keine Sammelrechnung mehrerer Buchungen (QUESTIONS.md).
 
+### 19.8 HESTA-Auswertung (Teil von Modul `statistics`)
+- Seite `/admin/<hotel>/statistics/hesta` (Reiter «HESTA» bei der Statistik, Menüschlüssel `hesta`, Rolle `staff` und `accounting`) mit Monatsauswahl (Standard: Vormonat) und CSV (`.../hesta/csv?month=JJJJ-MM`, Audit `hesta.export`).
+- Inhalt: Zimmer, Betten (Summe der Höchstbelegung je Zimmertyp), verfügbare und belegte Zimmernächte, Zimmerauslastung; Ankünfte (Anreise im Monat) und Logiernächte (Nächte im Monat, auch über den Monatswechsel) je Herkunftsland (`src/domain/hesta.ts`, `src/services/hesta.ts`).
+- Herkunftsland = Nationalität aus der Gästemeldung (`guest_registrations`); Personen ohne Meldung (Erwachsene + Kinder der Buchung minus gemeldete) stehen unter «Land unbekannt». Nur bestätigte Buchungen.
+- Keine Übermittlung an das BFS: Die Zahlen werden im BFS-Portal (eHESTA) erfasst. Eine technische Schnittstelle ist nicht öffentlich dokumentiert; es wurde nichts erfunden (QUESTIONS.md).
+- ASSUMPTION: Betten = Höchstbelegung der Zimmertypen (Zusatzbetten, gesperrte Zimmer und Saisonbetrieb nicht berücksichtigt); die genauen Variablen und Gliederung (z. B. Herkunft nach BFS-Ländergruppen) liefert das BFS in der Wegleitung.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.
