@@ -695,6 +695,15 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - Admin: Reiter «Bewertungen» unter «Gäste» (Menüschlüssel `feedback`): Einstellungen (Rolle manager), Liste mit Durchschnitt.
 - ASSUMPTION: Gleiche Einwilligung wie die Nachher-Mail. Der Link zur Bewertungsseite wird nur bei guter Note gezeigt (Bewertungsportale verbieten gezieltes Filtern teilweise; Haus prüft die Regeln seines Portals).
 
+### 19.3 Preisempfehlung (Modul `pricing_rules`, Standard aus)
+- Je Tarif eine Regel (`pricing_rules`): Basispreis, Mindest- und Höchstpreis (Rappen, ganze Franken), bis zu drei Auslastungsstufen (ab x % Auslastung ± y %), optional Last Minute (innerhalb n Tagen und unter x % Auslastung ± y %), Zu-/Abschlag je Wochentag. Ereignisse (`pricing_events`: Name, Zeitraum, ± %) gelten für alle Tarife des Betriebs.
+- Preis = Basispreis × (1 + Summe der Zu-/Abschläge), auf ganze Franken gerundet, auf Minimum/Maximum begrenzt. Immer ab Basispreis, daher wiederholbar. Auslastung = gebucht / (Zimmer − gesperrt − extern gesperrt) des Zimmertyps der Nacht (`src/domain/pricing-rules.ts`).
+- Täglich (Job `pricing`, 03:30) und auf Knopfdruck werden Vorschläge für die nächsten 90 Nächte berechnet (`pricing_proposals`, Status offen/übernommen/verworfen) mit einem Satz Begründung. Nächte ohne Preis oder mit Verkaufsstopp werden übersprungen. Verworfene Vorschläge kommen mit gleichem Preis nicht wieder.
+- Übernehmen läuft über `updateRatesBatch` (Preis im Kalender, `channex_outbox` und `audit_log` in einer Transaktion). Nichts ändert sich ohne Bestätigung, ausser die Regel hat «automatisch übernehmen»; dann nur innerhalb Minimum/Maximum (wird beim Übernehmen nochmals geprüft).
+- Seite `/admin/<hotel>/preise` (Reiter «Preisempfehlung» beim Kalender, Menüschlüssel `pricing`), Änderungen Rolle `manager`.
+- Die KI-Preisempfehlung bleibt ein eigenes, kostenpflichtiges Zusatzmodul (`ai_pricing`, später).
+- ASSUMPTION: Preise je Tarif und Nacht, keine Berücksichtigung von Personenpreisen oder Mindestaufenthalt; Konkurrenzpreise folgen nicht.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

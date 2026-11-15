@@ -986,3 +986,47 @@ export const stayFeedback = pgTable("stay_feedback", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type StayFeedback = typeof stayFeedback.$inferSelect;
+
+export type OccupancyStep = { fromPct: number; bps: number };
+export type LastMinuteRule = { withinDays: number; belowPct: number; bps: number };
+export const pricingRules = pgTable("pricing_rules", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  ratePlanId: uuid("rate_plan_id").notNull().unique(),
+  baseRappen: integer("base_rappen").notNull(),
+  minRappen: integer("min_rappen").notNull(),
+  maxRappen: integer("max_rappen").notNull(),
+  occupancySteps: jsonb("occupancy_steps").$type<OccupancyStep[]>().notNull().default([]),
+  lastMinute: jsonb("last_minute").$type<LastMinuteRule | null>(),
+  /** Zuschlag in Basispunkten je Wochentag, Index 0 = Sonntag */
+  weekdayBps: jsonb("weekday_bps").$type<number[]>().notNull().default([0, 0, 0, 0, 0, 0, 0]),
+  autoApply: boolean("auto_apply").notNull().default(false),
+  active: boolean("active").notNull().default(true),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+export type PricingRule = typeof pricingRules.$inferSelect;
+
+export const pricingEvents = pgTable("pricing_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: text("name").notNull(),
+  fromDay: date("from_day", { mode: "string" }).notNull(),
+  toDay: date("to_day", { mode: "string" }).notNull(),
+  adjustBps: integer("adjust_bps").notNull(),
+});
+export type PricingEvent = typeof pricingEvents.$inferSelect;
+
+export const pricingProposals = pgTable("pricing_proposals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  ratePlanId: uuid("rate_plan_id").notNull(),
+  night: date("night", { mode: "string" }).notNull(),
+  currentRappen: integer("current_rappen").notNull(),
+  proposedRappen: integer("proposed_rappen").notNull(),
+  reason: text("reason").notNull(),
+  status: text("status").$type<"open" | "applied" | "dismissed">().notNull().default("open"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  decidedAt: ts("decided_at"),
+  decidedBy: text("decided_by"),
+});
+export type PricingProposal = typeof pricingProposals.$inferSelect;

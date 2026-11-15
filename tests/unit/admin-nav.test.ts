@@ -26,7 +26,8 @@ describe("Admin-Menü", () => {
     expect(sectionFor("/admin/h1/inquiries", nav, home)?.label).toBe("Gäste");
     expect(sectionFor("/admin/h1/site/blocks", nav, home)?.label).toBe("Angebot");
     expect(sectionFor("/admin/h1/channex/booking", nav, home)?.label).toBe("Vertrieb");
-    expect(sectionFor("/admin/h1/calendar", nav, home)).toBeNull();
+    expect(sectionFor("/admin/h1/preise", nav, home)?.label).toBe("Kalender"); // Preisempfehlung ist Reiter beim Kalender
+    expect(sectionFor("/admin/h1/home", nav, home)).toBeNull();
     const guests = nav.primary.find((i) => i.key === "guests")!;
     expect(isActive("/admin/h1/vouchers", guests, home)).toBe(true); // Reiter hält den Sammelpunkt aktiv
   });
