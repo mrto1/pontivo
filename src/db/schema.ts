@@ -843,6 +843,9 @@ export const folioItems = pgTable("folio_items", {
   unitPriceRappen: integer("unit_price_rappen").notNull(),
   vatKind: text("vat_kind").$type<"stay" | "standard" | "none">().notNull().default("standard"),
   invoiceId: uuid("invoice_id"),
+  /** Beleg-ID der fremden Kasse (PosBridge, SPEC 19.15), eindeutig je Betrieb */
+  externalId: text("external_id"),
+  source: text("source"),
   createdBy: text("created_by").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
@@ -1212,3 +1215,16 @@ export const newsletters = pgTable("newsletters", {
   sentAt: ts("sent_at"),
 });
 export type Newsletter = typeof newsletters.$inferSelect;
+
+export const apiKeys = pgTable("api_keys", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  label: text("label").notNull(),
+  keyHash: text("key_hash").notNull().unique(),
+  prefix: text("prefix").notNull(),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  lastUsedAt: ts("last_used_at"),
+  revokedAt: ts("revoked_at"),
+});
+export type ApiKey = typeof apiKeys.$inferSelect;

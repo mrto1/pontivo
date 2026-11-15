@@ -777,6 +777,13 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - Regeln: mehr als 40 Zimmer oder eine Software für grosse Häuser → «läuft daneben» (Direktbuchung und Kanäle trotzdem nutzbar); Restaurant mit eigener Kasse → «mit Kassen-Schnittstelle oder Kassenmodul»; sonst «passt».
 - Die Antwort verspricht nur Vorhandenes: Kassenschnittstelle, Kassenmodul und geführte Datenübernahme werden als «in Entwicklung/Vorbereitung» benannt. ASSUMPTION: Schwelle 40 Zimmer aus PMS-ERSATZ (Zielgruppe); sobald diese Funktionen gebaut sind, die Texte anpassen.
 
+### 19.15 Kassen-Schnittstelle PosBridge (Modul `posbridge`, Standard aus, braucht `invoicing`)
+- Wer seine Restaurantkasse behält, bucht Posten aufs Zimmer: `POST /api/v1/folio-items` (JSON) mit Header `Authorization: Bearer pnt_…`. Felder: `room_number` **oder** `booking_reference`, `description`, `quantity` (Standard 1, nicht 0), `unit_price_rappen` (ganze Rappen, negativ = Gutschrift), `vat` (`standard`|`stay`|`none`, Standard `standard`), `external_id` (Beleg-ID der Kasse). Der Posten erscheint als `folio_items` in der Hotelrechnung (SPEC 16.3).
+- **Schlüssel** je Betrieb (`api_keys`), Seite `/admin/<hotel>/posbridge` (Reiter «Kassen-Schnittstelle» unter «Verbinden», Rolle `owner`). Klartext nur einmal bei der Erstellung sichtbar, gespeichert wird nur der SHA-256-Hash; widerrufbar; «zuletzt benutzt». Das Hotel kommt immer aus dem Schlüssel, nie aus der Anfrage. Höchstens 120 Anfragen pro Minute und Schlüssel (429).
+- **Zimmernummer:** Gast im Haus (Anreise bis vor Abreise, berücksichtigt Zimmerwechsel über `room_stays`); gibt es keinen, der am Abreisetag. Mehrere Treffer → 409 `ambiguous` (dann `booking_reference` senden), keiner → 404. Nur bestätigte Buchungen.
+- **Idempotent** über `external_id` (eindeutig je Betrieb): gleiche Anfrage → 200 mit `duplicate: true`, nichts doppelt; gleiche ID mit anderem Inhalt oder anderer Buchung → 409 `conflict`. Neu → 201. Audit `folio.add` mit Akteur `api:<Schlüssel>`.
+- ASSUMPTION: Posten auf einer schon ausgestellten Rechnung erscheinen erst in einer neuen Rechnung bzw. nach Gutschrift und Neuausstellung (wie von Hand erfasste Posten); keine Webhooks zurück an die Kasse, kein Abruf des Zimmerstands und keine Stornierung über die API (Gutschrift = negativer Posten mit neuer `external_id`). Welche Kassen zuerst angebunden werden, ist offen (QUESTIONS.md).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.
