@@ -13,6 +13,8 @@ export const createBookingSchema = z
     checkout: dayString,
     adults: z.number().int().min(1).max(10),
     children: z.number().int().min(0).max(10).default(0),
+    /** Anzahl gleicher Zimmer (SPEC 19.6) */
+    rooms: z.number().int().min(1).max(4).default(1),
     children_ages: z.array(z.number().int().min(0).max(17)).max(10).default([]),
     guest: z.object({
       first_name: z.string().trim().min(1).max(100),
@@ -39,6 +41,7 @@ export const searchParamsSchema = z.object({
   checkout: dayString,
   adults: z.coerce.number().int().min(1).max(10).default(2),
   children: z.coerce.number().int().min(0).max(10).default(0),
+  rooms: z.coerce.number().int().min(1).max(4).default(1),
   ages: z
     .string()
     .optional()

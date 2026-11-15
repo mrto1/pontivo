@@ -16,6 +16,8 @@ export function BookingForm(props: {
   checkout: string;
   adults: number;
   children: number;
+  /** Anzahl gleicher Zimmer (SPEC 19.6) */
+  rooms?: number;
   ages: number[];
   base: string;
   /** Hotel verkauft Gutscheine → Feld «Gutschein einlösen» anzeigen */
@@ -55,6 +57,7 @@ export function BookingForm(props: {
         checkout: props.checkout,
         adults: props.adults,
         children: props.children,
+        rooms: props.rooms ?? 1,
         children_ages: props.ages,
         guest: {
           first_name: f.get("first_name"),

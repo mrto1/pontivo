@@ -103,8 +103,9 @@ export default async function BookingDetail({ params, searchParams }: { params: 
         <span className="muted">Quelle</span><span>{b.source}{b.otaReservationCode ? ` (${b.otaReservationCode})` : ""}</span>
         <span className="muted">Gast</span><span>{g ? <>{g.firstName} {g.lastName} · <a href={`mailto:${g.email}`}>{g.email}</a>{g.phone ? ` · ${g.phone}` : ""}</> : "–"}</span>
         <span className="muted">Aufenthalt</span><span>{b.checkin} → {b.checkout} · {b.adults} Erw.{b.children ? ` + ${b.children} Kinder (${b.childrenAges.join(", ")} J.)` : ""}</span>
-        <span className="muted">Zimmer</span><span>{d.roomType?.name ?? "–"} · {d.ratePlan?.name ?? "–"}</span>
-        <span className="muted">Preise pro Nacht</span><span>{d.room?.nightlyPrices.map((n) => `${n.night}: ${formatChf(n.price_rappen)}`).join(" · ")}</span>
+        <span className="muted">{d.roomList.length > 1 ? `Zimmer (${d.roomList.length})` : "Zimmer"}</span>
+        <span>{d.roomList.length > 1 ? d.roomList.map((r) => `${r.typeName} · ${r.planName ?? "–"} (${r.room.adults} Erw.${r.room.children ? `, ${r.room.children} Kinder` : ""})`).join(" / ") : `${d.roomType?.name ?? "–"} · ${d.ratePlan?.name ?? "–"}`}</span>
+        <span className="muted">Preise pro Nacht</span><span>{d.roomList.length > 1 ? d.roomList.map((r, i) => `Zimmer ${i + 1}: ${r.room.nightlyPrices.map((n) => `${n.night} ${formatChf(n.price_rappen)}`).join(" · ")}`).join(" | ") : d.room?.nightlyPrices.map((n) => `${n.night}: ${formatChf(n.price_rappen)}`).join(" · ")}</span>
         <span className="muted">Zimmer total</span><span>{formatChf(b.roomsTotalRappen)}</span>
         {extras.length ? (<><span className="muted">Zusatzleistungen</span><span>{extras.map((x) => `${x.name.de ?? ""}${x.quantity > 1 ? ` × ${x.quantity}` : ""} ${formatChf(x.amountRappen)}`).join(" · ")}</span></>) : null}
         <span className="muted">Kurtaxe</span><span>{formatChf(b.touristTaxRappen)}{hotel.touristTaxIncludedInPrice ? " (im Preis inbegriffen)" : ""}</span>

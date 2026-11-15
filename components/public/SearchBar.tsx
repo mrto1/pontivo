@@ -8,7 +8,7 @@ export function SearchBar({ action, locale, defaults, today, plan }: {
   plan?: string;
   locale: Locale;
   today: string;
-  defaults: { checkin?: string; checkout?: string; adults?: number; children?: number; ages?: number[] };
+  defaults: { checkin?: string; checkout?: string; adults?: number; children?: number; ages?: number[]; rooms?: number };
 }) {
   const d = t(locale);
   const [children, setChildren] = useState(defaults.children ?? 0);
@@ -27,6 +27,12 @@ export function SearchBar({ action, locale, defaults, today, plan }: {
         <label htmlFor="adults">{d.adults}</label>
         <select id="adults" name="adults" defaultValue={defaults.adults ?? 2}>
           {Array.from({ length: 6 }, (_, i) => i + 1).map((n) => <option key={n}>{n}</option>)}
+        </select>
+      </div>
+      <div>
+        <label htmlFor="rooms">{d.roomCount}</label>
+        <select id="rooms" name="rooms" defaultValue={defaults.rooms ?? 1}>
+          {Array.from({ length: 4 }, (_, i) => i + 1).map((n) => <option key={n}>{n}</option>)}
         </select>
       </div>
       <div>

@@ -7,7 +7,7 @@ import {
   bookingExtras, bookingRooms, bookings, extras, guests, hotels, payments, ratePlans,
   type Booking, type Hotel,
 } from "../db/schema";
-import { ExtrasError, resolveExtras } from "../domain/extras";
+import { ExtrasError, resolveExtras, type ExtraDef } from "../domain/extras";
 import { addDays, nightsOf, todayIn, zonedToUtc } from "../domain/dates";
 import { platformFee } from "../domain/pricing";
 import { assertTransition } from "../domain/state-machine";
@@ -19,7 +19,8 @@ import { moduleOn } from "./modules";
 import { enqueueEmail } from "../email/enqueue";
 import { getPaymentProvider } from "../payments/provider";
 import { isBookable } from "./hotels";
-import { searchOffers } from "./search";
+import { searchOffers, type Offer } from "./search";
+import { MAX_ROOMS, splitGuests } from "../domain/multiroom";
 import { enqueueUpsellOffer } from "./upsell";
 import { pushForBooking } from "../push/service";
 import { env } from "../env";
@@ -60,7 +61,66 @@ export type CreateBookingInput = {
   guest: GuestInput;
   /** Zusatzleistungen (optional); obligatorische werden immer ergänzt */
   extras?: { id: string; quantity: number }[];
+  /** Mehrere gleiche Zimmer (SPEC 19.6): adults/children sind dann die Summen, sie werden gleichmässig verteilt */
+  roomCount?: number;
+  /** Weitere Zimmer mit eigener Belegung (Rezeption); das erste Zimmer steht in den Feldern oben */
+  extraRooms?: RoomLine[];
 };
+
+/** Ein Zimmer einer Buchung mit eigener Belegung (SPEC 19.6) */
+export type RoomLine = { roomTypeId: string; ratePlanId: string; adults: number; children: number; childrenAges: number[] };
+
+/** Zimmerzeilen einer Buchung: ein Zimmer, mehrere gleiche (roomCount) oder gemischte (extraRooms) */
+export function roomLinesOf(input: { roomTypeId: string; ratePlanId: string; adults: number; children: number; childrenAges: number[]; roomCount?: number; extraRooms?: RoomLine[] }): RoomLine[] {
+  const n = input.roomCount ?? 1;
+  if (n > 1) {
+    if (input.extraRooms?.length) throw new BookingError("invalid_rooms", 400);
+    const split = splitGuests(input.adults, input.children, input.childrenAges, n);
+    if (!split) throw new BookingError("occupancy", 400);
+    return split.map((g) => ({ roomTypeId: input.roomTypeId, ratePlanId: input.ratePlanId, adults: g.adults, children: g.children, childrenAges: g.childrenAges.filter((a): a is number => a !== null) }));
+  }
+  const lines: RoomLine[] = [{ roomTypeId: input.roomTypeId, ratePlanId: input.ratePlanId, adults: input.adults, children: input.children, childrenAges: input.childrenAges }, ...(input.extraRooms ?? [])];
+  if (lines.length > MAX_ROOMS) throw new BookingError("too_many_rooms", 400);
+  return lines;
+}
+
+/** Summen über alle Zimmer: Personen und Kinderalter der Buchung */
+export function lineTotals(lines: RoomLine[]) {
+  return { adults: lines.reduce((a, l) => a + l.adults, 0), children: lines.reduce((a, l) => a + l.children, 0), childrenAges: lines.flatMap((l) => l.childrenAges) };
+}
+
+/** Jedes Zimmer wie bei der Einzelbuchung serverseitig bepreisen (Verfügbarkeit: bei gleichem Typ mehrfach nötig) */
+export async function priceRoomLines(hotel: Hotel, stay: { checkin: string; checkout: string }, lines: RoomLine[], lang: Locale, now: Date | undefined, ex?: Executor): Promise<Offer[]> {
+  const offers: Offer[] = [];
+  for (const l of lines) {
+    const need = lines.filter((x) => x.roomTypeId === l.roomTypeId).length;
+    const search = await searchOffers(hotel, { ...stay, adults: l.adults, children: l.children, childrenAges: l.childrenAges }, { lang, roomTypeId: l.roomTypeId, ratePlanId: l.ratePlanId, now, ex, needRooms: need });
+    if (!search.ok) throw new BookingError(search.error, 400);
+    const offer = search.offers[0];
+    if (!offer) {
+      const reason = search.rejected[0]?.reason;
+      if (reason === "sold_out") throw new BookingError("sold_out", 409);
+      if (!reason) throw new BookingError("offer_not_found", 404);
+      throw new BookingError(reason, 400);
+    }
+    offers.push(offer);
+  }
+  return offers;
+}
+
+/**
+ * Zusatzleistungen: Gewählte (ganze Buchung, alle Personen) und obligatorische je Zimmer. Bei einem Zimmer wie bisher.
+ * Die Summe der obligatorischen Leistungen steckt schon in den Angeboten (offer.totalRappen).
+ */
+export function resolveBookingExtras<T extends ExtraDef>(defs: T[], selection: { id: string; quantity: number }[], lines: RoomLine[], nights: number) {
+  const persons = lineTotals(lines);
+  const chosen = resolveExtras(defs, selection, { roomTypeId: lines[0].roomTypeId, nights, persons: persons.adults + persons.children });
+  if (lines.length === 1) return chosen;
+  const picked = chosen.lines.filter((l) => !l.extra.mandatory);
+  const mand = lines.flatMap((l) => resolveExtras(defs, [], { roomTypeId: l.roomTypeId, nights, persons: l.adults + l.children }).lines);
+  const all = [...mand, ...picked];
+  return { lines: all, totalRappen: all.reduce((a, l) => a + l.amountRappen, 0) };
+}
 
 // ---------------------------------------------------------------- Hold (5.3)
 
@@ -84,6 +144,13 @@ export async function releaseNights(tx: Tx, hotelId: string, roomTypeId: string,
   await enqueueAvailability(tx, hotelId, roomTypeId, checkin, addDays(checkout, -1));
 }
 
+/** «2 × Doppelzimmer, Einzelzimmer» */
+export function roomsLabel(names: string[]): string {
+  const count = new Map<string, number>();
+  for (const n of names) count.set(n, (count.get(n) ?? 0) + 1);
+  return [...count].map(([n, c]) => (c > 1 ? `${c} × ${n}` : n)).join(", ");
+}
+
 export class RollbackSoldOut extends Error {}
 
 /**
@@ -98,40 +165,33 @@ export async function createDirectBooking(
   const provider = await getPaymentProvider();
   if (!isBookable(hotel, provider.name)) throw new BookingError("hotel_not_bookable", 403);
 
-  const search = await searchOffers(
-    hotel,
-    { ...input, childrenAges: input.childrenAges },
-    { lang: input.guest.language, roomTypeId: input.roomTypeId, ratePlanId: input.ratePlanId, now: opts.now },
-  );
-  if (!search.ok) throw new BookingError(search.error, 400);
-  const offer = search.offers[0];
-  if (!offer) {
-    const reason = search.rejected[0]?.reason;
-    if (reason === "sold_out") throw new BookingError("sold_out", 409);
-    // Unbekannter Zimmertyp/Rateplan (auch eines anderen Hotels) → 404, keine Details preisgeben.
-    if (!reason) throw new BookingError("offer_not_found", 404);
-    throw new BookingError(reason, 400);
-  }
+  const lines = roomLinesOf(input);
+  const tot = lineTotals(lines);
+  const stay = { checkin: input.checkin, checkout: input.checkout };
+  const offers = await priceRoomLines(hotel, stay, lines, input.guest.language, opts.now);
+  const offer = offers[0];
   const now = opts.now ?? new Date();
   const today = todayIn(hotel.timezone, now);
   const holdExpiresAt = new Date(now.getTime() + HOLD_MINUTES * 60_000);
   // Zusatzleistungen serverseitig bepreisen; der Angebotspreis enthält schon die obligatorischen
   const extraDefs = await db().select().from(extras).where(and(eq(extras.hotelId, hotel.id), eq(extras.active, true))).orderBy(extras.sortOrder, extras.createdAt);
-  let chosen: ReturnType<typeof resolveExtras<(typeof extraDefs)[number]>>;
+  let chosen: ReturnType<typeof resolveBookingExtras<(typeof extraDefs)[number]>>;
   try {
-    chosen = resolveExtras(extraDefs, input.extras ?? [], { roomTypeId: input.roomTypeId, nights: nightsOf(input.checkin, input.checkout).length, persons: input.adults + input.children });
+    chosen = resolveBookingExtras(extraDefs, input.extras ?? [], lines, nightsOf(input.checkin, input.checkout).length);
   } catch (e) {
     if (e instanceof ExtrasError) throw new BookingError(e.code, 400);
     throw e;
   }
-  const totalRappen = offer.totalRappen - offer.extrasRappen + chosen.totalRappen;
+  const sum = (f: (o: Offer) => number) => offers.reduce((a, o) => a + f(o), 0);
+  const roomsTotal = sum((o) => o.roomsTotalRappen);
+  const taxTotal = sum((o) => o.touristTaxRappen);
+  const totalRappen = sum((o) => o.totalRappen) - sum((o) => o.extrasRappen) + chosen.totalRappen;
 
   let booking: Booking | null = null;
   for (let attempt = 0; attempt < 3 && !booking; attempt++) {
     try {
       booking = await db().transaction(async (tx) => {
-        const ok = await reserveNights(tx, input.roomTypeId, input.checkin, input.checkout);
-        if (!ok) throw new RollbackSoldOut();
+        for (const l of lines) if (!(await reserveNights(tx, l.roomTypeId, input.checkin, input.checkout))) throw new RollbackSoldOut();
         // Gutschein sperren und anrechnen; Plattformgebühr (Standard 1,9 %) nur auf den Teil, der per Karte/TWINT bezahlt wird
         // (am Gutschein hat Pontivo beim Verkauf schon verdient)
         const vt = input.voucherCode?.trim() ? await takeVoucherForBooking(tx, hotel, input.voucherCode, totalRappen, today) : null;
@@ -162,14 +222,14 @@ export async function createDirectBooking(
             status: "hold",
             checkin: input.checkin,
             checkout: input.checkout,
-            adults: input.adults,
-            children: input.children,
-            childrenAges: input.childrenAges,
+            adults: tot.adults,
+            children: tot.children,
+            childrenAges: tot.childrenAges,
             language: input.guest.language,
             guestId: g.id,
-            roomsTotalRappen: offer.roomsTotalRappen,
+            roomsTotalRappen: roomsTotal,
             extrasRappen: chosen.totalRappen,
-            touristTaxRappen: offer.touristTaxRappen,
+            touristTaxRappen: taxTotal,
             totalRappen,
             platformFeeRappen: fee,
             balanceRappen: plan.kind === "deposit" ? plan.balanceRappen : 0,
@@ -180,16 +240,16 @@ export async function createDirectBooking(
             guestNotes: input.guest.notes ?? null,
           })
           .returning();
-        await tx.insert(bookingRooms).values({
+        await tx.insert(bookingRooms).values(lines.map((l, i) => ({
           bookingId: b.id,
           hotelId: hotel.id,
-          roomTypeId: input.roomTypeId,
-          ratePlanId: input.ratePlanId,
-          adults: input.adults,
-          children: input.children,
-          nightlyPrices: offer.nightlyPrices,
-          amountRappen: offer.roomsTotalRappen,
-        });
+          roomTypeId: l.roomTypeId,
+          ratePlanId: l.ratePlanId,
+          adults: l.adults,
+          children: l.children,
+          nightlyPrices: offers[i].nightlyPrices,
+          amountRappen: offers[i].roomsTotalRappen,
+        })));
         if (chosen.lines.length) {
           await tx.insert(bookingExtras).values(chosen.lines.map((l, position) => ({ position,
             bookingId: b.id, hotelId: hotel.id, extraId: l.extra.id, name: l.extra.name, unit: l.extra.unit,
@@ -197,10 +257,10 @@ export async function createDirectBooking(
           })));
         }
         if (vt) await chargeVoucher(tx, vt.voucher, b.id, voucherRappen, `Buchung ${b.reference}`, "guest");
-        await enqueueAvailability(tx, hotel.id, input.roomTypeId, input.checkin, addDays(input.checkout, -1));
+        for (const rt of new Set(lines.map((l) => l.roomTypeId))) await enqueueAvailability(tx, hotel.id, rt, input.checkin, addDays(input.checkout, -1));
         await audit(tx, {
           hotelId: hotel.id, actor: "guest", action: "booking.hold", entity: "booking", entityId: b.id,
-          details: { total: totalRappen, extras: chosen.totalRappen, fee, voucher: voucherRappen, ip: opts.ip ?? null },
+          details: { rooms: lines.length, total: totalRappen, extras: chosen.totalRappen, fee, voucher: voucherRappen, ip: opts.ip ?? null },
         });
         return b;
       });
@@ -279,7 +339,7 @@ export async function confirmBooking(
     if (b.status === "cancelled" || b.status === "no_show") return "ignored";
 
     const [booking] = await tx.select().from(bookings).where(eq(bookings.id, bookingId));
-    const [room] = await tx.select().from(bookingRooms).where(eq(bookingRooms.bookingId, bookingId));
+    const roomRows = await tx.select().from(bookingRooms).where(eq(bookingRooms.bookingId, bookingId));
 
     if (b.status === "expired") {
       // Späte Zahlung: Zimmer erneut belegen, falls noch frei.
@@ -287,7 +347,7 @@ export async function confirmBooking(
       let ok = true;
       try {
         await tx.transaction(async (sp) => {
-          if (!(await reserveNights(sp, room.roomTypeId, booking.checkin, booking.checkout))) throw new RollbackSoldOut();
+          for (const r of roomRows) if (!(await reserveNights(sp, r.roomTypeId, booking.checkin, booking.checkout))) throw new RollbackSoldOut();
           if (booking.voucherId && booking.voucherRappen > 0) {
             try {
               await chargeVoucher(sp, { id: booking.voucherId, hotelId: booking.hotelId }, booking.id, booking.voucherRappen, `Buchung ${booking.reference} (späte Zahlung)`, pay.actor);
@@ -306,7 +366,7 @@ export async function confirmBooking(
         await audit(tx, { hotelId: booking.hotelId, actor: pay.actor, action: "booking.late_payment_no_room", entity: "booking", entityId: booking.id });
         return "refund_required";
       }
-      await enqueueAvailability(tx, booking.hotelId, room.roomTypeId, booking.checkin, addDays(booking.checkout, -1));
+      for (const rt of new Set(roomRows.map((r) => r.roomTypeId))) await enqueueAvailability(tx, booking.hotelId, rt, booking.checkin, addDays(booking.checkout, -1));
     }
 
     assertTransition(b.status, "confirmed");
@@ -386,8 +446,7 @@ export async function releaseHold(
     const [b] = rows<{ status: string }>(await tx.execute(sql`SELECT status FROM bookings WHERE id = ${bookingId} FOR UPDATE`));
     if (!b || b.status !== "hold") return false;
     const [booking] = await tx.select().from(bookings).where(eq(bookings.id, bookingId));
-    const [room] = await tx.select().from(bookingRooms).where(eq(bookingRooms.bookingId, bookingId));
-    await releaseNights(tx, booking.hotelId, room.roomTypeId, booking.checkin, booking.checkout);
+    for (const r of await tx.select().from(bookingRooms).where(eq(bookingRooms.bookingId, bookingId))) await releaseNights(tx, booking.hotelId, r.roomTypeId, booking.checkin, booking.checkout);
     assertTransition("hold", "expired");
     await tx.update(bookings).set({ status: "expired", holdExpiresAt: null, updatedAt: now }).where(eq(bookings.id, bookingId));
     if (booking.voucherId && booking.voucherRappen > 0) {
@@ -421,11 +480,12 @@ async function loadForCancel(ex: Executor, bookingId: string, hotelId?: string) 
   const [booking] = await ex.select().from(bookings).where(where);
   if (!booking) throw new BookingError("not_found", 404);
   const [hotel] = await ex.select().from(hotels).where(eq(hotels.id, booking.hotelId));
-  const [room] = await ex.select().from(bookingRooms).where(eq(bookingRooms.bookingId, booking.id));
+  const roomRows = await ex.select().from(bookingRooms).where(eq(bookingRooms.bookingId, booking.id)).orderBy(bookingRooms.id);
+  const room = roomRows[0]; // ASSUMPTION (SPEC 19.6): Bei mehreren Zimmern gilt die Stornoregel des ersten Zimmers für die ganze Buchung
   const [plan] = room?.ratePlanId ? await ex.select().from(ratePlans).where(eq(ratePlans.id, room.ratePlanId)) : [];
   // Bei Anzahlung gibt es bis zu zwei Zahlungen (Anzahlung, Rest); neueste zuerst
   const paid = await ex.select().from(payments).where(and(eq(payments.bookingId, booking.id), inArray(payments.status, ["succeeded", "partially_refunded"]))).orderBy(desc(payments.createdAt));
-  return { booking, hotel, room, plan, paid };
+  return { booking, hotel, room, rooms: roomRows, plan, paid };
 }
 
 export async function cancellationPreview(
@@ -457,7 +517,7 @@ export async function cancelBooking(
   const now = opts.now ?? new Date();
   const preview = await cancellationPreview(bookingId, { by: opts.by, hotelId: opts.hotelId, now });
   if (!preview.cancellable) throw new BookingError(preview.reason ?? "not_cancellable", 409);
-  const { booking, hotel, room, paid } = await loadForCancel(db(), bookingId, opts.hotelId);
+  const { booking, hotel, rooms: roomRows, paid } = await loadForCancel(db(), bookingId, opts.hotelId);
 
   // Rückerstattet wird höchstens, was der Gast tatsächlich bezahlt hat, abzüglich der Stornogebühr (bei Anzahlung kann das weniger sein als «Total minus Gebühr»)
   const cardPaid = paid.reduce((n, p) => n + p.amountRappen - p.refundedRappen, 0);
@@ -486,7 +546,7 @@ export async function cancelBooking(
     const [b] = rows<{ status: string }>(await tx.execute(sql`SELECT status FROM bookings WHERE id = ${bookingId} FOR UPDATE`));
     if (b.status === "cancelled") return; // parallel bereits storniert
     assertTransition(b.status, "cancelled");
-    await releaseNights(tx, booking.hotelId, room.roomTypeId, booking.checkin, booking.checkout);
+    for (const r of roomRows) await releaseNights(tx, booking.hotelId, r.roomTypeId, booking.checkin, booking.checkout);
     await tx
       .update(bookings)
       .set({ status: "cancelled", cancelledAt: now, cancelReason: opts.reason ?? `by_${opts.by}`, updatedAt: now })
@@ -541,5 +601,8 @@ export async function getBookingByToken(token: string) {
   const [roomType] = room ? await db().select().from(roomTypes).where(eq(roomTypes.id, room.roomTypeId)) : [];
   const [plan] = room?.ratePlanId ? await db().select().from(ratePlans).where(eq(ratePlans.id, room.ratePlanId)) : [];
   const [guest] = booking.guestId ? await db().select().from(guests).where(eq(guests.id, booking.guestId)) : [];
-  return { booking, hotel, room, roomType, plan, guest };
+  const all = await db().select({ rt: roomTypes }).from(bookingRooms).innerJoin(roomTypes, eq(roomTypes.id, bookingRooms.roomTypeId)).where(eq(bookingRooms.bookingId, booking.id)).orderBy(bookingRooms.id);
+  // Mehrere Zimmer (SPEC 19.6): Name = alle Zimmertypen, damit Seite und Mails nichts verschweigen
+  const label = all.length > 1 ? { ...roomType, name: roomsLabel(all.map((x) => x.rt.name)), i18n: {} } : roomType;
+  return { booking, hotel, room, rooms: all.length, roomType: label, plan, guest };
 }

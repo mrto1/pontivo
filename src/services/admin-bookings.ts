@@ -13,7 +13,7 @@ import { enqueueAvailability } from "./outbox";
 import { searchOffers } from "./search";
 import { consumeBlock } from "./group-blocks";
 import { enqueueUpsellOffer } from "./upsell";
-import { BookingError, releaseNights, reserveNights, RollbackSoldOut } from "./bookings";
+import { BookingError, lineTotals, priceRoomLines, releaseNights, reserveNights, resolveBookingExtras, RollbackSoldOut, roomLinesOf, type RoomLine } from "./bookings";
 
 /** Buchungsliste eines Hotels (immer nach hotel_id gefiltert, SPEC 0.5) */
 export async function listBookings(hotelId: string, f: { from?: string; to?: string; status?: string; source?: string }) {
@@ -42,7 +42,11 @@ export async function bookingDetail(hotelId: string, bookingId: string) {
   const [rp] = room?.ratePlanId ? await db().select().from(ratePlans).where(eq(ratePlans.id, room.ratePlanId)) : [];
   const pays = await db().select().from(payments).where(eq(payments.bookingId, b.id));
   const log = await db().select().from(auditLog).where(and(eq(auditLog.hotelId, hotelId), eq(auditLog.entityId, b.id))).orderBy(auditLog.createdAt);
-  return { booking: b, guest: g, room, roomType: rt, ratePlan: rp, payments: pays, log };
+  // Mehrere Zimmer (SPEC 19.6)
+  const roomRows = await db().select({ room: bookingRooms, typeName: roomTypes.name, planName: ratePlans.name }).from(bookingRooms)
+    .innerJoin(roomTypes, eq(roomTypes.id, bookingRooms.roomTypeId)).leftJoin(ratePlans, eq(ratePlans.id, bookingRooms.ratePlanId))
+    .where(eq(bookingRooms.bookingId, b.id)).orderBy(bookingRooms.id);
+  return { booking: b, guest: g, room, roomType: rt, ratePlan: rp, roomList: roomRows, payments: pays, log };
 }
 
 // ---------------------------------------------------------------- Vom Hotel erfasste Buchungen
@@ -61,6 +65,11 @@ export const adminBookingSchema = z.object({
   adults: z.number().int().min(1).max(30),
   children: z.number().int().min(0).max(20).default(0),
   childrenAges: z.array(z.number().int().min(0).max(17)).max(20).default([]),
+  /** Weitere Zimmer mit eigener Belegung (SPEC 19.6); das erste Zimmer steht oben */
+  extraRooms: z.array(z.object({
+    roomTypeId: z.string().uuid(), ratePlanId: z.string().uuid(),
+    adults: z.number().int().min(1).max(30), children: z.number().int().min(0).max(20).default(0), childrenAges: z.array(z.number().int().min(0).max(17)).max(20).default([]),
+  })).max(5).default([]),
   guest: z.object({
     firstName: z.string().trim().min(1, "Vorname fehlt").max(100),
     lastName: z.string().trim().min(1, "Nachname fehlt").max(100),
@@ -91,16 +100,14 @@ export function bookingErrorText(code: string): string {
 export async function createAdminBooking(hotel: Hotel, input: AdminBookingInput, actor: string, now = new Date(), opts: { groupId?: string } = {}): Promise<Booking> {
   const v = adminBookingSchema.parse(input);
   // Preis und Pflicht-Extras; bei Gruppenbuchungen erst in der Transaktion (nach dem Entnehmen aus dem Block ist das Zimmer wieder frei)
+  if (opts.groupId && v.extraRooms.length) throw new BookingError("invalid_rooms", 400);
+  const lines = roomLinesOf({ roomTypeId: v.roomTypeId, ratePlanId: v.ratePlanId, adults: v.adults, children: v.children, childrenAges: v.childrenAges, extraRooms: v.extraRooms as RoomLine[] });
+  const tot = lineTotals(lines);
   const prepare = async (ex: Executor | Tx) => {
-    const search = await searchOffers(hotel, { checkin: v.checkin, checkout: v.checkout, adults: v.adults, children: v.children, childrenAges: v.childrenAges }, {
-      lang: v.guest.language, roomTypeId: v.roomTypeId, ratePlanId: v.ratePlanId, now, ex,
-    });
-    if (!search.ok) throw new BookingError(search.error, 400);
-    const offer = search.offers[0];
-    if (!offer) throw new BookingError(search.rejected[0]?.reason ?? "offer_not_found", search.rejected[0]?.reason === "sold_out" ? 409 : 400);
+    const offers = await priceRoomLines(hotel, { checkin: v.checkin, checkout: v.checkout }, lines, v.guest.language, now, ex);
     const extraDefs = await ex.select().from(extras).where(and(eq(extras.hotelId, hotel.id), eq(extras.active, true))).orderBy(extras.sortOrder, extras.createdAt);
-    const mand = resolveExtras(extraDefs, [], { roomTypeId: v.roomTypeId, nights: nightsOf(v.checkin, v.checkout).length, persons: v.adults + v.children });
-    return { offer, mand };
+    const mand = resolveBookingExtras(extraDefs, [], lines, nightsOf(v.checkin, v.checkout).length);
+    return { offers, mand };
   };
   const pre = opts.groupId ? null : await prepare(db());
 
@@ -108,30 +115,31 @@ export async function createAdminBooking(hotel: Hotel, input: AdminBookingInput,
     try {
       return await db().transaction(async (tx) => {
         if (opts.groupId) await consumeBlock(tx, hotel.id, opts.groupId, v.roomTypeId, v.checkin, v.checkout);
-        const { offer, mand } = pre ?? (await prepare(tx));
-        if (!(await reserveNights(tx, v.roomTypeId, v.checkin, v.checkout))) throw new RollbackSoldOut();
+        const { offers, mand } = pre ?? (await prepare(tx));
+        const sum = (f: (o: (typeof offers)[number]) => number) => offers.reduce((a, o) => a + f(o), 0);
+        for (const l of lines) if (!(await reserveNights(tx, l.roomTypeId, v.checkin, v.checkout))) throw new RollbackSoldOut();
         const [g] = await tx.insert(guests).values({
           hotelId: hotel.id, firstName: v.guest.firstName, lastName: v.guest.lastName, email: v.guest.email, phone: v.guest.phone || null, language: v.guest.language,
         }).returning();
         const [b] = await tx.insert(bookings).values({
           hotelId: hotel.id, reference: newReference(), publicToken: newPublicToken(), source: "admin", status: "confirmed", confirmedAt: now,
-          checkin: v.checkin, checkout: v.checkout, adults: v.adults, children: v.children, childrenAges: v.childrenAges, language: v.guest.language,
-          guestId: g.id, roomsTotalRappen: offer.roomsTotalRappen, extrasRappen: mand.totalRappen, touristTaxRappen: offer.touristTaxRappen,
-          totalRappen: offer.totalRappen, platformFeeRappen: 0, guestNotes: v.guest.notes || null, groupId: opts.groupId ?? null,
+          checkin: v.checkin, checkout: v.checkout, adults: tot.adults, children: tot.children, childrenAges: tot.childrenAges, language: v.guest.language,
+          guestId: g.id, roomsTotalRappen: sum((o) => o.roomsTotalRappen), extrasRappen: mand.totalRappen, touristTaxRappen: sum((o) => o.touristTaxRappen),
+          totalRappen: sum((o) => o.totalRappen), platformFeeRappen: 0, guestNotes: v.guest.notes || null, groupId: opts.groupId ?? null,
         }).returning();
-        await tx.insert(bookingRooms).values({
-          bookingId: b.id, hotelId: hotel.id, roomTypeId: v.roomTypeId, ratePlanId: v.ratePlanId, adults: v.adults, children: v.children,
-          nightlyPrices: offer.nightlyPrices, amountRappen: offer.roomsTotalRappen,
-        });
+        await tx.insert(bookingRooms).values(lines.map((l, i) => ({
+          bookingId: b.id, hotelId: hotel.id, roomTypeId: l.roomTypeId, ratePlanId: l.ratePlanId, adults: l.adults, children: l.children,
+          nightlyPrices: offers[i].nightlyPrices, amountRappen: offers[i].roomsTotalRappen,
+        })));
         if (mand.lines.length) {
           await tx.insert(bookingExtras).values(mand.lines.map((l, position) => ({
             position, bookingId: b.id, hotelId: hotel.id, extraId: l.extra.id, name: l.extra.name, unit: l.extra.unit,
             unitPriceRappen: l.extra.priceRappen, quantity: l.quantity, amountRappen: l.amountRappen,
           })));
         }
-        await enqueueAvailability(tx, hotel.id, v.roomTypeId, v.checkin, addDays(v.checkout, -1));
+        for (const rt of new Set(lines.map((l) => l.roomTypeId))) await enqueueAvailability(tx, hotel.id, rt, v.checkin, addDays(v.checkout, -1));
         if (v.notifyGuest && v.guest.email) await scheduleGuestEmails(tx, hotel, b, { confirmation: true, now });
-        await audit(tx, { hotelId: hotel.id, actor, action: "booking.admin_create", entity: "booking", entityId: b.id, details: { total: offer.totalRappen, notify: v.notifyGuest } });
+        await audit(tx, { hotelId: hotel.id, actor, action: "booking.admin_create", entity: "booking", entityId: b.id, details: { rooms: lines.length, total: sum((o) => o.totalRappen), notify: v.notifyGuest } });
         return b;
       });
     } catch (e) {

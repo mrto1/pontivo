@@ -136,6 +136,6 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Eigentümerabrechnung: Zielgruppe Verwaltungsfirmen bestätigen?
 
 ## Pauschalen, Zimmerwechsel, Mehrzimmerbuchung (SPEC 19.4/19.5)
-- Mehrzimmerbuchung: Das Datenmodell (`booking_rooms`) kennt mehrere Zimmer je Buchung, die Buchungsstrecke und die Admin-Buchung legen aber immer genau eines an. Soll eine Buchung mehrere Zimmer (Familie, 2 Doppelzimmer) in einem Schritt erfassen können (Suche mit Zimmeranzahl, ein Total, eine Rechnung)? Bis dahin: Gruppen-Modul oder zwei Buchungen.
+- ERLEDIGT in SPEC 19.6 (online gleiche Zimmer, Rezeption gemischt; offen bleibt Teilstornierung einzelner Zimmer). Früher: Das Datenmodell (`booking_rooms`) kennt mehrere Zimmer je Buchung, die Buchungsstrecke und die Admin-Buchung legen aber immer genau eines an. Soll eine Buchung mehrere Zimmer (Familie, 2 Doppelzimmer) in einem Schritt erfassen können (Suche mit Zimmeranzahl, ein Total, eine Rechnung)? Bis dahin: Gruppen-Modul oder zwei Buchungen.
 - Zimmerwechsel in einen anderen Zimmertyp (Up-/Downgrade): Preisfolge (Differenz je Nacht gutschreiben/belasten) und Verfügbarkeit je Zimmertyp müssten angepasst werden. Aktuell nur innerhalb desselben Typs (ASSUMPTION in SPEC 19.5).
 - Pauschalen: Wert der Verpflegung (`meal_rappen`) pflegt das Hotel selbst; Treuhänder sollte den Aufteilungsschlüssel bestätigen.

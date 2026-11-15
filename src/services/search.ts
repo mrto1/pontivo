@@ -11,8 +11,9 @@ import { computeTouristTax, needsChildAges, TouristTaxUnconfirmedError } from ".
 import { cancellationPolicyText } from "../domain/cancellation";
 import { taxRuleFor } from "./hotels";
 import { planName, roomDescription, roomName } from "../domain/i18n-names";
+import { splitGuests } from "../domain/multiroom";
 
-export type SearchInput = StayQuery & { childrenAges?: (number | null)[] };
+export type SearchInput = StayQuery & { childrenAges?: (number | null)[]; /** Anzahl gleicher Zimmer (SPEC 19.6), Standard 1; Personen werden gleichmässig verteilt */ rooms?: number };
 
 export type Offer = {
   roomType: Pick<RoomType, "id" | "name" | "description" | "photos" | "maxOccupancy">;
@@ -39,8 +40,9 @@ export type SearchResult =
 export async function searchOffers(
   hotel: Hotel,
   input: SearchInput,
-  opts: { lang?: Locale; roomTypeId?: string; ratePlanId?: string; now?: Date; ex?: Executor } = {},
+  opts: { lang?: Locale; roomTypeId?: string; ratePlanId?: string; now?: Date; ex?: Executor; needRooms?: number } = {},
 ): Promise<SearchResult> {
+  if ((input.rooms ?? 1) > 1) return searchMultiRoom(hotel, input, opts);
   const ex = opts.ex ?? db();
   const lang = opts.lang ?? "de";
   const today = todayIn(hotel.timezone, opts.now);
@@ -114,7 +116,7 @@ export async function searchOffers(
         rejected.push({ roomTypeId: rt.id, ratePlanId: rp.id, reason: "min_stay" });
         continue;
       }
-      const res = evaluateOffer(input, rt, rtInv, rates.filter((r) => r.ratePlanId === rp.id));
+      const res = evaluateOffer(input, rt, rtInv, rates.filter((r) => r.ratePlanId === rp.id), opts.needRooms ?? 1);
       if (!res.ok) {
         rejected.push({ roomTypeId: rt.id, ratePlanId: rp.id, reason: res.reason });
         continue;
@@ -143,4 +145,40 @@ export async function searchOffers(
     }
   }
   return { ok: true, offers, rejected, needsChildAges: ageRequired };
+}
+
+/**
+ * Mehrere gleiche Zimmer (SPEC 19.6): Personen verteilen, je Zimmer wie bei einem Zimmer suchen und zusammenzählen.
+ * Ein Angebot erscheint nur, wenn für alle Zimmer genug frei ist und die Personen in jedes Zimmer passen.
+ */
+async function searchMultiRoom(hotel: Hotel, input: SearchInput, opts: Parameters<typeof searchOffers>[2] = {}): Promise<SearchResult> {
+  const n = input.rooms ?? 1;
+  const ages: (number | null)[] = Array.from({ length: input.children }, (_, i) => input.childrenAges?.[i] ?? null);
+  const split = splitGuests(input.adults, input.children, ages, n);
+  if (!split) return { ok: false, error: "occupancy" };
+  const results: SearchResult[] = [];
+  for (const g of split) {
+    results.push(await searchOffers(hotel, { checkin: input.checkin, checkout: input.checkout, adults: g.adults, children: g.children, childrenAges: g.childrenAges, rooms: 1 }, { ...opts, needRooms: n }));
+  }
+  const bad = results.find((r) => !r.ok);
+  if (bad && !bad.ok) return bad;
+  const ok = results as Extract<SearchResult, { ok: true }>[];
+  const offers: Offer[] = [];
+  for (const first of ok[0].offers) {
+    const parts = ok.map((r) => r.offers.find((o) => o.ratePlan.id === first.ratePlan.id));
+    if (parts.some((p) => !p)) continue;
+    const ps = parts as Offer[];
+    const nightly = first.nightlyPrices.map((np, i) => ({ night: np.night, price_rappen: ps.reduce((a, p) => a + p.nightlyPrices[i].price_rappen, 0) }));
+    offers.push({
+      ...first,
+      nightlyPrices: nightly,
+      roomsTotalRappen: ps.reduce((a, p) => a + p.roomsTotalRappen, 0),
+      touristTaxRappen: ps.reduce((a, p) => a + p.touristTaxRappen, 0),
+      extrasRappen: ps.reduce((a, p) => a + p.extrasRappen, 0),
+      mandatoryExtras: ps.flatMap((p) => p.mandatoryExtras),
+      totalRappen: ps.reduce((a, p) => a + p.totalRappen, 0),
+    });
+  }
+  const rejected = ok[0].rejected.filter((r) => !offers.some((o) => o.ratePlan.id === r.ratePlanId));
+  return { ok: true, offers, rejected, needsChildAges: ok[0].needsChildAges };
 }

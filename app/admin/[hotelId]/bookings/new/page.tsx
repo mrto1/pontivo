@@ -21,9 +21,15 @@ async function createAction(formData: FormData) {
   const [roomTypeId, ratePlanId] = s("offer").split("|");
   const children = Number(s("children") || 0);
   const ages = s("ages") ? s("ages").split(/[,;\s]+/).filter(Boolean).map(Number) : [];
+  // Weitere Zimmer (SPEC 19.6): bis zu zwei mit eigener Belegung
+  const extraRooms = [2, 3].filter((i) => s(`offer${i}`)).map((i) => {
+    const [rt, rp] = s(`offer${i}`).split("|");
+    return { roomTypeId: rt, ratePlanId: rp, adults: Number(s(`adults${i}`) || 1), children: Number(s(`children${i}`) || 0), childrenAges: s(`ages${i}`) ? s(`ages${i}`).split(/[,;\s]+/).filter(Boolean).map(Number) : [] };
+  });
   let target = "";
   try {
     const b = await createAdminBooking(hotel, {
+      extraRooms,
       roomTypeId, ratePlanId, checkin: s("checkin"), checkout: s("checkout"), adults: Number(s("adults") || 1), children, childrenAges: ages,
       guest: { firstName: s("firstName"), lastName: s("lastName"), email: s("email"), phone: s("phone") || undefined, language: (s("language") || "de") as "de", notes: s("notes") || undefined },
       notifyGuest: formData.get("notify") === "on",
@@ -32,7 +38,7 @@ async function createAction(formData: FormData) {
   } catch (e) {
     const msg = e instanceof BookingError ? bookingErrorText(e.code) : e instanceof ZodError ? e.issues.map((i) => i.message).join(", ") : `Fehler: ${(e as Error).message}`;
     const keep = new URLSearchParams();
-    for (const k of ["offer", "checkin", "checkout", "adults", "children", "ages", "firstName", "lastName", "email", "phone", "language", "notes"]) if (s(k)) keep.set(k, s(k));
+    for (const k of ["offer", "offer2", "adults2", "children2", "ages2", "offer3", "adults3", "children3", "ages3", "checkin", "checkout", "adults", "children", "ages", "firstName", "lastName", "email", "phone", "language", "notes"]) if (s(k)) keep.set(k, s(k));
     keep.set("msg", msg);
     target = `/admin/${hotelId}/bookings/new?${keep}`;
   }
@@ -71,6 +77,23 @@ export default async function NewBooking({ params, searchParams }: { params: Pro
           <div><label>Kinder</label><input type="number" name="children" min={0} max={20} defaultValue={sp.children ?? 0} style={{ width: 80 }} /></div>
           <div><label>Alter der Kinder</label><input name="ages" placeholder="z. B. 4, 9" defaultValue={sp.ages} style={{ width: 120 }} /></div>
         </div>
+        {[2, 3].map((i) => (
+          <details key={i} open={!!sp[`offer${i}`]}>
+            <summary className="small">Weiteres Zimmer {i - 1} hinzufügen (z. B. Familie, mehrere Zimmer)</summary>
+            <div className="inline-form">
+              <div>
+                <label>Zimmer und Tarif</label>
+                <select name={`offer${i}`} defaultValue={sp[`offer${i}`] ?? ""}>
+                  <option value="">(kein weiteres Zimmer)</option>
+                  {rts.map((rt) => rps.filter((p) => p.roomTypeId === rt.id).map((p) => <option key={p.id} value={`${rt.id}|${p.id}`}>{rt.name} · {p.name}</option>))}
+                </select>
+              </div>
+              <div><label>Erwachsene</label><input type="number" name={`adults${i}`} min={1} max={30} defaultValue={sp[`adults${i}`] ?? 2} style={{ width: 80 }} /></div>
+              <div><label>Kinder</label><input type="number" name={`children${i}`} min={0} max={20} defaultValue={sp[`children${i}`] ?? 0} style={{ width: 80 }} /></div>
+              <div><label>Alter der Kinder</label><input name={`ages${i}`} placeholder="z. B. 4, 9" defaultValue={sp[`ages${i}`]} style={{ width: 120 }} /></div>
+            </div>
+          </details>
+        ))}
         <div className="inline-form">
           <div><label>Vorname</label><input name="firstName" required maxLength={100} defaultValue={sp.firstName} /></div>
           <div><label>Nachname</label><input name="lastName" required maxLength={100} defaultValue={sp.lastName} /></div>

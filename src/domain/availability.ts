@@ -63,6 +63,7 @@ export function evaluateOffer(
   room: RoomCapacity,
   inv: InvRow[],
   rates: RateRow[],
+  needRooms = 1,
 ): { ok: true; rates: RateRow[] } | { ok: false; reason: Rejection } {
   if (!fitsRoom(q, room)) return { ok: false, reason: "occupancy" };
   const nights = nightsOf(q.checkin, q.checkout);
@@ -72,7 +73,7 @@ export function evaluateOffer(
   for (const night of nights) {
     const i = invBy.get(night);
     if (!i) return { ok: false, reason: "no_inventory" };
-    if (i.total - i.booked - i.blocked - (i.externalBlocked ?? 0) < 1) return { ok: false, reason: "sold_out" };
+    if (i.total - i.booked - i.blocked - (i.externalBlocked ?? 0) < needRooms) return { ok: false, reason: "sold_out" };
     const r = rateBy.get(night);
     if (!r) return { ok: false, reason: "no_rate" };
     if (r.stopSell) return { ok: false, reason: "stop_sell" };

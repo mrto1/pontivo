@@ -31,6 +31,7 @@ export async function POST(req: Request) {
         adults: body.adults,
         children: body.children,
         childrenAges: body.children_ages,
+        roomCount: body.rooms,
         voucherCode: body.voucher_code ?? null,
         extras: body.extras,
         guest: {

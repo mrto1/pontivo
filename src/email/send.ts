@@ -1,5 +1,6 @@
 import { and, eq, lte, sql } from "drizzle-orm";
 import { db } from "../db/client";
+import { roomsLabel } from "../services/bookings";
 import { bookingRooms, bookings, emailOutbox, emailSuppressions, guests, hotels, ratePlans, roomTypes, type Hotel, bookingExtras } from "../db/schema";
 import { env } from "../env";
 import { render, type Rendered } from "./templates";
@@ -31,8 +32,12 @@ const PLATFORM_DEFAULT_HOTEL = { name: process.env.PLATFORM_NAME || "Pontivo", c
 async function renderRow(row: typeof emailOutbox.$inferSelect): Promise<Rendered> {
   const [hotel] = row.hotelId ? await db().select().from(hotels).where(eq(hotels.id, row.hotelId)) : [];
   const [booking] = row.bookingId ? await db().select().from(bookings).where(eq(bookings.id, row.bookingId)) : [];
-  const [room] = booking ? await db().select().from(bookingRooms).where(eq(bookingRooms.bookingId, booking.id)) : [];
-  const [roomType] = room ? await db().select().from(roomTypes).where(eq(roomTypes.id, room.roomTypeId)) : [];
+  const roomRows = booking ? await db().select().from(bookingRooms).where(eq(bookingRooms.bookingId, booking.id)).orderBy(bookingRooms.id) : [];
+  const room = roomRows[0];
+  const [firstType] = room ? await db().select().from(roomTypes).where(eq(roomTypes.id, room.roomTypeId)) : [];
+  // Mehrere Zimmer (SPEC 19.6): alle Zimmertypen im Namen
+  const names = roomRows.length > 1 ? await Promise.all(roomRows.map(async (r) => (await db().select({ n: roomTypes.name }).from(roomTypes).where(eq(roomTypes.id, r.roomTypeId)))[0]?.n ?? "")) : [];
+  const roomType = names.length > 1 && firstType ? { ...firstType, name: roomsLabel(names.filter(Boolean)), i18n: {} } : firstType;
   const [plan] = room?.ratePlanId ? await db().select().from(ratePlans).where(eq(ratePlans.id, room.ratePlanId)) : [];
   const [guest] = booking?.guestId ? await db().select().from(guests).where(eq(guests.id, booking.guestId)) : [];
   const extras = booking ? await db().select().from(bookingExtras).where(eq(bookingExtras.bookingId, booking.id)).orderBy(bookingExtras.position) : [];

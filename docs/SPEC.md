@@ -717,6 +717,15 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - Admin: Zimmerplan → «Zugewiesenes Zimmer ändern» → «Zimmer wechseln».
 - ASSUMPTION: Kein Wechsel in einen anderen Zimmertyp (Up-/Downgrade mit Preisfolge folgt bei Bedarf; bis dahin Differenz als Posten auf die Rechnung). Zutrittscodes (Nuki) und die Tagesliste zeigen das aktuelle Zimmer.
 
+### 19.6 Mehrzimmerbuchung
+- Eine Buchung kann mehrere Zimmer haben (`booking_rooms`, je Zimmer eigener Tarif, eigene Belegung und eigene Nachtpreise). Höchstens 6 Zimmer.
+- **Online:** Suchfeld «Zimmer» (1 bis 4). Erwachsene und Kinder sind Summen und werden gleichmässig auf gleiche Zimmer verteilt (jedes Zimmer mindestens ein Erwachsener, Kinder reihum samt Alter; `src/domain/multiroom.ts`). Ein Angebot erscheint nur, wenn die Personen in jedes Zimmer passen und genug Zimmer frei sind. Preis = Summe der Einzelzimmer-Preise; Kurtaxe summiert nach den Personen je Zimmer.
+- **Rezeption:** «Buchung erfassen» mit bis zu zwei weiteren Zimmern mit eigenem Typ, Tarif und eigener Belegung (gemischte Zimmer). Gruppenbuchungen (Block) bleiben ein Zimmer.
+- Verfügbarkeit: je Zimmer ein Platz in `inventory_days`, alle atomar in einer Transaktion; reicht es für eines nicht, wird nichts belegt (409). Freigabe bei Ablauf des Holds, Storno und Verschiebung läuft über alle Zimmer; Channex-Outbox je betroffenem Zimmertyp.
+- Zusatzleistungen: gewählte gelten für die ganze Buchung (alle Personen), obligatorische je Zimmer.
+- Rechnung: eine Übernachtungszeile je Zimmer. Admin-Detail, Gästeseite und Mails nennen alle Zimmer («2 × Doppelzimmer, Einzelzimmer»).
+- ASSUMPTION: Die Stornoregel des ersten Zimmers gilt für die ganze Buchung. Ein Gast kann online nur gleiche Zimmer buchen; gemischte Zimmer erfasst die Rezeption. Keine Teilstornierung einzelner Zimmer (Stornieren oder Ändern geht für die ganze Buchung).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.
