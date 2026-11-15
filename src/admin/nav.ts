@@ -40,7 +40,7 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
       { key: "home", label: "Übersicht", href: base },
       { ...link("calendar", "Kalender"), tabs: [link("calendar", "Kalender"), link("pricing", "Preisempfehlung", "preise")] },
       { ...link("bookings", "Buchungen"), tabs: [link("bookings", "Buchungen"), link("frontdesk", "Heute"), link("plan", "Zimmerplan"), link("housekeeping", "Reinigung"), link("groups", "Gruppen"), link("resources", "Angebote vor Ort"), link("invoices", "Rechnungen"), link("dayclose", "Tagesabschluss", "invoices/tagesabschluss"), link("debtors", "Debitoren", "invoices/debitoren"), link("owners", "Eigentümer")] },
-      { ...link("guests", "Gäste"), tabs: [link("guests", "Gäste"), link("guestbook", "Kartei"), link("inquiries", "Anfragen"), link("inbox", "Posteingang"), link("vouchers", "Gutscheine"), link("feedback", "Bewertungen")] },
+      { ...link("guests", "Gäste"), tabs: [link("guests", "Gäste"), link("guestbook", "Kartei"), link("inquiries", "Anfragen"), link("inbox", "Posteingang"), link("marketing", "Newsletter"), link("vouchers", "Gutscheine"), link("feedback", "Bewertungen")] },
     ],
     groups: [
       {

@@ -152,3 +152,5 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Eigentümerabrechnung (SPEC 19.10): Wie rechnen Verwalter ab (Kommission auf Brutto oder Netto, MWST-Ausweis, Kurtaxe, Reinigungsgebühr)? Braucht der Eigentümer einen eigenen Login (Lesezugang) und einen automatischen Monatsversand mit PDF?
 
 - Angebote vor Ort (SPEC 19.11): Online-Buchung durch Gäste (Zeitfenster auf der Gästeseite)? Preise nach Wochentag oder Saison? Seminar: Angebot als PDF und Verpflegung je Teilnehmer?
+
+- Newsletter (SPEC 19.12): Absender (Hotel-Adresse als Reply-To?), Postmark-Stream für Marketing getrennt von Transaktionsmails (Postmark verlangt oft einen Broadcast-Stream), geplante Versandzeit, Statistik.

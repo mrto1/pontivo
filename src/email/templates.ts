@@ -245,6 +245,12 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
       const due = c.data.dueOn ? formatDay(String(c.data.dueOn), gl) : "";
       return wrap(c, gl, `${dm.words[lvl]} ${String(c.data.number ?? "")} – ${c.hotel.name}`, [hi + ",", dm.texts[lvl]], [`${dm.open}: ${money("openRappen")}`, ...(due ? [`${dm.due}: ${due}`] : [])], href ? { href, label: dm.link } : undefined);
     }
+    case "newsletter": {
+      // Newsletter (SPEC 19.12): Text des Hotels, Abmeldelink in jeder Mail (DSG/UWG)
+      const unsub = { de: "Newsletter abbestellen", en: "Unsubscribe", fr: "Se désabonner", it: "Annulla l'iscrizione" } as Record<string, string>;
+      const paras = String(c.data.body ?? "").split(/\n{1,}/).map((x) => x.trim()).filter(Boolean);
+      return wrap(c, gl, String(c.data.subject ?? c.hotel.name), paras, [], { href: String(c.data.unsubscribeUrl ?? c.baseUrl), label: unsub[gl] ?? unsub.en });
+    }
     case "owner_statement": {
       // Eigentümerabrechnung (SPEC 19.10), Sprache des Hotels
       const n = (k: string) => formatChf(Number(c.data[k] ?? 0));

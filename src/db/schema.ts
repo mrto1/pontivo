@@ -1195,3 +1195,18 @@ export const resourceBookings = pgTable("resource_bookings", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type ResourceBooking = typeof resourceBookings.$inferSelect;
+
+export type NewsletterSegment = { language?: string; tag?: string; stayedSince?: string; minStays?: number };
+export const newsletters = pgTable("newsletters", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  segment: jsonb("segment").$type<NewsletterSegment>().notNull().default({}),
+  status: text("status").$type<"draft" | "sent">().notNull().default("draft"),
+  recipients: integer("recipients").notNull().default(0),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  sentAt: ts("sent_at"),
+});
+export type Newsletter = typeof newsletters.$inferSelect;

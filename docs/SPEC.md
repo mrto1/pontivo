@@ -760,6 +760,13 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - **Posten aufs Zimmer:** Mit der Buchungsnummer eines bestätigten Hausgasts wird der Preis als Posten (`folio_items`) gebucht und erscheint auf der Rechnung. Stornieren löscht den Posten, solange er nicht auf einer Rechnung steht (sonst Gutschrift). Ohne Buchungsnummer (Tagesgast) wird nur die Reservation gespeichert; die Zahlung läuft über die Kasse.
 - ASSUMPTION: Nur Rezeption und Admin buchen (keine Online-Buchung durch Gäste, kein Wartelisten- oder Wiederholungs-Mechanismus, kein Seminarangebot als PDF); Preis je Zeitfenster gilt für alle Tage gleich (QUESTIONS.md).
 
+### 19.12 Newsletter (Modul `marketing`, Standard aus)
+- Mail an Gäste, die bei der Buchung dem Newsletter zugestimmt haben (`guests.marketing_consent`). Seite `/admin/<hotel>/marketing` (Reiter «Newsletter» bei den Gästen, Menüschlüssel `marketing`, Rolle `manager`).
+- **Auswahl** (`src/domain/newsletter.ts`): Sprache, Stichwort aus der Gästekartei, Aufenthalt (Abreise ab Datum), Mindestzahl Aufenthalte; alle Bedingungen gelten gemeinsam. Eine Adresse zählt einmal je Betrieb (Gross-/Kleinschreibung egal).
+- **Entwurf → Testmail → Versand** (`newsletters`, Status `draft|sent`). Der Versand läuft über die E-Mail-Outbox (`newsletter`), Empfänger zum Zeitpunkt des Versands, nur einmal (Statuswechsel atomar). Audit `newsletter.*`.
+- **Abmeldung** (DSG/UWG): jede Mail hat einen Abmeldelink `/abmelden?h&e&t` mit HMAC über Betrieb und E-Mail (`AUTH_SECRET`). Der Link zeigt nur einen Knopf, erst der Klick widerruft die Einwilligung für alle Gästeeinträge dieser E-Mail im Betrieb.
+- ASSUMPTION: Der Abmeldelink steht als Knopf am Ende, kein `List-Unsubscribe`-Header; keine Statistik (Öffnungen, Klicks), keine geplante Versandzeit, kein Bild-/HTML-Editor (nur Text mit Absätzen); Einwilligung wird beim Buchen erfasst, ein nachträgliches Anmelden gibt es nicht. Absender ist die Standard-Absenderadresse (QUESTIONS.md).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.
