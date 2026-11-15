@@ -5,6 +5,8 @@ import { hiddenNavKeys } from "@/src/domain/modules";
 import { isLimitedRole, ROLE_AREAS, ROLE_LABEL } from "@/src/domain/roles";
 import { moduleRows } from "@/src/services/modules";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { PasskeyNudge } from "@/components/admin/PasskeyNudge";
+import { listPasskeys } from "@/src/services/mfa";
 import { SectionTabs } from "@/components/admin/SectionTabs";
 
 export default async function HotelAdminLayout({ children, params }: { children: React.ReactNode; params: Promise<{ hotelId: string }> }) {
@@ -21,6 +23,7 @@ export default async function HotelAdminLayout({ children, params }: { children:
   }
   const nav = adminNav(hotel, isLimitedRole(role) ? false : setup, hidden);
   const home = `/admin/${hotel.id}`;
+  const noPasskey = (await listPasskeys(user.id)).length === 0;
   const others = (await hotelsForUser(user.id)).filter((x) => x.hotel.id !== hotel.id);
   return (
     <>
@@ -40,6 +43,7 @@ export default async function HotelAdminLayout({ children, params }: { children:
         </div>
       </header>
       <main className="wrap admin-main">
+        {noPasskey ? <PasskeyNudge /> : null}
         <SectionTabs nav={nav} home={home} />
         {children}
       </main>

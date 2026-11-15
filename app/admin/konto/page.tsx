@@ -15,6 +15,7 @@ export default async function Konto() {
       <AccountSecurity
         passkeys={pks.map((p) => ({ id: p.id, name: p.name, createdAt: p.createdAt.toISOString(), lastUsedAt: p.lastUsedAt?.toISOString() ?? null }))}
         totpOn={totp}
+        passkeyOnly={user.emailLoginDisabled}
         codesLeft={left}
       />
     </main>

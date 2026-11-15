@@ -94,3 +94,24 @@ describe("Passkeys", () => {
     expect(await listPasskeys(a.id)).toHaveLength(0);
   });
 });
+
+describe("Nur Passkey (E-Mail-Link abgeschaltet)", () => {
+  it("braucht 2 Passkeys; sperrt Link-Ausstellung und alte Links; Passkey-Minimum bleibt", async () => {
+    const { requestLoginLink, consumeLoginToken } = await import("../../src/auth/session");
+    const { setEmailLoginDisabled } = await import("../../src/services/mfa");
+    const u = await mkUser();
+    const add = (n: number) => db().insert(userPasskeys).values({ userId: u.id, credentialId: `c${n}-${u.id}`, publicKey: "AAAA", name: `P${n}` }).returning();
+    const [p1] = await add(1);
+    expect(await setEmailLoginDisabled(u.id, true)).toBe(false); // nur 1 Passkey
+    expect(await requestLoginLink(u.email)).toMatch(/token=/);
+    const [p2] = await add(2);
+    const oldLink = (await requestLoginLink(u.email))!;
+    expect(await setEmailLoginDisabled(u.id, true)).toBe(true);
+    expect(await requestLoginLink(u.email)).toBeNull();
+    expect(await consumeLoginToken(new URL(oldLink).searchParams.get("token")!)).toBeNull();
+    expect(await deletePasskey(u.id, p1.id)).toBe(false); // unter das Minimum
+    expect(await setEmailLoginDisabled(u.id, false)).toBe(true);
+    expect(await deletePasskey(u.id, p2.id)).toBe(true);
+    expect(await requestLoginLink(u.email)).toMatch(/token=/);
+  });
+});

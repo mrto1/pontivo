@@ -111,6 +111,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   name: text("name"),
   isPlatformAdmin: boolean("is_platform_admin").notNull().default(false),
+  emailLoginDisabled: boolean("email_login_disabled").notNull().default(false),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 

@@ -65,7 +65,8 @@ export function sessionCookieOptions() {
  */
 export async function requestLoginLink(email: string, now = new Date(), opts: { mail?: boolean } = {}): Promise<string | null> {
   const [u] = await db().select().from(users).where(eq(users.email, email.trim().toLowerCase()));
-  if (!u) return null;
+  // Anmeldung nur per Passkey: kein Link (Antwort an den Client bleibt gleich, keine Auskunft über das Konto)
+  if (!u || u.emailLoginDisabled) return null;
   const token = crypto.randomBytes(32).toString("base64url");
   await db().insert(loginTokens).values({ tokenHash: sha256(token), userId: u.id, expiresAt: new Date(now.getTime() + TOKEN_MINUTES * 60_000) });
   const link = `${env().APP_BASE_URL}/api/auth/callback?token=${token}`;
@@ -81,7 +82,10 @@ export async function consumeLoginToken(token: string, now = new Date()): Promis
     .set({ usedAt: now })
     .where(and(eq(loginTokens.tokenHash, sha256(token)), isNull(loginTokens.usedAt), gt(loginTokens.expiresAt, now)))
     .returning();
-  return row?.userId ?? null;
+  if (!row) return null;
+  // ein vor dem Abschalten ausgestellter Link gilt nicht mehr
+  const [u] = await db().select({ off: users.emailLoginDisabled }).from(users).where(eq(users.id, row.userId));
+  return u && !u.off ? row.userId : null;
 }
 
 import { atLeast as atLeastRole, type Role } from "../domain/roles";

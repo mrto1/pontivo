@@ -23,7 +23,19 @@ export const listPasskeys = (userId: string) =>
   db().select({ id: userPasskeys.id, name: userPasskeys.name, createdAt: userPasskeys.createdAt, lastUsedAt: userPasskeys.lastUsedAt })
     .from(userPasskeys).where(eq(userPasskeys.userId, userId)).orderBy(userPasskeys.createdAt);
 
+export const MIN_PASSKEYS_FOR_PASSKEY_ONLY = 2;
+
+/** Anmeldung nur per Passkey ein-/ausschalten. Einschalten nur mit mindestens 2 Passkeys (Ersatzgerät gegen Aussperren). */
+export async function setEmailLoginDisabled(userId: string, disabled: boolean): Promise<boolean> {
+  if (disabled && (await listPasskeys(userId)).length < MIN_PASSKEYS_FOR_PASSKEY_ONLY) return false;
+  await db().update(users).set({ emailLoginDisabled: disabled }).where(eq(users.id, userId));
+  return true;
+}
+
 export async function deletePasskey(userId: string, id: string): Promise<boolean> {
+  // Bei «nur Passkey» darf die Zahl der Passkeys nicht unter das Minimum fallen
+  const [u] = await db().select({ off: users.emailLoginDisabled }).from(users).where(eq(users.id, userId));
+  if (u?.off && (await listPasskeys(userId)).length <= MIN_PASSKEYS_FOR_PASSKEY_ONLY) return false;
   const r = await db().delete(userPasskeys).where(and(eq(userPasskeys.id, id), eq(userPasskeys.userId, userId))).returning({ id: userPasskeys.id });
   return r.length > 0;
 }

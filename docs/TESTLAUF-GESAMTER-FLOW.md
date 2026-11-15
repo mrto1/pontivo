@@ -45,7 +45,9 @@ Oben steht, wie viele Schritte erledigt sind. «Überspringen» gibt es bei frei
 4. «Authenticator-App einrichten»: QR-Code mit Google/Microsoft Authenticator, 2FAS oder Aegis scannen, den 6-stelligen Code eingeben. Die 10 Wiederherstellungscodes notieren.
 5. Abmelden, per E-Mail-Link anmelden → jetzt kommt «Zweiter Faktor». Falscher Code wird abgelehnt, richtiger Code oder ein Wiederherstellungscode meldet an (jeder Wiederherstellungscode nur einmal).
 6. Per Passkey anmelden → kein Code nötig.
-7. Zurück in «Sicherheit»: 2FA mit gültigem Code ausschalten.
+7. Zweiten Passkey anlegen (anderes Gerät), dann «Nur Passkey erlauben»: auf der Login-Seite kommt jetzt kein E-Mail-Link mehr, nur noch der Passkey geht. Mit «E-Mail-Link wieder erlauben» rückgängig machen.
+8. Zurück in «Sicherheit»: 2FA mit gültigem Code ausschalten.
+9. Ohne Passkey zeigt das Admin oben einen Hinweis «Passkey einrichten» (ausblendbar).
 Hinweis: Passkeys gelten nur für die Domain, auf der sie angelegt wurden (lokal localhost, Server pontivo.ch).
 
 ## 1. Der Gast bucht (Inkognito-Fenster)

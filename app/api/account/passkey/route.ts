@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { env } from "@/src/env";
 import { readSessionValue, readShort, SESSION_COOKIE, signShort, WEBAUTHN_COOKIE } from "@/src/auth/session";
-import { deletePasskey, passkeyRegistrationOptions, verifyPasskeyRegistration } from "@/src/services/mfa";
+import { setEmailLoginDisabled, deletePasskey, passkeyRegistrationOptions, verifyPasskeyRegistration } from "@/src/services/mfa";
 
 export const dynamic = "force-dynamic";
 
@@ -28,5 +28,9 @@ export async function POST(req: Request) {
     return res;
   }
   if (body.action === "delete") return NextResponse.json({ ok: await deletePasskey(userId, String(body.id ?? "")) });
+  if (body.action === "emailLogin") {
+    const ok = await setEmailLoginDisabled(userId, !!body.disabled);
+    return NextResponse.json({ ok }, { status: ok ? 200 : 400 });
+  }
   return NextResponse.json({ error: "action" }, { status: 400 });
 }

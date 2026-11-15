@@ -6,10 +6,11 @@ type Pk = { id: string; name: string; createdAt: string; lastUsedAt: string | nu
 const post = (url: string, body: unknown) => fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
 const fmt = (s: string | null) => (s ? new Date(s).toLocaleDateString("de-CH") : "noch nie");
 
-export function AccountSecurity({ passkeys, totpOn, codesLeft }: { passkeys: Pk[]; totpOn: boolean; codesLeft: number }) {
+export function AccountSecurity({ passkeys, totpOn, codesLeft, passkeyOnly }: { passkeys: Pk[]; totpOn: boolean; codesLeft: number; passkeyOnly: boolean }) {
   const [pks, setPks] = useState(passkeys);
   const [on, setOn] = useState(totpOn);
   const [left, setLeft] = useState(codesLeft);
+  const [only, setOnly] = useState(passkeyOnly);
   const [msg, setMsg] = useState("");
   const [name, setName] = useState("");
   const [setup, setSetup] = useState<{ secret: string; qr: string } | null>(null);
@@ -29,7 +30,13 @@ export function AccountSecurity({ passkeys, totpOn, codesLeft }: { passkeys: Pk[
   async function removePasskey(id: string) {
     if (!confirm("Diesen Passkey entfernen?")) return;
     const r = await post("/api/account/passkey", { action: "delete", id });
-    if (r.ok) setPks(pks.filter((p) => p.id !== id));
+    if (r.data.ok) setPks(pks.filter((p) => p.id !== id));
+    else setMsg("Bei «nur Passkey» müssen mindestens 2 Passkeys bleiben. Schalten Sie zuerst die E-Mail-Link-Anmeldung wieder ein.");
+  }
+  async function toggleOnly(disabled: boolean) {
+    setMsg("");
+    const r = await post("/api/account/passkey", { action: "emailLogin", disabled });
+    if (r.ok) setOnly(disabled); else setMsg("Dafür braucht es mindestens 2 Passkeys (ein Ersatzgerät, damit Sie nicht ausgesperrt sind).");
   }
   async function begin() {
     setMsg("");
@@ -56,7 +63,7 @@ export function AccountSecurity({ passkeys, totpOn, codesLeft }: { passkeys: Pk[
 
       <section className="card stack">
         <h2>Passkeys</h2>
-        <p className="muted small">Anmelden mit Fingerabdruck, Gesicht oder Gerätecode, ohne Passwort und ohne E-Mail-Link. Ein Passkey mit Gerätesperre gilt bereits als starke Anmeldung, der Authenticator-Code entfällt dann.</p>
+        <p className="muted small">Anmelden mit Fingerabdruck, Gesicht oder Gerätecode, ohne Passwort und ohne E-Mail-Link. Ein Passkey ist bereits ein sicherer Anmeldeweg für sich; die Authenticator-App ergänzt den E-Mail-Link, falls Sie ihn weiter nutzen.</p>
         {pks.length ? (
           <ul>
             {pks.map((p) => (
@@ -70,6 +77,13 @@ export function AccountSecurity({ passkeys, totpOn, codesLeft }: { passkeys: Pk[
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name, z. B. «iPhone von Ruth»" maxLength={60} aria-label="Name des Passkeys" />
           <button className="btn" onClick={addPasskey} data-testid="passkey-add">Passkey hinzufügen</button>
+        </div>
+        <div className="stack">
+          <p><strong>Anmeldung nur per Passkey:</strong> {only ? "eingeschaltet. Der E-Mail-Link funktioniert für Ihr Konto nicht mehr." : "ausgeschaltet. Der E-Mail-Link funktioniert weiterhin als Ersatz."}</p>
+          <p className="muted small">Sicherste Einstellung (schützt vor Phishing und Postfach-Übernahme). Braucht mindestens 2 Passkeys, z. B. Handy und Laptop oder ein Passwort-Manager. Bei Verlust aller Passkeys muss Pontivo Ihr Konto zurücksetzen.</p>
+          <div>{only
+            ? <button className="btn secondary small" onClick={() => toggleOnly(false)}>E-Mail-Link wieder erlauben</button>
+            : <button className="btn secondary small" onClick={() => toggleOnly(true)} disabled={pks.length < 2}>Nur Passkey erlauben{pks.length < 2 ? " (erst 2 Passkeys anlegen)" : ""}</button>}</div>
         </div>
       </section>
 
