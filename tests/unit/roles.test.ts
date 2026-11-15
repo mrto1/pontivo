@@ -12,7 +12,7 @@ describe("Rollen (SPEC 17.4)", () => {
   });
 
   it("eingeschränkte Rollen: ohne Bereich nie, nie über «staff» hinaus", () => {
-    for (const r of ["reception", "housekeeping", "accounting"] as const) {
+    for (const r of ["reception", "housekeeping", "accounting", "service"] as const) {
       expect(isLimitedRole(r)).toBe(true);
       expect(atLeast(r, "staff")).toBe(false);
       expect(canAccess(r, "staff")).toBe(false); // Seite ohne Bereichsangabe = gesperrt
@@ -34,6 +34,9 @@ describe("Rollen (SPEC 17.4)", () => {
     expect(canAccess("reception", "staff", "statistics")).toBe(false);
     expect(canAccess("reception", "staff", "settings")).toBe(false);
     expect(canAccess("reception", "staff", "report")).toBe(false);
+    expect(canAccess("service", "staff", "restaurant")).toBe(true);
+    expect(canAccess("service", "staff", "bookings")).toBe(false);
+    expect(canAccess("service", "manager", "restaurant")).toBe(false); // Rabatt, Storno, Abschluss nur Manager
   });
 
   it("alle Bereiche der Rollen sind echte Menüpunkte (oder Rahmen)", () => {

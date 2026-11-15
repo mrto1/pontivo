@@ -3,11 +3,11 @@
  * freigegebene Bereiche und sind überall sonst ausgesperrt (sicher als Standard: eine Seite ohne Bereichsangabe ist für sie 404).
  */
 export type FullRole = "owner" | "manager" | "staff";
-export type LimitedRole = "reception" | "housekeeping" | "accounting";
+export type LimitedRole = "reception" | "housekeeping" | "accounting" | "service";
 export type Role = FullRole | LimitedRole;
 
 export const ROLE_LABEL: Record<Role, string> = {
-  owner: "Inhaber", manager: "Manager", staff: "Mitarbeitende", reception: "Rezeption", housekeeping: "Reinigung", accounting: "Buchhaltung",
+  owner: "Inhaber", manager: "Manager", staff: "Mitarbeitende", reception: "Rezeption", housekeeping: "Reinigung", accounting: "Buchhaltung", service: "Service (Restaurant)",
 };
 
 /** Bereiche = Schlüssel der Menüpunkte (src/admin/nav.ts) plus «layout» (Rahmen) und «home» (leitet weiter) */
@@ -15,13 +15,14 @@ export const ROLE_AREAS: Record<LimitedRole, readonly string[]> = {
   reception: ["layout", "home", "mypontivo", "calendar", "bookings", "frontdesk", "plan", "housekeeping", "resources", "guests", "guestbook", "inquiries", "inbox", "vouchers", "invoices", "dayclose", "groups"],
   housekeeping: ["layout", "home", "mypontivo", "housekeeping"],
   accounting: ["layout", "home", "mypontivo", "invoices", "dayclose", "debtors", "owners", "statistics", "hesta", "accountingexport"],
+  service: ["layout", "home", "mypontivo", "restaurant"],
 };
 
-export const isLimitedRole = (r: Role | null): r is LimitedRole => r === "reception" || r === "housekeeping" || r === "accounting";
+export const isLimitedRole = (r: Role | null): r is LimitedRole => r === "reception" || r === "housekeeping" || r === "accounting" || r === "service";
 export const roleAllowsArea = (r: LimitedRole, area: string) => ROLE_AREAS[r].includes(area);
 
 /** Erste Seite nach dem Anmelden für eingeschränkte Rollen */
-export const LANDING: Record<LimitedRole, string> = { reception: "frontdesk", housekeeping: "housekeeping", accounting: "invoices" };
+export const LANDING: Record<LimitedRole, string> = { reception: "frontdesk", housekeeping: "housekeeping", accounting: "invoices", service: "restaurant" };
 
 const RANK: Record<FullRole, number> = { staff: 1, manager: 2, owner: 3 };
 /** Eingeschränkte Rollen erfüllen nie eine Mindestrolle, nur den Bereichs-Zugang */

@@ -11,6 +11,8 @@ import {
 } from "../../src/services/pos";
 import { addDays, todayIn } from "../../src/domain/dates";
 import { makeHotel } from "../helpers";
+import { addMember } from "../../src/services/settings";
+import { webDevice } from "../../src/services/pos";
 
 afterAll(closeDb);
 
@@ -165,5 +167,14 @@ describe("Kasse Service (SPEC 19.16)", () => {
     await expect(addLines(s.hotel, s.order.id, [{ itemId: o.soup.id, quantity: 1 }], "x")).rejects.toThrow(/nicht verfügbar/);
     await expect(openOrder(o.hotel.id, { id: s.order.id }, "x")).rejects.toThrow(/anderen Betrieb/);
     await expect(reverseLine(o.hotel.id, a.id, 1, "x", "x")).rejects.toThrow(/Zeile nicht gefunden/);
+  });
+
+  it("Rolle «service» lässt sich vergeben; Web-Gerät W1 wird einmal angelegt", async () => {
+    const s = await setup();
+    await addMember(s.hotel.id, `kellner-${crypto.randomUUID()}@example.com`, "service", "t");
+    const a = await webDevice(s.hotel.id);
+    const b = await webDevice(s.hotel.id);
+    expect(a.code).toBe("W1");
+    expect(b.id).toBe(a.id);
   });
 });

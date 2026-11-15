@@ -67,6 +67,12 @@ export async function createDevice(hotelId: string, code: string, label: string,
   return d;
 }
 
+/** Gerät der Weboberfläche (Bon-Nummernkreis «W1»); wird beim ersten Kassieren angelegt. */
+export async function webDevice(hotelId: string): Promise<PosDevice> {
+  const [d] = await db().select().from(posDevices).where(and(eq(posDevices.hotelId, hotelId), eq(posDevices.code, "W1")));
+  return d ?? createDevice(hotelId, "W1", "Weboberfläche", "system");
+}
+
 // ---------------------------------------------------------------- Bestellung
 
 /** Bestellung eröffnen. Die Id kommt vom Gerät (auch offline); dieselbe Id liefert dieselbe Bestellung (idempotent). */

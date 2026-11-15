@@ -45,7 +45,7 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
     groups: [
       {
         title: "Mein Betrieb",
-        items: [{ ...link("rooms", "Angebot"), tabs: [link("rooms", "Zimmer"), link("site", "Website")] }, link("ki-chat", "KI-Chat"), link("upsell", "Upselling"), { ...link("statistics", "Statistik"), tabs: [link("statistics", "Statistik"), link("hesta", "HESTA", "statistics/hesta")] }, link("accountingexport", "Buchhaltung", "buchhaltung"), link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt"), link("mailtexts", "Mail-Texte", "mail-texte"), link("report", "Abrechnung")],
+        items: [{ ...link("rooms", "Angebot"), tabs: [link("rooms", "Zimmer"), link("site", "Website")] }, link("ki-chat", "KI-Chat"), link("upsell", "Upselling"), { ...link("statistics", "Statistik"), tabs: [link("statistics", "Statistik"), link("hesta", "HESTA", "statistics/hesta")] }, link("accountingexport", "Buchhaltung", "buchhaltung"), link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt"), link("mailtexts", "Mail-Texte", "mail-texte"), link("report", "Abrechnung"), { ...link("restaurant", "Restaurant"), tabs: [link("restaurant", "Tische"), link("positems", "Artikel", "restaurant/artikel"), link("posclose", "Kassenabschluss", "restaurant/abschluss")] }],
       },
       { title: "Verbinden", items: [{ ...link("channex", "Vertrieb"), tabs: [link("channex", "Channel-Manager"), link("ical", "Kalender-Abgleich"), link("embed", "Einbinden"), link("posbridge", "Kassen-Schnittstelle")] }] },
       {

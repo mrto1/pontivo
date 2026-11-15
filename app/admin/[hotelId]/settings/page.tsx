@@ -292,7 +292,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
           <form action={memberAdd} className="inline-form">
             {hidden}
             <div><label>E-Mail</label><input name="email" type="email" required /></div>
-            <div><label>Rolle</label><select name="role" defaultValue="staff"><option value="owner">Inhaber</option><option value="manager">Manager</option><option value="staff">Mitarbeitende</option><option value="reception">Rezeption (ohne Statistik und Preise)</option><option value="housekeeping">Reinigung (nur Reinigungsliste)</option><option value="accounting">Buchhaltung (nur Rechnungen und Statistik)</option></select></div>
+            <div><label>Rolle</label><select name="role" defaultValue="staff"><option value="owner">Inhaber</option><option value="manager">Manager</option><option value="staff">Mitarbeitende</option><option value="reception">Rezeption (ohne Statistik und Preise)</option><option value="housekeeping">Reinigung (nur Reinigungsliste)</option><option value="accounting">Buchhaltung (nur Rechnungen und Statistik)</option><option value="service">Service (nur Restaurant: bestellen und kassieren)</option></select></div>
             <button className="btn">Hinzufügen</button>
           </form>
           <p className="muted small">Inhaber: alles. Manager: alles ausser Mitglieder und Stripe. Mitarbeitende: Kalender und Buchungen lesen, No-Show. Rezeption: Tagesgeschäft ohne Statistik, Abrechnung und Einstellungen. Reinigung: nur die Reinigungsliste. Buchhaltung: nur Rechnungen und Statistik.</p>

@@ -794,6 +794,9 @@ Grundlage: `docs/PMS-ERSATZ.md` 5.3 (Treuhänder-/Kassenvorgaben). Diese Stufe: 
 - **Tagesabschluss:** `closeDay` mit gezähltem Bargeld; Z-Bericht (Summen je Zahlart und MWST-Satz, erwartetes Bargeld, Differenz) unveränderbar; ein Tag nur einmal. Bons mit geschlossenem Geschäftstag zählen am nächsten offenen Tag (`late`). Gerätezeit nur, wenn plausibel (höchstens 60 s in der Zukunft, jünger als 7 Tage). Export CSV je Zeitraum.
 - ASSUMPTION: Karte/TWINT ist in V1 vom Personal bestätigt (keine Terminal-Anbindung); Barverkäufe sind nicht Teil von `onsite_payments`. Offene Punkte für den Treuhänder: Nummernkreis je Gerät, MWST-Sätze je Posten, Art. 70 MWSTG, kantonale Vorgaben.
 
+- **Oberfläche (Stufe C):** Menüpunkt «Restaurant» (Reiter Tische, Artikel, Kassenabschluss) unter «Mein Betrieb». Tische mit offenen Bestellungen, Bestellung (Artikel, Menge, im Haus/Take-away), Bezahlen mit Mengenwahl je Zeile (Getrennt-Zahlen), Zahlart, Trinkgeld, Buchungsnummer für «aufs Zimmer». Rabatt, Storno, Gegenbon, Artikelstamm, Tische, Geräte, Kassenabschluss und CSV-Export nur Rolle `manager` oder höher; Seiten `/admin/<hotel>/restaurant/...`. Die Weboberfläche bucht über das Gerät `W1`.
+- **Rolle `service`** (Migration 0054): sieht nur den Bereich `restaurant` (bestellen und kassieren), landet dort nach der Anmeldung; in den Einstellungen wählbar.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.
