@@ -229,6 +229,16 @@ export async function setArrivalInfo(hotel: Hotel, text: Partial<Record<"de" | "
   });
 }
 
+/** Infos für den Aufenthalt im Gästeportal (SPEC 19.13) */
+export async function setGuestInfo(hotel: Hotel, text: Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>, actor: string) {
+  const clean = Object.fromEntries(Object.entries(text).map(([k, x]) => [k, (x ?? "").trim().slice(0, 4000) || undefined]));
+  await db().transaction(async (tx) => {
+    const [h] = await tx.select().from(hotels).where(eq(hotels.id, hotel.id)).for("update");
+    await tx.update(hotels).set({ content: { ...h.content, guestInfo: clean }, updatedAt: new Date() }).where(eq(hotels.id, hotel.id));
+    await audit(tx, { hotelId: hotel.id, actor, action: "hotel.guest_info", entity: "hotel", entityId: hotel.id });
+  });
+}
+
 // ---------------------------------------------------------------- Live
 
 /** Alle Pflichtschritte erledigt → Website anlegen, live schalten, Glückwunsch-Mail */

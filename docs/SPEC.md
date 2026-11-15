@@ -767,6 +767,11 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - **Abmeldung** (DSG/UWG): jede Mail hat einen Abmeldelink `/abmelden?h&e&t` mit HMAC über Betrieb und E-Mail (`AUTH_SECRET`). Der Link zeigt nur einen Knopf, erst der Klick widerruft die Einwilligung für alle Gästeeinträge dieser E-Mail im Betrieb.
 - ASSUMPTION: Der Abmeldelink steht als Knopf am Ende, kein `List-Unsubscribe`-Header; keine Statistik (Öffnungen, Klicks), keine geplante Versandzeit, kein Bild-/HTML-Editor (nur Text mit Absätzen); Einwilligung wird beim Buchen erfasst, ein nachträgliches Anmelden gibt es nicht. Absender ist die Standard-Absenderadresse (QUESTIONS.md).
 
+### 19.13 Gästeportal ausbauen (Seite `/b/<token>`, kein eigenes Modul)
+- Die Buchungsseite des Gastes bekommt (statt einer App): **Infos zum Aufenthalt** (`hotels.content.guestInfo`, je Sprache, im Einrichtungs-Assistenten beim Schritt «Infos zur Ankunft»; sichtbar für bestätigte Buchungen, im Unterschied zu den Ankunftsinfos mit Codes nicht auf den Aufenthalt begrenzt), einen Hinweis **Extras dazubuchen** mit Link zur Extras-Seite (nur wenn Upselling aktiv ist und Extras vorhanden sind) und **Zum Kalender hinzufügen** (`/b/<token>/kalender`, .ics, ganztägig Anreise bis Abreise).
+- Bestehend und unverändert: Ankunftsinfos während des Aufenthalts, Online-Check-in, Restzahlung, Stornierung, Chat.
+- ASSUMPTION: Hausinfos sind eine Freitext-Spalte je Sprache (keine Bausteine, keine Bilder); keine eigene App und keine Push-Mitteilungen an Gäste; Zugangscodes gehören weiter nur in die Ankunftsinfos.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

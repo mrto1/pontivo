@@ -76,6 +76,8 @@ export type HotelContent = {
   otaCommissionBps?: number;
   /** Infos zur Ankunft (Schlüssel, Code, WLAN, Parkplatz), gehen mit der Mail vor der Anreise an den Gast */
   arrivalInfo?: Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>;
+  /** Infos für den Aufenthalt (Frühstück, Hausregeln, Tipps), im Gästeportal /b/<token> für bestätigte Buchungen (SPEC 19.13) */
+  guestInfo?: Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>;
   /** Dokumente (PDF) für den Baustein «Downloads», z. B. Speisekarte, Preisliste */
   documents?: HotelDocument[];
   /** Erscheinungsbild der Buchungsseite */

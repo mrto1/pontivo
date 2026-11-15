@@ -5,7 +5,7 @@ import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import {
   addUnit, bookingOnly, CANCEL_TEMPLATES, detectEmbed, goLiveFromWizard, markEmbedded, isWholeUnit, nextOpenStep, onboardingSteps, OnboardingError, PROPERTY_LABEL,
-  setArrivalInfo, unitWord, updateBasics, type StepKey,
+  setArrivalInfo, setGuestInfo, unitWord, updateBasics, type StepKey,
 } from "@/src/services/onboarding";
 import { confirmTouristTax } from "@/src/services/settings";
 import { taxRuleFor } from "@/src/services/hotels";
@@ -82,6 +82,11 @@ async function saveUnit(f: FormData) {
 async function saveArrival(f: FormData) {
   "use server";
   await step(f, ({ hotel, actor }) => setArrivalInfo(hotel, { de: s(f, "de"), en: s(f, "en") }, actor));
+}
+
+async function saveGuestInfoAction(f: FormData) {
+  "use server";
+  await step(f, ({ hotel, actor }) => setGuestInfo(hotel, { de: s(f, "de"), en: s(f, "en") }, actor));
 }
 
 async function skip(f: FormData) {
@@ -292,6 +297,18 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           <p className="small muted">Zugangscodes nur hier eintragen, nicht auf der Website – die Infos gehen nur an Gäste mit bestätigter Buchung.</p>
           <div style={{ display: "flex", gap: 8 }}><button className="btn">Speichern und weiter</button>{skipBtn}</div>
         </form>
+      );
+      body = (
+        <div className="stack">
+          {body}
+          <form action={saveGuestInfoAction} className="stack card">{H}
+            <h3>Infos für den Aufenthalt (Gästeportal)</h3>
+            <p className="small muted">Frühstückszeiten, Hausregeln, Tipps in der Nähe. Der Gast sieht sie auf seiner Buchungsseite, sobald die Buchung bestätigt ist.</p>
+            <div><label htmlFor="gi-de">Deutsch</label><textarea id="gi-de" name="de" rows={6} maxLength={4000} defaultValue={hotel.content.guestInfo?.de ?? ""} /></div>
+            <div><label htmlFor="gi-en">Englisch (optional)</label><textarea id="gi-en" name="en" rows={4} maxLength={4000} defaultValue={hotel.content.guestInfo?.en ?? ""} /></div>
+            <div><button className="btn secondary">Aufenthaltsinfos speichern</button></div>
+          </form>
+        </div>
       );
       break;
     case "zahlungen":

@@ -16,6 +16,8 @@ import { bookingExtrasOf } from "@/src/services/extras";
 import { tr } from "@/src/domain/blocks";
 import { balanceOpen } from "@/src/services/balance";
 import { fill } from "@/src/i18n/dict";
+import { PORTAL } from "@/src/i18n/portal";
+import { offerForBooking } from "@/src/services/upsell";
 
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false } };
@@ -36,6 +38,9 @@ export default async function BookingView({ params, searchParams }: { params: Pr
   // Ankunftsinfos (Code, WLAN …) nur während des Aufenthalts einer bestätigten Buchung
   const arrival = arrivalAllowed({ booking, hotel }) ? arrivalText({ hotel, roomType }, locale) : "";
 
+  const pt = PORTAL[locale];
+  const guestInfo = booking.status === "confirmed" ? tr(hotel.content.guestInfo, locale).trim() : "";
+  const extrasOffer = await offerForBooking(token);
   return (
     <Shell hotel={hotel} locale={locale} base={base} chatToken={token}>
       <section style={{ padding: "32px 0" }}>
@@ -73,7 +78,21 @@ export default async function BookingView({ params, searchParams }: { params: Pr
           ) : null}
           {plan ? (<><h3 style={{ marginTop: 20 }}>{d.cancellation}</h3><p className="small muted">{cancellationPolicyText(plan, locale)}</p></>) : null}
           {preview?.cancellable ? <CancelBox token={token} locale={locale} /> : null}
+          {booking.status === "confirmed" ? <p style={{ marginTop: 16 }}><a className="btn secondary small" href={`/b/${token}/kalender`}>{pt.calendar}</a></p> : null}
         </div>
+        {guestInfo ? (
+          <div className="card" style={{ marginTop: 16 }}>
+            <h3>{pt.infoTitle}</h3>
+            <p style={{ whiteSpace: "pre-wrap" }}>{guestInfo}</p>
+          </div>
+        ) : null}
+        {extrasOffer ? (
+          <div className="card" style={{ marginTop: 16 }}>
+            <h3>{pt.extrasTitle}</h3>
+            <p>{pt.extrasText}</p>
+            <a className="btn" href={`/b/${token}/upsell?lang=${locale}`}>{pt.extrasButton}</a>
+          </div>
+        ) : null}
         {arrival ? (
           <div className="card" style={{ marginTop: 16 }}>
             <h3>{CHAT_TEXT[locale].arrivalTitle}</h3>
