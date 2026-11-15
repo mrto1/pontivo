@@ -308,7 +308,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           {isOwner ? (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {hotel.stripeChargesEnabled ? null : <form action={stripeStart}>{H}<button className={env().STRIPE_PUBLISHABLE_KEY ? "btn secondary small" : "btn"}>{env().STRIPE_PUBLISHABLE_KEY ? "Lieber auf der Stripe-Seite einrichten" : hotel.stripeAccountId ? "Bei Stripe fortsetzen" : "Konto bei Stripe eröffnen"}</button></form>}
-              {hotel.stripeAccountId ? <form action={stripeReload}>{H}<input type="hidden" name="stay" value={hotel.stripeChargesEnabled ? "" : "1"} /><button className="btn secondary">Status prüfen</button></form> : null}
+              {hotel.stripeAccountId ? <form action={stripeReload}>{H}<input type="hidden" name="stay" value={hotel.stripeChargesEnabled ? "" : "1"} /><button className={env().STRIPE_PUBLISHABLE_KEY && !hotel.stripeChargesEnabled ? "btn secondary small" : "btn secondary"}>Status prüfen</button></form> : null}
             </div>
           ) : <p className="small muted">Das Konto eröffnet die Inhaberin bzw. der Inhaber.</p>}
         </div>

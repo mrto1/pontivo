@@ -2,31 +2,16 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { isActive, type Nav, type NavItem } from "@/src/admin/nav";
-import { PushToggle } from "./PushToggle";
-
-type InstallEvent = Event & { prompt: () => Promise<void> };
 
 /**
  * Menü: Desktop = Links in der Kopfzeile, Handy = feste Leiste unten. «Mehr» öffnet auf dem Handy ein Fenster von unten,
  * auf dem Desktop ein Menü unter der Kopfzeile. Menüinhalt kommt aus src/admin/nav.ts.
+ * «myPontivo» (eigene Seite mit Konto, App, Sicherheit) steht in der Kopfzeile und oben im «Mehr»-Fenster; gibt es kein «Mehr», in der Leiste.
  */
-export function AdminNav({ nav, home, hotelId, userLabel }: { nav: Nav; home: string; hotelId: string; userLabel: string }) {
+export function AdminNav({ nav, home, userLabel }: { nav: Nav; home: string; userLabel: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [install, setInstall] = useState<InstallEvent | null>(null);
-  const [iosHint, setIosHint] = useState(false);
-
   useEffect(() => setOpen(false), [pathname]);
-  useEffect(() => {
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setInstall(e as InstallEvent);
-    };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
-    if (!standalone && /iphone|ipad|ipod/i.test(navigator.userAgent)) setIosHint(true);
-    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
-  }, []);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
@@ -34,6 +19,9 @@ export function AdminNav({ nav, home, hotelId, userLabel }: { nav: Nav; home: st
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  const hasMore = nav.groups.length > 0;
+  const mypontivo = `${home}/mypontivo`;
+  const myActive = pathname === mypontivo;
   const moreActive = nav.groups.some((g) => g.items.some((i) => isActive(pathname, i, home)));
   const a = (i: NavItem) => (isActive(pathname, i, home) ? "active" : undefined);
   const ext = (i: NavItem) => (i.external ? { target: "_blank", rel: "noopener" } : {});
@@ -43,34 +31,35 @@ export function AdminNav({ nav, home, hotelId, userLabel }: { nav: Nav; home: st
       <nav className="admin-nav" aria-label="Hauptmenü">
         {nav.primary.map((i) => <a key={i.key} href={i.href} className={a(i)} aria-current={isActive(pathname, i, home) ? "page" : undefined}>{i.label}</a>)}
       </nav>
-      <button type="button" className={`more-btn${moreActive ? " active" : ""}`} aria-expanded={open} aria-controls="admin-more" onClick={() => setOpen((v) => !v)}>
-        Mehr <span aria-hidden>▾</span>
-      </button>
+      {hasMore ? (
+        <button type="button" className={`more-btn${moreActive ? " active" : ""}`} aria-expanded={open} aria-controls="admin-more" onClick={() => setOpen((v) => !v)}>
+          Mehr <span aria-hidden>▾</span>
+        </button>
+      ) : null}
+      <a href={mypontivo} className={`mypontivo-link${myActive ? " active" : ""}`} aria-current={myActive ? "page" : undefined}>myPontivo</a>
 
       <nav className="tabbar" aria-label="Hauptmenü">
         {nav.primary.map((i) => <a key={i.key} href={i.href} className={a(i)} aria-current={isActive(pathname, i, home) ? "page" : undefined}>{i.label}</a>)}
-        <button type="button" className={moreActive || open ? "active" : undefined} aria-expanded={open} aria-controls="admin-more" onClick={() => setOpen((v) => !v)}>Mehr</button>
+        {hasMore
+          ? <button type="button" className={moreActive || open ? "active" : undefined} aria-expanded={open} aria-controls="admin-more" onClick={() => setOpen((v) => !v)}>Mehr</button>
+          : <a href={mypontivo} className={myActive ? "active" : undefined}>myPontivo</a>}
       </nav>
 
       {open ? (
         <>
           <div className="more-backdrop" onClick={() => setOpen(false)} />
           <div id="admin-more" className="more-panel" role="dialog" aria-label="Weitere Seiten">
+            <a href={mypontivo} className="more-me">
+              <strong>myPontivo</strong>
+              <span className="muted small">{userLabel}</span>
+              <span className="muted small">Konto, App, Sicherheit, Webseite-Vorschau</span>
+            </a>
             {nav.groups.map((g) => (
               <div key={g.title} className="more-group">
                 <h3>{g.title}</h3>
                 {g.items.map((i) => <a key={i.key} href={i.href} className={a(i)} {...ext(i)}>{i.label}{i.external ? " ↗" : ""}</a>)}
               </div>
             ))}
-            <div className="more-group">
-              <h3>App</h3>
-              {install ? <button type="button" className="btn secondary small" onClick={() => install.prompt().then(() => setInstall(null))}>Als App installieren</button> : null}
-              {iosHint ? <p className="muted small">Zum Installieren: Teilen-Symbol, dann «Zum Home-Bildschirm».</p> : null}
-              <PushToggle hotelId={hotelId} />
-              <p className="muted small">{userLabel}</p>
-              <a href="/admin/konto">Sicherheit (Passkey, 2FA)</a>
-              <form action="/api/auth/logout" method="post"><button className="btn secondary small">Abmelden</button></form>
-            </div>
           </div>
         </>
       ) : null}

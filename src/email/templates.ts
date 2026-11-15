@@ -265,6 +265,15 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
       return wrap(c, l, de ? "Ihr Login-Link" : "Your login link",
         [de ? "Klicken Sie auf den Link, um sich anzumelden. Er ist 15 Minuten gültig und nur einmal verwendbar." : "Click the link to sign in. It is valid for 15 minutes and can be used once."],
         [], { href: String(c.data.link), label: de ? "Anmelden" : "Sign in" });
+    case "email_change_confirm":
+      return wrap(c, l, de ? "Neue E-Mail-Adresse bestätigen" : "Confirm your new email address",
+        [de ? `Für Ihr Konto wurde diese Adresse als neue Anmelde-Adresse angegeben. Klicken Sie auf den Link, um sie zu bestätigen. Er ist 60 Minuten gültig. Haben Sie das nicht veranlasst, ignorieren Sie diese Mail.` : "This address was entered as the new sign-in address for an account. Click the link to confirm it. It is valid for 60 minutes. If you did not request this, ignore this email."],
+        [], { href: String(c.data.link), label: de ? "Adresse bestätigen" : "Confirm address" });
+    case "email_change_notice":
+      return wrap(c, l, de ? "Änderung Ihrer Anmelde-Adresse" : "Change of your sign-in address",
+        [de ? (c.data.done ? `Die Anmelde-Adresse Ihres Kontos wurde auf ${String(c.data.newEmail)} geändert. Ab jetzt melden Sie sich nur noch mit der neuen Adresse an.` : `Für Ihr Konto wurde beantragt, die Anmelde-Adresse auf ${String(c.data.newEmail)} zu ändern. Sie ändert sich erst, wenn die neue Adresse bestätigt wird.`) : (c.data.done ? `The sign-in address of your account was changed to ${String(c.data.newEmail)}.` : `A change of your sign-in address to ${String(c.data.newEmail)} was requested. It only takes effect once the new address is confirmed.`),
+          de ? "Waren Sie das nicht? Melden Sie sich sofort an und prüfen Sie unter «myPontivo, Sicherheit» Ihre Passkeys und die Zwei-Faktor-Anmeldung, oder schreiben Sie uns." : "Was this not you? Sign in right away and check your passkeys and two-factor sign-in under myPontivo, Security, or write to us."],
+        []);
     case "upsell_offer": {
       const u = U[gl];
       return wrap(c, gl, u.mailSubject(c.hotel.name), [hi + ",", u.mailText], summary(c, gl), b ? { href: `${c.baseUrl}/b/${b.publicToken}/upsell`, label: u.mailButton } : undefined);

@@ -39,7 +39,7 @@ export default async function HotelAdminLayout({ children, params }: { children:
               </ul>
             </details>
           ) : null}
-          <AdminNav nav={nav} home={home} hotelId={hotel.id} userLabel={`${user.email} · ${ROLE_LABEL[role]}`} />
+          <AdminNav nav={nav} home={home} userLabel={`${user.email} · ${ROLE_LABEL[role]}`} />
         </div>
       </header>
       <main className="wrap admin-main">

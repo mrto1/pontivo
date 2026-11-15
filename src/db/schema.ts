@@ -942,3 +942,12 @@ export const platformSettings = pgTable("platform_settings", {
   updatedAt: ts("updated_at").notNull().defaultNow(),
   updatedBy: text("updated_by"),
 });
+
+export const emailChanges = pgTable("email_changes", {
+  tokenHash: text("token_hash").primaryKey(),
+  userId: uuid("user_id").notNull(),
+  newEmail: text("new_email").notNull(),
+  expiresAt: ts("expires_at").notNull(),
+  usedAt: ts("used_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});

@@ -22,6 +22,8 @@ export type TemplateName =
   | "late_payment_refunded"
   | "dispute_alert"
   | "login_link"
+  | "email_change_confirm"
+  | "email_change_notice"
   | "channex_alert"
   | "platform_alert"
   | "balance_due"

@@ -574,3 +574,12 @@ table.plan .plan-bar.hold { background: #f4e6b8; }
 table.plan .plan-bar a { color: inherit; text-decoration: none; font-weight: 600; }
 table.plan tr.plan-off { opacity: .55; }
 .linklike { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+
+/* myPontivo: Link in der Kopfzeile und oberster Eintrag im «Mehr»-Fenster */
+.mypontivo-link { color: var(--ink); text-decoration: none; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-weight: 600; white-space: nowrap; }
+.mypontivo-link:hover, .mypontivo-link.active { background: var(--accent-soft); }
+.more-me { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; text-decoration: none; color: var(--ink); margin-bottom: 12px; }
+.more-me:hover { background: var(--accent-soft); }
+@media (max-width: 720px) { .mypontivo-link { display: none; } }
+.mp-top { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+.mp-section { scroll-margin-top: 80px; }

@@ -180,7 +180,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
         {isOwner ? (
           <div className="inline-form">
             <form action={stripeOnboarding}>{hidden}<button className={!hotel.stripeChargesEnabled && env().STRIPE_PUBLISHABLE_KEY && provider === "stripe" ? "btn secondary small" : "btn"}>{hotel.stripeChargesEnabled || !env().STRIPE_PUBLISHABLE_KEY || provider !== "stripe" ? (hotel.stripeAccountId ? "Stripe-Einrichtung fortsetzen" : "Stripe-Konto einrichten") : "Lieber auf der Stripe-Seite einrichten"}</button></form>
-            {hotel.stripeAccountId ? <form action={stripeRefresh}>{hidden}<button className="btn secondary">Status neu laden</button></form> : null}
+            {hotel.stripeAccountId ? <form action={stripeRefresh}>{hidden}<button className={!hotel.stripeChargesEnabled && env().STRIPE_PUBLISHABLE_KEY && provider === "stripe" ? "btn secondary small" : "btn secondary"}>Status neu laden</button></form> : null}
           </div>
         ) : <p className="muted small">Nur Inhaber können Stripe einrichten.</p>}
       </section>

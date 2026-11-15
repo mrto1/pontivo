@@ -37,6 +37,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<Re
     <main className="wrap" style={{ maxWidth: 420, padding: "80px 16px" }}>
       <h1>Anmelden</h1>
       <p className="muted">Melden Sie sich mit Passkey oder mit einem Login-Link per E-Mail an (15 Minuten gültig). Wer die Zwei-Faktor-Anmeldung eingeschaltet hat, gibt danach den Code der Authenticator-App ein. Wer «nur Passkey» eingeschaltet hat, erhält keinen Link.</p>
+      {sp.emailchanged ? <p className="notice">Die neue E-Mail-Adresse ist bestätigt. Bitte melden Sie sich damit an.</p> : null}
       {sp.error === "retry" ? <p className="notice warn">Bitte nochmals absenden.</p> : null}
       {sp.error === "turnstile" ? <p className="notice warn">Die Sicherheitsprüfung ist fehlgeschlagen. Bitte die Seite neu laden und nochmals versuchen.</p> : null}
       {sp.error === "link" ? <p className="notice warn">Der Link ist ungültig oder abgelaufen. Bitte neu anfordern.</p> : null}

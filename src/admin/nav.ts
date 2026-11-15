@@ -32,7 +32,7 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
     // Während der Einrichtung: schlank
     return {
       primary: [link("einrichten", "Einrichten"), link("rooms", "Zimmer"), link("site", "Website"), link("settings", "Einstellungen")],
-      groups: [{ title: "Anderes", items: [{ key: "preview", label: "Vorschau ansehen", href: `/h/${hotel.slug}/de`, external: true }] }],
+      groups: [], // Vorschau und Konto: myPontivo
     };
   }
   return {
@@ -53,7 +53,6 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
         items: [
           link("settings", "Einstellungen"),
           link("funktionen", "Funktionen"),
-          { key: "view", label: "Website ansehen", href: hotel.primaryDomain ? `//${hotel.primaryDomain}` : `/h/${hotel.slug}/de`, external: true },
         ],
       },
     ],
