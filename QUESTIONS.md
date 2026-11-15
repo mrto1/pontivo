@@ -150,3 +150,5 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Welche Variablen und Gliederung verlangt das BFS genau (Herkunft nach Ländergruppen, Betten, geöffnete Tage)?
 
 - Eigentümerabrechnung (SPEC 19.10): Wie rechnen Verwalter ab (Kommission auf Brutto oder Netto, MWST-Ausweis, Kurtaxe, Reinigungsgebühr)? Braucht der Eigentümer einen eigenen Login (Lesezugang) und einen automatischen Monatsversand mit PDF?
+
+- Angebote vor Ort (SPEC 19.11): Online-Buchung durch Gäste (Zeitfenster auf der Gästeseite)? Preise nach Wochentag oder Saison? Seminar: Angebot als PDF und Verpflegung je Teilnehmer?

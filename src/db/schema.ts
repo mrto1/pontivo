@@ -1158,3 +1158,40 @@ export const ownerStatements = pgTable("owner_statements", {
   sentTo: text("sent_to").notNull(),
   sentAt: ts("sent_at").notNull().defaultNow(),
 });
+
+export const resources = pgTable("resources", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: text("name").notNull(),
+  kind: text("kind").$type<"wellness" | "seminar" | "sport" | "other">().notNull().default("other"),
+  capacity: integer("capacity").notNull().default(1),
+  slotMinutes: integer("slot_minutes").notNull().default(60),
+  /** Öffnungszeit in Minuten ab Mitternacht */
+  openFrom: integer("open_from").notNull().default(480),
+  openTo: integer("open_to").notNull().default(1200),
+  priceRappen: integer("price_rappen").notNull().default(0),
+  pricePerPerson: boolean("price_per_person").notNull().default(false),
+  vatKind: text("vat_kind").$type<"stay" | "standard" | "none">().notNull().default("standard"),
+  active: boolean("active").notNull().default(true),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type Resource = typeof resources.$inferSelect;
+
+export const resourceBookings = pgTable("resource_bookings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  resourceId: uuid("resource_id").notNull(),
+  bookingId: uuid("booking_id"),
+  folioItemId: uuid("folio_item_id"),
+  guestName: text("guest_name").notNull(),
+  day: date("day", { mode: "string" }).notNull(),
+  startMin: integer("start_min").notNull(),
+  endMin: integer("end_min").notNull(),
+  persons: integer("persons").notNull(),
+  priceRappen: integer("price_rappen").notNull(),
+  status: text("status").$type<"confirmed" | "cancelled">().notNull().default("confirmed"),
+  note: text("note").notNull().default(""),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type ResourceBooking = typeof resourceBookings.$inferSelect;

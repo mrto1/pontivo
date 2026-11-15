@@ -754,6 +754,12 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - **Ausgabe:** Druckansicht `/admin/<hotel>/owners/<eigentümer>/<JJJJ-MM>` (Browser «Drucken» → PDF) und Mail `owner_statement` an die Adresse des Eigentümers, je Monat einmal; der versendete Stand wird gespeichert (`owner_statements`). Audit `owner.*`.
 - ASSUMPTION: Umsatz ohne Kurtaxe, Zusatzleistungen und MWST-Ausweis; Stornierte Buchungen zählen nicht; kein Eigentümer-Login (Lesezugang für Eigentümer) und kein automatischer Monatsversand in V1, kein PDF-Anhang (QUESTIONS.md).
 
+### 19.11 Angebote vor Ort (Modul `resources`, Standard aus, braucht `invoicing`)
+- Buchbare Ressourcen wie Wellness, Sauna, Seminarraum, Tennisplatz. **Angebot** (`resources`: Name, Art, Plätze je Zeitfenster, Länge des Zeitfensters 15 bis 480 Minuten, Öffnungszeit, Preis je Zeitfenster, Preis pro Person ja/nein, MWST-Art, aktiv). Seite `/admin/<hotel>/resources` (Reiter «Angebote vor Ort» bei den Buchungen, Menüschlüssel `resources`, Rolle `reception` zum Buchen, `manager` zum Einrichten).
+- **Buchung** (`resource_bookings`): Tag, Von/Bis im Raster der Zeitfenster innerhalb der Öffnungszeit, Personen. Freie Plätze = Plätze minus höchste gleichzeitige Belegung; die Ressource wird in der Transaktion gesperrt, damit nichts überbucht wird. Seminarräume (`kind = seminar`) sind exklusiv: eine Buchung belegt den ganzen Raum.
+- **Posten aufs Zimmer:** Mit der Buchungsnummer eines bestätigten Hausgasts wird der Preis als Posten (`folio_items`) gebucht und erscheint auf der Rechnung. Stornieren löscht den Posten, solange er nicht auf einer Rechnung steht (sonst Gutschrift). Ohne Buchungsnummer (Tagesgast) wird nur die Reservation gespeichert; die Zahlung läuft über die Kasse.
+- ASSUMPTION: Nur Rezeption und Admin buchen (keine Online-Buchung durch Gäste, kein Wartelisten- oder Wiederholungs-Mechanismus, kein Seminarangebot als PDF); Preis je Zeitfenster gilt für alle Tage gleich (QUESTIONS.md).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.
