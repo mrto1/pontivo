@@ -23,6 +23,7 @@ const keyOf = () => { try { let k = localStorage.getItem("pontivo-kasse-key"); i
 export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiable: boolean }) {
   const store = useRef<Store | null>(null);
   const syncing = useRef(false);
+  const rev = useRef(0); // zählt lokale Änderungen: ein Abgleich vom Server darf sie nie überschreiben
   const [phase, setPhase] = useState<"loading" | "pick" | "ready" | "error">("loading");
   const [msg, setMsg] = useState("");
   const [warn, setWarn] = useState("");
@@ -57,6 +58,7 @@ export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiabl
   /** Daten vom Server holen (Katalog immer; offene Bestellungen nur, wenn nichts mehr zu übertragen ist) */
   const bootstrap = useCallback(async (deviceCode?: string): Promise<boolean> => {
     const s = store.current!;
+    const r0 = rev.current;
     const { status, json } = await call("/api/pos/bootstrap", { hotelId, deviceKey: keyOf(), deviceCode });
     if (status === 401) { setMsg("Bitte neu anmelden (Verbindung nötig)."); return false; }
     if (status !== 200) { setMsg(json.error ?? "Nicht möglich."); return false; }
@@ -67,12 +69,8 @@ export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiabl
     setCat(catalog);
     const lastLocal = (await s.get<number>("kv", "lastBon")) ?? 0;
     await s.put("kv", nextBonNo(lastLocal, json.device.lastBon) - 1, "lastBon");
-    const queue = await s.all<Queued>("queue");
-    if (!queue.length) {
-      const dirty = new Set<string>();
-      await s.clear("orders");
-      for (const o of mergeServer([], json.orders ?? [], dirty)) await s.put("orders", o);
-    }
+    // Offene Bestellungen vom Server nur übernehmen, wenn nichts mehr zu übertragen ist und sich lokal nichts geändert hat, seit die Anfrage rausging
+    if (!(await s.all<Queued>("queue")).length && rev.current === r0) await s.replace("orders", mergeServer([], json.orders ?? [], new Set<string>()));
     await refresh();
     return true;
   }, [call, hotelId, refresh, vatLiable]);
@@ -102,8 +100,8 @@ export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiabl
     } catch { /* offline: bleibt in der Warteschlange */ } finally { syncing.current = false; await refresh(); }
   }, [bootstrap, call, hotelId, refresh]);
 
-  const enqueue = useCallback(async (op: SyncOp) => { await store.current!.put("queue", op); await refresh(); void sync(); }, [refresh, sync]);
-  const save = useCallback(async (o: LocalOrder) => { await store.current!.put("orders", o); await refresh(); }, [refresh]);
+  const enqueue = useCallback(async (op: SyncOp) => { rev.current++; await store.current!.put("queue", op); await refresh(); void sync(); }, [refresh, sync]);
+  const save = useCallback(async (o: LocalOrder) => { rev.current++; await store.current!.put("orders", o); await refresh(); }, [refresh]);
 
   useEffect(() => {
     let off = false;
@@ -149,12 +147,15 @@ export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiabl
   async function addItem(item: CatalogItem) {
     if (!order) return;
     const l = lineFor(item, qty, mode, uuid(), cat!.vatLiable);
-    await save({ ...order, lines: [...order.lines, l] });
+    const fresh = (await store.current!.get<LocalOrder>("orders", order.id)) ?? order; // immer vom gespeicherten Stand ausgehen
+    await save({ ...fresh, lines: [...fresh.lines, l] });
     await enqueue({ kind: "lines", id: uuid(), orderId: order.id, at: Date.now(), lines: [{ id: l.id, itemId: item.id, quantity: l.quantity, mode: l.mode, description: l.description, unitPriceRappen: l.unitPriceRappen, vatBps: l.vatBps }] });
     setQty(1);
   }
   async function payNow() {
-    if (!order || !code) return;
+    if (!cur || !code) return;
+    const order = await store.current!.get<LocalOrder>("orders", cur);
+    if (!order) return;
     const sel = order.lines.flatMap((l) => { const q = paySel[l.id] ?? l.openQuantity; return q > 0 && l.openQuantity > 0 ? [{ lineId: l.id, quantity: q }] : []; });
     const c = checkPay(order, sel);
     if ("error" in c) { setMsg(c.error); return; }

@@ -287,7 +287,13 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       );
       break;
     }
-    case "ankunft":
+    case "ankunft": {
+      // «Später» ist eine zweite Schaltfläche desselben Formulars (kein verschachteltes Formular)
+      const skipFromArrival = async (f: FormData) => {
+        "use server";
+        const c = await requireHotel(s(f, "hotelId"), "manager");
+        redirect(`/admin/${c.hotel.id}/einrichten?step=${next}`);
+      };
       body = (
         <form action={saveArrival} className="stack">{H}
           <p>Diese Infos schicken wir dem Gast automatisch 3 Tage vor der Anreise per E-Mail – so müssen Sie nicht jedes Mal schreiben.</p>
@@ -295,7 +301,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             placeholder={whole ? "Schlüssel: Schlüsselbox neben der Haustür, Code 4711.\nParkplatz: Nr. 3 hinter dem Haus.\nWLAN: Chalet-Gast / Passwort bergluft24" : "Rezeption geöffnet 7–21 Uhr. Später? Rufen Sie uns an: 055 …\nParkplätze hinter dem Haus."} /></div>
           <div><label htmlFor="ai-en">Englisch (optional)</label><textarea id="ai-en" name="en" rows={4} maxLength={2000} defaultValue={hotel.content.arrivalInfo?.en ?? ""} /></div>
           <p className="small muted">Zugangscodes nur hier eintragen, nicht auf der Website – die Infos gehen nur an Gäste mit bestätigter Buchung.</p>
-          <div style={{ display: "flex", gap: 8 }}><button className="btn">Speichern und weiter</button>{skipBtn}</div>
+          <div style={{ display: "flex", gap: 8 }}><button className="btn">Speichern und weiter</button>{next ? <button className="btn secondary small" formNoValidate formAction={skipFromArrival}>Später</button> : null}</div>
         </form>
       );
       body = (
@@ -311,6 +317,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
         </div>
       );
       break;
+    }
     case "zahlungen":
       body = env().PAYMENT_PROVIDER !== "stripe" ? (
         <div className="stack"><p className="notice">Testbetrieb: Zahlungen werden simuliert, dieser Schritt ist erledigt.</p>{skipBtn}</div>
