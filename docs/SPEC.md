@@ -673,6 +673,9 @@ Gilt für Buchung, Anfrage, Gutschein-Kauf und KI-Chat (Chat-Weiterleitung). Kei
 - **Zusätzlich:** Honeypot (`website`), Grenzen je IP und je E-Mail-Adresse in der Datenbank (Buchung 30/10 pro Stunde, Anfrage, Gutschein und Chat-Weiterleitung 20/5 pro Stunde), bestehende In-Memory-Grenzen bleiben.
 - Ein/Aus: `POW_REQUIRED` (`1` an, `0` aus; Standard: nur in Produktion). Ohne JavaScript lassen sich die geschützten Formulare nicht absenden.
 
+### 18.12 Stripe-Konto vorausfüllen
+Beim Eröffnen des verbundenen Kontos gibt Pontivo vorhandene Betriebsangaben mit (`accountPrefill` in `src/integrations/stripe/onboarding.ts`): bei Hotels (Firma) Firmenname, Adresse, Telefon; bei allen die öffentlichen Kontaktangaben (E-Mail, Telefon, Adresse, eigene Domain als Website). Leere Angaben entfallen. Das Stripe-Formular zeigt sie zur Kontrolle; Persönliches (Geburtsdatum, Ausweis, IBAN) füllt Pontivo nie vor. Gilt nur für neu eröffnete Konten.
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

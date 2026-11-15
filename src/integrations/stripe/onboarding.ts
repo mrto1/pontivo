@@ -6,6 +6,29 @@ import { audit } from "../../services/audit";
 import { stripe, type Stripe } from "./client";
 
 /**
+ * Vorausfüllen des Stripe-Kontos mit Angaben, die Pontivo schon hat (SPEC 6.1). Felder laut Stripe-SDK (v2 Core Accounts):
+ * `identity.business_details` (registered_name, address, phone; nur für Firmen), `configuration.merchant.support` (email, phone, url, address).
+ * Leere Angaben werden weggelassen. Der Gastgeber sieht und ändert alles im Stripe-Formular selbst; Stripe prüft die Angaben.
+ * Persönliche Angaben (Geburtsdatum, Ausweis, IBAN) hat Pontivo nicht und füllt sie nie vor.
+ */
+export function accountPrefill(hotel: Pick<Hotel, "propertyType" | "legalName" | "name" | "addressLine" | "postalCode" | "city" | "contactEmail" | "contactPhone" | "primaryDomain">) {
+  const clean = (s: string | null | undefined) => (s ?? "").trim() || undefined;
+  const address = clean(hotel.addressLine) && clean(hotel.postalCode) && clean(hotel.city)
+    ? { country: "ch", line1: clean(hotel.addressLine), postal_code: clean(hotel.postalCode), city: clean(hotel.city) }
+    : undefined;
+  const phone = clean(hotel.contactPhone);
+  const company = hotel.propertyType === "hotel";
+  const registeredName = clean(hotel.legalName);
+  const businessDetails = company && (address || phone || registeredName)
+    ? { ...(registeredName ? { registered_name: registeredName } : {}), ...(address ? { address } : {}), ...(phone ? { phone } : {}) }
+    : undefined;
+  // ASSUMPTION: Als Website nur eine eigene Domain; die Pontivo-Adresse /h/<slug> ist vor dem Live-Gang nicht öffentlich.
+  const domain = clean(hotel.primaryDomain);
+  const support = { email: hotel.contactEmail, ...(phone ? { phone } : {}), ...(address ? { address } : {}), ...(domain ? { url: `https://${domain}` } : {}) };
+  return { businessDetails, support };
+}
+
+/**
  * SPEC 6.1: Verbundenes Konto, bei dem das Hotel Händler ist, Stripe-Gebühren und Verluste trägt
  * und das volle Stripe-Dashboard hat (Direct-Charges-Modell). Land CH, Firma.
  */
@@ -13,14 +36,16 @@ export async function ensureConnectedAccount(hotel: Hotel, actor: string): Promi
   if (hotel.stripeAccountId) return hotel.stripeAccountId;
   // Stripe verlangt für neue Connect-Integrationen Accounts v2 (POST /v2/core/accounts); v1-Konten-Erstellung ist gesperrt.
   // Gleiches Modell wie bisher: volles Stripe-Dashboard, Betrieb zahlt die Stripe-Gebühren, Stripe trägt Verluste (Direct Charges).
+  const prefill = accountPrefill(hotel);
   const account = await stripe().v2.core.accounts.create(
     {
       contact_email: hotel.contactEmail,
       display_name: hotel.name,
       // ASSUMPTION: Hotels sind Firmen; B&Bs, Ferienwohnungen, Chalets oft Privatpersonen → Rechtsform wählt der Gastgeber im Stripe-Onboarding
-      identity: { country: "ch", ...(hotel.propertyType === "hotel" ? { entity_type: "company" as const } : {}) },
+      identity: { country: "ch", ...(hotel.propertyType === "hotel" ? { entity_type: "company" as const } : {}), ...(prefill.businessDetails ? { business_details: prefill.businessDetails } : {}) },
       configuration: {
         merchant: {
+          support: prefill.support,
           capabilities: { card_payments: { requested: true }, twint_payments: { requested: true } },
         },
       },
