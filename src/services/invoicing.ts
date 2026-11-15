@@ -2,10 +2,11 @@ import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import QRCode from "qrcode";
 import { db, rows, type Executor } from "../db/client";
 import {
-  bookingExtras, bookingRooms, bookings, folioItems, groups as groupsTable, guests, hotels, invoiceLines, invoices, onsitePayments, roomTypes,
+  bookingExtras, bookingRooms, bookings, folioItems, groups as groupsTable, guests, hotels, invoiceLines, invoices, onsitePayments, ratePlans, roomTypes,
   type Booking, type FolioItem, type Hotel, type Invoice, type InvoiceLine, type InvoiceRecipient, type OnsitePayment,
 } from "../db/schema";
 import { addDays, diffDays, todayIn } from "../domain/dates";
+import { splitBoard, type Board } from "../domain/board";
 import {
   cleanIban, DEFAULT_INVOICING, qrReference, isQrIban, isSwissIban, swissQrPayload, vatBps, vatBreakdown,
   type InvoicingSettings, type VatKind,
@@ -132,11 +133,15 @@ type NewLine = Pick<InvoiceLine, "description" | "quantity" | "unitPriceRappen" 
 async function bookingLines(ex: Executor, hotel: Hotel, booking: Booking, folio: FolioItem[]): Promise<NewLine[]> {
   const set = invoicingSettings(hotel);
   const lines: NewLine[] = [];
-  const rr = await ex.select({ br: bookingRooms, name: roomTypes.name }).from(bookingRooms).innerJoin(roomTypes, eq(roomTypes.id, bookingRooms.roomTypeId)).where(eq(bookingRooms.bookingId, booking.id));
+  const rr = await ex.select({ br: bookingRooms, name: roomTypes.name, board: ratePlans.board, mealRappen: ratePlans.mealRappen }).from(bookingRooms).innerJoin(roomTypes, eq(roomTypes.id, bookingRooms.roomTypeId))
+    .leftJoin(ratePlans, eq(ratePlans.id, bookingRooms.ratePlanId)).where(eq(bookingRooms.bookingId, booking.id));
   const n = diffDays(booking.checkin, booking.checkout);
   const stayBps = vatBps(set, "stay"), stdBps = vatBps(set, "standard");
   for (const r of rr) {
-    lines.push({ description: `Übernachtung ${r.name}, ${booking.checkin} bis ${booking.checkout} (${n} ${n === 1 ? "Nacht" : "Nächte"})`, quantity: 1, unitPriceRappen: r.br.amountRappen, amountRappen: r.br.amountRappen, vatBps: stayBps, category: "stay" });
+    // Halb-/Vollpension: Verpflegung zum Normalsatz abspalten, Summe bleibt gleich (SPEC 19.4)
+    const sp = splitBoard(r.br.amountRappen, (r.board ?? "none") as Board, r.br.adults + r.br.children, n, r.mealRappen ?? 0);
+    lines.push({ description: `Übernachtung ${r.name}, ${booking.checkin} bis ${booking.checkout} (${n} ${n === 1 ? "Nacht" : "Nächte"})`, quantity: 1, unitPriceRappen: sp.stayRappen, amountRappen: sp.stayRappen, vatBps: stayBps, category: "stay" });
+    if (sp.mealsRappen > 0) lines.push({ description: `Verpflegung ${r.board === "full" ? "Vollpension" : "Halbpension"}, ${r.name}`, quantity: 1, unitPriceRappen: sp.mealsRappen, amountRappen: sp.mealsRappen, vatBps: stdBps, category: "extra" });
   }
   const ex2 = await ex.select().from(bookingExtras).where(eq(bookingExtras.bookingId, booking.id)).orderBy(asc(bookingExtras.position));
   for (const e of ex2) lines.push({ description: tr(e.name, "de") || "Zusatzleistung", quantity: e.quantity, unitPriceRappen: e.unitPriceRappen, amountRappen: e.amountRappen, vatBps: stdBps, category: "extra" });

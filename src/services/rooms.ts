@@ -38,7 +38,9 @@ function auditDetails(v: z.output<typeof roomTypeSchema>) {
 
 export const ratePlanSchema = z.object({
   name: z.string().trim().min(1, "Name fehlt").max(120),
-  breakfastIncluded: z.boolean(),
+  breakfastIncluded: z.boolean().optional(),
+  board: z.enum(["none", "breakfast", "half", "full"]).optional(),
+  mealRappen: z.number().int().min(0).max(1_000_000).default(0),
   freeCancelHours: z.number().int().min(0).max(24 * 365).nullable(), // null = nicht kostenlos stornierbar
   cancelFeeBps: z.number().int().min(0).max(10000),
   baseOccupancy: z.number().int().min(1).max(30),
@@ -48,7 +50,12 @@ export const ratePlanSchema = z.object({
   arrivalWeekdays: z.array(z.number().int().min(0).max(6)).max(7).default([]).transform((a) => [...new Set(a)].sort()),
   active: z.boolean(),
   i18n: z.object(Object.fromEntries(["en", "fr", "it", "nl"].map((l) => [l, z.object({ name: z.string().trim().max(120).optional() }).optional()])) as Record<"en" | "fr" | "it" | "nl", z.ZodOptional<z.ZodObject<{ name: z.ZodOptional<z.ZodString> }>>>).default({}),
-});
+})
+  .refine((v) => !["half", "full"].includes(v.board ?? "none") || v.mealRappen > 0, { message: "Bei Halb-/Vollpension den Wert der Verpflegung je Person und Nacht angeben (für die MWST-Aufteilung)", path: ["mealRappen"] })
+  .transform((v) => {
+    const board = v.board ?? (v.breakfastIncluded ? "breakfast" : "none");
+    return { ...v, board, breakfastIncluded: board !== "none", mealRappen: board === "half" || board === "full" ? v.mealRappen : 0 };
+  });
 export type RatePlanInput = z.input<typeof ratePlanSchema>;
 
 async function hotelOrThrow(hotelId: string) {

@@ -174,6 +174,10 @@ export const ratePlans = pgTable("rate_plans", {
   roomTypeId: uuid("room_type_id").notNull(),
   name: text("name").notNull(),
   breakfastIncluded: boolean("breakfast_included").notNull().default(true),
+  /** Verpflegung: none | breakfast | half | full. breakfastIncluded bleibt als abgeleiteter Wert (board != none) */
+  board: text("board").$type<"none" | "breakfast" | "half" | "full">().notNull().default("none"),
+  /** Wert der Verpflegung je Person und Nacht (Rappen), nur Halb-/Vollpension: wird auf der Rechnung zum Normalsatz abgespalten */
+  mealRappen: integer("meal_rappen").notNull().default(0),
   freeCancelHours: integer("free_cancel_hours"),
   cancelFeeBps: integer("cancel_fee_bps").notNull().default(10000),
   baseOccupancy: integer("base_occupancy").notNull().default(2),

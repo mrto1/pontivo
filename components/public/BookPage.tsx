@@ -74,7 +74,7 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
                 <div style={{ flex: "1 1 260px" }}>
                 <h3>{o.roomType.name} · {o.ratePlan.name}</h3>
                 <p className="small muted">
-                  {o.ratePlan.breakfastIncluded ? d.breakfast : d.noBreakfast} · {o.cancellationPolicy}
+                  {o.ratePlan.board === "half" ? d.halfBoard : o.ratePlan.board === "full" ? d.fullBoard : o.ratePlan.breakfastIncluded ? d.breakfast : d.noBreakfast} · {o.cancellationPolicy}
                 </p>
                 <table className="rows small">
                   <tbody>

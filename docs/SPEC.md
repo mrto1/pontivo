@@ -704,6 +704,12 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - Die KI-Preisempfehlung bleibt ein eigenes, kostenpflichtiges Zusatzmodul (`ai_pricing`, später).
 - ASSUMPTION: Preise je Tarif und Nacht, keine Berücksichtigung von Personenpreisen oder Mindestaufenthalt; Konkurrenzpreise folgen nicht.
 
+### 19.4 Pauschalen (Verpflegungsart je Tarif)
+- `rate_plans.board` (`none`, `breakfast`, `half`, `full`) ersetzt das Frühstück-Häkchen; `breakfast_included` bleibt als abgeleiteter Wert (board ≠ none) für Kanäle und Bestandscode. Bestehende Tarife: mit Frühstück → `breakfast`, sonst `none`.
+- Bei Halb-/Vollpension ist `meal_rappen` Pflicht: Wert der Verpflegung je Person und Nacht. Auf der Rechnung wird er (Personen × Nächte × Wert, höchstens der Zimmerbetrag) als Zeile «Verpflegung Halbpension/Vollpension» zum Normalsatz abgespalten; der Rest bleibt Beherbergung zum Sondersatz (inkl. Frühstück). Das Buchungstotal ändert sich nicht (`src/domain/board.ts`).
+- Gast sieht «Halbpension/Vollpension inbegriffen» in allen fünf Sprachen. Admin: Auswahl «Verpflegung» im Tarif.
+- ASSUMPTION: Kinder zählen als Personen für den Verpflegungswert; Channex bekommt weiter nur «Frühstück ja/nein» (kein neues API-Feld erfunden).
+
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
 
 - Channex Produktions-URL und Preise für Staging/Produktion.

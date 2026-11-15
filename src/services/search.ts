@@ -16,7 +16,7 @@ export type SearchInput = StayQuery & { childrenAges?: (number | null)[] };
 
 export type Offer = {
   roomType: Pick<RoomType, "id" | "name" | "description" | "photos" | "maxOccupancy">;
-  ratePlan: Pick<RatePlan, "id" | "name" | "breakfastIncluded" | "freeCancelHours" | "cancelFeeBps">;
+  ratePlan: Pick<RatePlan, "id" | "name" | "breakfastIncluded" | "board" | "freeCancelHours" | "cancelFeeBps">;
   nightlyPrices: NightlyPrice[];
   roomsTotalRappen: number;
   touristTaxRappen: number;
@@ -127,6 +127,7 @@ export async function searchOffers(
           id: rp.id,
           name: planName(rp, lang),
           breakfastIncluded: rp.breakfastIncluded,
+          board: rp.board,
           freeCancelHours: rp.freeCancelHours,
           cancelFeeBps: rp.cancelFeeBps,
         },

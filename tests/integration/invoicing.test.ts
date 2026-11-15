@@ -175,3 +175,33 @@ describe("Rechnung (SPEC 16.3)", () => {
     expect(after[0].data).toMatchObject({ invoiceId: cn.id, kind: "credit_note" });
   });
 });
+
+describe("Pauschalen auf der Rechnung (SPEC 19.4)", () => {
+  it("Halbpension: Verpflegung zum Normalsatz, Beherbergung zum Sondersatz, Total unverändert", async () => {
+    const s = await setup();
+    await updateInvoicingSettings(s.hotel, { vatLiable: true, vatNumber: "CHE-123.456.789 MWST", iban: IBAN }, "t");
+    const hotel = await reload(s);
+    const { updateRatePlan } = await import("../../src/services/rooms");
+    const plan = s.rooms[0].plans[0];
+    await updateRatePlan(hotel.id, plan.id, { name: plan.name, board: "half", mealRappen: 3500, freeCancelHours: null, cancelFeeBps: 10000, baseOccupancy: plan.baseOccupancy, extraAdultRappen: 0, singleDiscountRappen: 0, active: true }, "t");
+    const b = await book(s, 20, 2);
+    const inv = await createInvoiceDraft(hotel, b.id, "t");
+    const v = await invoiceView(hotel, inv.id);
+    const meals = v!.lines.find((l) => l.description.startsWith("Verpflegung Halbpension"))!;
+    const stay = v!.lines.find((l) => l.category === "stay")!;
+    expect(meals.amountRappen).toBe(2 * 2 * 3500);
+    expect(meals.vatBps).toBeGreaterThan(stay.vatBps);
+    expect(v!.lines.reduce((a, l) => a + l.amountRappen, 0)).toBe(b.totalRappen);
+  });
+  it("Halb-/Vollpension ohne Wert der Verpflegung wird abgelehnt; Frühstück-Flag bleibt abgeleitet", async () => {
+    const s = await setup();
+    const { updateRatePlan } = await import("../../src/services/rooms");
+    const plan = s.rooms[0].plans[0];
+    const base = { name: plan.name, freeCancelHours: null, cancelFeeBps: 10000, baseOccupancy: plan.baseOccupancy, extraAdultRappen: 0, singleDiscountRappen: 0, active: true };
+    await expect(updateRatePlan(s.hotel.id, plan.id, { ...base, board: "full", mealRappen: 0 }, "t")).rejects.toThrow(/Wert der Verpflegung/);
+    const rp = await updateRatePlan(s.hotel.id, plan.id, { ...base, board: "none" }, "t");
+    expect(rp.breakfastIncluded).toBe(false);
+    const rp2 = await updateRatePlan(s.hotel.id, plan.id, { ...base, breakfastIncluded: true }, "t");
+    expect(rp2.board).toBe("breakfast");
+  });
+});

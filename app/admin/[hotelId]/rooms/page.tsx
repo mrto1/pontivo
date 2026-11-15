@@ -11,6 +11,7 @@ import { deleteImage } from "@/src/lib/storage";
 import { decimalToRappen, rappenToDecimal } from "@/src/domain/money";
 import { cancellationPolicyText } from "@/src/domain/cancellation";
 import type { RatePlan, RoomType } from "@/src/db/schema";
+import { boardLabel } from "@/src/domain/board";
 import { hotelLocales, LOCALE_NAMES, type Locale } from "@/src/i18n/dict";
 import { translateRooms, translationEnabled, translationsLeft, TranslateError } from "@/src/services/translate";
 
@@ -49,7 +50,8 @@ function planInput(f: FormData): RatePlanInput {
   const flexible = s(f, "cancelMode") === "free";
   return {
     name: s(f, "name"),
-    breakfastIncluded: f.get("breakfast") === "on",
+    board: (["none", "breakfast", "half", "full"].includes(s(f, "board")) ? s(f, "board") : "none") as "none",
+    mealRappen: chf(f, "mealChf"),
     freeCancelHours: flexible ? Math.round(n(f, "freeCancelDays") * 24) : null,
     cancelFeeBps: Math.round(n(f, "cancelFeePct") * 100),
     baseOccupancy: n(f, "baseOccupancy"),
@@ -242,7 +244,19 @@ function PlanForm({ hotelId, roomTypeId, p, canEdit, langs }: { hotelId: string;
         <div><label>Tage vor Anreise (bei kostenlos)</label><input name="freeCancelDays" type="number" min={0} step="0.5" defaultValue={p?.freeCancelHours != null ? p.freeCancelHours / 24 : 2} disabled={!canEdit} /></div>
         <div><label>Gebühr danach in % des Zimmerpreises</label><input name="cancelFeePct" type="number" min={0} max={100} defaultValue={p ? p.cancelFeeBps / 100 : 100} disabled={!canEdit} /></div>
       </div>
-      <label className="check"><input type="checkbox" name="breakfast" defaultChecked={p?.breakfastIncluded ?? true} disabled={!canEdit} />Frühstück inbegriffen</label>
+      <div className="grid">
+        <div>
+          <label>Verpflegung</label>
+          <select name="board" defaultValue={p?.board ?? "breakfast"} disabled={!canEdit}>
+            <option value="none">Nur Übernachtung</option>
+            <option value="breakfast">Mit Frühstück</option>
+            <option value="half">Halbpension</option>
+            <option value="full">Vollpension</option>
+          </select>
+        </div>
+        <div><label>Wert der Verpflegung je Person und Nacht (CHF, nur Halb-/Vollpension)</label><input name="mealChf" type="number" min={0} step="0.05" defaultValue={p ? p.mealRappen / 100 : 0} disabled={!canEdit} /></div>
+      </div>
+      <p className="muted small">Bei Halb-/Vollpension weist die Rechnung die Verpflegung zum Normalsatz aus (Beherbergung zum Sondersatz).</p>
       <label className="check"><input type="checkbox" name="active" defaultChecked={p?.active ?? true} disabled={!canEdit} />Buchbar</label>
       {p ? <p className="muted small">Gast sieht: {cancellationPolicyText(p, "de")}</p> : <p className="muted small">Der Startpreis gilt für alle Tage der nächsten 18 Monate. Wochenend- oder Saisonpreise setzt du danach im Kalender.</p>}
       {canEdit ? <button className="btn small">{p ? "Tarif speichern" : "Tarif anlegen"}</button> : null}
@@ -298,7 +312,7 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
           {plans.map((p) => (
             <details key={p.id} className="card">
               <summary>
-                <strong>{p.name}</strong> <span className="muted small">· {p.breakfastIncluded ? "mit Frühstück" : "ohne Frühstück"} · {p.freeCancelHours !== null ? `kostenlos stornierbar bis ${p.freeCancelHours / 24} Tag(e) vorher` : "nicht kostenlos stornierbar"}{p.active ? "" : " · nicht buchbar"}</span>
+                <strong>{p.name}</strong> <span className="muted small">· {boardLabel(p.board)} · {p.freeCancelHours !== null ? `kostenlos stornierbar bis ${p.freeCancelHours / 24} Tag(e) vorher` : "nicht kostenlos stornierbar"}{p.active ? "" : " · nicht buchbar"}</span>
               </summary>
               <div style={{ marginTop: 12 }}><PlanForm hotelId={hotel.id} roomTypeId={rt.id} p={p} canEdit={canEdit} langs={langs} /></div>
             </details>
