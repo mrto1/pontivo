@@ -1,4 +1,4 @@
-# Pontivo als Ersatz der Hotelsoftware: Umzug, Lücken, Kasse
+# Pontivo als Ersatz der Hotelsoftware: Migration, Lücken, Kasse
 
 Stand 15.11.2026. Entwurf zur Entscheidung, noch nicht in `docs/SPEC.md` (dort erst nach Freigabe, dann bauen). Baut auf `docs/PMS-KONZEPT.md` auf (Stufen A bis C sind gebaut, Stufe D dort heisst «Skalierung»; dieses Dokument ist die Stufe **E «Ersetzen»**).
 
@@ -6,21 +6,21 @@ Stand 15.11.2026. Entwurf zur Entscheidung, noch nicht in `docs/SPEC.md` (dort e
 
 Aussage an Kunden (Startseite, FAQ): *Bei kleinen und mittleren Häusern ersetzt Pontivo in der Regel die bisherige Hotelsoftware. Wer ein Restaurant mit eigener Kasse hat oder etwas braucht, das wir noch nicht haben, lässt die alte Software daneben weiterlaufen.*
 
-Damit das stimmt, braucht es vier Dinge: einen **Umzug**, der in einem Nachmittag machbar ist (Abschnitt 2), die **fehlenden Funktionen** (3), ein **Produkt drumherum** aus Onboarding, Support und Notfallplan (4) und für Restaurants eine **eigene Kasse** als Zusatzmodul (5). Reihenfolge und Aufwand: Abschnitt 6, ergänzt durch den Marktvergleich in Abschnitt 9.
+Damit das stimmt, braucht es vier Dinge: eine **Migration**, die in einem Nachmittag machbar ist (Abschnitt 2), die **fehlenden Funktionen** (3), ein **Produkt drumherum** aus Onboarding, Support und Notfallplan (4) und für Restaurants eine **eigene Kasse** als Zusatzmodul (5). Reihenfolge und Aufwand: Abschnitt 6, ergänzt durch den Marktvergleich in Abschnitt 9.
 
 Zielgruppe bleibt: Hotel garni, B&B, Ferienwohnungen, Berggasthaus, bis ca. 40 Zimmer.
 
-## 2. Umzug aus der bisherigen Software (wichtigster Teil)
+## 2. Migration aus der bisherigen Software (wichtigster Teil)
 
 ### 2.1 Grundsätze
 - **Kein Wechsel mitten im Betrieb erzwingen.** Parallelbetrieb ist normal: alte Software läuft weiter, Pontivo übernimmt schrittweise.
 - **Keine Doppelbuchungen, nie.** Importierte Reservierungen belegen das Inventar wie echte Buchungen (Abschnitt 2.5).
 - **Ein Code für alle** (`CLAUDE.md`): Importformate sind «Quellprofile» in Code für alle Hotels, keine Hotel-Sonderlösung.
-- **Der Umzug ist umkehrbar:** Import ist rückgängig machbar, und der Gesamtexport (2.9) gibt jederzeit alle Daten heraus.
+- **Die Migration ist umkehrbar:** Import ist rückgängig machbar, und der Gesamtexport (2.9) gibt jederzeit alle Daten heraus.
 - **Der Gastgeber muss keine Datenbank verstehen:** geführter Assistent, Prüfbericht in Klartext.
 
 ### 2.2 Ablauf aus Sicht des Gastgebers
-1. **Einstellungen, «Umzug»** (auch im Einrichtungs-Assistenten: Frage «Haben Sie bereits eine Hotelsoftware?»).
+1. **Einstellungen, «Migration»** (auch im Einrichtungs-Assistenten: Frage «Haben Sie bereits eine Hotelsoftware?»).
 2. **Software wählen** (Quellprofil) oder «andere / Excel». Anleitung: wie exportiere ich dort die Daten (Bildschirmfotos, Schritt für Schritt).
 3. **Dateien hochladen** (CSV/Excel). Pontivo erkennt Spalten selbst, der Gastgeber bestätigt die Zuordnung.
 4. **Zuordnen:** Zimmerkategorien der alten Software auf Pontivo-Zimmertypen, Tarife auf Pontivo-Tarife, MWST-Sätze. Vorschläge werden gemacht, Entscheid liegt beim Gastgeber.
@@ -129,7 +129,7 @@ Ein System, das die Hotelsoftware ersetzt, muss nicht nur funktionieren, es muss
 
 ### 4.1 Eignungs-Check im Onboarding
 Beim Einrichten (und auf der Startseite) drei Fragen: Zimmerzahl, «Haben Sie ein Restaurant mit eigener Kasse?», «Welche Software nutzen Sie jetzt?» Antwort:
-- **Passt** (ersetzt Ihre Software, Umzug geführt),
+- **Passt** (ersetzt Ihre Software, Migration geführt),
 - **Passt mit Kassen-Schnittstelle oder Kassenmodul** (Restaurant),
 - **Läuft daneben** (z. B. über 40 Zimmer, Spezialwünsche; Direktbuchung und Kanäle trotzdem nutzbar).
 Die Seite verspricht nie mehr, als die Antwort hergibt.
@@ -137,7 +137,7 @@ Die Seite verspricht nie mehr, als die Antwort hergibt.
 ### 4.2 Einarbeitung
 - Checkliste «Erste Woche» pro Rolle (Rezeption, Reinigung, Buchhaltung): 5 bis 8 Aufgaben mit Link.
 - Hilfeseiten pro Modul (ein Absatz, ein Bild) direkt neben der Funktion.
-- Optional: Einrichtungshilfe gegen Entgelt (Umzug begleiten), nicht Pflicht.
+- Optional: Einrichtungshilfe gegen Entgelt (Migration begleiten), nicht Pflicht.
 
 ### 4.3 Verlässlichkeit
 - **Notfall-Rezeption:** Täglich um 06:00 geht eine **Tagesliste (Anreisen, Abreisen, im Haus, Zimmer, Bemerkungen) per E-Mail als PDF** an den Betrieb. Zusätzlich liest die Admin-App die Tagesliste **auch ohne Internet** (Service Worker, nur lesen). Ohne Internet gibt es keine neuen Buchungen, aber die Rezeption steht nicht still.
@@ -190,7 +190,7 @@ Zusatzmodul mit festem Monatspreis (Support-Aufwand abends) und ohne Provision a
 
 | Reihenfolge | Inhalt | Aufwand | Voraussetzung |
 | --- | --- | --- | --- |
-| E1 | **Umzug**: generisches CSV, Prüfbericht, Import, Rückgängig, Rechnungsnummern-Start, Gesamtexport | L | keine |
+| E1 | **Migration**: generisches CSV, Prüfbericht, Import, Rückgängig, Rechnungsnummern-Start, Gesamtexport | L | keine |
 | E2 | Eignungs-Check, Umschalt-Checkliste, Notfall-Tagesliste, Hilfeseiten, Erste-Woche-Checkliste | M | E1 teilweise |
 | E3 | Quellprofile für 2 bis 3 gängige Programme | M je Profil | Beispieldateien von Interessenten |
 | E4 | Prüfung Mehrzimmerbuchung/Tagesabschluss, Zimmerwechsel, Pauschalen (`board`) | M | keine |
@@ -246,7 +246,7 @@ Direktbuchung mit Stripe und TWINT, Anzahlung/Rest, Website-Baukasten, Channel-M
 | Telefonanlage, Schlüsselkarten, TV | Protel | `KeyProvider` und Partner | Nur grosse Häuser, bewusst nicht Ziel. | L, später |
 
 ### 9.3 Reihenfolge (Ergänzung zu Abschnitt 6)
-1. **Vor dem Satz «ersetzt Ihre Software»** (Vertrauen und Pflicht): Umzug (E1), eHESTA, Tagesabschluss, rechtliche Abnahme (4.4). Weitere Zahlungsanbieter sind zurückgestellt.
+1. **Vor dem Satz «ersetzt Ihre Software»** (Vertrauen und Pflicht): Migration (E1), eHESTA, Tagesabschluss, rechtliche Abnahme (4.4). Weitere Zahlungsanbieter sind zurückgestellt.
 2. **Danach, grösster Nutzen für kleine Häuser:** Bewertungen einholen, regelbasierte Preisempfehlung, gemeinsamer Posteingang, Eigentümerabrechnung (für Verwalter). Danach das Zusatzmodul KI-Preisempfehlung.
 3. **Danach:** Newsletter, Gästeportal ausbauen, offene API, Events/Seminare.
 4. **Nur auf Nachfrage:** zentrale Gästeführung, Schlüsselkarten, TV.
