@@ -47,6 +47,15 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
   await page.setInputFiles("input[type=file]", { name: "aussicht.png", mimeType: "image/png", buffer: png });
   await page.getByRole("button", { name: "Hochladen" }).click();
   await expect(page.getByText("1 Foto(s) hochgeladen")).toBeVisible();
+  // Zweites Foto hochladen und als Titelbild setzen (kommt an die erste Stelle)
+  await page.setInputFiles("input[type=file]", { name: "zimmer.png", mimeType: "image/png", buffer: png });
+  await page.getByRole("button", { name: "Hochladen" }).click();
+  await expect(page.locator("figure.photo")).toHaveCount(2);
+  await expect(page.locator("figure.photo").nth(0).locator(".badge")).toHaveText("Titelbild");
+  const second = (await page.locator("figure.photo").nth(1).locator("img").getAttribute("src"))!;
+  await page.locator("figure.photo").nth(1).getByRole("button", { name: "Als Titelbild" }).click();
+  await expect(page.locator("figure.photo").nth(0).locator("img")).toHaveAttribute("src", second);
+  await expect(page.locator("figure.photo").nth(0).locator(".badge")).toHaveText("Titelbild");
   await page.getByRole("button", { name: "Weiter" }).click();
 
   // Ankunft

@@ -11,6 +11,7 @@ import { PontivoHome } from "@/components/marketing/PontivoHome";
 import { resolveSite } from "@/src/domain/pontivo-site";
 import { getSiteOverrides } from "@/src/services/platform-site";
 import { DEFAULT_PLATFORM_FEE_BPS } from "@/src/domain/fee";
+import { accountLink } from "@/src/services/account-link";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,7 @@ export default async function Root() {
   const list = e.NODE_ENV === "production" || process.env.STATIC_SITE === "1" ? [] : await db().select().from(hotels).orderBy(hotels.name);
   return (
     <PontivoHome
+      account={process.env.STATIC_SITE === "1" ? null : await accountLink()}
       site={resolveSite(await getSiteOverrides(), { name: e.PLATFORM_NAME, fee: DEFAULT_PLATFORM_FEE_BPS / 100, email: e.PLATFORM_CONTACT_EMAIL })}
       contact={{
         name: e.PLATFORM_NAME,

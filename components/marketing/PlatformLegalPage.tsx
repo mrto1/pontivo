@@ -4,6 +4,7 @@ import type { LegalDoc } from "@/src/legal/texts";
 import { getHotelByHost } from "@/src/services/hotels";
 import { env } from "@/src/env";
 import { pageHref } from "./PontivoHome";
+import { AccountLink } from "./AccountLink";
 
 /** Rechtliche Seiten der Plattform (nicht auf Hotel-Domains) */
 export async function PlatformLegalPage({ doc }: { doc: LegalDoc }) {
@@ -11,7 +12,7 @@ export async function PlatformLegalPage({ doc }: { doc: LegalDoc }) {
   const st = process.env.STATIC_SITE === "1";
   return (
     <main className="wrap legal" style={{ maxWidth: 760, padding: "40px 16px 64px" }}>
-      <p><a href={pageHref("/", st)} className="brand">{env().PLATFORM_NAME}</a></p>
+      <p><a href={pageHref("/", st)} className="brand">{env().PLATFORM_NAME}</a><AccountLink /></p>
       {doc.draftNote ? <p className="notice warn small">{doc.draftNote}</p> : null}
       <h1>{doc.title}</h1>
       <p>{doc.intro}</p>

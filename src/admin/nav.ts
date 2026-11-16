@@ -31,8 +31,8 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
   if (setup) {
     // Während der Einrichtung: schlank
     return {
-      primary: [link("einrichten", "Einrichten"), link("rooms", "Zimmer"), link("site", "Website"), link("settings", "Einstellungen")],
-      groups: [], // Vorschau und Konto: myPontivo
+      primary: [link("einrichten", "Einrichten"), link("rooms", "Zimmer"), link("calendar", "Kalender"), link("site", "Website"), link("settings", "Einstellungen")],
+      groups: [], // Vorschau und Konto: Mein Konto
     };
   }
   return {

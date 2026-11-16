@@ -33,7 +33,7 @@ export const GUIDE: Record<GuideRole, GuideTask[]> = {
     { key: "h_list", area: "housekeeping", title: "Reinigungsliste öffnen", hint: "Am Handy: die Zimmer des Tages, nach Abreise zuerst." },
     { key: "h_status", area: "housekeeping", title: "Ein Zimmer auf «sauber» setzen", hint: "So sieht die Rezeption sofort, dass es bereit ist." },
     { key: "h_issue", area: "housekeeping", title: "Einen Mangel melden", hint: "Defektes Licht, fehlendes Handtuch: kurze Meldung, die Rezeption sieht sie." },
-    { key: "h_home", area: "mypontivo", title: "Pontivo auf den Startbildschirm legen", hint: "Unter myPontivo: so öffnet sich die Liste mit einem Tipp." },
+    { key: "h_home", area: "mypontivo", title: "Pontivo auf den Startbildschirm legen", hint: "Unter «Mein Konto»: so öffnet sich die Liste mit einem Tipp." },
   ],
   accounting: [
     { key: "a_invoices", area: "invoices", title: "Rechnungen ansehen", hint: "Offene, bezahlte und gutgeschriebene Rechnungen." },

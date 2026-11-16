@@ -8,7 +8,7 @@ import { PushToggle } from "@/components/admin/PushToggle";
 
 export const dynamic = "force-dynamic";
 
-/** myPontivo: eigenes Konto, Webseite-Vorschau, App und Mitteilungen, Sicherheit (SPEC 18.10) */
+/** Mein Konto (Teil von myPontivo, dem Admin-Bereich): eigenes Konto, Webseite-Vorschau, App und Mitteilungen, Sicherheit (SPEC 18.10) */
 export default async function MyPontivo({ params }: { params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
   const { hotel, user, role } = await requireHotel(hotelId, "staff", "mypontivo");
@@ -17,7 +17,7 @@ export default async function MyPontivo({ params }: { params: Promise<{ hotelId:
   return (
     <div className="stack" style={{ gap: 28, maxWidth: 760 }}>
       <header>
-        <h1 style={{ marginBottom: 4 }}>myPontivo</h1>
+        <h1 style={{ marginBottom: 4 }}>Mein Konto</h1>
         <div className="mp-top">
           <strong>{user.email}</strong>
           <span className="muted">{user.isPlatformAdmin ? "Plattformbetreiber" : ROLE_LABEL[role]} bei {hotel.name}</span>

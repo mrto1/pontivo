@@ -9,7 +9,8 @@ import {
 } from "@/src/services/onboarding";
 import { confirmTouristTax } from "@/src/services/settings";
 import { taxRuleFor } from "@/src/services/hotels";
-import { listRooms, MAX_PHOTOS, RoomError } from "@/src/services/rooms";
+import { changePhoto, listRooms, MAX_PHOTOS, RoomError } from "@/src/services/rooms";
+import { deleteImage } from "@/src/lib/storage";
 import { listExtras } from "@/src/services/extras";
 import { startCardSetup } from "@/src/services/billing";
 import { onboardingLink, refreshAccountStatus } from "@/src/integrations/stripe/onboarding";
@@ -89,6 +90,20 @@ async function saveGuestInfoAction(f: FormData) {
   await step(f, ({ hotel, actor }) => setGuestInfo(hotel, { de: s(f, "de"), en: s(f, "en") }, actor));
 }
 
+/** Foto im Assistenten: als Titelbild setzen (kommt an die erste Stelle) oder entfernen */
+async function photoStep(f: FormData) {
+  "use server";
+  const c = await requireHotel(s(f, "hotelId"), "manager");
+  const remove = s(f, "action") === "remove";
+  try {
+    await changePhoto(c.hotel.id, null, s(f, "url"), remove ? "remove" : "first", c.actor);
+    if (remove) await deleteImage(s(f, "url"));
+  } catch (e) {
+    redirect(`/admin/${c.hotel.id}/einrichten?step=fotos&error=${encodeURIComponent(errText(e))}`);
+  }
+  redirect(`/admin/${c.hotel.id}/einrichten?step=fotos`);
+}
+
 async function skip(f: FormData) {
   "use server";
   const c = await requireHotel(s(f, "hotelId"), "manager");
@@ -161,7 +176,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
   );
   const next = steps[idx + 1]?.key;
   const skipBtn = next ? (
-    <form action={skip} style={{ display: "inline" }}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value={next} /><button className="btn secondary small">Später</button></form>
+    <form action={skip} style={{ display: "inline" }}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value={next} /><button className="btn secondary">Später</button></form>
   ) : null;
 
   let body: React.ReactNode = null;
@@ -270,8 +285,14 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       const photos = hotel.content.photos ?? [];
       body = (
         <div className="stack">
-          <p>Gute Fotos sind das Wichtigste für Buchungen. Das erste Foto erscheint gross auf der Startseite. Querformat, hell, ohne Personen.</p>
-          {photos.length ? <div className="photo-grid">{photos.map((p, i) => <figure key={p.url} className="photo"><img src={p.url} alt={p.alt ?? ""} />{i === 0 ? <span className="badge">Titelbild</span> : null}</figure>)}</div> : null}
+          <p>Gute Fotos sind das Wichtigste für Buchungen. Das Titelbild (das erste Foto) erscheint gross auf der Startseite. Jedes andere Foto können Sie mit «Als Titelbild» nach vorne setzen. Querformat, hell, ohne Personen.</p>
+          {photos.length ? <div className="photo-grid">{photos.map((p, i) => (
+            <figure key={p.url} className="photo"><img src={p.url} alt={p.alt ?? ""} />{i === 0 ? <span className="badge">Titelbild</span> : null}
+              <div className="photo-actions">
+                {i > 0 ? <form action={photoStep}>{H}<input type="hidden" name="url" value={p.url} /><input type="hidden" name="action" value="first" /><button className="btn secondary small">Als Titelbild</button></form> : null}
+                <form action={photoStep}>{H}<input type="hidden" name="url" value={p.url} /><input type="hidden" name="action" value="remove" /><button className="btn secondary small">Entfernen</button></form>
+              </div>
+            </figure>))}</div> : null}
           {photos.length < MAX_PHOTOS ? (
             <form action={`/api/admin/hotels/${hotel.id}/photos?from=wizard`} method="post" encType="multipart/form-data" className="stack card">
               <div><label>Fotos hochladen (JPG, PNG, WebP, max. 8 MB, bis 3 aufs Mal)</label><input type="file" name="file" accept="image/jpeg,image/png,image/webp" multiple required /></div>
@@ -301,7 +322,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             placeholder={whole ? "Schlüssel: Schlüsselbox neben der Haustür, Code 4711.\nParkplatz: Nr. 3 hinter dem Haus.\nWLAN: Chalet-Gast / Passwort bergluft24" : "Rezeption geöffnet 7–21 Uhr. Später? Rufen Sie uns an: 055 …\nParkplätze hinter dem Haus."} /></div>
           <div><label htmlFor="ai-en">Englisch (optional)</label><textarea id="ai-en" name="en" rows={4} maxLength={2000} defaultValue={hotel.content.arrivalInfo?.en ?? ""} /></div>
           <p className="small muted">Zugangscodes nur hier eintragen, nicht auf der Website – die Infos gehen nur an Gäste mit bestätigter Buchung.</p>
-          <div style={{ display: "flex", gap: 8 }}><button className="btn">Speichern und weiter</button>{next ? <button className="btn secondary small" formNoValidate formAction={skipFromArrival}>Später</button> : null}</div>
+          <div style={{ display: "flex", gap: 8 }}><button className="btn">Speichern und weiter</button>{next ? <button className="btn secondary" formNoValidate formAction={skipFromArrival}>Später</button> : null}</div>
         </form>
       );
       body = (

@@ -3,6 +3,7 @@ import { feePercentText } from "@/src/domain/fee";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
+import { AccountLink } from "@/components/marketing/AccountLink";
 import { AccountExistsError, CANTONS, PROPERTY_LABEL, PROPERTY_TYPES, registerHost } from "@/src/services/onboarding";
 import { getHotelByHost } from "@/src/services/hotels";
 import { clientIp } from "@/src/lib/rate-limit";
@@ -64,7 +65,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
   const name = env().PLATFORM_NAME;
   return (
     <main className="wrap register">
-      <a href="/" className="brand">{name}</a>
+      <a href="/" className="brand">{name}</a><AccountLink />
       <div className="register-grid">
         <section>
           <h1>Direktbuchung für Ihren Betrieb – in 20 Minuten eingerichtet</h1>

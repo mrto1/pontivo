@@ -663,8 +663,8 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 ### 18.9 Texte der Pontivo-Startseite (Plattform-Admin)
 Die Texte der Pontivo-Startseite stehen als Standard im Code (`src/domain/pontivo-site.ts`). Der Plattform-Admin überschreibt sie unter `/admin/plattform/website`; Überschreibungen liegen in `platform_settings` (Schlüssel `site_texts`). Platzhalter: `{name}`, `{fee}`, `{emailTo}`. «Zurücksetzen» stellt den Standard wieder her.
 
-### 18.10 myPontivo (eigene Seite je Benutzer)
-Seite `/admin/<hotelId>/mypontivo` ersetzt das frühere App-/Sicherheitsfeld im «Mehr»-Menü. Oben: eigene E-Mail-Adresse und Rolle. Bereiche: Webseite-Vorschau, Pontivo-App (Installation, Mitteilungen mit Erklärung), Sicherheit (Passkeys, Authenticator-App, «Nur Passkey»), Weiteres (Abmelden).
+### 18.10 Mein Konto (eigene Seite je Benutzer; «myPontivo» heisst der ganze Admin-Bereich)
+Namen: Die Kopfzeile des Admin zeigt «myPontivo · <Betrieb>», die App auf dem Startbildschirm heisst «myPontivo», der Link zur persönlichen Seite «Mein Konto». Seite `/admin/<hotelId>/mypontivo` ersetzt das frühere App-/Sicherheitsfeld im «Mehr»-Menü. Oben: eigene E-Mail-Adresse und Rolle. Bereiche: Webseite-Vorschau, Pontivo-App (Installation, Mitteilungen mit Erklärung), Sicherheit (Passkeys, Authenticator-App, «Nur Passkey»), Weiteres (Abmelden).
 E-Mail-Adresse ändern: Link (60 Minuten, einmalig) an die NEUE Adresse, Hinweis an die ALTE; mit aktiver Authenticator-App zusätzlich Code nötig; höchstens 3 Anträge pro Stunde; Wegwerf-Adressen gesperrt; ob die neue Adresse schon vergeben ist, wird nicht verraten. Nach Bestätigung gilt die neue Adresse als verifiziert, offene Login-Links sind ungültig. Tabelle `email_changes`.
 
 ### 18.11 Schutz der Gäste-Formulare auf Hotel-Websites

@@ -32,8 +32,8 @@ describe("Admin-Menü", () => {
     expect(isActive("/admin/h1/vouchers", guests, home)).toBe(true); // Reiter hält den Sammelpunkt aktiv
   });
 
-  it("Einrichtung: schlankes Menü ohne «Mehr» (Vorschau und Konto liegen in myPontivo)", () => {
-    expect(adminNav(hotel, true).primary.map((i) => i.key)).toEqual(["einrichten", "rooms", "site", "settings"]);
+  it("Einrichtung: schlankes Menü ohne «Mehr» (Vorschau und Konto liegen unter «Mein Konto»)", () => {
+    expect(adminNav(hotel, true).primary.map((i) => i.key)).toEqual(["einrichten", "rooms", "calendar", "site", "settings"]);
     expect(adminNav(hotel, true).groups).toEqual([]);
   });
 

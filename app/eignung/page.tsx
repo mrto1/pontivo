@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { env } from "@/src/env";
+import { AccountLink } from "@/components/marketing/AccountLink";
 import { MAX_ROOMS, SOFTWARE, SOFTWARE_LABEL, suitability, type Software } from "@/src/domain/suitability";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export default async function Eignung({ searchParams }: { searchParams: Promise<
   const r = answered ? suitability({ rooms, restaurantWithPos: sp.restaurant === "yes", software: software! }) : null;
   return (
     <main className="wrap register">
-      <a href="/" className="brand">{env().PLATFORM_NAME}</a>
+      <a href="/" className="brand">{env().PLATFORM_NAME}</a><AccountLink />
       <h1>Passt Pontivo zu Ihrem Haus?</h1>
       <p className="muted">Drei Fragen, eine ehrliche Antwort. Wir speichern nichts.</p>
       <form method="get" className="card stack">
