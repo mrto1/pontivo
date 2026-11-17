@@ -16,12 +16,27 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
   await expect(page.getByRole("heading", { name: "Fast geschafft" })).toBeVisible();
   await page.getByRole("link", { name: "Hier anmelden" }).click();
 
+  // Nach dem Login: volles Menü, Einrichtungskarte, Hinweise auf jeder Seite; Konto über den Avatar
+  await expect(page.getByRole("heading", { name: "Willkommen bei myPontivo" })).toBeVisible();
+  await expect(page.locator(".admin-nav").getByRole("link", { name: "Kalender" })).toBeVisible();
+  await expect(page.locator(".avatar-link")).toHaveText("RK");
+  await expect(page.locator(".setup-chip")).toContainText("Einrichtung");
+  await page.locator(".admin-nav").getByRole("link", { name: "Kalender" }).click();
+  await expect(page.locator(".setup-banner")).toContainText("noch nicht abgeschlossen");
+  await expect(page.locator(".setup-need")).toContainText("Zimmer");
+  await page.locator(".setup-banner").getByRole("link", { name: "Einrichtung fortsetzen" }).click();
+
   // Assistent: Angaben
   await expect(page.getByRole("heading", { name: "Angaben zum Betrieb" })).toBeVisible();
   await page.fill("#addressLine", "Promenade 12");
   await page.fill("#postalCode", "7270");
   await page.fill("#city", "Davos");
   await page.fill("#intro", "Helle 3½-Zimmer-Wohnung mit Balkon, 5 Minuten zur Parsennbahn.");
+  await page.getByRole("button", { name: "Speichern und weiter" }).click();
+
+  // Was brauchen Sie? (Ferienwohnung: ohne Rezeption vorbelegt)
+  await expect(page.getByRole("heading", { name: "Was brauchen Sie?" })).toBeVisible();
+  await expect(page.getByLabel(/Wir haben eine Rezeption/)).not.toBeChecked();
   await page.getByRole("button", { name: "Speichern und weiter" }).click();
 
   // Kurtaxe: Gemeinde unbekannt → eintragen

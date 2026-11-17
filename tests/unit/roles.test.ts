@@ -41,7 +41,7 @@ describe("Rollen (SPEC 17.4)", () => {
 
   it("alle Bereiche der Rollen sind echte Menüpunkte (oder Rahmen)", () => {
     const hotel = { id: "h", slug: "s", primaryDomain: null };
-    const nav = adminNav(hotel, false);
+    const nav = adminNav(hotel);
     const keys = new Set<string>();
     const walk = (items: { key: string; tabs?: { key: string }[] }[]) => items.forEach((i) => { keys.add(i.key); walk(i.tabs ?? []); });
     walk(nav.primary); nav.groups.forEach((g) => walk(g.items));

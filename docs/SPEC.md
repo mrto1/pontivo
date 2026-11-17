@@ -816,3 +816,10 @@ Grundlage: `docs/PMS-ERSATZ.md` 5.3 (Treuhänder-/Kassenvorgaben). Diese Stufe: 
 - Gästemeldung Appenzell Innerrhoden.
 - Ob Hotels mit eigenem Channel-Manager (z. B. Hotel-Spider) statt Channex angebunden werden (eigene Integration, nicht v1).
 - Rechtstexte (AGB Gäste, Vertrag Hotel, Datenschutzerklärung) liefert der Betreiber.
+
+### 19.18 Menü und Einrichtung im Admin
+- Das Menü hängt nur von Betriebstyp, eingeschalteten Funktionen und Rolle ab, nie vom Stand der Einrichtung. Es gibt keinen Menüpunkt «Einrichten».
+- Stand der Einrichtung: Chip in der Kopfzeile («Einrichtung X von Y»), Einrichtungskarte auf der Übersicht, einzeilige Hinweiszeile auf jeder Seite (nur Inhaber und Geschäftsführung, nicht im Assistenten). Pausierter Betrieb: Hinweis «Gäste können nicht buchen» mit Link zu den Einstellungen.
+- Seiten, die Zimmer (Kalender, Preisempfehlung, Zimmerplan, Heute, Reinigung, Statistik, Vertrieb) oder Betriebsangaben (Rechnungen) brauchen, zeigen bis dahin einen Hinweis mit Link zum passenden Schritt. Nichts wird gesperrt.
+- «Mein Konto» erreicht man über das Profilbild (Initialen) oben rechts.
+- Funktionen: Startprofil wird bei der Registrierung als feste Einträge gespeichert (Ferienwohnung ohne Rezeption). Wizard-Schritt «Was brauchen Sie?» direkt nach den Angaben; Einschalten zieht Voraussetzungen automatisch mit. Abnahme: tests/unit/setup-concept.test.ts, tests/integration/onboarding.test.ts, tests/e2e/onboarding.spec.ts.

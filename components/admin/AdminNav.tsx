@@ -6,9 +6,9 @@ import { isActive, type Nav, type NavItem } from "@/src/admin/nav";
 /**
  * Menü: Desktop = Links in der Kopfzeile, Handy = feste Leiste unten. «Mehr» öffnet auf dem Handy ein Fenster von unten,
  * auf dem Desktop ein Menü unter der Kopfzeile. Menüinhalt kommt aus src/admin/nav.ts.
- * «Mein Konto» (eigene Seite mit Konto, App, Sicherheit; «myPontivo» heisst der ganze Admin-Bereich) steht in der Kopfzeile und oben im «Mehr»-Fenster; gibt es kein «Mehr», in der Leiste.
+ * Das Profilbild (Initialen) oben rechts führt zu «Mein Konto» (Konto, App, Sicherheit; «myPontivo» heisst der ganze Admin-Bereich).
  */
-export function AdminNav({ nav, home, userLabel }: { nav: Nav; home: string; userLabel: string }) {
+export function AdminNav({ nav, home, userLabel, initials }: { nav: Nav; home: string; userLabel: string; initials: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [pathname]);
@@ -36,24 +36,17 @@ export function AdminNav({ nav, home, userLabel }: { nav: Nav; home: string; use
           Mehr <span aria-hidden>▾</span>
         </button>
       ) : null}
-      <a href={mypontivo} className={`mypontivo-link${myActive ? " active" : ""}`} aria-current={myActive ? "page" : undefined}>Mein Konto</a>
+      <a href={mypontivo} className={`avatar-link${myActive ? " active" : ""}`} aria-current={myActive ? "page" : undefined} aria-label={`Mein Konto (${userLabel})`} title={userLabel}>{initials}</a>
 
       <nav className="tabbar" aria-label="Hauptmenü">
         {nav.primary.map((i) => <a key={i.key} href={i.href} className={a(i)} aria-current={isActive(pathname, i, home) ? "page" : undefined}>{i.label}</a>)}
-        {hasMore
-          ? <button type="button" className={moreActive || open ? "active" : undefined} aria-expanded={open} aria-controls="admin-more" onClick={() => setOpen((v) => !v)}>Mehr</button>
-          : <a href={mypontivo} className={myActive ? "active" : undefined}>Mein Konto</a>}
+        {hasMore ? <button type="button" className={moreActive || open ? "active" : undefined} aria-expanded={open} aria-controls="admin-more" onClick={() => setOpen((v) => !v)}>Mehr</button> : null}
       </nav>
 
       {open ? (
         <>
           <div className="more-backdrop" onClick={() => setOpen(false)} />
           <div id="admin-more" className="more-panel" role="dialog" aria-label="Weitere Seiten">
-            <a href={mypontivo} className="more-me">
-              <strong>Mein Konto</strong>
-              <span className="muted small">{userLabel}</span>
-              <span className="muted small">Konto, App, Sicherheit, Webseite-Vorschau</span>
-            </a>
             {nav.groups.map((g) => (
               <div key={g.title} className="more-group">
                 <h3>{g.title}</h3>

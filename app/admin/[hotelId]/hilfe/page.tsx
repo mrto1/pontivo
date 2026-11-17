@@ -12,7 +12,7 @@ export default async function HelpPage({ params }: { params: Promise<{ hotelId: 
   const { hotelId } = await params;
   const { hotel } = await requireHotel(hotelId, "staff", "help");
   const rows = await moduleRows(hotel.id);
-  const pages = new Map(allPages(adminNav(hotel, false, hiddenNavKeys(rows))).map((p) => [p.key, p.href]));
+  const pages = new Map(allPages(adminNav(hotel, hiddenNavKeys(rows))).map((p) => [p.key, p.href]));
   const mods = MODULES.filter((m) => isOn(rows, m.key));
   const contact = env().EMAIL_FROM;
   return (

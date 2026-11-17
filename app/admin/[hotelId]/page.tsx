@@ -4,6 +4,8 @@ import { isLimitedRole, LANDING } from "@/src/domain/roles";
 import { atLeast } from "@/src/auth/session";
 import { bpsOf, formatChf } from "@/src/domain/money";
 import { overview, PERIOD_LABEL, PERIODS, setOtaCommission, type Period } from "@/src/services/overview";
+import { setupOpen } from "@/src/domain/setup";
+import { onboardingSteps, nextOpenStep } from "@/src/services/onboarding";
 import { DirectChart } from "@/components/admin/DirectChart";
 
 export const dynamic = "force-dynamic";
@@ -23,10 +25,32 @@ export default async function Overview({ params, searchParams }: { params: Promi
   const sp = await searchParams;
   const { hotel, role } = await requireHotel(hotelId, "staff", "home");
   if (isLimitedRole(role)) redirect(`/admin/${hotel.id}/${LANDING[role]}`);
-  // Einrichtung begonnen, noch nicht abgeschlossen → Assistent
-  if (hotel.onboarding.startedAt && !hotel.onboarding.completedAt && atLeast(role, "manager")) redirect(`/admin/${hotel.id}/einrichten`);
   // Zahlen zu Umsatz und Gebühren nur für Inhaber und Geschäftsführung (wie die Abrechnung)
   if (!atLeast(role, "manager")) redirect(`/admin/${hotel.id}/bookings`);
+  // Einrichtung läuft: Übersicht zeigt die Einrichtungskarte (das Menü bleibt voll, nichts ist gesperrt)
+  if (setupOpen(hotel)) {
+    const steps = await onboardingSteps(hotel);
+    const next = nextOpenStep(steps);
+    const done = steps.filter((x) => x.done).length;
+    return (
+      <div className="stack">
+        <h1 style={{ margin: 0 }}>Willkommen bei myPontivo</h1>
+        <section className="card stack">
+          <h2 style={{ margin: 0 }}>Einrichtung: {done} von {steps.length} Schritten</h2>
+          <p className="muted" style={{ margin: 0 }}>Sobald Zimmer und Preise erfasst sind und Sie online gehen, füllen sich Kalender, Statistik und diese Übersicht. Sie können jederzeit alle Seiten ansehen.</p>
+          <ol className="stack" style={{ margin: 0, paddingLeft: 20 }}>
+            {steps.map((x) => (
+              <li key={x.key}>
+                <a href={`/admin/${hotel.id}/einrichten?step=${x.key}`}>{x.title}</a>
+                {x.done ? <span className="badge" style={{ marginLeft: 8 }}>erledigt</span> : x.required ? null : <span className="muted small"> (optional)</span>}
+              </li>
+            ))}
+          </ol>
+          <p style={{ margin: 0 }}><a className="btn" href={`/admin/${hotel.id}/einrichten?step=${next}`}>Einrichtung fortsetzen</a></p>
+        </section>
+      </div>
+    );
+  }
   const period: Period = (PERIODS as readonly string[]).includes(sp.period ?? "") ? (sp.period as Period) : "month";
   const o = await overview(hotel, period);
   const pct = (o.commissionBps / 100).toLocaleString("de-CH");

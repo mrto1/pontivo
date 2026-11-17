@@ -19,7 +19,7 @@ async function toggle(f: FormData) {
 export default async function FirstWeekPage({ params }: { params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
   const { hotel, user, role } = await requireHotel(hotelId, "staff", "firstweek");
-  const pages = allPages(adminNav(hotel, false, hiddenNavKeys(await moduleRows(hotel.id))));
+  const pages = allPages(adminNav(hotel, hiddenNavKeys(await moduleRows(hotel.id))));
   const href = new Map(pages.map((p) => [p.key, p.href]));
   href.set("mypontivo", `/admin/${hotel.id}/mypontivo`);
   const tasks = tasksFor(role, new Set(href.keys()));

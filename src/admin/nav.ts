@@ -10,8 +10,8 @@ export type NavGroup = { title: string; items: NavItem[] };
 export type Nav = { primary: NavItem[]; groups: NavGroup[] };
 
 /** `hidden`: Menüpunkte ausgeschalteter Module (src/domain/modules.ts). Hat ein Sammelpunkt nur noch einen Reiter, bleibt er ein einfacher Punkt. */
-export function adminNav(hotel: { id: string; slug: string; primaryDomain: string | null }, setup: boolean, hidden: ReadonlySet<string> = new Set()): Nav {
-  const nav = baseNav(hotel, setup);
+export function adminNav(hotel: { id: string; slug: string; primaryDomain: string | null }, hidden: ReadonlySet<string> = new Set()): Nav {
+  const nav = baseNav(hotel);
   if (!hidden.size) return nav;
   const prune = (items: NavItem[]) =>
     items.flatMap((i) => {
@@ -25,16 +25,9 @@ export function adminNav(hotel: { id: string; slug: string; primaryDomain: strin
   return { primary: prune(nav.primary), groups: nav.groups.map((g) => ({ ...g, items: prune(g.items) })).filter((g) => g.items.length) };
 }
 
-function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null }, setup: boolean): Nav {
+function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null }): Nav {
   const base = `/admin/${hotel.id}`;
   const link = (key: string, label: string, path = key): NavItem => ({ key, label, href: `${base}/${path}` });
-  if (setup) {
-    // Während der Einrichtung: schlank
-    return {
-      primary: [link("einrichten", "Einrichten"), link("rooms", "Zimmer"), link("calendar", "Kalender"), link("site", "Website"), link("settings", "Einstellungen")],
-      groups: [], // Vorschau und Konto: Mein Konto
-    };
-  }
   return {
     primary: [
       { key: "home", label: "Übersicht", href: base },

@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
-import { isOn, MODULES } from "@/src/domain/modules";
-import { ModuleError, moduleRows, setModule } from "@/src/services/modules";
+import { isOn, MODULES, moduleDef } from "@/src/domain/modules";
+import { applyModules, ModuleError, moduleRows, setModule } from "@/src/services/modules";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,12 @@ async function toggle(f: FormData) {
   const c = await requireHotel(s(f, "hotelId"), "manager");
   let msg = "Gespeichert.";
   try {
-    await setModule(c.hotel.id, s(f, "module"), f.get("on") === "1", c.actor);
+    const key = s(f, "module");
+    if (f.get("on") === "1") {
+      // Einschalten zieht die Voraussetzungen automatisch mit
+      const changed = Object.keys(await applyModules(c.hotel.id, { [key]: true }, c.actor)).filter((k) => k !== key);
+      if (changed.length) msg = `Gespeichert. Zusätzlich eingeschaltet: ${changed.map((k) => moduleDef(k)?.label ?? k).join(", ")}.`;
+    } else await setModule(c.hotel.id, key, false, c.actor);
   } catch (e) {
     if (!(e instanceof ModuleError)) throw e;
     msg = `Nicht geändert: ${e.message}`;

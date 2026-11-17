@@ -1,7 +1,9 @@
 import { and, eq, sql } from "drizzle-orm";
+import { applyModules } from "./modules";
+import { startModules } from "../domain/module-choice";
 import { z } from "zod";
 import { db, rows } from "../db/client";
-import { hotelMembers, hotels, ratePlans, roomTypes, sitePages, users, type Hotel } from "../db/schema";
+import { hotelMembers, hotelModules, hotels, ratePlans, roomTypes, sitePages, users, type Hotel } from "../db/schema";
 import { slugify } from "../domain/blocks";
 import { DEFAULT_MONTHLY_MINIMUM_RAPPEN, HOST_TERMS_VERSION } from "../legal/host-terms";
 import { enqueueEmail } from "../email/enqueue";
@@ -102,6 +104,8 @@ export async function registerHost(input: RegisterInput, now = new Date(), opts:
     const [u] = await tx.insert(users).values({ email: v.email, name: v.contactName })
       .onConflictDoUpdate({ target: users.email, set: { name: sql`coalesce(${users.name}, ${v.contactName})` } }).returning();
     await tx.insert(hotelMembers).values({ hotelId: h.id, userId: u.id, role: "owner" }).onConflictDoNothing();
+    // Startprofil als feste Einträge: Funktionen sind von Anfang an schaltbar (Wizard «Was brauchen Sie?», Funktionen-Seite)
+    await tx.insert(hotelModules).values(Object.entries(startModules(isWholeUnit(v.propertyType))).map(([module, enabled]) => ({ hotelId: h.id, module, enabled })));
     await audit(tx, { hotelId: h.id, actor: `user:${u.id}`, action: "host.register", entity: "hotel", entityId: h.id, details: { propertyType: v.propertyType, terms: HOST_TERMS_VERSION } });
     return h;
   });
@@ -113,7 +117,14 @@ export async function registerHost(input: RegisterInput, now = new Date(), opts:
 
 // ---------------------------------------------------------------- Schritte
 
-export type StepKey = "betrieb" | "kurtaxe" | "unterkunft" | "fotos" | "ankunft" | "zahlungen" | "karte" | "live" | "einbinden";
+/** Wizard-Schritt «Was brauchen Sie?»: Auswahl anwenden (Abhängigkeiten werden aufgelöst) und den Schritt als erledigt vermerken */
+export async function chooseModules(hotel: Hotel, wanted: Record<string, boolean>, actor: string) {
+  await applyModules(hotel.id, wanted, actor);
+  await db().update(hotels).set({ onboarding: { ...hotel.onboarding, modulesChosenAt: new Date().toISOString() } }).where(eq(hotels.id, hotel.id));
+}
+
+
+export type StepKey = "betrieb" | "funktionen" | "kurtaxe" | "unterkunft" | "fotos" | "ankunft" | "zahlungen" | "karte" | "live" | "einbinden";
 export type Step = { key: StepKey; title: string; done: boolean; required: boolean };
 
 export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
@@ -124,6 +135,7 @@ export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
   const photos = (hotel.content.photos?.length ?? 0) + rts.reduce((n, r) => n + r.photos.length, 0);
   return [
     { key: "betrieb", title: "Angaben zum Betrieb", done: !!(hotel.addressLine && hotel.postalCode && hotel.city), required: true },
+    { key: "funktionen", title: "Was brauchen Sie?", done: !!hotel.onboarding.modulesChosenAt, required: true },
     { key: "kurtaxe", title: "Kurtaxe", done: !problems.some((p) => p.startsWith("Kurtaxe")), required: true },
     { key: "unterkunft", title: `${isWholeUnit(hotel.propertyType) ? unit : "Zimmer"} und Preise`, done: rts.length > 0 && rts.every((r) => rps.some((p) => p.roomTypeId === r.id)), required: true },
     { key: "fotos", title: "Fotos", done: photos > 0, required: true },

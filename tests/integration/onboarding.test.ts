@@ -3,7 +3,9 @@ import { and, eq } from "drizzle-orm";
 import { db, closeDb } from "../../src/db/client";
 import { consumeLoginToken } from "../../src/auth/session";
 import { auditLog, bookings, emailOutbox, hotelMembers, hotels, platformCharges, users } from "../../src/db/schema";
-import { addUnit, detectEmbed, goLiveFromWizard, markEmbedded, nextOpenStep, onboardingReminders, onboardingSteps, OnboardingError, registerHost, setArrivalInfo, updateBasics } from "../../src/services/onboarding";
+import { chooseModules, addUnit, detectEmbed, goLiveFromWizard, markEmbedded, nextOpenStep, onboardingReminders, onboardingSteps, OnboardingError, registerHost, setArrivalInfo, updateBasics } from "../../src/services/onboarding";
+import { moduleRows } from "../../src/services/modules";
+import { isOn, MODULES } from "../../src/domain/modules";
 import { confirmTouristTax } from "../../src/services/settings";
 import { searchOffers } from "../../src/services/search";
 import { finishCardSetup, processCharges, runMonthlyMinimum, startCardSetup } from "../../src/services/billing";
@@ -60,7 +62,15 @@ describe("Selbst-Registrierung und Einrichtung", () => {
     await addUnit(await fresh(hotel.id), { name: "Wohnung Bergsicht", count: 1, maxPersons: 4, priceRappen: 18000, minNights: 3, arrivalWeekdays: [6], cancel: "moderat", cleaningRappen: 9000 }, "t");
     await setArrivalInfo(await fresh(hotel.id), { de: "Schlüsselbox Code 4711" }, "t");
     steps = await onboardingSteps(await fresh(hotel.id));
-    expect(steps.filter((s) => !s.done).map((s) => s.key)).toEqual(["fotos", "karte", "live"]);
+    expect(steps.filter((s) => !s.done).map((s) => s.key)).toEqual(["funktionen", "fotos", "karte", "live"]);
+    // Startprofil liegt als feste Einträge vor (Ferienwohnung: ohne Rezeption); «Was brauchen Sie?» zieht Voraussetzungen mit
+    const rows = await moduleRows(hotel.id);
+    expect(rows.length).toBe(MODULES.length);
+    expect(isOn(rows, "frontdesk")).toBe(false);
+    await chooseModules(await fresh(hotel.id), { housekeeping: true }, "t");
+    const after = await moduleRows(hotel.id);
+    expect(isOn(after, "housekeeping") && isOn(after, "frontdesk")).toBe(true);
+    expect((await onboardingSteps(await fresh(hotel.id))).find((x) => x.key === "funktionen")!.done).toBe(true);
     await expect(goLiveFromWizard(await fresh(hotel.id), "t")).rejects.toThrow(OnboardingError);
 
     // Suche: nur Samstag, Endreinigung im Total, ganze Wohnung = gleicher Preis für 1–4 Personen

@@ -4,7 +4,7 @@ import { ROLE_AREAS, type LimitedRole } from "../../src/domain/roles";
 import { MODULES } from "../../src/domain/modules";
 import { adminNav, allPages } from "../../src/admin/nav";
 
-const nav = allPages(adminNav({ id: "h", slug: "s", primaryDomain: null }, false));
+const nav = allPages(adminNav({ id: "h", slug: "s", primaryDomain: null }));
 const keys = new Set([...nav.map((p) => p.key), "mypontivo"]);
 
 describe("Einarbeitung (PMS-ERSATZ 4.2)", () => {

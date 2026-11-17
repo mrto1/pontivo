@@ -8,7 +8,7 @@ const hotel = { id: "h1", slug: "demo", primaryDomain: null };
 
 describe("Admin-Menü", () => {
   it("jede Seite genau einmal; alle Links gehören zum eigenen Hotel", () => {
-    const nav = adminNav(hotel, false);
+    const nav = adminNav(hotel);
     const all = allPages(nav);
     const keys = all.map((i) => i.key);
     expect(new Set(keys).size).toBe(keys.length);
@@ -18,7 +18,7 @@ describe("Admin-Menü", () => {
   });
 
   it("zusammengelegte Punkte: Gäste, Angebot und Vertrieb haben Reiter; im Menü steht nur der Sammelpunkt", () => {
-    const nav = adminNav(hotel, false);
+    const nav = adminNav(hotel);
     const menu = [...nav.primary, ...nav.groups.flatMap((g) => g.items)].map((i) => i.label);
     expect(menu).toEqual(expect.arrayContaining(["Gäste", "Angebot", "Vertrieb"]));
     expect(menu).not.toEqual(expect.arrayContaining(["Anfragen"]));
@@ -32,13 +32,14 @@ describe("Admin-Menü", () => {
     expect(isActive("/admin/h1/vouchers", guests, home)).toBe(true); // Reiter hält den Sammelpunkt aktiv
   });
 
-  it("Einrichtung: schlankes Menü ohne «Mehr» (Vorschau und Konto liegen unter «Mein Konto»)", () => {
-    expect(adminNav(hotel, true).primary.map((i) => i.key)).toEqual(["einrichten", "rooms", "calendar", "site", "settings"]);
-    expect(adminNav(hotel, true).groups).toEqual([]);
+  it("Das Menü ist immer vollständig: kein «Einrichten»-Punkt, Konto über den Avatar", () => {
+    const keys = allPages(adminNav(hotel)).map((i) => i.key);
+    expect(keys).not.toContain("einrichten");
+    expect(keys).toEqual(expect.arrayContaining(["calendar", "rooms", "site", "settings", "bookings"]));
   });
 
   it("aktive Seite: Übersicht nur exakt, andere auch bei Unterseiten", () => {
-    const nav = adminNav(hotel, false);
+    const nav = adminNav(hotel);
     const home = "/admin/h1";
     const [overview, calendar] = nav.primary;
     expect(isActive("/admin/h1", overview, home)).toBe(true);

@@ -11,12 +11,12 @@ describe("Modul-Register", () => {
     expect(isOn([], "gibt-es-nicht")).toBe(false);
   });
   it("jeder Menüschlüssel der Module existiert im Menü", () => {
-    const keys = new Set(allPages(adminNav(hotel, false)).map((i) => i.key));
+    const keys = new Set(allPages(adminNav(hotel)).map((i) => i.key));
     for (const m of MODULES) for (const k of m.navKeys) expect(keys.has(k), `${m.key}:${k}`).toBe(true);
   });
   it("ausgeschaltete Module verschwinden aus dem Menü, Sammelpunkt mit einem Reiter wird einfach", () => {
     const off = hiddenNavKeys([{ module: "frontdesk", enabled: false }, { module: "invoicing", enabled: false }]);
-    const nav = adminNav(hotel, false, off);
+    const nav = adminNav(hotel, off);
     const keys = allPages(nav).map((i) => i.key);
     expect(keys).not.toEqual(expect.arrayContaining(["frontdesk"]));
     expect(keys).not.toEqual(expect.arrayContaining(["plan"]));
@@ -24,7 +24,7 @@ describe("Modul-Register", () => {
     const b = nav.primary.find((i) => i.key === "bookings")!;
     expect(b.tabs).toBeUndefined();
     // nur Rechnung aus: Buchungen behält Reiter Heute und Zimmerplan
-    const nav2 = adminNav(hotel, false, hiddenNavKeys([{ module: "invoicing", enabled: false }]));
+    const nav2 = adminNav(hotel, hiddenNavKeys([{ module: "invoicing", enabled: false }]));
     expect(nav2.primary.find((i) => i.key === "bookings")!.tabs?.map((t) => t.key)).toEqual(["bookings", "frontdesk", "plan"]);
     expect(nav2.primary.length).toBeLessThanOrEqual(4);
   });

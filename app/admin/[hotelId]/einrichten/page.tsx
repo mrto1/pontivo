@@ -4,9 +4,12 @@ import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import {
-  addUnit, bookingOnly, CANCEL_TEMPLATES, detectEmbed, goLiveFromWizard, markEmbedded, isWholeUnit, nextOpenStep, onboardingSteps, OnboardingError, PROPERTY_LABEL,
+  addUnit, bookingOnly, CANCEL_TEMPLATES, chooseModules, detectEmbed, goLiveFromWizard, markEmbedded, isWholeUnit, nextOpenStep, onboardingSteps, OnboardingError, PROPERTY_LABEL,
   setArrivalInfo, setGuestInfo, unitWord, updateBasics, type StepKey,
 } from "@/src/services/onboarding";
+import { CHOICES } from "@/src/domain/module-choice";
+import { isOn } from "@/src/domain/modules";
+import { moduleRows } from "@/src/services/modules";
 import { confirmTouristTax } from "@/src/services/settings";
 import { taxRuleFor } from "@/src/services/hotels";
 import { changePhoto, listRooms, MAX_PHOTOS, RoomError } from "@/src/services/rooms";
@@ -54,6 +57,11 @@ async function saveBasics(f: FormData) {
     name: s(f, "name"), addressLine: s(f, "addressLine"), postalCode: s(f, "postalCode"), city: s(f, "city"), contactPhone: s(f, "phone"),
     checkinTime: s(f, "checkin"), checkoutTime: s(f, "checkout"), intro: s(f, "intro"),
   }, actor));
+}
+
+async function saveModules(f: FormData) {
+  "use server";
+  await step(f, ({ hotel, actor }) => chooseModules(hotel, Object.fromEntries(CHOICES.flatMap((c) => c.modules.map((m) => [m, f.get(`c_${c.key}`) === "1"]))), actor));
 }
 
 async function saveTax(f: FormData) {
@@ -201,6 +209,22 @@ export default async function Wizard({ params, searchParams }: { params: Promise
         </form>
       );
       break;
+    case "funktionen": {
+      const rows = await moduleRows(hotel.id);
+      body = (
+        <form action={saveModules} className="stack">{H}
+          <p className="muted" style={{ margin: 0 }}>Kreuzen Sie an, was auf Sie zutrifft. Alles andere bleibt ausgeblendet und lässt sich jederzeit unter «Funktionen» ändern.</p>
+          {CHOICES.map((c) => (
+            <label key={c.key} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
+              <input type="checkbox" name={`c_${c.key}`} value="1" defaultChecked={c.modules.every((m) => isOn(rows, m))} style={{ width: "auto", marginTop: 4 }} />
+              <span>{c.question}</span>
+            </label>
+          ))}
+          <div><button className="btn">Speichern und weiter</button></div>
+        </form>
+      );
+      break;
+    }
     case "kurtaxe": {
       const rule = await taxRuleFor(hotel, todayIn(hotel.timezone));
       const known = rule && rule.status !== "needs_confirmation" && rule.adultRappen !== null;

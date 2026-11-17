@@ -576,10 +576,11 @@ table.plan tr.plan-off { opacity: .55; }
 .linklike { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
 
 /* Mein Konto: Link in der Kopfzeile und oberster Eintrag im «Mehr»-Fenster */
-.mypontivo-link { color: var(--ink); text-decoration: none; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); font-weight: 600; white-space: nowrap; }
-.mypontivo-link:hover, .mypontivo-link.active { background: var(--accent-soft); }
-.more-me { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; text-decoration: none; color: var(--ink); margin-bottom: 12px; }
-.more-me:hover { background: var(--accent-soft); }
-@media (max-width: 720px) { .mypontivo-link { display: none; } }
+.avatar-link { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: .85rem; text-decoration: none; flex: none; margin-left: 8px; }
+.avatar-link:hover, .avatar-link.active { box-shadow: 0 0 0 3px var(--accent-soft); }
+.setup-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); font-size: .8rem; font-weight: 600; text-decoration: none; white-space: nowrap; margin-left: 8px; }
+.setup-banner { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; padding: 10px 14px; margin: 0 0 16px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; background: var(--accent-soft); font-size: .92rem; }
+.setup-banner.paused { border-left-color: #b45309; }
+.setup-need { margin: 0 0 16px; }
 .mp-top { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
 .mp-section { scroll-margin-top: 80px; }
