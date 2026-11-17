@@ -240,6 +240,8 @@ export const guests = pgTable("guests", {
   language: text("language").notNull().default("de"),
   marketingConsent: boolean("marketing_consent").notNull().default(false),
   marketingConsentAt: ts("marketing_consent_at"),
+  /** Datenübernahme (Migration 0057): von diesem Auftrag angelegt */
+  importJobId: uuid("import_job_id"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -286,6 +288,9 @@ export const bookings = pgTable("bookings", {
   /** Gruppe, zu der die Buchung gehört (SPEC 18.1) */
   groupId: uuid("group_id"),
   overbooked: boolean("overbooked").notNull().default(false),
+  /** Datenübernahme (Migration 0057): Nummer in der bisherigen Software, je Betrieb eindeutig, und der Auftrag */
+  sourceRef: text("source_ref"),
+  importJobId: uuid("import_job_id"),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
@@ -1359,3 +1364,24 @@ export const onboardingTasks = pgTable(
   },
   (t) => [primaryKey({ columns: [t.hotelId, t.userId, t.taskKey] })],
 );
+
+/** Datenübernahme aus der bisherigen Software (Migration 0057, PMS-ERSATZ E1) */
+export type ImportSummary = {
+  total: number; created: number; skipped: number; errors: number; warnings: number; past: number; future: number;
+  issues: { row: number; severity: "error" | "warn"; message: string }[];
+  sample: { row: number; ref: string; guest: string; checkin: string; checkout: string }[];
+  undone?: { removed: number; kept: { ref: string; reason: string }[] };
+};
+export const importJobs = pgTable("import_jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  sourceProfile: text("source_profile").notNull().default("generic"),
+  status: text("status").$type<"checked" | "running" | "done" | "undone" | "failed">().notNull(),
+  filename: text("filename").notNull().default(""),
+  csv: text("csv"),
+  summary: jsonb("summary").$type<ImportSummary>().notNull().default({} as ImportSummary),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  finishedAt: ts("finished_at"),
+});
+export type ImportJob = typeof importJobs.$inferSelect;

@@ -5,7 +5,7 @@ describe("Eignungs-Check (SPEC 19.14)", () => {
   it("kleines Haus ohne Restaurant passt", () => {
     const r = suitability({ rooms: 12, restaurantWithPos: false, software: "small" });
     expect(r.fit).toBe("fits");
-    expect(r.text).toContain("in Vorbereitung"); // keine Datenübernahme versprochen
+    expect(r.text).toContain("Datenübernahme"); // verspricht nur den CSV-Import
     expect(suitability({ rooms: 5, restaurantWithPos: false, software: "none" }).text).toContain("ohne Datenübernahme");
   });
   it("Restaurant mit Kasse: Schnittstelle und Kassenmodul, ehrlich über Grenzen", () => {

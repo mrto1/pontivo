@@ -1,6 +1,6 @@
 /**
  * Eignungs-Check (SPEC 19.14, PMS-ERSATZ 4.1): drei Fragen, drei Antworten. Reine Logik.
- * Die Antwort verspricht nie mehr, als Pontivo heute kann: Kassenschnittstelle und Kassenmodul gibt es, die Datenübernahme ist noch in Vorbereitung.
+ * Die Antwort verspricht nie mehr, als Pontivo heute kann: Kassenschnittstelle und Kassenmodul gibt es, die Datenübernahme gibt es als CSV-Import für Reservierungen (andere Formate und Excel noch nicht).
  */
 export const MAX_ROOMS = 40;
 export const SOFTWARE = ["none", "small", "large", "channel"] as const;
@@ -34,7 +34,7 @@ export function suitability(i: { rooms: number; restaurantWithPos: boolean; soft
   }
   const start = i.software === "none"
     ? "Sie starten ohne Datenübernahme."
-    : "Die geführte Übernahme Ihrer Daten aus der bisherigen Software ist in Vorbereitung. Bis dahin starten Sie parallel: neue Buchungen laufen in Pontivo, bestehende erfassen Sie von Hand oder lassen sie in der alten Software auslaufen.";
+    : "Ihre Reservierungen übernehmen Sie über die Datenübernahme (CSV-Datei, mit Prüfbericht und Rückgängig). Gäste, Gutscheine und offene Rechnungen übernehmen wir noch nicht; starten Sie dafür parallel und lassen Sie sie in der alten Software auslaufen.";
   return {
     fit: "fits", title: "Passt: Pontivo kann Ihre Software in der Regel ersetzen",
     text: `Buchungen, Kanäle, Rechnungen, Kurtaxe, Meldeschein und Reinigung sind abgedeckt. ${start}`,

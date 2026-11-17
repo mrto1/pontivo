@@ -46,6 +46,7 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
         items: [
           link("settings", "Einstellungen"),
           link("funktionen", "Funktionen"),
+          link("migration", "Datenübernahme"),
           link("firstweek", "Erste Woche", "erste-woche"),
           link("help", "Hilfe", "hilfe"),
         ],

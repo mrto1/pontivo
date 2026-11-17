@@ -162,3 +162,9 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 ## Einarbeitung (SPEC 19.17)
 - Support-Adresse und Preis der Einrichtungshilfe: der Betreiber legt sie fest. Bis dahin steht auf der Hilfeseite die Absenderadresse der Mails.
 - Hilfeseiten sollten ein Bild haben (PMS-ERSATZ 4.2). Bilder brauchen Screenshots eines Beispielbetriebs; erst machen, wenn die Oberflächen stabil sind.
+
+## Datenübernahme (SPEC 19.19)
+- Welche Anbieter zuerst als Quellprofil (Rückfrage bei echten Interessenten)? Bis dahin: generisches CSV.
+- Soll ein zweiter Import derselben Buchungsnummer aktualisieren statt überspringen (PMS-ERSATZ 2.4)? Aktuell: überspringen.
+- Hintergrundjob und Excel-Dateien: nötig, sobald Betriebe mehr als 2000 Reservierungen auf einmal übernehmen wollen.
+- Dokumentenablage für alte Rechnungen, Rechnungs-PDFs und Meldescheine im Gesamtexport: Treuhänder fragen, ob Komfort oder Pflicht.
