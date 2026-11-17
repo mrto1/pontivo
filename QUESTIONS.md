@@ -168,3 +168,5 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Soll ein zweiter Import derselben Buchungsnummer aktualisieren statt überspringen (PMS-ERSATZ 2.4)? Aktuell: überspringen.
 - Hintergrundjob und Excel-Dateien: nötig, sobald Betriebe mehr als 2000 Reservierungen auf einmal übernehmen wollen.
 - Dokumentenablage für alte Rechnungen, Rechnungs-PDFs und Meldescheine im Gesamtexport: Treuhänder fragen, ob Komfort oder Pflicht.
+- Offene Rechnungen und Guthaben aus der alten Software (PMS-ERSATZ 2.3 Nr. 6): bewusst nicht übernommen, weil falsche Beträge schlimmer sind als keine. Treuhänder fragen, ob ein Import offener Posten gewünscht ist.
+- Quellprofile einzelner Anbieter brauchen echte Beispielexporte (Interessenten fragen). Der Rückweg von 30 Tagen nach dem Umschalten wird nur angezeigt.

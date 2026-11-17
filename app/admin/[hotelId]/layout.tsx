@@ -12,7 +12,7 @@ import { SetupNotices } from "@/components/admin/SetupNotices";
 import { atLeast } from "@/src/auth/session";
 import { onboardingSteps } from "@/src/services/onboarding";
 import { initials } from "@/src/domain/avatar";
-import { setupBanner, setupOpen, unmetNeeds } from "@/src/domain/setup";
+import { parallelBanner, setupBanner, setupOpen, unmetNeeds } from "@/src/domain/setup";
 
 export default async function HotelAdminLayout({ children, params }: { children: React.ReactNode; params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
@@ -30,6 +30,7 @@ export default async function HotelAdminLayout({ children, params }: { children:
   const manages = !isLimitedRole(role) && atLeast(role, "manager");
   const steps = manages && setupOpen(hotel) ? await onboardingSteps(hotel) : null;
   const banner = manages ? setupBanner(hotel, steps) : null;
+  const parallel = manages ? parallelBanner(hotel) : null;
   const doneCount = steps?.filter((x) => x.done).length ?? 0;
   const noPasskey = (await listPasskeys(user.id)).length === 0;
   const others = (await hotelsForUser(user.id)).filter((x) => x.hotel.id !== hotel.id);
@@ -53,7 +54,7 @@ export default async function HotelAdminLayout({ children, params }: { children:
       </header>
       <main className="wrap admin-main">
         {noPasskey ? <PasskeyNudge /> : null}
-        <SetupNotices home={home} banner={banner} unmet={steps ? unmetNeeds(steps) : []} />
+        <SetupNotices home={home} banner={banner} parallel={parallel} unmet={steps ? unmetNeeds(steps) : []} />
         <SectionTabs nav={nav} home={home} />
         {children}
       </main>

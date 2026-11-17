@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { feePercentText } from "@/src/domain/fee";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
@@ -10,6 +11,7 @@ import {
 import { CHOICES } from "@/src/domain/module-choice";
 import { isOn } from "@/src/domain/modules";
 import { moduleRows } from "@/src/services/modules";
+import { setPreviousSoftware } from "@/src/services/migration";
 import { confirmTouristTax } from "@/src/services/settings";
 import { taxRuleFor } from "@/src/services/hotels";
 import { changePhoto, listRooms, MAX_PHOTOS, RoomError } from "@/src/services/rooms";
@@ -47,6 +49,7 @@ async function step(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>
     redirect(`/admin/${c.hotel.id}/einrichten?step=${here}&error=${encodeURIComponent(errText(e))}`);
   }
   const fresh = (await requireHotel(c.hotel.id, min)).hotel;
+  revalidatePath(`/admin/${c.hotel.id}`, "layout"); // Chip und Banner in der Kopfzeile aktualisieren
   const stay = s(f, "stay") === "1";
   redirect(`/admin/${c.hotel.id}/einrichten?step=${stay ? here : nextOpenStep(await onboardingSteps(fresh))}&ok=1`);
 }
@@ -62,6 +65,11 @@ async function saveBasics(f: FormData) {
 async function saveModules(f: FormData) {
   "use server";
   await step(f, ({ hotel, actor }) => chooseModules(hotel, Object.fromEntries(CHOICES.flatMap((c) => c.modules.map((m) => [m, f.get(`c_${c.key}`) === "1"]))), actor));
+}
+
+async function saveUmstieg(f: FormData) {
+  "use server";
+  await step(f, ({ hotel, actor }) => setPreviousSoftware(hotel, s(f, "answer") === "yes" ? "yes" : "none", actor));
 }
 
 async function saveTax(f: FormData) {
@@ -225,6 +233,23 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       );
       break;
     }
+    case "umstieg":
+      body = (
+        <form action={saveUmstieg} className="stack">{H}
+          <p className="muted" style={{ margin: 0 }}>Haben Sie bereits eine Hotelsoftware oder Buchungsverwaltung?</p>
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
+            <input type="radio" name="answer" value="none" defaultChecked={hotel.onboarding.previousSoftware !== "yes"} style={{ width: "auto", marginTop: 4 }} />
+            <span>Nein, ich starte neu mit Pontivo.</span>
+          </label>
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
+            <input type="radio" name="answer" value="yes" defaultChecked={hotel.onboarding.previousSoftware === "yes"} style={{ width: "auto", marginTop: 4 }} />
+            <span>Ja, ich wechsle von einer anderen Software und möchte meine Reservierungen übernehmen.</span>
+          </label>
+          <p className="small muted" style={{ margin: 0 }}>Bei «Ja» läuft Ihre alte Software zunächst parallel weiter. Unter «Datenübernahme» finden Sie dann den Import, die Umschalt-Checkliste und Hinweise zum Parallelbetrieb.</p>
+          <div><button className="btn">Speichern und weiter</button></div>
+        </form>
+      );
+      break;
     case "kurtaxe": {
       const rule = await taxRuleFor(hotel, todayIn(hotel.timezone));
       const known = rule && rule.status !== "needs_confirmation" && rule.adultRappen !== null;

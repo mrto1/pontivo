@@ -7,7 +7,7 @@ import { createInvoiceDraft, issueInvoice } from "../../src/services/invoicing";
 import { addDays, todayIn } from "../../src/domain/dates";
 import { importTemplate, parseImport } from "../../src/domain/import-csv";
 import { zipStore } from "../../src/domain/zip";
-import { inDays, makeHotel } from "../helpers";
+import { inDays, makeHotel, uid } from "../helpers";
 
 afterAll(closeDb);
 
@@ -137,5 +137,58 @@ describe("Datenübernahme (PMS-ERSATZ 2.10)", () => {
     expect(r.problems).toEqual([]);
     expect(r.rows).toHaveLength(2);
     expect(addDays("2027-01-01", 1)).toBe("2027-01-02");
+  });
+});
+
+describe("Gäste, Gutscheine, Parallelbetrieb, Umschalten", () => {
+  const G = (...l: string[]) => ["vorname;nachname;email;telefon;sprache;marketing_einwilligung;einwilligung_am", ...l].join("\n");
+  const V = (...l: string[]) => ["code;betrag;restwert;gueltig_bis;kaeufer;kaeufer_email;empfaenger", ...l].join("\n");
+
+  it("Gäste-Stamm: Dubletten übersprungen, Einwilligung nur mit Datum, Rückgängig", async () => {
+    const { hotel } = await makeHotel();
+    const mail = `a-${Math.random().toString(36).slice(2, 7)}@example.ch`;
+    const job = await createImportCheck(hotel, G(`Anna;Muster;${mail};;de;ja;2026-01-05`, "Hans;Ohnemail;;;de;ja;", `Anna;Doppelt;${mail};;de;nein;`), "g.csv", "t");
+    expect(job.summary).toMatchObject({ kind: "guests", created: 2, skipped: 1, errors: 0 });
+    expect(await db().select().from(guests).where(eq(guests.hotelId, hotel.id))).toHaveLength(0); // Trockenlauf
+    await runImport(hotel, job.id, "t");
+    const gs = await db().select().from(guests).where(eq(guests.hotelId, hotel.id));
+    expect(gs.map((g) => g.marketingConsent).sort()).toEqual([false, true]);
+    expect((await fresh(hotel.id)).onboarding.previousSoftware).toBe("yes"); // Import = Parallelbetrieb
+    const undone = await undoImport(await fresh(hotel.id), job.id, "t");
+    expect(undone.summary.undone?.removed).toBe(2);
+    expect(await db().select().from(guests).where(eq(guests.hotelId, hotel.id))).toHaveLength(0);
+  });
+
+  it("Gutscheine: Code einmalig über alle Betriebe, einlösbar, Rückgängig nur ohne Einlösung", async () => {
+    const a = await makeHotel(), b = await makeHotel();
+    const code = `GS-T${uid().toUpperCase().slice(0, 3)}-${uid().toUpperCase().slice(0, 4)}`;
+    const code2 = `GS-U${uid().toUpperCase().slice(0, 3)}-${uid().toUpperCase().slice(0, 4)}`;
+    await runImport(a.hotel, (await createImportCheck(a.hotel, V(`${code};200;150;2027-12-31;Frau Meier;;`, `${code2};100;100;2027-12-31;Herr Keller;;`), "v.csv", "t")).id, "t");
+    const clash = await createImportCheck(b.hotel, V(`${code};100;100;2027-12-31;X;;`), "v.csv", "t");
+    expect(clash.summary.errors).toBe(1);
+    expect(clash.summary.issues[0].message).toMatch(/schon vergeben/);
+    const { redeemVoucher } = await import("../../src/services/vouchers");
+    await redeemVoucher(a.hotel, code, 5000, "Test", "t");
+    const [jobA] = await db().select().from((await import("../../src/db/schema")).importJobs).where(eq((await import("../../src/db/schema")).importJobs.hotelId, a.hotel.id));
+    const undone = await undoImport(a.hotel, jobA.id, "t");
+    expect(undone.summary.undone).toMatchObject({ removed: 1, kept: [{ ref: code }] });
+  });
+
+  it("Umschalten: Checkliste mit Zähler, Bestätigungen, Abschluss beendet den Parallelbetrieb", async () => {
+    const { hotel } = await makeHotel();
+    const m = await import("../../src/services/migration");
+    await db().update(hotels).set({ stripeChargesEnabled: true }).where(eq(hotels.id, hotel.id));
+    await m.setPreviousSoftware(await fresh(hotel.id), "yes", "t");
+    expect(m.inParallel(await fresh(hotel.id))).toBe(true);
+    await expect(m.finishSwitchover(await fresh(hotel.id), "t")).rejects.toThrow(ImportError);
+    await runImport(hotel, (await createImportCheck(hotel, csv(line("S-1", 20, 2), line("S-2", 21, 2)), "a.csv", "t")).id, "t");
+    await m.setOldFuture(await fresh(hotel.id), 2, "t");
+    for (const k of ["stammdaten", "kanaele", "zahlungen", "rechnungsnummer", "team"]) await m.confirmSwitchItem(await fresh(hotel.id), k, true, "t");
+    const view = await m.switchoverView(await fresh(hotel.id));
+    expect(view.items.filter((i) => i.required && !i.done)).toEqual([]);
+    await m.finishSwitchover(await fresh(hotel.id), "t");
+    const h = await fresh(hotel.id);
+    expect(m.inParallel(h)).toBe(false);
+    expect(h.onboarding.switchover?.switchedAt).toBeTruthy();
   });
 });

@@ -125,3 +125,68 @@ export const importTemplate = () => toCsv(IMPORT_COLUMNS.map((c) => c.key), [
   ["A-1001", "2027-02-12", "2027-02-15", "Doppelzimmer", "Standard", 2, 0, "Anna", "Muster", "anna@example.ch", "+41 79 000 00 00", "de", "540.00", "100.00", "bestaetigt", "Ruhiges Zimmer gewünscht"],
   ["A-0987", "2026-08-01", "2026-08-04", "Doppelzimmer", "", 2, 1, "Peter", "Beispiel", "", "", "de", "720.00", "720.00", "bestaetigt", ""],
 ]);
+
+// ---------------------------------------------------------------- Gäste und Gutscheine
+
+export type ImportKind = "reservations" | "guests" | "vouchers";
+export const KIND_LABEL: Record<ImportKind, string> = { reservations: "Reservierungen", guests: "Gäste", vouchers: "Gutscheine" };
+
+/** Art der Datei aus der Kopfzeile: Reservierungen (externe_nummer), Gutscheine (code + restwert), sonst Gäste */
+export function detectKind(text: string): ImportKind {
+  const header = (parseCsv(text)[0] ?? []).map(norm);
+  if (header.includes("externe_nummer")) return "reservations";
+  if (header.includes("code") && header.includes("restwert")) return "vouchers";
+  return "guests";
+}
+
+function readTable(text: string, required: string[], maxRows: number) {
+  const table = parseCsv(text);
+  const header = (table[0] ?? []).map(norm);
+  const missing = required.filter((k) => !header.includes(k));
+  const body = table.slice(1);
+  const fail = (message: string) => ({ ok: false as const, problems: [{ row: 1, message }], total: body.length });
+  if (!table.length) return fail("Die Datei ist leer.");
+  if (missing.length) return fail(`Spalten fehlen: ${missing.join(", ")}.`);
+  if (body.length > maxRows) return fail(`Zu viele Zeilen (${body.length}, höchstens ${maxRows} pro Datei). Bitte in mehrere Dateien teilen.`);
+  return { ok: true as const, header, body, total: body.length };
+}
+
+export type GuestRow = { row: number; firstName: string; lastName: string; email: string; phone: string; language: string; consent: boolean; consentAt: string | null };
+/** Gäste-Stamm: gleiche Spalten wie «gaeste.csv» im Gesamtexport. Marketing-Einwilligung nur mit Ja und Datum (PMS-ERSATZ 2.8) */
+export function parseGuests(text: string, maxRows = 5000): { rows: GuestRow[]; problems: RowProblem[]; total: number; warnings: RowProblem[] } {
+  const t = readTable(text, ["vorname", "nachname"], maxRows);
+  if (!t.ok) return { rows: [], problems: t.problems, total: t.total, warnings: [] };
+  const rows: GuestRow[] = [], problems: RowProblem[] = [], warnings: RowProblem[] = [];
+  t.body.forEach((f, idx) => {
+    const row = idx + 2;
+    const g = (k: string) => (f[t.header.indexOf(k)] ?? "").trim();
+    const email = g("email").toLowerCase(), lang = g("sprache").toLowerCase() || "de";
+    if (!g("vorname") || !g("nachname")) return void problems.push({ row, message: "Vor- und Nachname sind Pflicht." });
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return void problems.push({ row, message: `E-Mail-Adresse ungültig («${email}»).` });
+    if (!["de", "en", "fr", "it"].includes(lang)) return void problems.push({ row, message: `Sprache ungültig («${lang}»).` });
+    const said = ["ja", "yes", "1", "true"].includes(g("marketing_einwilligung").toLowerCase());
+    const at = parseDay(g("einwilligung_am"));
+    if (said && !at) warnings.push({ row, message: "Marketing-Einwilligung ohne gültiges Datum wird nicht übernommen." });
+    rows.push({ row, firstName: g("vorname"), lastName: g("nachname"), email, phone: g("telefon"), language: lang, consent: said && !!at, consentAt: said ? at : null });
+  });
+  return { rows, problems, total: t.total, warnings };
+}
+
+export type VoucherRow = { row: number; code: string; amountRappen: number; remainingRappen: number; validUntil: string; buyer: string; buyerEmail: string; recipient: string };
+/** Gutscheine mit Restwert: gleiche Spalten wie «gutscheine.csv» im Gesamtexport */
+export function parseVouchers(text: string, maxRows = 5000): { rows: VoucherRow[]; problems: RowProblem[]; total: number } {
+  const t = readTable(text, ["code", "betrag", "restwert", "gueltig_bis"], maxRows);
+  if (!t.ok) return { rows: [], problems: t.problems, total: t.total };
+  const rows: VoucherRow[] = [], problems: RowProblem[] = [];
+  t.body.forEach((f, idx) => {
+    const row = idx + 2;
+    const g = (k: string) => (f[t.header.indexOf(k)] ?? "").trim();
+    const amount = parseChf(g("betrag")), rest = parseChf(g("restwert")), until = parseDay(g("gueltig_bis"));
+    if (!g("code")) return void problems.push({ row, message: "Gutscheincode fehlt." });
+    if (amount === null || amount <= 0) return void problems.push({ row, message: `Betrag ungültig («${g("betrag")}»).` });
+    if (rest === null || rest < 0 || rest > amount) return void problems.push({ row, message: `Restwert ungültig («${g("restwert")}»): zwischen 0 und dem Betrag.` });
+    if (!until) return void problems.push({ row, message: `Gültig bis ungültig («${g("gueltig_bis")}»).` });
+    rows.push({ row, code: g("code").toUpperCase(), amountRappen: amount, remainingRappen: rest, validUntil: until, buyer: g("kaeufer") || "Übernahme", buyerEmail: g("kaeufer_email").toLowerCase(), recipient: g("empfaenger") });
+  });
+  return { rows, problems, total: t.total };
+}

@@ -7,7 +7,7 @@ export type SetupStep = { key: string; done: boolean; required: boolean };
 
 export const setupOpen = (h: SetupHotel) => !!h.onboarding.startedAt && !h.onboarding.completedAt;
 
-export type Banner = { kind: "open" | "almost" | "paused"; text: string; cta: string; path: string; done: number; total: number };
+export type Banner = { kind: "open" | "almost" | "paused" | "parallel"; text: string; cta: string; path: string; done: number; total: number };
 
 /** Hinweiszeile auf jeder Seite (nur für Inhaber und Manager): offen, fast fertig oder pausiert; sonst nichts */
 export function setupBanner(h: SetupHotel, steps: SetupStep[] | null): Banner | null {
@@ -38,4 +38,12 @@ export const PAGE_NEEDS: Record<string, Need> = {
 /** Noch nicht erfüllte Voraussetzungen (nur solange die Einrichtung läuft) */
 export function unmetNeeds(steps: SetupStep[]): Need[] {
   return (Object.keys(NEEDS) as Need[]).filter((n) => !steps.find((s) => s.key === NEEDS[n].step)?.done);
+}
+
+/** Parallelbetrieb: bisherige Software läuft noch (Antwort «ja» im Assistenten oder Import), bis das Umschalten bestätigt ist */
+export type ParallelHotel = { onboarding: { previousSoftware?: "none" | "yes"; switchover?: { switchedAt?: string } } };
+export function parallelBanner(h: ParallelHotel): Banner | null {
+  if (h.onboarding.previousSoftware !== "yes" || h.onboarding.switchover?.switchedAt) return null;
+  return { kind: "parallel", done: 0, total: 0, cta: "Umschalt-Checkliste", path: "migration/umschalten",
+    text: "Parallelbetrieb: Ihre bisherige Software läuft noch. Ändern Sie Buchungen, Preise und Verfügbarkeit nicht an zwei Orten gleichzeitig. Kanäle dürfen nur von einem System gesteuert werden." };
 }

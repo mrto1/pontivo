@@ -39,6 +39,10 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
   await expect(page.getByLabel(/Wir haben eine Rezeption/)).not.toBeChecked();
   await page.getByRole("button", { name: "Speichern und weiter" }).click();
 
+  // Bisherige Software: Nein (Standard)
+  await expect(page.getByRole("heading", { name: "Bisherige Software" })).toBeVisible();
+  await page.getByRole("button", { name: "Speichern und weiter" }).click();
+
   // Kurtaxe: Gemeinde unbekannt → eintragen
   await expect(page.getByRole("heading", { name: "Kurtaxe" })).toBeVisible();
   await page.fill("input[name=adult]", "3.50");

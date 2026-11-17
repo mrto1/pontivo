@@ -1,14 +1,17 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db, rows, type Tx } from "../db/client";
-import { bookingRooms, bookings, guests, importJobs, invoices, onsitePayments, ratePlans, roomTypes, vouchers, type Hotel, type ImportJob, type ImportSummary } from "../db/schema";
+import { bookingRooms, bookings, guests, hotelMembers, hotels, importJobs, invoices, onsitePayments, ratePlans, roomTypes, voucherRedemptions, vouchers, type Hotel, type ImportJob, type ImportSummary } from "../db/schema";
 import { addDays, nightsOf, todayIn } from "../domain/dates";
 import { newPublicToken, newReference } from "../domain/ids";
-import { IMPORT_COLUMNS, parseImport, toCsv, type ImportRow } from "../domain/import-csv";
+import { detectKind, IMPORT_COLUMNS, parseGuests, parseImport, parseVouchers, toCsv, type ImportRow } from "../domain/import-csv";
 import { audit } from "./audit";
 import { ensureInventory } from "./inventory";
 import { enqueueAvailability } from "./outbox";
 import { releaseNights, reserveNights } from "./bookings";
 import { bookingBalance } from "./invoicing";
+import { newPublicToken as newVoucherToken } from "../domain/ids";
+import { newVoucherCode } from "./vouchers";
+import { evaluateSwitchover, type SwitchFacts } from "../domain/switchover";
 
 /**
  * Datenübernahme aus der bisherigen Software (PMS-ERSATZ E1, SPEC 19.19).
@@ -27,10 +30,61 @@ export function spreadNights(totalRappen: number, nights: string[]) {
   return nights.map((night, i) => ({ night, price_rappen: base + (i < rest ? 1 : 0) }));
 }
 
+/** Gäste und Gutscheine: einfacher Ablauf, gleiche Regeln (Trockenlauf = Import mit Rollback, alles oder nichts) */
+async function processSimple(hotel: Hotel, job: ImportJob, csv: string, kind: "guests" | "vouchers", dry: boolean, actor: string): Promise<ImportSummary> {
+  const issues: ImportSummary["issues"] = [];
+  const sum: ImportSummary = { kind, total: 0, created: 0, skipped: 0, errors: 0, warnings: 0, past: 0, future: 0, issues, sample: [] };
+  const note = (row: number, severity: "error" | "warn", message: string) => {
+    if (severity === "error") sum.errors++; else sum.warnings++;
+    if (issues.length < MAX_ISSUES) issues.push({ row, severity, message });
+  };
+  const sample = (row: number, ref: string, guest: string) => { if (sum.sample.length < 10) sum.sample.push({ row, ref, guest, checkin: "", checkout: "" }); };
+  try {
+    await db().transaction(async (tx) => {
+      if (kind === "guests") {
+        const p = parseGuests(csv);
+        sum.total = p.total;
+        for (const x of p.problems) note(x.row, "error", x.message);
+        for (const x of p.warnings) note(x.row, "warn", x.message);
+        for (const r of p.rows) {
+          const [dupe] = await tx.select({ id: guests.id }).from(guests).where(and(eq(guests.hotelId, hotel.id), r.email ? sql`lower(${guests.email}) = ${r.email}` : sql`${guests.email} = '' AND lower(${guests.firstName}) = ${r.firstName.toLowerCase()} AND lower(${guests.lastName}) = ${r.lastName.toLowerCase()}`)).limit(1);
+          if (dupe) { sum.skipped++; note(r.row, "warn", `«${r.firstName} ${r.lastName}» ist schon vorhanden und wird übersprungen.`); continue; }
+          await tx.insert(guests).values({ hotelId: hotel.id, firstName: r.firstName, lastName: r.lastName, email: r.email, phone: r.phone || null, language: r.language, marketingConsent: r.consent, marketingConsentAt: r.consent && r.consentAt ? new Date(`${r.consentAt}T12:00:00Z`) : null, importJobId: job.id });
+          sum.created++;
+          sample(r.row, r.email || "–", `${r.firstName} ${r.lastName}`);
+        }
+      } else {
+        const p = parseVouchers(csv);
+        sum.total = p.total;
+        for (const x of p.problems) note(x.row, "error", x.message);
+        const seen = new Set<string>();
+        for (const r of p.rows) {
+          if (seen.has(r.code)) { note(r.row, "error", `Code «${r.code}» kommt in der Datei mehrfach vor.`); continue; }
+          seen.add(r.code);
+          const [dupe] = await tx.select({ hotelId: vouchers.hotelId }).from(vouchers).where(eq(vouchers.code, r.code));
+          if (dupe) {
+            if (dupe.hotelId === hotel.id) { sum.skipped++; note(r.row, "warn", `Gutschein «${r.code}» ist schon vorhanden und wird übersprungen.`); } else note(r.row, "error", `Code «${r.code}» ist in Pontivo schon vergeben. Bitte einen anderen Code verwenden.`);
+            continue;
+          }
+          await tx.insert(vouchers).values({ hotelId: hotel.id, code: r.code, publicToken: newVoucherToken(), amountRappen: r.amountRappen, remainingRappen: r.remainingRappen, buyerName: r.buyer, buyerEmail: r.buyerEmail, recipientName: r.recipient, status: "paid", validUntil: r.validUntil, paidAt: new Date(), importJobId: job.id });
+          sum.created++;
+          sample(r.row, r.code, `Restwert ${(r.remainingRappen / 100).toFixed(2)}`);
+        }
+      }
+      if (dry || sum.errors > 0) throw new DryRollback();
+    });
+  } catch (e) {
+    if (!(e instanceof DryRollback)) throw e;
+  }
+  return sum;
+}
+
 async function process(hotel: Hotel, job: ImportJob, csv: string, dry: boolean, actor: string): Promise<ImportSummary> {
+  const kind = detectKind(csv);
+  if (kind !== "reservations") return processSimple(hotel, job, csv, kind, dry, actor);
   const parsed = parseImport(csv);
   const issues: ImportSummary["issues"] = parsed.problems.map((p) => ({ row: p.row, severity: "error", message: p.message }));
-  const sum: ImportSummary = { total: parsed.total, created: 0, skipped: 0, errors: parsed.problems.length, warnings: 0, past: 0, future: 0, issues, sample: [] };
+  const sum: ImportSummary = { kind: "reservations", total: parsed.total, created: 0, skipped: 0, errors: parsed.problems.length, warnings: 0, past: 0, future: 0, issues, sample: [] };
   const note = (row: number, severity: "error" | "warn", message: string) => {
     if (severity === "error") sum.errors++; else sum.warnings++;
     if (issues.length < MAX_ISSUES) issues.push({ row, severity, message });
@@ -124,6 +178,7 @@ export async function runImport(hotel: Hotel, jobId: string, actor: string): Pro
     throw new ImportError("Der Import wurde nicht ausgeführt: Es gibt noch Fehler. Es wurde nichts geschrieben.");
   }
   const [done] = await db().update(importJobs).set({ status: "done", csv: null, summary, finishedAt: new Date() }).where(eq(importJobs.id, job.id)).returning();
+  if (!hotel.onboarding.previousSoftware) await setPreviousSoftware(hotel, "yes", actor); // wer importiert, wechselt: Parallelbetrieb
   await audit(db(), { hotelId: hotel.id, actor, action: "import.run", entity: "import_job", entityId: job.id, details: { created: summary.created, skipped: summary.skipped } });
   return done;
 }
@@ -158,7 +213,15 @@ export async function undoImport(hotel: Hotel, jobId: string, actor: string): Pr
       kept.push({ ref, reason: "Es hängen weitere Daten daran (z. B. Zutritt, Posteingang)." });
     }
   }
-  await db().execute(sql`DELETE FROM guests g WHERE g.hotel_id = ${hotel.id} AND g.import_job_id = ${job.id} AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.guest_id = g.id)`);
+  const gone = await db().execute(sql`DELETE FROM guests g WHERE g.hotel_id = ${hotel.id} AND g.import_job_id = ${job.id} AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.guest_id = g.id) RETURNING g.id`);
+  if (job.summary.kind === "guests") removed += gone.rows.length;
+  const vs = await db().select().from(vouchers).where(and(eq(vouchers.hotelId, hotel.id), eq(vouchers.importJobId, job.id)));
+  for (const v of vs) {
+    const used = (await db().select({ id: voucherRedemptions.id }).from(voucherRedemptions).where(eq(voucherRedemptions.voucherId, v.id)).limit(1)).length > 0;
+    if (used) { kept.push({ ref: v.code, reason: "Der Gutschein wurde seither eingelöst." }); continue; }
+    await db().delete(vouchers).where(and(eq(vouchers.id, v.id), eq(vouchers.hotelId, hotel.id)));
+    removed++;
+  }
   const [upd] = await db().update(importJobs).set({ status: "undone", csv: null, finishedAt: new Date(), summary: { ...job.summary, undone: { removed, kept } } }).where(eq(importJobs.id, job.id)).returning();
   await audit(db(), { hotelId: hotel.id, actor, action: "import.undo", entity: "import_job", entityId: job.id, details: { removed, kept: kept.length } });
   return upd;
@@ -215,6 +278,60 @@ export async function exportFiles(hotel: Hotel): Promise<{ name: string; csv: st
     { name: "zimmertypen.csv", csv: toCsv(["name", "aktiv"], types.map((t) => [t.name, t.active ? "ja" : "nein"])) },
     { name: "tarife.csv", csv: toCsv(["zimmertyp", "name", "aktiv"], plans.map((p) => [tName.get(p.roomTypeId), p.name, p.active ? "ja" : "nein"])) },
     { name: "rechnungen.csv", csv: toCsv(["nummer", "art", "status", "datum", "faellig", "total", "mwst", "empfaenger"], inv.map((i) => [i.number, i.kind === "credit_note" ? "gutschrift" : "rechnung", i.status === "issued" ? "ausgestellt" : "entwurf", i.issuedOn, i.dueOn, chf(i.totalRappen), chf(i.vatRappen), i.recipient.company || i.recipient.name || ""])) },
-    { name: "gutscheine.csv", csv: toCsv(["code", "betrag", "restwert", "status", "kaeufer", "empfaenger"], vs.map((v) => [v.code, chf(v.amountRappen), chf(v.remainingRappen), v.status, v.buyerName, v.recipientName])) },
+    { name: "gutscheine.csv", csv: toCsv(["code", "betrag", "restwert", "gueltig_bis", "status", "kaeufer", "kaeufer_email", "empfaenger"], vs.map((v) => [v.code, chf(v.amountRappen), chf(v.remainingRappen), v.validUntil, v.status, v.buyerName, v.buyerEmail, v.recipientName])) },
   ];
+}
+
+// ---------------------------------------------------------------- Parallelbetrieb und Umschalten
+
+/** Antwort auf «Haben Sie bereits eine Hotelsoftware?»: «yes» = Parallelbetrieb bis zum Umschalten */
+export async function setPreviousSoftware(hotel: Hotel, answer: "none" | "yes", actor: string): Promise<void> {
+  const [h] = await db().select().from(hotels).where(eq(hotels.id, hotel.id));
+  await db().update(hotels).set({ onboarding: { ...h.onboarding, previousSoftware: answer } }).where(eq(hotels.id, hotel.id));
+  await audit(db(), { hotelId: hotel.id, actor, action: "host.previous_software", entity: "hotel", entityId: hotel.id, details: { answer } });
+}
+
+/** Parallelbetrieb: bisherige Software läuft noch, Umschalten noch nicht bestätigt */
+export const inParallel = (h: Pick<Hotel, "onboarding">) => h.onboarding.previousSoftware === "yes" && !h.onboarding.switchover?.switchedAt;
+
+export async function switchoverFacts(hotel: Hotel): Promise<SwitchFacts> {
+  const today = todayIn(hotel.timezone);
+  const types = await db().select({ id: roomTypes.id }).from(roomTypes).where(and(eq(roomTypes.hotelId, hotel.id), eq(roomTypes.active, true)));
+  const plans = await db().select({ roomTypeId: ratePlans.roomTypeId }).from(ratePlans).where(and(eq(ratePlans.hotelId, hotel.id), eq(ratePlans.active, true)));
+  const [b] = rows<{ n: number; imp: number }>(await db().execute(sql`SELECT count(*)::int AS n, count(*) FILTER (WHERE source = 'import')::int AS imp FROM bookings WHERE hotel_id = ${hotel.id} AND status = 'confirmed' AND checkout > ${today}::date`));
+  const [m] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM hotel_members WHERE hotel_id = ${hotel.id}`));
+  return {
+    roomTypes: types.length, ratePlansComplete: types.length > 0 && types.every((t) => plans.some((p) => p.roomTypeId === t.id)),
+    futureBookings: b.n, importedFuture: b.imp, channexEnabled: hotel.channexEnabled, stripeCharges: hotel.stripeChargesEnabled,
+    invoiceLast: await invoiceCounter(hotel.id, Number(today.slice(0, 4))), members: m.n,
+  };
+}
+
+export async function switchoverView(hotel: Hotel) {
+  return { ...evaluateSwitchover(await switchoverFacts(hotel), hotel.onboarding.switchover ?? {}), state: hotel.onboarding.switchover ?? {} };
+}
+
+async function patchSwitchover(hotel: Hotel, fn: (s: NonNullable<Hotel["onboarding"]["switchover"]>) => void, actor: string, action: string, details: Record<string, unknown>) {
+  await db().transaction(async (tx) => {
+    const [h] = await tx.select().from(hotels).where(eq(hotels.id, hotel.id)).for("update");
+    const st = { ...(h.onboarding.switchover ?? {}) };
+    fn(st);
+    await tx.update(hotels).set({ onboarding: { ...h.onboarding, switchover: st } }).where(eq(hotels.id, hotel.id));
+    await audit(tx, { hotelId: hotel.id, actor, action, entity: "hotel", entityId: hotel.id, details });
+  });
+}
+
+export const confirmSwitchItem = (hotel: Hotel, key: string, on: boolean, actor: string) =>
+  patchSwitchover(hotel, (s) => { const set = new Set(s.confirmed ?? []); if (on) set.add(key); else set.delete(key); s.confirmed = [...set]; }, actor, "switchover.confirm", { key, on });
+
+export async function setOldFuture(hotel: Hotel, n: number, actor: string) {
+  if (!Number.isInteger(n) || n < 0 || n > 100000) throw new ImportError("Bitte eine ganze Zahl eingeben.");
+  await patchSwitchover(hotel, (s) => { s.oldFuture = n; }, actor, "switchover.old_future", { n });
+}
+
+/** Umschalten bestätigen: nur wenn alle Pflichtpunkte erledigt sind. Der Import bleibt 30 Tage rückgängig machbar. */
+export async function finishSwitchover(hotel: Hotel, actor: string) {
+  const v = await switchoverView(hotel);
+  if (!v.ready) throw new ImportError("Es sind noch nicht alle Pflichtpunkte erledigt.");
+  await patchSwitchover(hotel, (s) => { s.switchedAt = new Date().toISOString(); }, actor, "switchover.done", {});
 }

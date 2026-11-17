@@ -53,7 +53,7 @@ export const hotels = pgTable("hotels", {
   billingCustomerId: text("billing_customer_id"),
   billingPaymentMethodId: text("billing_payment_method_id"),
   billingCardLabel: text("billing_card_label"),
-  onboarding: jsonb("onboarding").$type<{ startedAt?: string; completedAt?: string; reminders?: number; alertedAt?: string; embeddedAt?: string; modulesChosenAt?: string }>().notNull().default({}),
+  onboarding: jsonb("onboarding").$type<{ startedAt?: string; completedAt?: string; reminders?: number; alertedAt?: string; embeddedAt?: string; modulesChosenAt?: string; previousSoftware?: "none" | "yes"; switchover?: { confirmed?: string[]; oldFuture?: number; switchedAt?: string } }>().notNull().default({}),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
@@ -567,6 +567,8 @@ export const vouchers = pgTable("vouchers", {
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   validUntil: date("valid_until", { mode: "string" }).notNull(),
   paidAt: ts("paid_at"),
+  /** Datenübernahme (Migration 0058) */
+  importJobId: uuid("import_job_id"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type Voucher = typeof vouchers.$inferSelect;
@@ -1367,6 +1369,7 @@ export const onboardingTasks = pgTable(
 
 /** Datenübernahme aus der bisherigen Software (Migration 0057, PMS-ERSATZ E1) */
 export type ImportSummary = {
+  kind?: "reservations" | "guests" | "vouchers";
   total: number; created: number; skipped: number; errors: number; warnings: number; past: number; future: number;
   issues: { row: number; severity: "error" | "warn"; message: string }[];
   sample: { row: number; ref: string; guest: string; checkin: string; checkout: string }[];

@@ -124,7 +124,7 @@ export async function chooseModules(hotel: Hotel, wanted: Record<string, boolean
 }
 
 
-export type StepKey = "betrieb" | "funktionen" | "kurtaxe" | "unterkunft" | "fotos" | "ankunft" | "zahlungen" | "karte" | "live" | "einbinden";
+export type StepKey = "betrieb" | "funktionen" | "umstieg" | "kurtaxe" | "unterkunft" | "fotos" | "ankunft" | "zahlungen" | "karte" | "live" | "einbinden";
 export type Step = { key: StepKey; title: string; done: boolean; required: boolean };
 
 export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
@@ -136,6 +136,7 @@ export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
   return [
     { key: "betrieb", title: "Angaben zum Betrieb", done: !!(hotel.addressLine && hotel.postalCode && hotel.city), required: true },
     { key: "funktionen", title: "Was brauchen Sie?", done: !!hotel.onboarding.modulesChosenAt, required: true },
+    { key: "umstieg", title: "Bisherige Software", done: !!hotel.onboarding.previousSoftware, required: true },
     { key: "kurtaxe", title: "Kurtaxe", done: !problems.some((p) => p.startsWith("Kurtaxe")), required: true },
     { key: "unterkunft", title: `${isWholeUnit(hotel.propertyType) ? unit : "Zimmer"} und Preise`, done: rts.length > 0 && rts.every((r) => rps.some((p) => p.roomTypeId === r.id)), required: true },
     { key: "fotos", title: "Fotos", done: photos > 0, required: true },

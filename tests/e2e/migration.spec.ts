@@ -37,6 +37,14 @@ test("Datenübernahme: prüfen, importieren, rückgängig", async ({ page, conte
   await expect(page.getByText("Import ausgeführt. Bitte prüfen")).toBeVisible();
   await expect(page.locator("#bericht")).toContainText("ausgeführt");
 
+  // Wer importiert, ist im Parallelbetrieb: Banner auf jeder Seite, Checkliste erreichbar
+  await expect(page.locator(".setup-banner.parallel")).toContainText("Parallelbetrieb");
+  await page.locator(".setup-banner.parallel").getByRole("link", { name: "Umschalt-Checkliste" }).click();
+  await expect(page.getByRole("heading", { name: "Umschalt-Checkliste" })).toBeVisible();
+  await expect(page.locator("ol > li")).toHaveCount(7);
+  await expect(page.getByRole("button", { name: /Umschalten: Parallelbetrieb beenden/ })).toBeDisabled();
+  await page.goto(`/admin/${h.hotel.id}/migration?job=${new URL(page.url()).searchParams.get("job") ?? ""}`);
+  await page.getByRole("link", { name: /alt\.csv/ }).first().click();
   await page.getByRole("button", { name: "Import rückgängig machen" }).click();
   await expect(page.locator("#bericht")).toContainText("2 Buchungen entfernt");
 
