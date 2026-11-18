@@ -46,6 +46,9 @@ const schema = z.object({
   TRANSLATIONS_PER_MONTH: z.coerce.number().int().min(0).default(50),
   // KI-Chat (SPEC 14b): Modell, technische Obergrenze Gespräche pro Hotel und Monat, Kosten pro Million Tokens (USD, für die Auswertung)
   CHAT_MODEL: z.string().default("claude-haiku-5-5"),
+  // KI-Preisempfehlung (Modul ai_pricing): Modell und Obergrenze Berechnungen pro Hotel und Tag
+  PRICING_MODEL: z.string().default("claude-sonnet-5-5"),
+  AI_PRICING_RUNS_PER_DAY: z.coerce.number().int().min(1).default(3),
   AI_CHAT_HARD_CAP: z.coerce.number().int().min(0).default(5000),
   CHAT_COST_IN_USD_PER_MTOK: z.coerce.number().min(0).default(0.1),
   CHAT_COST_OUT_USD_PER_MTOK: z.coerce.number().min(0).default(0.5),

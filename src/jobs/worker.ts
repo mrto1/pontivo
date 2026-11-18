@@ -29,13 +29,13 @@ import { syncDueFeeds } from "../services/ical";
 import { accessJob } from "../services/door-access";
 import { balanceJob } from "../services/balance";
 import { monthlyAccountingJob } from "../services/accounting";
-import { pricingJob } from "../services/pricing-rules";
+import { aiPricingJob } from "../services/ai-pricing";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
   { name: "emails", cron: "* * * * *", run: () => sendDueEmails() },
   { name: "push", cron: "* * * * *", run: () => sendDuePushes() },
-  { name: "pricing", cron: "30 3 * * *", run: () => pricingJob() },
+  { name: "pricing", cron: "30 3 * * *", run: () => aiPricingJob() },
   { name: "horizon", cron: "15 3 * * *", run: () => extendHorizon() },
   { name: "groups-release", cron: "5 4 * * *", run: () => releaseDueGroups() },
   { name: "channex-feed", cron: "*/15 * * * *", run: () => pullFeed() },

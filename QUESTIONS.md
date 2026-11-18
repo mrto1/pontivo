@@ -170,3 +170,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Dokumentenablage für alte Rechnungen, Rechnungs-PDFs und Meldescheine im Gesamtexport: Treuhänder fragen, ob Komfort oder Pflicht.
 - Offene Rechnungen und Guthaben aus der alten Software (PMS-ERSATZ 2.3 Nr. 6): bewusst nicht übernommen, weil falsche Beträge schlimmer sind als keine. Treuhänder fragen, ob ein Import offener Posten gewünscht ist.
 - Quellprofile einzelner Anbieter brauchen echte Beispielexporte (Interessenten fragen). Der Rückweg von 30 Tagen nach dem Umschalten wird nur angezeigt.
+
+## KI-Preisempfehlung (SPEC 19.20)
+- Gebühr und Abrechnung (wie beim KI-Chat mit Tarif nach `ai_plans` und Zähler, oder Pauschale)? Bis dahin keine Abrechnung, nur Tageslimit je Hotel. Token-Verbrauch steht in `ai_pricing_runs`, damit sich die Kosten je Lauf berechnen lassen.
+- Qualität der Empfehlungen sollte mit echten Betriebsdaten geprüft werden (Rückfrage bei Pilotbetrieben), bevor das Modul Kunden angeboten wird. Externe Preisdaten (Wettbewerb) nur mit einer verlässlichen, erlaubten Quelle.

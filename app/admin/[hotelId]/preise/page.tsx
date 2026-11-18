@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { moduleOn, requireModule } from "@/src/services/modules";
+import { refreshProposals, runsToday } from "@/src/services/ai-pricing";
+import { env } from "@/src/env";
 import { atLeast } from "@/src/auth/session";
 import { db } from "@/src/db/client";
 import { ratePlans } from "@/src/db/schema";
@@ -64,6 +66,13 @@ async function computeAction(f: FormData) {
   const r = await generateProposals(c.hotel.id, todayIn(c.hotel.timezone), c.actor);
   back(c.hotel.id, r.applied ? `${r.applied} Preise automatisch übernommen.` : `${r.proposed} Vorschläge berechnet.`);
 }
+async function aiAction(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  const r = await refreshProposals(c.hotel, c.actor);
+  if ("aiError" in r && r.aiError) back(c.hotel.id, `Nicht berechnet: ${r.aiError}`);
+  back(c.hotel.id, r.ai ? `KI-Empfehlung fertig: ${r.ai.proposed} Vorschläge${r.ai.applied ? `, ${r.ai.applied} automatisch übernommen` : ""}.` : "Keine KI-Berechnung (Modul aus).");
+}
 async function decideAction(f: FormData) {
   "use server";
   const c = await guard(f);
@@ -85,6 +94,8 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
     listRules(hotel.id), listEvents(hotel.id, today), listProposals(hotel.id, today),
   ]);
   const byPlan = new Map(rules.map((r) => [r.ratePlanId, r]));
+  const ai = (await moduleOn(hotel.id, "ai_pricing")) && !!env().ANTHROPIC_API_KEY;
+  const aiLeft = ai ? Math.max(0, env().AI_PRICING_RUNS_PER_DAY - (await runsToday(hotel.id, today))) : 0;
   return (
     <div className="stack">
       <h1>Preisempfehlung</h1>
@@ -93,7 +104,13 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
 
       <section className="card stack">
         <h2>Vorschläge {proposals.length ? `(${proposals.length})` : ""}</h2>
-        {manage ? <form action={computeAction}><input type="hidden" name="hotelId" value={hotel.id} /><button className="btn secondary">Jetzt neu berechnen</button></form> : null}
+        {manage ? (
+          <div className="row">
+            <form action={computeAction}><input type="hidden" name="hotelId" value={hotel.id} /><button className="btn secondary">Jetzt nach Regeln neu berechnen</button></form>
+            {ai ? <form action={aiAction}><input type="hidden" name="hotelId" value={hotel.id} /><button className="btn" disabled={aiLeft === 0}>Mit KI neu berechnen</button></form> : null}
+          </div>
+        ) : null}
+        {ai ? <p className="small muted" style={{ margin: 0 }}>KI-Preisempfehlung ist an: Sie schlägt Preise innerhalb Ihres Preiskorridors vor, stützt sich nur auf Ihre Zahlen (keine Konkurrenzpreise) und ändert nichts ohne Ihre Bestätigung, ausser «automatisch übernehmen» ist bei der Regel eingeschaltet. Heute noch {aiLeft} Berechnungen. Läuft ausserdem täglich nachts.</p> : null}
         {proposals.length ? (
           <form action={decideAction} className="stack">
             <input type="hidden" name="hotelId" value={hotel.id} />
@@ -101,7 +118,7 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
               {proposals.map((p) => (
                 <tr key={p.id}>
                   <td><input type="checkbox" name="id" value={p.id} defaultChecked aria-label="Vorschlag wählen" /></td>
-                  <td>{formatDay(p.night, "de")}</td><td>{p.planName}</td><td>CHF {chf(p.currentRappen)}</td><td><strong>CHF {chf(p.proposedRappen)}</strong></td><td>{p.reason}</td>
+                  <td>{formatDay(p.night, "de")}</td><td>{p.planName}</td><td>CHF {chf(p.currentRappen)}</td><td><strong>CHF {chf(p.proposedRappen)}</strong></td><td>{p.source === "ai" ? <span className="badge">KI</span> : null} {p.reason.replace(/^KI: /, "")}</td>
                 </tr>
               ))}
             </tbody></table>

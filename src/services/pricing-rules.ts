@@ -60,7 +60,7 @@ export async function deleteEvent(hotelId: string, id: string, actor: string): P
  * der Preis ist durch Minimum/Maximum der Regel begrenzt.
  * ASSUMPTION: Nur Nächte mit vorhandenem Preis und ohne Verkaufsstopp werden bearbeitet; Auslastung = gebucht / (Zimmer − gesperrt) des Zimmertyps.
  */
-export async function generateProposals(hotelId: string, today: string, actor: string, days = 90): Promise<{ proposed: number; applied: number }> {
+export async function generateProposals(hotelId: string, today: string, actor: string, days = 90, opts: { skipAuto?: boolean } = {}): Promise<{ proposed: number; applied: number }> {
   const rules = (await listRules(hotelId)).filter((r) => r.active);
   if (!rules.length) return { proposed: 0, applied: 0 };
   const to = addDays(today, days - 1);
@@ -95,7 +95,7 @@ export async function generateProposals(hotelId: string, today: string, actor: s
       if (rows.length) await tx.insert(pricingProposals).values(rows.map((r) => ({ hotelId, ratePlanId: plan.id, night: r.night, currentRappen: r.current, proposedRappen: r.proposed, reason: r.reason })));
     });
     proposed += rows.length;
-    if (rule.autoApply && rows.length) {
+    if (rule.autoApply && rows.length && !opts.skipAuto) {
       const open = await db().select({ id: pricingProposals.id }).from(pricingProposals).where(and(eq(pricingProposals.hotelId, hotelId), eq(pricingProposals.ratePlanId, plan.id), eq(pricingProposals.status, "open")));
       applied += await applyProposals(hotelId, open.map((o) => o.id), `auto:${actor}`);
     }
@@ -131,16 +131,4 @@ export async function dismissProposals(hotelId: string, ids: string[], actor: st
   if (!ids.length) return;
   await db().update(pricingProposals).set({ status: "dismissed", decidedAt: new Date(), decidedBy: actor })
     .where(and(eq(pricingProposals.hotelId, hotelId), eq(pricingProposals.status, "open"), inArray(pricingProposals.id, ids)));
-}
-
-/** Täglicher Job: Vorschläge für alle Betriebe mit eingeschaltetem Modul neu berechnen */
-export async function pricingJob(now = new Date()): Promise<number> {
-  const on = await db().select({ hotelId: hotelModules.hotelId }).from(hotelModules).where(and(eq(hotelModules.module, "pricing_rules"), eq(hotelModules.enabled, true)));
-  let n = 0;
-  for (const { hotelId } of on) {
-    const [h] = await db().select({ tz: hotels.timezone }).from(hotels).where(eq(hotels.id, hotelId));
-    if (!h) continue;
-    n += (await generateProposals(hotelId, todayIn(h.tz, now), "job")).proposed;
-  }
-  return n;
 }

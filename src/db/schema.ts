@@ -1047,6 +1047,8 @@ export const pricingProposals = pgTable("pricing_proposals", {
   proposedRappen: integer("proposed_rappen").notNull(),
   reason: text("reason").notNull(),
   status: text("status").$type<"open" | "applied" | "dismissed">().notNull().default("open"),
+  /** Herkunft: nach Regeln oder KI-Empfehlung (Migration 0059) */
+  source: text("source").$type<"rules" | "ai">().notNull().default("rules"),
   createdAt: ts("created_at").notNull().defaultNow(),
   decidedAt: ts("decided_at"),
   decidedBy: text("decided_by"),
@@ -1388,3 +1390,19 @@ export const importJobs = pgTable("import_jobs", {
   finishedAt: ts("finished_at"),
 });
 export type ImportJob = typeof importJobs.$inferSelect;
+
+/** KI-Preisempfehlung: ein Lauf je Aufruf, nur Zähler (Migration 0059) */
+export const aiPricingRuns = pgTable("ai_pricing_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  day: date("day", { mode: "string" }).notNull(),
+  status: text("status").$type<"ok" | "error">().notNull(),
+  model: text("model").notNull(),
+  nights: integer("nights").notNull().default(0),
+  proposals: integer("proposals").notNull().default(0),
+  rejected: integer("rejected").notNull().default(0),
+  inputTokens: integer("input_tokens").notNull().default(0),
+  outputTokens: integer("output_tokens").notNull().default(0),
+  error: text("error"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
