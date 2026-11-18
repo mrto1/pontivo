@@ -181,7 +181,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Website-Schnittstelle: Webhooks, Stornieren über die API, Rückkehr-Adresse nach der Zahlung, Idempotenz-Schlüssel erst bei Bedarf einer Agentur.
 
 ## App myPontivo (SPEC 19.23)
-- Bestätigen: App-Kennung `ch.pontivo.mypontivo` (nach dem ersten Store-Eintrag nicht mehr änderbar), Name «myPontivo», Adresse pontivo.ch.
+- Bestätigt (18.11.2026): App-Kennung `ch.pontivo.mypontivo`. Noch zu bestätigen: Name «myPontivo», Adresse pontivo.ch.
 - Konten und Material: Google-Play- und Apple-Developer-Konto, Mac für iOS, Icon/Splash/Screenshots, Datenschutzangaben für die Stores, Testbetrieb mit Zugang für den Apple-Prüfer.
 - Mitteilungen: Firebase-Projekt und APNs-Schlüssel einrichten, dann Versand bauen (FCM HTTP v1, Doku vorher lesen).
 - Passkeys in der Hülle auf echten Geräten testen.
