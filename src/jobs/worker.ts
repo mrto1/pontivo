@@ -30,8 +30,11 @@ import { accessJob } from "../services/door-access";
 import { balanceJob } from "../services/balance";
 import { monthlyAccountingJob } from "../services/accounting";
 import { aiPricingJob } from "../services/ai-pricing";
+import { deliverDue, webhookCleanup } from "../services/webhooks";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
+  { name: "webhooks", cron: "* * * * *", run: () => deliverDue() },
+  { name: "webhook-cleanup", cron: "50 3 * * *", run: () => webhookCleanup() },
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
   { name: "emails", cron: "* * * * *", run: () => sendDueEmails() },
   { name: "push", cron: "* * * * *", run: () => sendDuePushes() },

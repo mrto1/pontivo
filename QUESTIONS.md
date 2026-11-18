@@ -179,3 +179,12 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Abacus: Mit dem Treuhänder eine Testdatei einlesen (Trennzeichen, Kopfzeile, Version `J`, Belegnummer auf 10 Zeichen gekürzt). Die Dokumentation nennt nur die Felder.
 - Infoniqa (früher Sage 50) und bexio: Format nicht aus offizieller Quelle belegt. bexio: eventuell nur über deren API statt Datei. Zuerst beim Treuhänder klären, welches Programm und welches Format.
 - Website-Schnittstelle: Webhooks, Stornieren über die API, Rückkehr-Adresse nach der Zahlung, Idempotenz-Schlüssel erst bei Bedarf einer Agentur.
+
+## App myPontivo (SPEC 19.23)
+- Bestätigen: App-Kennung `ch.pontivo.mypontivo` (nach dem ersten Store-Eintrag nicht mehr änderbar), Name «myPontivo», Adresse pontivo.ch.
+- Konten und Material: Google-Play- und Apple-Developer-Konto, Mac für iOS, Icon/Splash/Screenshots, Datenschutzangaben für die Stores, Testbetrieb mit Zugang für den Apple-Prüfer.
+- Mitteilungen: Firebase-Projekt und APNs-Schlüssel einrichten, dann Versand bauen (FCM HTTP v1, Doku vorher lesen).
+- Passkeys in der Hülle auf echten Geräten testen.
+
+## Infoniqa (Recherche 18.11.2026)
+- Offizielle Hilfe nennt für ONE 200 Finanz eine «ASCII-Schnittstelle» («Interface») und «Connect» (ASCII und andere Dateien, bearbeitet über die API) ohne Dateiformat; die Excel-Schnittstelle von Sage 50 exportiert nur. Kein belegbares Importformat, daher kein Export gebaut. Beim Treuhänder fragen: welche Infoniqa-Lösung (ONE 50/200/Treuhand) und welche Importart er nutzt, Musterdatei anfordern.

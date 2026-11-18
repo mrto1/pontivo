@@ -66,6 +66,8 @@ export type HotelContent = {
   it?: { headline?: string; intro?: string };
   nl?: { headline?: string; intro?: string };
   photos?: { url: string; alt?: string }[];
+  /** Website-Schnittstelle: erlaubte Rückkehr-Adressen nach der Zahlung (nur Ursprung, https) */
+  api?: { returnOrigins?: string[] };
   /** Angebotene Sprachen der Website (src/i18n/dict.ts hotelLocales), fehlt = Deutsch und Englisch */
   languages?: string[];
   /** Automatische Übersetzungen pro Monat ("YYYY-MM" → Anzahl), für das Limit */
@@ -1237,6 +1239,9 @@ export const apiKeys = pgTable("api_keys", {
   prefix: text("prefix").notNull(),
   /** pos = Kassen-Schnittstelle, website = Buchungs-API für die eigene Website */
   scope: text("scope").$type<"pos" | "website">().notNull().default("pos"),
+  /** optionaler Ablauf und optionale Liste erlaubter IP-Adressen (leer = alle) */
+  expiresAt: ts("expires_at"),
+  allowedIps: text("allowed_ips").array().notNull().default([]),
   createdBy: text("created_by").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
   lastUsedAt: ts("last_used_at"),
@@ -1451,3 +1456,55 @@ export const offerLines = pgTable("offer_lines", {
   resourceBookingId: uuid("resource_booking_id"),
 });
 export type OfferLine = typeof offerLines.$inferSelect;
+
+// ---------------------------------------------------------------- Website-Schnittstelle: Idempotenz und Webhooks (SPEC 19.22)
+export const apiIdempotency = pgTable("api_idempotency", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  keyId: uuid("key_id").notNull(),
+  idemKey: text("idem_key").notNull(),
+  requestHash: text("request_hash").notNull(),
+  statusCode: integer("status_code"),
+  response: jsonb("response").$type<unknown>(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const webhookEndpoints = pgTable("webhook_endpoints", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  url: text("url").notNull(),
+  secretEnc: text("secret_enc").notNull(),
+  events: text("events").array().notNull().default([]),
+  active: boolean("active").notNull().default(true),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type WebhookEndpoint = typeof webhookEndpoints.$inferSelect;
+
+export const webhookDeliveries = pgTable("webhook_deliveries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  endpointId: uuid("endpoint_id").notNull(),
+  event: text("event").notNull(),
+  eventId: uuid("event_id").notNull(),
+  payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  status: text("status").$type<"pending" | "sent" | "failed">().notNull().default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  nextAttemptAt: ts("next_attempt_at").notNull().defaultNow(),
+  lastStatus: integer("last_status"),
+  lastError: text("last_error"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  sentAt: ts("sent_at"),
+});
+export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;
+
+/** Gerätekennung der nativen App myPontivo für Mitteilungen (SPEC 19.23) */
+export const nativePushTokens = pgTable("native_push_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  userId: uuid("user_id").notNull(),
+  platform: text("platform").$type<"android" | "ios">().notNull(),
+  token: text("token").notNull(),
+  appVersion: text("app_version"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});

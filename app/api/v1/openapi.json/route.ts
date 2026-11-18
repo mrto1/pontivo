@@ -1,0 +1,47 @@
+import { env } from "@/src/env";
+
+export const dynamic = "force-static";
+
+const sec = [{ bearer: [] }];
+const err = (d: string) => ({ description: d, content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } });
+const ref = { name: "reference", in: "path", required: true, schema: { type: "string" } };
+
+/** OpenAPI 3.0 der Website-Schnittstelle (SPEC 19.22), öffentlich lesbar, ohne Schlüssel */
+export function GET() {
+  const spec = {
+    openapi: "3.0.3",
+    info: { title: "Pontivo Website-Schnittstelle", version: "1.0.0", description: "Verfügbarkeit, Preise, Buchung und Storno für die eigene Hotel-Website. Beträge in Rappen (CHF). Schlüssel nur serverseitig verwenden." },
+    servers: [{ url: `${env().APP_BASE_URL}/api/v1` }],
+    security: sec,
+    paths: {
+      "/hotel": { get: { summary: "Stammdaten: Betrieb, Zimmertypen, Tarife, Zusatzleistungen", responses: { "200": { description: "OK" }, "401": err("Schlüssel fehlt oder ungültig"), "403": err("Modul aus, falscher Zweck oder IP nicht erlaubt") } } },
+      "/availability": { get: { summary: "Verfügbarkeit und Preise", parameters: ["checkin", "checkout", "adults", "children", "rooms", "ages", "lang"].map((n) => ({ name: n, in: "query", required: n === "checkin" || n === "checkout", schema: { type: "string" } })), responses: { "200": { description: "Angebote" }, "400": err("Eingabe ungültig"), "422": err("Suche nicht möglich (z. B. child_ages_required)") } } },
+      "/bookings": { post: { summary: "Buchung anlegen (Reservierung 32 Minuten, danach Zahlung)", parameters: [{ name: "Idempotency-Key", in: "header", required: false, schema: { type: "string", minLength: 8, maxLength: 128 }, description: "Gleicher Schlüssel und gleiche Anfrage: gleiche Antwort, nichts doppelt." }], requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/BookingRequest" } } } }, responses: { "201": { description: "Angelegt; checkout_url ist die Zahlungsseite" }, "400": err("Eingabe ungültig"), "409": err("Ausgebucht oder Anfrage läuft noch"), "413": err("Anfrage zu gross"), "422": err("Idempotency-Key mit anderem Inhalt"), "429": err("Zu viele Anfragen") } } },
+      "/bookings/{reference}": { get: { summary: "Status einer Buchung", parameters: [ref], responses: { "200": { description: "OK" }, "404": err("Nicht gefunden") } } },
+      "/bookings/{reference}/cancel": {
+        get: { summary: "Stornovorschau (Rückerstattung und Gebühr)", parameters: [ref], responses: { "200": { description: "OK" } } },
+        post: { summary: "Stornieren (wie ein Gast)", parameters: [ref], responses: { "200": { description: "Storniert (auch bei Wiederholung)" }, "409": err("Nicht stornierbar") } },
+      },
+    },
+    webhooks: {
+      "booking.confirmed": { post: { summary: "Buchung bezahlt und bestätigt", requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Event" } } } }, responses: { "200": { description: "2xx = angekommen" } } } },
+      "booking.cancelled": { post: { summary: "Buchung storniert", requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Event" } } } }, responses: { "200": { description: "2xx = angekommen" } } } },
+      "booking.expired": { post: { summary: "Reservierung nicht bezahlt, Zimmer wieder frei", requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/Event" } } } }, responses: { "200": { description: "2xx = angekommen" } } } },
+    },
+    components: {
+      securitySchemes: { bearer: { type: "http", scheme: "bearer", description: "pnt_… (Admin → Website-Schnittstelle)" } },
+      schemas: {
+        Error: { type: "object", properties: { error: { type: "string" }, message: { type: "string" } } },
+        BookingRequest: { type: "object", required: ["room_type_id", "rate_plan_id", "checkin", "checkout", "adults", "guest", "terms_accepted"], properties: {
+          room_type_id: { type: "string", format: "uuid" }, rate_plan_id: { type: "string", format: "uuid" }, checkin: { type: "string", format: "date" }, checkout: { type: "string", format: "date" },
+          adults: { type: "integer" }, children: { type: "integer" }, children_ages: { type: "array", items: { type: "integer" } }, rooms: { type: "integer", default: 1 },
+          guest: { type: "object", required: ["first_name", "last_name", "email"], properties: { first_name: { type: "string" }, last_name: { type: "string" }, email: { type: "string" }, phone: { type: "string" }, language: { type: "string", enum: ["de", "en", "fr", "it", "nl"] }, notes: { type: "string" }, marketing_consent: { type: "boolean" } } },
+          terms_accepted: { type: "boolean", enum: [true] }, voucher_code: { type: "string" }, extras: { type: "array", items: { type: "object", properties: { id: { type: "string" }, quantity: { type: "integer" } } } },
+          return_url: { type: "string", description: "Rückkehr nach der Zahlung; Ursprung muss im Admin erlaubt sein. Es werden reference und result (paid|cancelled) angehängt." } } },
+        Event: { type: "object", properties: { id: { type: "string", format: "uuid" }, type: { type: "string" }, created_at: { type: "string", format: "date-time" }, data: { type: "object", description: "reference, status, checkin, checkout, adults, children, total_rappen, source; bei Storno zusätzlich refund_rappen, fee_rappen. Keine Gästedaten." } } },
+      },
+    },
+    "x-webhook-signature": "Header Pontivo-Signature: t=<unix>,v1=<hex>. v1 = HMAC-SHA256 über '<t>.<Rumpf>' mit dem Geheimnis der Adresse. Zeitstempel höchstens 5 Minuten alt akzeptieren. Wiederholung bei Fehlern nach 1 Min, 5 Min, 30 Min, 2 Std, 12 Std, 24 Std; Ereignis-ID id ist bei Wiederholungen gleich.",
+  };
+  return Response.json(spec, { headers: { "cache-control": "public, max-age=300", "access-control-allow-origin": "*" } });
+}

@@ -15,6 +15,7 @@ import { quoteCancellation, type CancelQuote } from "../domain/cancellation";
 import { newPublicToken, newReference } from "../domain/ids";
 import { enqueueAvailability } from "./outbox";
 import { audit } from "./audit";
+import { bookingPayload, enqueueWebhook } from "./webhooks";
 import { moduleOn } from "./modules";
 import { enqueueEmail } from "../email/enqueue";
 import { getPaymentProvider } from "../payments/provider";
@@ -31,6 +32,13 @@ import { env } from "../env";
  */
 // ASSUMPTION: 32 Minuten, damit expires_at (= hold_expires_at) bei Stripe sicher gültig ist.
 export const HOLD_MINUTES = 32;
+
+/** Parameter an eine Rückkehr-Adresse hängen (bestehende bleiben) */
+function withParams(url: string, p: Record<string, string>): string {
+  const u = new URL(url);
+  for (const [k, v] of Object.entries(p)) u.searchParams.set(k, v);
+  return u.toString();
+}
 
 export class BookingError extends Error {
   constructor(public code: string, public httpStatus: number, message?: string) {
@@ -160,7 +168,7 @@ export class RollbackSoldOut extends Error {}
 export async function createDirectBooking(
   hotel: Hotel,
   input: CreateBookingInput,
-  opts: { now?: Date; ip?: string } = {},
+  opts: { now?: Date; ip?: string; /** Rückkehr-Adresse der eigenen Website (SPEC 19.22), vom Aufrufer gegen die erlaubten Ursprünge geprüft */ returnUrl?: string } = {},
 ): Promise<{ booking: Booking; checkoutUrl: string }> {
   const provider = await getPaymentProvider();
   if (!isBookable(hotel, provider.name)) throw new BookingError("hotel_not_bookable", 403);
@@ -289,8 +297,8 @@ export async function createDirectBooking(
       booking,
       guestEmail: input.guest.email,
       lang,
-      successUrl: `${base}/b/${booking.publicToken}?paid=1`,
-      cancelUrl: `${base}/b/${booking.publicToken}?cancelled_payment=1`,
+      successUrl: opts.returnUrl ? withParams(opts.returnUrl, { reference: booking.reference, result: "paid" }) : `${base}/b/${booking.publicToken}?paid=1`,
+      cancelUrl: opts.returnUrl ? withParams(opts.returnUrl, { reference: booking.reference, result: "cancelled" }) : `${base}/b/${booking.publicToken}?cancelled_payment=1`,
       description: `${t(lang).stay} ${hotel.name}, ${input.checkin} – ${input.checkout}`,
     });
   } catch (e) {
@@ -377,6 +385,7 @@ export async function confirmBooking(
     await setPaymentInfo(tx, booking, pay, "succeeded");
     await audit(tx, { hotelId: booking.hotelId, actor: pay.actor, action: "booking.confirm", entity: "booking", entityId: booking.id, details: { from: b.status } });
     await enqueueBookingEmails(tx, { ...booking, status: "confirmed" }, now);
+    await enqueueWebhook(tx, booking.hotelId, "booking.confirmed", bookingPayload({ ...booking, status: "confirmed" }), now);
     return "confirmed";
   });
 }
@@ -456,6 +465,7 @@ export async function releaseHold(
       await tx.update(payments).set({ status: "failed", updatedAt: now }).where(and(eq(payments.bookingId, bookingId), eq(payments.status, "pending")));
     }
     await audit(tx, { hotelId: booking.hotelId, actor: opts.actor, action: "booking.expire", entity: "booking", entityId: bookingId, details: { reason: opts.reason } });
+    await enqueueWebhook(tx, booking.hotelId, "booking.expired", bookingPayload({ ...booking, status: "expired" }), now);
     return true;
   });
 }
@@ -569,6 +579,7 @@ export async function cancelBooking(
     if (guest) await enqueueEmail(tx, { hotelId: hotel.id, bookingId, template: "booking_cancelled", to: guest.email, language: booking.language, data });
     await enqueueEmail(tx, { hotelId: hotel.id, bookingId, template: "booking_cancelled", to: hotel.contactEmail, language: hotel.defaultLanguage, data });
     await pushForBooking(tx, hotel.id, bookingId, "cancelled");
+    await enqueueWebhook(tx, hotel.id, "booking.cancelled", { ...bookingPayload({ ...booking, status: "cancelled" }), refund_rappen: refunded, fee_rappen: preview.feeRappen }, now);
     await audit(tx, { hotelId: hotel.id, actor: opts.actor, action: "booking.cancel", entity: "booking", entityId: bookingId, details: { by: opts.by, refund: refunded, voucherBack, fee: preview.feeRappen, feeOpen } });
   });
   return { refundRappen: refunded, voucherBackRappen: voucherBack, feeRappen: preview.feeRappen, feeOpenRappen: feeOpen };

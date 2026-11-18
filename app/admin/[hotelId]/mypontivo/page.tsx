@@ -5,6 +5,7 @@ import { AccountSecurity } from "@/components/admin/AccountSecurity";
 import { ChangeEmail } from "@/components/admin/ChangeEmail";
 import { InstallApp } from "@/components/admin/InstallApp";
 import { PushToggle } from "@/components/admin/PushToggle";
+import { NativePush } from "@/components/admin/NativePush";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ export default async function MyPontivo({ params }: { params: Promise<{ hotelId:
         <InstallApp />
         <h3>Mitteilungen auf diesem Gerät</h3>
         <PushToggle hotelId={hotel.id} />
+        <NativePush hotelId={hotel.id} />
         <p className="muted small">Sie erhalten eine Mitteilung bei neuer Buchung, neuer Anfrage, Stornierung und Überbuchung. Die Einstellung gilt nur für dieses Gerät und diesen Betrieb; auf jedem Gerät schalten Sie sie separat ein. Ausschalten geht jederzeit hier, oder in den Einstellungen Ihres Browsers bzw. Handys.</p>
       </section>
 

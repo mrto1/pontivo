@@ -11,7 +11,8 @@ export function InstallApp() {
     const onPrompt = (e: Event) => { e.preventDefault(); setInstall(e as InstallEvent); };
     window.addEventListener("beforeinstallprompt", onPrompt);
     const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
-    setState(standalone ? "installed" : /iphone|ipad|ipod/i.test(navigator.userAgent) ? "ios" : "other");
+    const native = navigator.userAgent.includes("MyPontivoApp");
+    setState(standalone || native ? "installed" : /iphone|ipad|ipod/i.test(navigator.userAgent) ? "ios" : "other");
     return () => window.removeEventListener("beforeinstallprompt", onPrompt);
   }, []);
   if (state === "loading") return null;

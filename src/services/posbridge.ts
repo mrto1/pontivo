@@ -15,12 +15,12 @@ export class PosBridgeError extends Error {
 const hash = (key: string) => crypto.createHash("sha256").update(key).digest("hex");
 
 /** Neuen Schlüssel anlegen. Der Klartext wird nur hier zurückgegeben und nie gespeichert. */
-export async function createApiKey(hotelId: string, label: string, actor: string, scope: ApiKey["scope"] = "pos"): Promise<{ key: string; row: ApiKey }> {
+export async function createApiKey(hotelId: string, label: string, actor: string, scope: ApiKey["scope"] = "pos", opts: { expiresAt?: Date | null; allowedIps?: string[] } = {}): Promise<{ key: string; row: ApiKey }> {
   const l = label.trim().slice(0, 80);
   if (!l) throw new PosBridgeError("invalid", "Bitte eine Bezeichnung angeben (z. B. Name der Kasse).");
   const key = `${KEY_PREFIX}${crypto.randomBytes(32).toString("base64url")}`;
   return db().transaction(async (tx) => {
-    const [row] = await tx.insert(apiKeys).values({ hotelId, label: l, keyHash: hash(key), prefix: key.slice(0, 10), scope, createdBy: actor }).returning();
+    const [row] = await tx.insert(apiKeys).values({ hotelId, label: l, keyHash: hash(key), prefix: key.slice(0, 10), scope, createdBy: actor, expiresAt: opts.expiresAt ?? null, allowedIps: opts.allowedIps ?? [] }).returning();
     await audit(tx, { hotelId, actor, action: "apikey.create", entity: "api_key", entityId: row.id, details: { label: l, scope } });
     return { key, row };
   });
@@ -39,6 +39,7 @@ export async function revokeApiKey(hotelId: string, id: string, actor: string) {
 export async function authenticate(key: string): Promise<ApiKey | null> {
   const [k] = await db().select().from(apiKeys).where(and(eq(apiKeys.keyHash, hash(key)), isNull(apiKeys.revokedAt)));
   if (!k) return null;
+  if (k.expiresAt && k.expiresAt.getTime() <= Date.now()) return null;
   await db().update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, k.id));
   return k;
 }

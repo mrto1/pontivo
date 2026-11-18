@@ -1,5 +1,5 @@
 import { searchParamsSchema } from "@/src/lib/validation";
-import { websiteAuth, apiError } from "@/src/lib/api-auth";
+import { apiJson, websiteAuth, apiError } from "@/src/lib/api-auth";
 import { searchOffers } from "@/src/services/search";
 import { isLocale } from "@/src/i18n/dict";
 
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   const lang = isLocale(sp.lang ?? "") ? (sp.lang as "de") : "de";
   const r = await searchOffers(a.hotel, { checkin: q.data.checkin, checkout: q.data.checkout, adults: q.data.adults, children: q.data.children, childrenAges: q.data.ages, rooms: q.data.rooms }, { lang });
   if (!r.ok) return apiError(422, r.error, `Suche nicht möglich: ${r.error}`);
-  return Response.json({
+  return apiJson({
     currency: "CHF", checkin: q.data.checkin, checkout: q.data.checkout, needs_child_ages: r.needsChildAges,
     offers: r.offers.map((o) => ({
       room_type_id: o.roomType.id, room_type_name: o.roomType.name, rate_plan_id: o.ratePlan.id, rate_plan_name: o.ratePlan.name, board: o.ratePlan.board,
