@@ -1408,3 +1408,44 @@ export const aiPricingRuns = pgTable("ai_pricing_runs", {
   error: text("error"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+/** Angebot aus einer Anfrage (Seminar, Gruppe, Fest). Preise brutto in Rappen. */
+export const offers = pgTable("offers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  inquiryId: uuid("inquiry_id"),
+  seq: integer("seq").notNull(),
+  publicToken: text("public_token").notNull().unique(),
+  status: text("status").$type<"draft" | "sent" | "accepted" | "declined" | "expired">().notNull().default("draft"),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  company: text("company").notNull().default(""),
+  title: text("title").notNull(),
+  intro: text("intro").notNull().default(""),
+  language: text("language").notNull().default("de"),
+  validUntil: date("valid_until", { mode: "string" }).notNull(),
+  sentAt: ts("sent_at"),
+  decidedAt: ts("decided_at"),
+  decisionNote: text("decision_note").notNull().default(""),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type Offer = typeof offers.$inferSelect;
+
+export const offerLines = pgTable("offer_lines", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  offerId: uuid("offer_id").notNull(),
+  hotelId: uuid("hotel_id").notNull(),
+  position: integer("position").notNull(),
+  description: text("description").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  unitRappen: integer("unit_rappen").notNull(),
+  vatKind: text("vat_kind").$type<"stay" | "standard" | "none">().notNull().default("standard"),
+  resourceId: uuid("resource_id"),
+  day: date("day", { mode: "string" }),
+  startMin: integer("start_min"),
+  endMin: integer("end_min"),
+  persons: integer("persons"),
+  resourceBookingId: uuid("resource_booking_id"),
+});
+export type OfferLine = typeof offerLines.$inferSelect;

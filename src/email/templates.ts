@@ -348,6 +348,21 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
         [`${de ? "Anlass" : "Occasion"}: ${KIND_DE[String(d.kind)] ?? d.kind}`, `${de ? "Name" : "Name"}: ${d.name}`, `E-Mail: ${d.email}`, ...(d.phone ? [`${de ? "Telefon" : "Phone"}: ${d.phone}`] : []),
           ...(d.dateFrom ? [`${de ? "Datum" : "Date"}: ${formatDay(String(d.dateFrom), l)}${d.dateTo ? ` – ${formatDay(String(d.dateTo), l)}` : ""}`] : []), ...(d.timeOfDay ? [`${de ? "Uhrzeit" : "Time"}: ${d.timeOfDay}`] : []), ...(d.persons ? [`${de ? "Personen" : "Guests"}: ${d.persons}`] : [])]);
     }
+    case "offer_sent": {
+      const link = { href: `${c.baseUrl}/o/${c.data.token}`, label: gl === "de" ? "Angebot ansehen und zusagen" : "View and accept the offer" };
+      // ASSUMPTION: Angebots-Mails nur Deutsch und Englisch (andere Sprachen erhalten Englisch)
+      const gd = gl === "de";
+      return wrap(c, gd ? "de" : "en", gd ? `Ihr Angebot: ${c.data.title}` : `Your offer: ${c.data.title}`,
+        [(gd ? "Guten Tag " : "Hello ") + String(c.data.name ?? "") + ",", gd ? `gerne senden wir Ihnen unser Angebot «${c.data.title}». Sie können es online ansehen, als PDF speichern und zusagen.` : `please find our offer «${c.data.title}». You can view it online, save it as PDF and accept it.`, String(c.data.intro ?? "")],
+        [`${gd ? "Gültig bis" : "Valid until"}: ${formatDay(String(c.data.validUntil), gd ? "de" : "en")}`], link);
+    }
+    case "offer_accepted":
+      return wrap(c, l, de ? `Angebot ${c.data.seq} angenommen: ${c.data.title}` : `Offer ${c.data.seq} accepted: ${c.data.title}`,
+        [de ? `${c.data.name} (${c.data.email}) hat das Angebot angenommen. ${c.data.reservations} Raumreservation(en) wurden angelegt (Angebote vor Ort).` : `${c.data.name} (${c.data.email}) accepted the offer. ${c.data.reservations} room reservation(s) were created.`, String(c.data.note ?? "")],
+        [], { href: `${env().APP_BASE_URL}/admin/${c.hotel.id}/inquiries`, label: de ? "Zu den Anfragen" : "Open requests" });
+    case "offer_declined":
+      return wrap(c, l, de ? `Angebot ${c.data.seq} abgelehnt: ${c.data.title}` : `Offer ${c.data.seq} declined: ${c.data.title}`,
+        [de ? `${c.data.name} hat das Angebot abgelehnt.` : `${c.data.name} declined the offer.`, String(c.data.note ?? "")]);
     case "inquiry_confirmation": {
       const x = X[gl];
       if (c.data.kind === "table") {

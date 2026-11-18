@@ -37,7 +37,10 @@ export type TemplateName =
   | "invoice_sent"
   | "dunning"
   | "owner_statement"
-  | "newsletter";
+  | "newsletter"
+  | "offer_sent"
+  | "offer_accepted"
+  | "offer_declined";
 
 /** SPEC 10: E-Mails nur über die Outbox. Gleiche Kombination booking/template/to wird nur einmal eingereiht. */
 export async function enqueueEmail(

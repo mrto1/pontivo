@@ -3,6 +3,8 @@ import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { atLeast } from "@/src/auth/session";
 import { listInquiries, setInquiryStatus } from "@/src/services/inquiries";
+import { createOfferFromInquiry, listOffers, OfferError } from "@/src/services/offers";
+import { OFFER_STATUS_LABEL } from "@/src/domain/offers";
 import { formatDay } from "@/src/i18n/dict";
 
 export const dynamic = "force-dynamic";
@@ -16,12 +18,27 @@ async function toggle(f: FormData) {
   redirect(`/admin/${c.hotel.id}/inquiries`);
 }
 
+async function makeOffer(f: FormData) {
+  "use server";
+  const c = await requireHotel(String(f.get("hotelId")), "manager");
+  await requireModule(c.hotel.id, "inquiries");
+  try {
+    const o = await createOfferFromInquiry(c.hotel, String(f.get("id")), c.actor);
+    redirect(`/admin/${c.hotel.id}/offers/${o.id}`);
+  } catch (e) {
+    if (!(e instanceof OfferError)) throw e;
+    redirect(`/admin/${c.hotel.id}/inquiries`);
+  }
+}
+
 export default async function Inquiries({ params }: { params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
   const { hotel, role } = await requireHotel(hotelId, "staff", "inquiries");
   await requireModule(hotel.id, "inquiries");
   const canEdit = atLeast(role, "manager");
   const list = await listInquiries(hotel.id);
+  const offerList = await listOffers(hotel.id);
+  const offersOf = (id: string) => offerList.filter((o) => o.inquiryId === id);
   const open = list.filter((x) => x.status === "new").length;
   return (
     <div className="stack">
@@ -42,6 +59,13 @@ export default async function Inquiries({ params }: { params: Promise<{ hotelId:
                 {q.persons ? (<><span className="muted">Personen</span><span>{q.persons}</span></>) : null}
               </div>
               {q.message ? <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{q.message}</p> : null}
+              {offersOf(q.id).map((o) => <p key={o.id} className="small" style={{ margin: 0 }}>Angebot: <a href={`/admin/${hotel.id}/offers/${o.id}`}>{o.title}</a> · {OFFER_STATUS_LABEL[o.status]}</p>)}
+              {canEdit && q.kind !== "table" ? (
+                <form action={makeOffer}>
+                  <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={q.id} />
+                  <button className="btn small">Angebot erstellen</button>
+                </form>
+              ) : null}
               {canEdit ? (
                 <form action={toggle}>
                   <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={q.id} />
