@@ -96,7 +96,7 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
           <section className="card stack">
             <h2>Eingeschaltet <span className="badge">{t.name}</span></h2>
             {m.settings.endsAt ? <p className="notice warn small">Gekündigt: Der Chat läuft noch bis {m.settings.endsAt.split("-").reverse().join(".")}. Danach wird er abgeschaltet und nichts mehr berechnet.</p> : null}
-            <p className="small">{formatChf(t.priceRappen)} pro Monat (ohne MWST), {t.included} Gespräche inklusive. Abgerechnet wird zusammen mit der Plattformgebühr, über die hinterlegte Karte.{m.settings.freeMonth === today.slice(0, 7) ? " Der laufende Monat ist kostenlos." : ""}</p>
+            <p className="small">{formatChf(t.priceRappen)} pro Monat (ohne MWST), {t.included} Gespräche inklusive.{t.includesPricing ? " Enthält die KI-Preisempfehlung (Seite Preisempfehlung)." : ""} Abgerechnet wird zusammen mit der Plattformgebühr, über die hinterlegte Karte.{m.settings.freeMonth === today.slice(0, 7) ? " Der laufende Monat ist kostenlos." : ""}</p>
             {usage ? (
               <p>Diesen Monat: <strong>{usage.conversations}</strong> von {t.included} Gesprächen
                 {usage.packs > 0 ? <>, davon {usage.packs} Zusatzpaket{usage.packs === 1 ? "" : "e"} ({formatChf(usage.packsRappen)})</> : null}.
@@ -164,7 +164,8 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
               <input type="hidden" name="plan" value={p.code} />
               <input type="hidden" name="price" value={p.priceRappen} />
               <h3>{p.name}: {formatChf(p.priceRappen)} pro Monat</h3>
-              <p className="small">{p.includedConversations} Gespräche pro Monat inklusive.{p.packSize > 0 ? ` Bei Bedarf Zusatzpakete: ${p.packSize} Gespräche für ${formatChf(p.packPriceRappen)}, nur mit Ihrem Monatsbudget.` : ""} Preise ohne MWST. Der erste Monat ist kostenlos, danach monatlich kündbar.</p>
+              {p.includesPricing ? <p className="small">Enthalten: KI-Chat auf Ihrer Website und KI-Preisempfehlung (Vorschläge innerhalb Ihres Preiskorridors, bis zu 5 Tarife pro Berechnung). Schaltet die Preisregeln mit ein.</p> : null}
+              <p className="small">{p.includedConversations} Chat-Gespräche pro Monat inklusive.{p.packSize > 0 ? ` Bei Bedarf Zusatzpakete: ${p.packSize} Gespräche für ${formatChf(p.packPriceRappen)}, nur mit Ihrem Monatsbudget.` : ""} Preise ohne MWST. Der erste Monat ist kostenlos, danach monatlich kündbar.</p>
               <label className="check"><input type="checkbox" name="accept" /> Ich habe Preis und die <a href="/gastgeber-bedingungen" target="_blank">Bedingungen für Gastgeber</a> gelesen und bestätige die monatliche Abrechnung über die hinterlegte Karte.</label>
               <div><button className="btn" disabled={!isOwner || !hotel.billingPaymentMethodId}>Einschalten</button></div>
             </form>

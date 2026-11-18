@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { requireHotel } from "@/src/auth/guard";
-import { moduleOn, requireModule } from "@/src/services/modules";
-import { refreshProposals, runsToday } from "@/src/services/ai-pricing";
+import { requireModule } from "@/src/services/modules";
+import { aiPricingActive, refreshProposals, runsToday } from "@/src/services/ai-pricing";
 import { env } from "@/src/env";
 import { atLeast } from "@/src/auth/session";
 import { db } from "@/src/db/client";
@@ -94,7 +94,7 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
     listRules(hotel.id), listEvents(hotel.id, today), listProposals(hotel.id, today),
   ]);
   const byPlan = new Map(rules.map((r) => [r.ratePlanId, r]));
-  const ai = (await moduleOn(hotel.id, "ai_pricing")) && !!env().ANTHROPIC_API_KEY;
+  const ai = await aiPricingActive(hotel);
   const aiLeft = ai ? Math.max(0, env().AI_PRICING_RUNS_PER_DAY - (await runsToday(hotel.id, today))) : 0;
   return (
     <div className="stack">

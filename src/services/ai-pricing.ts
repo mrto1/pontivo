@@ -6,21 +6,29 @@ import { addDays, diffDays, todayIn, weekday } from "../domain/dates";
 import { proposePrice, type Rule } from "../domain/pricing-rules";
 import { env } from "../env";
 import { audit } from "./audit";
-import { moduleOn } from "./modules";
+import { aiModuleRow } from "./ai-module";
+import { moduleActiveOn } from "../domain/ai-plan";
 import { applyProposals, generateProposals, listRules } from "./pricing-rules";
 
 /**
- * KI-Preisempfehlung (Modul ai_pricing). Baut auf den Regeln auf: gleicher Preiskorridor, gleiche Vorschlagsliste.
+ * KI-Preisempfehlung (KI-Zusatz). Baut auf den Regeln auf: gleicher Preiskorridor, gleiche Vorschlagsliste.
  * Die KI liefert nur Vorschläge (source = 'ai'); übernommen wird nur nach Bestätigung oder, wenn das Hotel bei der Regel
  * «automatisch übernehmen» eingeschaltet hat, und dann nur im Korridor (applyProposals prüft ihn erneut).
- * ASSUMPTION: Gebühr offen (QUESTIONS.md), daher nur technische Obergrenze je Hotel und Tag; keine Wettbewerbsdaten.
+ * Gebühr: im KI-Zusatz (CHF 29/Monat) enthalten; technische Obergrenze je Hotel und Tag; keine Wettbewerbsdaten.
  */
 export class AiPricingError extends Error {}
 export type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<{ status: number; text: () => Promise<string> }>;
 const WEEKDAYS = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 const DAYS = 90;
 
-export const aiPricingActive = async (hotelId: string) => !!env().ANTHROPIC_API_KEY && (await moduleOn(hotelId, "ai_pricing"));
+/** Läuft die KI-Preisempfehlung? Nur mit gebuchtem KI-Zusatz (Laufzeit nicht abgelaufen) und gesetztem API-Schlüssel. */
+export async function aiPricingActive(hotel: Hotel, now = new Date()): Promise<boolean> {
+  if (!env().ANTHROPIC_API_KEY) return false;
+  const m = await aiModuleRow(hotel.id);
+  return !!m.settings.terms?.includesPricing && moduleActiveOn(m.enabled, m.settings, todayIn(hotel.timezone, now));
+}
+// ASSUMPTION: Fair Use, höchstens so viele Tarife pro Lauf (Kosten für den Betreiber begrenzen)
+export const AI_MAX_PLANS_PER_RUN = 5;
 
 export async function runsToday(hotelId: string, day: string): Promise<number> {
   const [r] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM ai_pricing_runs WHERE hotel_id = ${hotelId} AND day = ${day}::date`));
@@ -50,11 +58,11 @@ async function callModel(system: string, user: string, fetcher: FetchLike): Prom
 export async function runAiPricing(hotel: Hotel, actor: string, opts: { fetcher?: FetchLike; now?: Date } = {}): Promise<{ proposed: number; applied: number; rejected: number }> {
   const now = opts.now ?? new Date();
   const today = todayIn(hotel.timezone, now);
-  if (!(await aiPricingActive(hotel.id))) throw new AiPricingError("Die KI-Preisempfehlung ist nicht eingeschaltet.");
+  if (!(await aiPricingActive(hotel, now))) throw new AiPricingError("Die KI-Preisempfehlung ist nicht eingeschaltet.");
   const cap = env().AI_PRICING_RUNS_PER_DAY;
   if ((await runsToday(hotel.id, today)) >= cap) throw new AiPricingError(`Für heute sind alle ${cap} KI-Berechnungen verbraucht. Morgen geht es weiter.`);
   const fetcher: FetchLike = opts.fetcher ?? ((u, i) => fetch(u, i));
-  const rules = (await listRules(hotel.id)).filter((r) => r.active);
+  const rules = (await listRules(hotel.id)).filter((r) => r.active).slice(0, AI_MAX_PLANS_PER_RUN);
   if (!rules.length) throw new AiPricingError("Zuerst bei einem Tarif eine Regel mit Preiskorridor speichern.");
   const to = addDays(today, DAYS - 1);
   const events = await db().select().from(pricingEvents).where(and(eq(pricingEvents.hotelId, hotel.id), lte(pricingEvents.fromDay, to), gte(pricingEvents.toDay, today)));
@@ -121,7 +129,7 @@ export async function runAiPricing(hotel: Hotel, actor: string, opts: { fetcher?
 /** Regeln neu rechnen und danach die KI darüberlegen; ohne KI-Modul nur die Regeln (Automatik der Regeln unverändert) */
 export async function refreshProposals(hotel: Hotel, actor: string, opts: { fetcher?: FetchLike; now?: Date } = {}) {
   const today = todayIn(hotel.timezone, opts.now);
-  const ai = await aiPricingActive(hotel.id);
+  const ai = await aiPricingActive(hotel, opts.now);
   const base = await generateProposals(hotel.id, today, actor, 90, { skipAuto: ai });
   if (!ai) return { ...base, ai: null as null | { proposed: number; applied: number; rejected: number } };
   try { return { ...base, ai: await runAiPricing(hotel, actor, opts) }; }

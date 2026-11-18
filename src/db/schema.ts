@@ -613,6 +613,8 @@ export const aiPlans = pgTable("ai_plans", {
   packSize: integer("pack_size").notNull().default(0),
   packPriceRappen: integer("pack_price_rappen").notNull().default(0),
   active: boolean("active").notNull().default(true),
+  /** Tarif schaltet zusätzlich die KI-Preisempfehlung ein (KI-Zusatz) */
+  includesPricing: boolean("includes_pricing").notNull().default(false),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type AiPlan = typeof aiPlans.$inferSelect;

@@ -15,6 +15,8 @@ export type AiTerms = {
   acceptedBy: string;
   /** Version der Bedingungen für Gastgeber, die bei der Bestätigung galt */
   termsVersion?: string;
+  /** Tarif enthält die KI-Preisempfehlung (KI-Zusatz) */
+  includesPricing?: boolean;
 };
 
 export type AiModuleSettings = {

@@ -6,6 +6,7 @@ import { todayIn } from "../domain/dates";
 import { env } from "../env";
 import { HOST_TERMS_VERSION } from "../legal/host-terms";
 import { audit } from "./audit";
+import { applyModules } from "./modules";
 
 /**
  * Modul «KI-Chat» (SPEC 14b): Einschalten mit Preisbestätigung, Kündigung zum Monatsende, Budget für Zusatzpakete,
@@ -45,7 +46,7 @@ export async function enableAiChat(hotel: Hotel, planCode: string, confirmedPric
     const old = (cur?.settings ?? {}) as AiModuleSettings;
     const terms: AiTerms = {
       planCode: plan.code, name: plan.name, priceRappen: plan.priceRappen, included: plan.includedConversations,
-      packSize: plan.packSize, packPriceRappen: plan.packPriceRappen, acceptedAt: now.toISOString(), acceptedBy: actor, termsVersion: HOST_TERMS_VERSION,
+      packSize: plan.packSize, packPriceRappen: plan.packPriceRappen, acceptedAt: now.toISOString(), acceptedBy: actor, termsVersion: HOST_TERMS_VERSION, includesPricing: plan.includesPricing,
     };
     // Läuft die Laufzeit noch (Kündigung zurücknehmen), bleibt der Beginn; sonst beginnt eine neue Laufzeit. Der Gratismonat gilt nur beim allerersten Mal.
     const running = cur?.enabled && old.enabledSince && (!old.endsAt || old.endsAt >= today);
@@ -59,6 +60,8 @@ export async function enableAiChat(hotel: Hotel, planCode: string, confirmedPric
       .onConflictDoUpdate({ target: [hotelModules.hotelId, hotelModules.module], set: { enabled: true, settings } });
     await audit(tx, { hotelId: hotel.id, actor, action: "module.ai_chat.on", entity: "hotel", entityId: hotel.id, details: { plan: plan.code, priceRappen: plan.priceRappen } });
   });
+  // KI-Zusatz: Preisempfehlung braucht die Preisregeln, die bei Bedarf mit eingeschaltet werden
+  if (plan.includesPricing) await applyModules(hotel.id, { pricing_rules: true }, actor);
 }
 
 /** Kündigung: der Chat läuft bis Ende des laufenden Monats */

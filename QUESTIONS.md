@@ -172,5 +172,5 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Quellprofile einzelner Anbieter brauchen echte Beispielexporte (Interessenten fragen). Der Rückweg von 30 Tagen nach dem Umschalten wird nur angezeigt.
 
 ## KI-Preisempfehlung (SPEC 19.20)
-- Gebühr und Abrechnung (wie beim KI-Chat mit Tarif nach `ai_plans` und Zähler, oder Pauschale)? Bis dahin keine Abrechnung, nur Tageslimit je Hotel. Token-Verbrauch steht in `ai_pricing_runs`, damit sich die Kosten je Lauf berechnen lassen.
+- Gebühr entschieden (Inhaber, 18.11.2026): Bündel «KI-Zusatz» (Chat + Preisempfehlung) für CHF 29/Monat, Tarif `zusatz`. Zu prüfen nach den ersten Monaten: reale Token-Kosten aus `ai_pricing_runs` und `ai_usage` gegen die CHF 29 (Kostenschätzung stammt aus einer Drittquelle, nicht von Anthropic bestätigt).
 - Qualität der Empfehlungen sollte mit echten Betriebsdaten geprüft werden (Rückfrage bei Pilotbetrieben), bevor das Modul Kunden angeboten wird. Externe Preisdaten (Wettbewerb) nur mit einer verlässlichen, erlaubten Quelle.
