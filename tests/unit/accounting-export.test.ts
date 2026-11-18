@@ -41,3 +41,23 @@ describe("Buchungsjournal (SPEC 18.3)", () => {
     expect(accountOk("x".repeat(21))).toBe(false);
   });
 });
+
+import { ABACUS_FIELDS, abacusAccountProblems, abacusCsv } from "../../src/domain/abacus-export";
+describe("Abacus-Export (SPEC 18.3a)", () => {
+  const rows = [{ date: "2026-11-05", doc: "R-2026-000123456", text: "Rechnung; mit \"Zeichen\"", debit: "1100", credit: "3200", rappen: 12_345, vat: "3.8", ref: "PNT-AB12" }];
+  it("64 Felder in dokumentierter Reihenfolge, Pflichtfelder gefüllt, Kopfzeile", () => {
+    expect(ABACUS_FIELDS).toHaveLength(64);
+    const [head, line] = abacusCsv(rows).replace("﻿", "").trim().split("\r\n");
+    expect(head.split(";")).toHaveLength(64);
+    const cols = line.match(/("([^"]|"")*"|[^;]*)(;|$)/g)!.map((c) => c.replace(/;$/, ""));
+    const f = (n: string) => cols[ABACUS_FIELDS.indexOf(n as never)];
+    expect(cols.length).toBeGreaterThanOrEqual(64);
+    expect([f("RecordNumber"), f("Date"), f("Account"), f("Account2"), f("KeyAmount"), f("DebitCredit"), f("ISO"), f("TaxMethod"), f("TaxType")]).toEqual(["1", "2026-11-05", "1100", "3200", "123.45", "D", "CHF", "0", "1"]);
+    expect(f("DocumentNumber")).toBe("R-2026-000"); // höchstens 10 Zeichen
+    expect(f("Text1")).toBe('"Rechnung; mit ""Zeichen"""');
+  });
+  it("nicht numerische Konten werden gemeldet", () => {
+    expect(abacusAccountProblems(rows)).toEqual([]);
+    expect(abacusAccountProblems([{ ...rows[0], debit: "1100-A" }])).toEqual(["1100-A"]);
+  });
+});

@@ -1235,6 +1235,8 @@ export const apiKeys = pgTable("api_keys", {
   label: text("label").notNull(),
   keyHash: text("key_hash").notNull().unique(),
   prefix: text("prefix").notNull(),
+  /** pos = Kassen-Schnittstelle, website = Buchungs-API für die eigene Website */
+  scope: text("scope").$type<"pos" | "website">().notNull().default("pos"),
   createdBy: text("created_by").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
   lastUsedAt: ts("last_used_at"),

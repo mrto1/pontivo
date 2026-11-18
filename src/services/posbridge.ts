@@ -15,18 +15,18 @@ export class PosBridgeError extends Error {
 const hash = (key: string) => crypto.createHash("sha256").update(key).digest("hex");
 
 /** Neuen Schlüssel anlegen. Der Klartext wird nur hier zurückgegeben und nie gespeichert. */
-export async function createApiKey(hotelId: string, label: string, actor: string): Promise<{ key: string; row: ApiKey }> {
+export async function createApiKey(hotelId: string, label: string, actor: string, scope: ApiKey["scope"] = "pos"): Promise<{ key: string; row: ApiKey }> {
   const l = label.trim().slice(0, 80);
   if (!l) throw new PosBridgeError("invalid", "Bitte eine Bezeichnung angeben (z. B. Name der Kasse).");
   const key = `${KEY_PREFIX}${crypto.randomBytes(32).toString("base64url")}`;
   return db().transaction(async (tx) => {
-    const [row] = await tx.insert(apiKeys).values({ hotelId, label: l, keyHash: hash(key), prefix: key.slice(0, 10), createdBy: actor }).returning();
-    await audit(tx, { hotelId, actor, action: "apikey.create", entity: "api_key", entityId: row.id, details: { label: l } });
+    const [row] = await tx.insert(apiKeys).values({ hotelId, label: l, keyHash: hash(key), prefix: key.slice(0, 10), scope, createdBy: actor }).returning();
+    await audit(tx, { hotelId, actor, action: "apikey.create", entity: "api_key", entityId: row.id, details: { label: l, scope } });
     return { key, row };
   });
 }
 
-export const listApiKeys = (hotelId: string) => db().select().from(apiKeys).where(eq(apiKeys.hotelId, hotelId)).orderBy(desc(apiKeys.createdAt));
+export const listApiKeys = (hotelId: string, scope: ApiKey["scope"] = "pos") => db().select().from(apiKeys).where(and(eq(apiKeys.hotelId, hotelId), eq(apiKeys.scope, scope))).orderBy(desc(apiKeys.createdAt));
 
 export async function revokeApiKey(hotelId: string, id: string, actor: string) {
   await db().transaction(async (tx) => {

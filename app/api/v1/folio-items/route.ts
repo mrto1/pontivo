@@ -17,6 +17,7 @@ export async function POST(req: Request) {
   if (!key) return err(401, "unauthorized", "API-Schlüssel fehlt.");
   const k = await authenticate(key);
   if (!k) return err(401, "unauthorized", "API-Schlüssel ungültig oder widerrufen.");
+  if (k.scope !== "pos") return err(403, "wrong_scope", "Dieser Schlüssel ist für die Website-Schnittstelle, nicht für die Kasse.");
   if (!rateLimit(`posbridge:${k.id}`, 120, 60_000)) return err(429, "rate_limited", "Zu viele Anfragen (höchstens 120 pro Minute).");
   if (!(await moduleOn(k.hotelId, "posbridge"))) return err(403, "module_off", "Die Kassen-Schnittstelle ist für diesen Betrieb nicht aktiv.");
   let body: unknown;

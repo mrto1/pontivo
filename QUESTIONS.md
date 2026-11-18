@@ -174,3 +174,8 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 ## KI-Preisempfehlung (SPEC 19.20)
 - Gebühr entschieden (Inhaber, 18.11.2026): Bündel «KI-Zusatz» (Chat + Preisempfehlung) für CHF 29/Monat, Tarif `zusatz`. Zu prüfen nach den ersten Monaten: reale Token-Kosten aus `ai_pricing_runs` und `ai_usage` gegen die CHF 29 (Kostenschätzung stammt aus einer Drittquelle, nicht von Anthropic bestätigt).
 - Qualität der Empfehlungen sollte mit echten Betriebsdaten geprüft werden (Rückfrage bei Pilotbetrieben), bevor das Modul Kunden angeboten wird. Externe Preisdaten (Wettbewerb) nur mit einer verlässlichen, erlaubten Quelle.
+
+## Buchhaltungs-Exporte und API (SPEC 18.3a, 19.22)
+- Abacus: Mit dem Treuhänder eine Testdatei einlesen (Trennzeichen, Kopfzeile, Version `J`, Belegnummer auf 10 Zeichen gekürzt). Die Dokumentation nennt nur die Felder.
+- Infoniqa (früher Sage 50) und bexio: Format nicht aus offizieller Quelle belegt. bexio: eventuell nur über deren API statt Datei. Zuerst beim Treuhänder klären, welches Programm und welches Format.
+- Website-Schnittstelle: Webhooks, Stornieren über die API, Rückkehr-Adresse nach der Zahlung, Idempotenz-Schlüssel erst bei Bedarf einer Agentur.
