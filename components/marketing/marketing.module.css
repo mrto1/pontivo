@@ -123,13 +123,14 @@
 .faq p { margin: 10px 0 0; color: var(--pv-quiet); max-width: 68ch; }
 
 /* ---------- Kontakt ---------- */
-.contact { background: var(--pv-ink); color: var(--pv-paper); border-radius: 22px; padding: 56px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; }
-.contact .h2 { color: var(--pv-paper); }
-.contact p { color: var(--pv-paper); opacity: 0.85; }
+.contact { background: linear-gradient(90deg, rgba(8, 20, 28, .84) 0%, rgba(8, 20, 28, .55) 55%, rgba(8, 20, 28, .3) 100%), url("/marketing/kontakt.webp") center / cover no-repeat, #0e1726; color: #fff; border-radius: 22px; padding: 56px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; }
+.contact .h2 { color: #fff; }
+.contact p { color: #fff; opacity: 0.9; }
 .contactLinks { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
-.contactLinks a:not(.btn) { color: var(--pv-paper); }
+.contactLinks a:not(.btn) { color: #fff; }
+.contact .btn { background: #fff; color: #0e1726 !important; }
 @media (prefers-color-scheme: dark) {
-  .contact { background: #131c2e; }
+  .contact { background: linear-gradient(90deg, rgba(5, 11, 20, .9) 0%, rgba(5, 11, 20, .68) 55%, rgba(5, 11, 20, .5) 100%), url("/marketing/kontakt.webp") center / cover no-repeat, #0b1220; }
 }
 
 .foot { padding: 40px 0 56px; color: var(--pv-quiet); font-size: 0.9rem; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
@@ -248,8 +249,8 @@
 .heroImg { position: absolute; top: 0; left: 0; right: 0; height: 860px; background: url("/marketing/hero-hell.webp") 70% 40% / cover no-repeat; pointer-events: none; }
 .heroImg::after { content: ""; position: absolute; inset: 0;
   background:
-    linear-gradient(180deg, transparent 55%, var(--pv-paper) 100%),
-    linear-gradient(90deg, color-mix(in srgb, var(--pv-paper) 92%, transparent) 0%, color-mix(in srgb, var(--pv-paper) 78%, transparent) 38%, color-mix(in srgb, var(--pv-paper) 18%, transparent) 75%, transparent 100%); }
+    linear-gradient(180deg, transparent 68%, var(--pv-paper) 100%),
+    linear-gradient(90deg, color-mix(in srgb, var(--pv-paper) 82%, transparent) 0%, color-mix(in srgb, var(--pv-paper) 62%, transparent) 38%, color-mix(in srgb, var(--pv-paper) 8%, transparent) 72%, transparent 100%); }
 @media (prefers-color-scheme: dark) { .heroImg { background-image: url("/marketing/hero-dunkel.webp"); } }
 @media (max-width: 860px) {
   .heroImg { height: 760px; background-position: 78% 30%; }
