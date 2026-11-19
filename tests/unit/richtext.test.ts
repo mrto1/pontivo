@@ -50,16 +50,16 @@ describe("Textformatierung", () => {
 });
 
 describe("Gestaltung", () => {
-  it("8 Layouts und 8 Schriftpaare, unbekannte Werte → Standard", () => {
-    expect(LAYOUTS).toHaveLength(8);
+  it("9 Layouts und 8 Schriftpaare, unbekannte Werte → Standard", () => {
+    expect(LAYOUTS).toHaveLength(9); // 8 bisherige plus «Ruhig» (SPEC 19.26)
     expect(FONTS).toHaveLength(8);
     expect(layoutOf("redaktion")).toBe("redaktion");
     expect(fontOf("boutique")).toBe("boutique");
-    expect(layoutOf(undefined)).toBe("klassisch");
+    expect(layoutOf(undefined)).toBe("ruhig");
     expect(layoutOf("panorama")).toBe("panorama");
-    expect(layoutOf("<script>")).toBe("klassisch");
+    expect(layoutOf("<script>")).toBe("ruhig");
     expect(fontOf("elegant")).toBe("elegant");
-    expect(fontOf("comic-sans")).toBe("klassisch");
+    expect(fontOf("comic-sans")).toBe("editorial");
   });
 
   it("Ausrichtung/Grösse: Standard folgt dem Layout", () => {

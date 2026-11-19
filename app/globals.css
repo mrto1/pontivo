@@ -164,6 +164,11 @@ details > summary::-webkit-details-marker { display: none; }
 @media (prefers-color-scheme: light) {
   .branded { --accent: var(--brand-link); --accent-soft: color-mix(in srgb, var(--brand) 14%, white); }
 }
+@media (prefers-color-scheme: dark) {
+  .branded { --accent: var(--brand-link-dark); --accent-soft: color-mix(in srgb, var(--brand) 28%, var(--surface)); }
+  .branded .btn:not(.secondary):not(.danger) { background: var(--brand-link-dark); color: var(--brand-dark-ink); }
+  .branded .btn.secondary { color: var(--brand-link-dark); border-color: var(--brand-link-dark); }
+}
 .branded input:focus, .branded select:focus, .branded textarea:focus { outline-color: var(--brand); }
 
 .copybox { display: flex; gap: 10px; align-items: flex-start; }
@@ -210,19 +215,19 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .site .brand, .site h1, .site h2 { font-family: var(--serif); }
 
 /* Panorama: Titelbild über die ganze Breite, Titel auf dem Bild */
-.layout-panorama .blk-hero:has(.hero-photo) { display: grid; margin: 0 calc(50% - 50vw); padding: 0; }
-.layout-panorama .blk-hero:has(.hero-photo) > .hero-photo { grid-area: 1 / 1; margin: 0; border-radius: 0; aspect-ratio: auto; height: min(72vh, 640px); min-height: 360px; }
-.layout-panorama .blk-hero:has(.hero-photo) > .hero {
+:is(.layout-panorama, .layout-ruhig) .blk-hero:has(.hero-photo) { display: grid; margin: 0 calc(50% - 50vw); padding: 0; }
+:is(.layout-panorama, .layout-ruhig) .blk-hero:has(.hero-photo) > .hero-photo { grid-area: 1 / 1; margin: 0; border-radius: 0; aspect-ratio: auto; height: min(72vh, 640px); min-height: 360px; }
+:is(.layout-panorama, .layout-ruhig) .blk-hero:has(.hero-photo) > .hero {
   grid-area: 1 / 1; align-self: end; z-index: 1; width: 100%; margin: 0; padding-top: 120px; padding-bottom: 72px;
   color: #fff; background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0));
   max-width: none; padding-left: max(16px, calc(50vw - 504px)); padding-right: max(16px, calc(50vw - 504px));
 }
-.layout-panorama .blk-hero:has(.hero-photo) > .hero h1 { font-size: clamp(2.2rem, 5.5vw, 3.6rem); text-shadow: 0 1px 12px rgba(0,0,0,.35); }
-.layout-panorama .blk-hero:has(.hero-photo) > .hero p { color: rgba(255,255,255,.92); }
-.layout-panorama .blk-hero:has(.hero-photo) > .searchbar,
-.layout-panorama .blk-hero:has(.hero-photo) > form { width: min(1040px, calc(100% - 32px)); margin: -40px auto 0; position: relative; z-index: 2;
+:is(.layout-panorama, .layout-ruhig) .blk-hero:has(.hero-photo) > .hero h1 { font-size: clamp(2.2rem, 5.5vw, 3.6rem); text-shadow: 0 1px 12px rgba(0,0,0,.35); }
+:is(.layout-panorama, .layout-ruhig) .blk-hero:has(.hero-photo) > .hero p { color: rgba(255,255,255,.92); }
+:is(.layout-panorama, .layout-ruhig) .blk-hero:has(.hero-photo) > .searchbar,
+:is(.layout-panorama, .layout-ruhig) .blk-hero:has(.hero-photo) > form { width: min(1040px, calc(100% - 32px)); margin: -40px auto 0; position: relative; z-index: 2;
   background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: 0 8px 30px rgba(0,0,0,.14); }
-.layout-panorama .site-head { position: relative; z-index: 3; }
+:is(.layout-panorama, .layout-ruhig) .site-head { position: relative; z-index: 3; }
 
 /* Zentriert: Logo und Menü mittig, Titel zentriert */
 .layout-zentriert .site-head .wrap { flex-direction: column; justify-content: center; gap: 8px; padding-top: 18px; padding-bottom: 14px; }
@@ -293,6 +298,50 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .layout-redaktion .foot { border-top: 2px solid var(--ink); }
 .layout-redaktion p { text-wrap: pretty; }
 
+/* Ruhig (Standard): neutral, grosse Fotos, Zimmer als Reihen, kaum Rahmen. Farbe nur aus dem Logo des Hotels, Tag und Nacht nach Gerät. */
+.layout-ruhig { --bg: #ffffff; --surface: #ffffff; --ink: #1c1c1c; --muted: #565656; --line: #e2e2df; --radius: 3px; background: var(--bg); color: var(--ink); }
+.layout-ruhig:not(.branded) { --accent: #1c1c1c; --accent-ink: #ffffff; --accent-soft: #f1f1ef; }
+.layout-ruhig.branded { --accent-soft: color-mix(in srgb, var(--brand) 10%, #ffffff); }
+@media (prefers-color-scheme: dark) {
+  .layout-ruhig { --bg: #14161a; --surface: #1c1f24; --ink: #ececea; --muted: #a5a8ad; --line: #33373e; }
+  .layout-ruhig:not(.branded) { --accent: #ececea; --accent-ink: #14161a; --accent-soft: #1c1f24; }
+}
+.layout-ruhig .wrap { max-width: 1240px; padding: 0 32px; }
+.layout-ruhig .site-head { background: transparent; border-bottom: 0; }
+.layout-ruhig .brand { font-size: 1.5rem; font-weight: 500; }
+.layout-ruhig .site-nav a, .layout-ruhig .lang a { font-size: .92rem; font-weight: 500; text-decoration: none; }
+.layout-ruhig .site-nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.layout-ruhig h1 { font-weight: 400; font-size: clamp(2.3rem, 5.4vw, 4.2rem); line-height: 1.04; letter-spacing: -.02em; text-wrap: balance; }
+.layout-ruhig h2 { font-weight: 400; font-size: clamp(1.8rem, 3.4vw, 2.6rem); letter-spacing: -.01em; }
+.layout-ruhig .blk { padding: 56px 0; }
+.layout-ruhig .hero p { color: var(--muted); font-size: 1.15rem; text-wrap: pretty; }
+.layout-ruhig .card { background: transparent; border: 0; padding: 0; }
+.layout-ruhig .btn { border-radius: 2px; font-weight: 600; }
+.layout-ruhig input, .layout-ruhig select, .layout-ruhig textarea { border-radius: 2px; }
+.layout-ruhig .badge { border-radius: 2px; background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.layout-ruhig .hero-photo, .layout-ruhig .room-photo, .layout-ruhig .gallery img, .layout-ruhig .blk-imgtext img { border-radius: 0; }
+.layout-ruhig .blk-hero:has(.hero-photo) > .hero { padding-bottom: 88px; }
+.layout-ruhig .blk-hero:has(.hero-photo) > .hero h1 { max-width: 16ch; }
+.layout-ruhig .blk-hero:has(.hero-photo) > .searchbar,
+.layout-ruhig .blk-hero:has(.hero-photo) > form { border-radius: 2px; margin-top: -48px; }
+.layout-ruhig .blk-imgtext { gap: 64px; }
+.layout-ruhig .blk-imgtext.img-right img { order: 2; }
+.layout-ruhig .blk-imgtext img { aspect-ratio: 4 / 5; }
+/* Zimmer und Angebote mit Foto: Bild und Text in einer Reihe, abwechselnd links und rechts */
+.layout-ruhig .grid:has(> .card > .room-photo) { grid-template-columns: 1fr; gap: 64px; }
+.layout-ruhig .grid > .card:has(> .room-photo) { display: grid; grid-template-columns: 1.3fr 1fr; column-gap: 48px; align-content: center; align-items: start; }
+.layout-ruhig .grid > .card:has(> .room-photo) > .room-photo { grid-column: 1; grid-row: 1 / span 12; width: 100%; aspect-ratio: 4 / 3; height: auto; object-fit: cover; align-self: center; }
+.layout-ruhig .grid > .card:has(> .room-photo) > :not(.room-photo) { grid-column: 2; }
+.layout-ruhig .grid > .card:nth-child(even):has(> .room-photo) { grid-template-columns: 1fr 1.3fr; }
+.layout-ruhig .grid > .card:nth-child(even):has(> .room-photo) > .room-photo { grid-column: 2; }
+.layout-ruhig .grid > .card:nth-child(even):has(> .room-photo) > :not(.room-photo) { grid-column: 1; }
+@media (max-width: 760px) {
+  .layout-ruhig .wrap { padding: 0 16px; }
+  .layout-ruhig .grid > .card:has(> .room-photo), .layout-ruhig .grid > .card:nth-child(even):has(> .room-photo) { display: block; }
+  .layout-ruhig .blk { padding: 40px 0; }
+}
+.layout-ruhig .foot { border-top: 1px solid var(--line); background: var(--bg); }
+
 /* Galerie: grosse runde Fotos, Zimmer als Bildkacheln, runde Knöpfe */
 .layout-galerie { --radius: 22px; }
 .layout-galerie .wrap { max-width: 1180px; }
@@ -329,7 +378,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .rich-list li + li { margin-top: .25em; }
 .blk h3 { font-family: var(--serif); font-size: 1.15rem; margin: 1.2em 0 .4em; }
 .layout-zentriert .blk-text .rich-list, .layout-zentriert .blk-location .rich-list { display: inline-block; text-align: left; }
-.layout-panorama .blk-hero:has(.hero-photo) > .hero a { color: #fff; }
+:is(.layout-panorama, .layout-ruhig) .blk-hero:has(.hero-photo) > .hero a { color: #fff; }
 
 /* ---------- Formatierungsleiste im Editor ---------- */
 .rich { display: flex; flex-direction: column; }

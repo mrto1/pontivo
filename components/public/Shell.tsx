@@ -1,7 +1,7 @@
 import type { Hotel } from "@/src/db/schema";
 import { hotelLocales, LOCALE_NAMES, t, type Locale } from "@/src/i18n/dict";
 import { env } from "@/src/env";
-import { HEX, inkOn, readableOnWhite } from "@/src/domain/brand";
+import { HEX, inkOn, readableOnDark, readableOnWhite } from "@/src/domain/brand";
 import { tr } from "@/src/domain/blocks";
 import { listPages } from "@/src/services/site";
 import { fontOf, layoutOf } from "@/src/domain/theme";
@@ -23,7 +23,7 @@ export async function Shell({ hotel, locale, base, path = "", current, noBookBut
   const layout = layoutOf(brand.layout);
   const style = {
     ...fontVars(fontOf(brand.font)),
-    ...(color ? { "--brand": color, "--brand-ink": inkOn(color), "--brand-link": readableOnWhite(color) } : {}),
+    ...(color ? { "--brand": color, "--brand-ink": inkOn(color), "--brand-link": readableOnWhite(color), "--brand-link-dark": readableOnDark(color), "--brand-dark-ink": inkOn(readableOnDark(color)) } : {}),
   } as React.CSSProperties;
   const homeHref = bookingOnly ? brand.websiteUrl! : `${base}/${locale}`;
   const pages = (await listPages(hotel.id)).filter((p) => p.published);

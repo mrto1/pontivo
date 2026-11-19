@@ -888,6 +888,13 @@ Ziel: Der Gast bleibt auf der Website des Hotels (oder der Agentur) und sieht di
 - ASSUMPTION: Stripe.js wird mit `{ stripeAccount }` initialisiert (Direct Charges). Die abgerufene Doku nennt das nicht ausdrücklich; vor dem Einschalten bei einem Hotel mit einer Testbuchung im Stripe-Testmodus prüfen. Das Skript `https://js.stripe.com/endive/stripe.js` ist das in der Doku genannte. Gestaltung (Farben, Schrift, Dunkelmodus) stellt der Betreiber in den Branding-Einstellungen von Stripe ein, nicht in Pontivo.
 - Abnahme: `tests/integration/embedded-checkout.test.ts`.
 
+### 19.26 Gestaltung: neuer Standard der Hotel-Websites, Tag- und Nachtmodus
+Ziel: Hotel-Websites wirken nicht wie ein Baukasten-Standard (grünes Creme, Rahmen um alles, gleichförmige Karten) und folgen der Einstellung des Geräts (hell oder dunkel).
+- **Neuer Standard «Ruhig»** (`layout-ruhig`, Schriftpaar «Editorial»): neutrale Fläche, grosses Titelbild mit Titel und Suche, Zimmer und Angebote mit Foto als Reihen (Bild und Text, abwechselnd links und rechts, auf dem Handy untereinander), kaum Rahmen und Rundungen, Knöpfe in der Farbe des Hotels oder in Tinte, wenn keine Farbe gesetzt ist. Gilt für neue Hotels und für Hotels ohne gewählte Einstellung (`layoutOf` und `fontOf`). **Alle bisherigen Layouts und Schriften bleiben wählbar**, ausdrücklich gewählte ändern sich nicht.
+- **Tag und Nacht:** alle Layouts folgen `prefers-color-scheme`. Die Markenfarbe des Hotels wird im Nachtmodus automatisch aufgehellt (mindestens 4.5:1 auf dunklem Grund, `readableOnDark`) für Links, Knöpfe und Flächen; im Tagmodus unverändert (`readableOnWhite`). Kein Code pro Hotel: die Farbe ist ein Datenwert (`hotels.content.brand.color`).
+- Offen (nach Freigabe der Vorschau): Pontivo-Startseite im neuen Auftritt (Variante C: dezent, Rechner, Produktansicht, ebenfalls hell und dunkel).
+- Abnahme: `tests/unit/brand-dark.test.ts`, `tests/unit/richtext.test.ts`.
+
 ### 19.24 API: nachträgliche Änderung und White-Label-Ausbau
 Ziel: Ein Anbieter (Website-Agentur) bindet die Buchung vollständig in die Website des Hotels ein; der Gast soll möglichst nichts von Pontivo sehen.
 - **Umgesetzt: `PATCH /api/v1/bookings/<reference>`** (Migration nicht nötig). Erlaubt: `checkin` (gleiche Anzahl Nächte, gleiche Zimmer) und `guest` {`first_name`, `last_name`, `phone`}; `dry_run: true` prüft nur (Verfügbarkeit, Preis) und ändert nichts. Nur Buchungen im Status `confirmed` aus Direkt/Admin, nicht Portal, nicht nach Anreise.

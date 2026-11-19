@@ -5,6 +5,7 @@
  */
 
 export const LAYOUTS = [
+  { key: "ruhig", label: "Ruhig (Standard)", hint: "Grosses Titelbild mit Titel und Suche, Zimmer als Bild-und-Text-Reihen, kaum Rahmen. Farbe aus Ihrem Logo, passt sich Tag und Nacht an" },
   { key: "klassisch", label: "Klassisch", hint: "Ruhig und übersichtlich: Titelbild, darunter Titel und Suche, Inhalte in Karten" },
   { key: "panorama", label: "Panorama", hint: "Grosses Titelbild über die ganze Breite, Titel direkt auf dem Bild – ideal für Aussicht und Natur" },
   { key: "zentriert", label: "Zentriert", hint: "Logo und Menü mittig, Titel zentriert – wirkt gediegen, passt zu Gasthöfen und Boutique-Hotels" },
@@ -32,10 +33,10 @@ export type FontKey = (typeof FONTS)[number]["key"];
 export const LAYOUT_KEYS = LAYOUTS.map((l) => l.key) as [LayoutKey, ...LayoutKey[]];
 export const FONT_KEYS = FONTS.map((f) => f.key) as [FontKey, ...FontKey[]];
 
-/** Unbekannte oder fehlende Werte → Standard (alte Hotels ohne Einstellung sehen aus wie bisher) */
+/** Unbekannte oder fehlende Werte → neuer Standard «Ruhig» mit Schriftpaar «Editorial» (SPEC 19.26); ausdrücklich gewählte Layouts und Schriften bleiben */
 export function layoutOf(v: string | undefined | null): LayoutKey {
-  return (LAYOUT_KEYS as readonly string[]).includes(v ?? "") ? (v as LayoutKey) : "klassisch";
+  return (LAYOUT_KEYS as readonly string[]).includes(v ?? "") ? (v as LayoutKey) : "ruhig";
 }
 export function fontOf(v: string | undefined | null): FontKey {
-  return (FONT_KEYS as readonly string[]).includes(v ?? "") ? (v as FontKey) : "klassisch";
+  return (FONT_KEYS as readonly string[]).includes(v ?? "") ? (v as FontKey) : "editorial";
 }
