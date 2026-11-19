@@ -27,7 +27,7 @@ export function StripeOnboarding({ hotelId, publishableKey, privacyUrl, returnTo
       },
       appearance: {
         variables: {
-          colorPrimary: "#2f5d50",
+          colorPrimary: "#0b7285",
           fontFamily: "Inter, system-ui, sans-serif",
           borderRadius: "8px",
         },

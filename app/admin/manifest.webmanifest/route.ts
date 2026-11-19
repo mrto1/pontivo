@@ -9,8 +9,8 @@ export function GET() {
     start_url: "/admin",
     scope: "/admin/",
     display: "standalone",
-    background_color: "#faf8f5",
-    theme_color: "#2f5d50",
+    background_color: "#f6f7f9",
+    theme_color: "#0b7285",
     lang: "de",
     icons: [
       { src: "/admin/pwa-icon/192", sizes: "192x192", type: "image/png", purpose: "any" },

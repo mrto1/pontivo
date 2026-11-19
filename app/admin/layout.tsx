@@ -13,16 +13,16 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#1c2427" },
+    { media: "(prefers-color-scheme: dark)", color: "#131c2e" },
   ],
   viewportFit: "cover",
 };
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <div className="pv-admin">
       {children}
       <PwaRegister />
-    </>
+    </div>
   );
 }
