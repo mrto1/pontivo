@@ -188,3 +188,9 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 
 ## Infoniqa (Recherche 18.11.2026)
 - Offizielle Hilfe nennt für ONE 200 Finanz eine «ASCII-Schnittstelle» («Interface») und «Connect» (ASCII und andere Dateien, bearbeitet über die API) ohne Dateiformat; die Excel-Schnittstelle von Sage 50 exportiert nur. Kein belegbares Importformat, daher kein Export gebaut. Beim Treuhänder fragen: welche Infoniqa-Lösung (ONE 50/200/Treuhand) und welche Importart er nutzt, Musterdatei anfordern.
+
+## API: White-Label und Änderungen (SPEC 19.24, 19.11.2026)
+- Neutrale Gästeseiten und E-Mails für Anbieter-Einbindung: Absender (Name/Adresse, SPF/DKIM beim Versand über Postmark), Gestaltung, eigene Domain für /b/<token>. Zu klären: reicht «Hotelname als Absender, Pontivo-Hinweis klein im Fuss» oder muss Pontivo ganz verschwinden (Preisfrage, Rechtstexte nennen den Betreiber)?
+- Partner-Schlüssel für mehrere Hotels: Freigabe je Hotel, Abrechnung weiter je Hotel (1,9 %). Gewünscht?
+- Änderung mit Preisdifferenz (Nachzahlung/Rückerstattung) über die API: bisher nur gleicher Preis. Soll ein zweiter Zahlungslink bzw. Teilrückerstattung folgen?
+- Webhooks für Portal-Buchungen (Channex) nicht enthalten.

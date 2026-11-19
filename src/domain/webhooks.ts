@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import net from "node:net";
 
 /** Webhooks (SPEC 19.22): Ereignisse, Signatur, Wiederholung, Schutz vor internen Zielen. Reine Logik. */
-export const WEBHOOK_EVENTS = ["booking.confirmed", "booking.cancelled", "booking.expired", "ping"] as const;
+export const WEBHOOK_EVENTS = ["booking.confirmed", "booking.changed", "booking.cancelled", "booking.expired", "ping"] as const;
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 export const isWebhookEvent = (s: string): s is WebhookEvent => (WEBHOOK_EVENTS as readonly string[]).includes(s);
 
