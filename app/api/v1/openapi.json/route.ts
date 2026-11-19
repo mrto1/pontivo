@@ -1,6 +1,7 @@
 import { env } from "@/src/env";
 
-export const dynamic = "force-static";
+// Zur Laufzeit erzeugt (braucht APP_BASE_URL); beim Build gibt es keine Produktions-Umgebung.
+export const dynamic = "force-dynamic";
 
 const sec = [{ bearer: [] }];
 const err = (d: string) => ({ description: d, content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } });
