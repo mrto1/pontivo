@@ -3,7 +3,7 @@ import { feePercentText } from "@/src/domain/fee";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
-import { AccountLink } from "@/components/marketing/AccountLink";
+import { PlatformFrame } from "@/components/marketing/Chrome";
 import { AccountExistsError, CANTONS, PROPERTY_LABEL, PROPERTY_TYPES, registerHost } from "@/src/services/onboarding";
 import { getHotelByHost } from "@/src/services/hotels";
 import { clientIp } from "@/src/lib/rate-limit";
@@ -62,10 +62,9 @@ export default async function Register({ searchParams }: { searchParams: Promise
   // Wer angemeldet ist, registriert sich nicht neu: weiterer Betrieb im selben Konto
   if (await currentUserId()) redirect("/admin/neu");
   const sp = await searchParams;
-  const name = env().PLATFORM_NAME;
   return (
-    <main className="wrap register">
-      <a href="/" className="brand">{name}</a><AccountLink />
+    <PlatformFrame hideSignup>
+    <main className="register" style={{ padding: "8px 0 56px" }}>
       <div className="register-grid">
         <section>
           <h1>Direktbuchung für Ihren Betrieb – in 20 Minuten eingerichtet</h1>
@@ -114,5 +113,6 @@ export default async function Register({ searchParams }: { searchParams: Promise
         </form>
       </div>
     </main>
+    </PlatformFrame>
   );
 }

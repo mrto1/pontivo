@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { env } from "@/src/env";
-import { AccountLink } from "@/components/marketing/AccountLink";
+import { PlatformFrame } from "@/components/marketing/Chrome";
 import { MAX_ROOMS, SOFTWARE, SOFTWARE_LABEL, suitability, type Software } from "@/src/domain/suitability";
 
 export const dynamic = "force-dynamic";
@@ -14,8 +13,8 @@ export default async function Eignung({ searchParams }: { searchParams: Promise<
   const answered = Number.isFinite(rooms) && rooms >= 1 && rooms <= 1000 && software !== null && (sp.restaurant === "yes" || sp.restaurant === "no");
   const r = answered ? suitability({ rooms, restaurantWithPos: sp.restaurant === "yes", software: software! }) : null;
   return (
-    <main className="wrap register">
-      <a href="/" className="brand">{env().PLATFORM_NAME}</a><AccountLink />
+    <PlatformFrame narrow>
+    <main className="register" style={{ padding: "8px 0 56px" }}>
       <h1>Passt Pontivo zu Ihrem Haus?</h1>
       <p className="muted">Drei Fragen, eine ehrliche Antwort. Wir speichern nichts.</p>
       <form method="get" className="card stack">
@@ -38,5 +37,6 @@ export default async function Eignung({ searchParams }: { searchParams: Promise<
         </section>
       ) : null}
     </main>
+    </PlatformFrame>
   );
 }

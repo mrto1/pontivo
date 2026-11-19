@@ -166,7 +166,7 @@ function wrap(c: EmailContext, l: Locale, subject: string, paras: string[], line
 <h2 style="font-family:Georgia,serif">${esc(c.hotel.name)}</h2>
 ${paras.map((p) => `<p>${esc(p)}</p>`).join("")}
 ${lines.length ? `<table style="border-collapse:collapse;width:100%">${lines.map((x) => { const [k, ...v] = x.split(": "); return `<tr><td style="padding:4px 0;color:#5f6b70">${esc(k)}</td><td style="padding:4px 0;text-align:right">${esc(v.join(": "))}</td></tr>`; }).join("")}</table>` : ""}
-${link ? `<p style="margin-top:24px"><a href="${esc(link.href)}" style="background:#2f5d50;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">${esc(link.label)}</a></p>` : ""}
+${link ? `<p style="margin-top:24px"><a href="${esc(link.href)}" style="background:#0b7285;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">${esc(link.label)}</a></p>` : ""}
 <p style="color:#5f6b70;font-size:13px;margin-top:32px">${esc(c.hotel.name)} · ${esc(c.hotel.contactEmail)}${c.hotel.contactPhone ? " · " + esc(c.hotel.contactPhone) : ""}</p>
 </body></html>`;
   return { subject, text, html };

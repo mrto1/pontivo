@@ -55,63 +55,77 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "Angebot (drei Wege)",
     "label": "Website: Überschrift",
     "multiline": false,
-    "default": "Die Website ist ein Baustein unter mehreren"
+    "default": "Direktbuchung auf Ihrer eigenen Website, oder auf der von Pontivo"
   },
   {
     "key": "web.intro",
     "group": "Angebot (drei Wege)",
     "label": "Website: Einleitung",
     "multiline": true,
-    "default": "Sie entscheiden, wie viel {name} übernimmt. Buchung, Zahlung und der Abgleich mit Booking.com sind bei allen drei Wegen gleich. Auch der Wechsel von Ihrer heutigen Buchungsmaschine ist möglich: Statt einer festen Monatsgebühr zahlen Sie nur bei einer Buchung."
+    "default": "Drei gleichwertige Wege. Buchung, Zahlung und der Abgleich mit Booking.com sind bei allen gleich. Auch der Wechsel von Ihrer heutigen Buchungsmaschine ist möglich: Statt einer festen Monatsgebühr zahlen Sie nur bei einer Buchung."
   },
   {
     "key": "web.1.title",
     "group": "Angebot (drei Wege)",
-    "label": "Website 1: Titel",
+    "label": "Variante 1: Titel",
     "multiline": false,
-    "default": "Neue Website mit Pontivo"
+    "default": "Neue Website von Pontivo"
   },
   {
     "key": "web.1.text",
     "group": "Angebot (drei Wege)",
-    "label": "Website 1: Text",
+    "label": "Variante 1: Text",
     "multiline": true,
-    "default": "Für Hotels ohne Online-Buchung oder mit veralteter Seite: Startseite, Zimmer mit Fotos und Buchung auf Deutsch und Englisch, unter Ihrer Domain. Layout, Schrift, Farbe und Logo stellen Sie selbst ein."
+    "default": "Eine Website, die zu Ihrem Haus passt, mit allen Möglichkeiten: Layout, Schrift, Farbe, Logo und Inhalte stellen Sie selbst ein, auf Deutsch und Englisch."
+  },
+  {
+    "key": "web.1.bullets",
+    "group": "Angebot (drei Wege)",
+    "label": "Variante 1: Stichpunkte (eine Zeile pro Punkt)",
+    "multiline": true,
+    "default": "Alles aus einer Hand: Website, Buchung und Zahlung\nKeine zusätzlichen Unterhaltskosten für die Website\nUpdates und Wartung sind inklusive"
   },
   {
     "key": "web.2.title",
     "group": "Angebot (drei Wege)",
-    "label": "Website 2: Titel",
+    "label": "Variante 2: Titel",
     "multiline": false,
-    "default": "Eigene Website, Buchung von uns"
+    "default": "Einfache Einbindung auf Ihrer Website"
   },
   {
     "key": "web.2.text",
     "group": "Angebot (drei Wege)",
-    "label": "Website 2: Text",
+    "label": "Variante 2: Text",
     "multiline": true,
-    "default": "Ihre Seite bleibt. Wir liefern die Buchungsmaschine zum Einbetten: ein «Jetzt buchen»-Knopf, eine Suchleiste oder die ganze Buchungsstrecke direkt auf Ihrer Seite, mit Zahlung ohne Seitenwechsel. Logo und Farben übernehmen wir."
+    "default": "Ihre Seite bleibt. Ein «Jetzt buchen»-Knopf, eine Suchleiste oder die ganze Buchungsstrecke wird eingebaut, mit Zahlung ohne Seitenwechsel. Logo und Farben übernehmen wir."
   },
   {
     "key": "web.2.bullets",
     "group": "Angebot (drei Wege)",
-    "label": "Website 2: Stichpunkte (eine Zeile pro Punkt)",
+    "label": "Variante 2: Stichpunkte (eine Zeile pro Punkt)",
     "multiline": true,
     "default": "Funktioniert mit Wix, WordPress, Jimdo und jeder anderen Website\nEinfachste Variante: den bestehenden «Buchen»-Link umstellen\nKein Relaunch, keine neue Agentur"
   },
   {
     "key": "web.3.title",
     "group": "Angebot (drei Wege)",
-    "label": "Website 3: Titel",
+    "label": "Variante 3: Titel",
     "multiline": false,
-    "default": "Volle Integration über die API"
+    "default": "Volle Integration auf Ihrer Website"
   },
   {
     "key": "web.3.text",
     "group": "Angebot (drei Wege)",
-    "label": "Website 3: Text",
+    "label": "Variante 3: Text",
     "multiline": true,
-    "default": "Suche, Preise, Buchung, Änderung und Storno laufen über unsere API, die Oberfläche gestalten Sie vollständig selbst. Dank KI-Assistenten ist so eine Integration heute in Tagen statt Monaten gemacht, auch ohne eigenes Entwicklerteam."
+    "default": "Suche, Preise, Buchung, Änderung und Storno laufen über unsere API, die Oberfläche gestalten Sie vollständig selbst."
+  },
+  {
+    "key": "web.3.bullets",
+    "group": "Angebot (drei Wege)",
+    "label": "Variante 3: Stichpunkte (eine Zeile pro Punkt)",
+    "multiline": true,
+    "default": "Eigenes Design bis ins Detail\nDank KI-Assistenten heute in Tagen statt Monaten umgesetzt\nAuch ohne eigenes Entwicklerteam möglich"
   },
   {
     "key": "funktionen.title",

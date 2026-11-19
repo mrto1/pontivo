@@ -33,19 +33,23 @@
 }
 /* Admin, Login und Plattform-Bereich (myPontivo): gleiche Farben wie die Pontivo-Website (Petrol, Tinte, kühles Weiss).
    Hotel-Websites bleiben bei den Standardwerten oben. */
-:root:has(.pv-admin) {
+:root:has(.pv-admin), :root:has(.pv-site) {
   --bg: #f6f7f9; --surface: #ffffff; --ink: #0e1726; --muted: #566075; --line: #e1e6ee;
   --accent: #0b7285; --accent-ink: #ffffff; --accent-soft: #e3f1f4;
   --serif: var(--font);
   --ok: #1f7a4d;
 }
 @media (prefers-color-scheme: dark) {
-  :root:has(.pv-admin) {
+  :root:has(.pv-admin), :root:has(.pv-site) {
     --bg: #0b1220; --surface: #131c2e; --ink: #edf1f7; --muted: #9aa6bc; --line: #243049;
     --accent: #4fb7c9; --accent-ink: #06222a; --accent-soft: #12303a;
     --ok: #6ccf9c;
   }
 }
+.pv-site { --serif: var(--pv-display), system-ui, sans-serif; --font: var(--pv-body), system-ui, sans-serif; }
+.pv-site h1, .pv-site h2 { font-weight: 800; letter-spacing: -0.03em; }
+.pv-site .card { border-radius: 16px; }
+.pv-site .btn { border-radius: 999px; }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font); line-height: 1.5; font-size: 16px; }

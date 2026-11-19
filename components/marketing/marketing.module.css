@@ -37,7 +37,7 @@
 
 .head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; }
 .logo { font-family: var(--pv-display), sans-serif; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.02em; color: var(--pv-ink); text-decoration: none; display: inline-flex; align-items: center; gap: 10px; }
-.logo svg { width: 34px; height: 20px; }
+.logo svg { width: 34px; height: 34px; flex: none; }
 .headLinks { display: flex; gap: 22px; align-items: center; font-size: 1rem; }
 .headLinks a { color: var(--pv-ink); text-decoration: none; }
 .headLinks a:hover { text-decoration: underline; }
@@ -88,14 +88,12 @@
 .benefit dd { margin: 0; color: var(--pv-quiet); }
 
 /* ---------- Drei Wege ---------- */
-.paths { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 20px; align-items: stretch; }
+.paths { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
 .path { border: 1.5px solid var(--pv-line); border-radius: 16px; padding: 26px; }
-.path h3 { margin: 0 0 10px; font-size: 1.2rem; line-height: 1.25; }
+.path h3 { margin: 0 0 10px; font-family: var(--pv-display), sans-serif; font-size: 1.3rem; letter-spacing: -0.02em; line-height: 1.2; }
 .path p { margin: 0; color: var(--pv-quiet); }
 .path ul { margin: 16px 0 0; padding-left: 1.1em; }
 .path li { margin-bottom: 6px; }
-.pathMain { background: var(--pv-white); border-color: var(--pv-keep); border-width: 2px; }
-.pathMain h3 { font-family: var(--pv-display), sans-serif; font-size: 1.5rem; letter-spacing: -0.02em; }
 
 /* ---------- Rechner ---------- */
 .calc { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; background: var(--pv-white); border-radius: 18px; padding: 36px; }
@@ -147,7 +145,8 @@
   .steps { grid-template-columns: 1fr; gap: 28px; }
   .benefits { grid-template-columns: 1fr; }
   .paths { grid-template-columns: 1fr; }
-  .headLinks a:not(.btn) { display: none; }
+  .headLinks a:not(.btn):not(.loginLink) { display: none; }
+  .headLinks { gap: 14px; }
   .calc, .contact { padding: 26px; }
   .section { padding: 56px 0; }
 }
@@ -160,13 +159,11 @@
 .page { padding-bottom: 1px; }
 
 /* ---------- Bausteine, Funktionen, Ablauf ---------- */
-.band { display: block; width: 100%; height: 150px; margin: 0 0 8px; }
-.river { fill: color-mix(in srgb, var(--pv-keep) 22%, var(--pv-paper)); }
-.wave { stroke: var(--pv-keep); stroke-width: 2; fill: none; opacity: .5; stroke-linecap: round; }
-.pier { fill: var(--pv-ink); }
-.deck { stroke: var(--pv-ink); stroke-width: 5; stroke-linecap: round; }
-.arch { stroke: var(--pv-keep); stroke-width: 4; fill: none; stroke-linecap: round; }
-.bank { fill: none; stroke: var(--pv-ink); stroke-width: 3; opacity: .35; }
+.band { display: block; width: 100%; height: 170px; margin: 0 0 8px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
+.stone { fill: color-mix(in srgb, var(--pv-keep) 62%, var(--pv-paper)); }
+.rail { stroke: var(--pv-keep); stroke-width: 3; stroke-linecap: round; fill: none; }
+.sun { fill: var(--pv-fee); opacity: .95; }
+.wave { stroke: var(--pv-keep); stroke-width: 2; fill: none; opacity: .35; stroke-linecap: round; }
 .subTitle { font-family: var(--pv-display), sans-serif; font-size: 1.5rem; letter-spacing: -0.02em; margin: 56px 0 12px; }
 
 .buildWrap { background: var(--pv-white); border-radius: 18px; padding: 20px; box-shadow: 0 1px 0 var(--pv-line), 0 18px 40px -28px rgba(19, 38, 46, 0.35); margin: 28px 0 14px; overflow-x: auto; }
@@ -212,3 +209,35 @@
   .flow li:not(:last-child)::after { display: none; }
   .band { height: 100px; }
 }
+
+/* Login-Link bleibt auch am Handy sichtbar (als Textlink neben «Registrieren») */
+.loginLink { font-weight: 600; white-space: nowrap; }
+
+.pathNo { display: inline-flex; width: 30px; height: 30px; border-radius: 50%; align-items: center; justify-content: center; background: var(--pv-keep); color: var(--pv-on-keep); font-weight: 700; margin-bottom: 14px; }
+.path { background: var(--pv-white); }
+
+/* Beispiel-Website */
+.mock { margin: 48px auto 0; max-width: 940px; }
+.mock figcaption { margin-top: 14px; color: var(--pv-quiet); font-size: .95rem; text-align: center; }
+.mockFrame { border: 1.5px solid var(--pv-line); border-radius: 16px; overflow: hidden; background: var(--pv-white); box-shadow: 0 24px 50px -30px rgba(14, 23, 38, .45); }
+.mockBar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; border-bottom: 1px solid var(--pv-line); background: var(--pv-paper); }
+.mockBar i { width: 10px; height: 10px; border-radius: 50%; background: var(--pv-line); }
+.mockBar span { margin-left: 12px; padding: 3px 14px; border-radius: 999px; background: var(--pv-white); color: var(--pv-quiet); font-size: .8rem; }
+.mockHero { position: relative; min-height: 300px; padding: 18px 26px 26px; color: #fff; display: flex; flex-direction: column; justify-content: flex-end; gap: 18px; overflow: hidden;
+  background: linear-gradient(180deg, #2c5f6d 0%, #4d8794 46%, #c9a77a 100%); }
+.mockSun { position: absolute; right: 16%; top: 22%; width: 54px; height: 54px; border-radius: 50%; background: #ffd58a; opacity: .9; }
+.mockNav { position: absolute; top: 16px; left: 26px; right: 26px; display: flex; gap: 20px; font-size: .85rem; align-items: center; }
+.mockNav b { margin-right: auto; font-size: 1.05rem; }
+.mockTitle { position: relative; font-family: var(--pv-display), sans-serif; font-weight: 800; font-size: clamp(1.6rem, 4vw, 2.6rem); letter-spacing: -0.03em; line-height: 1.05; max-width: 14ch; }
+.mockSearch { position: relative; display: flex; flex-wrap: wrap; background: var(--pv-white); color: var(--pv-ink); border-radius: 12px; overflow: hidden; max-width: 640px; }
+.mockSearch div { flex: 1 1 110px; padding: 10px 14px; font-size: .92rem; border-right: 1px solid var(--pv-line); }
+.mockSearch small { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--pv-quiet); }
+.mockSearch button { flex: 1 1 150px; border: 0; background: var(--pv-keep); color: var(--pv-on-keep); font: inherit; font-weight: 700; padding: 12px 16px; }
+.mockRooms { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 20px 22px 24px; }
+.mockRooms > div { display: flex; gap: 14px; align-items: center; }
+.mockRooms b { display: block; }
+.mockRooms small { display: block; color: var(--pv-quiet); }
+.mockRooms em { display: block; margin-top: 4px; font-style: normal; font-weight: 700; color: var(--pv-keep); }
+.mockPhoto { flex: none; width: 110px; height: 80px; border-radius: 8px; background: linear-gradient(135deg, #7fa3a8, #d9c3a0); }
+.mockPhoto2 { background: linear-gradient(135deg, #a39a7f, #7fa3a8); }
+@media (max-width: 640px) { .mockRooms { grid-template-columns: 1fr; } .mockNav span { display: none; } .mockSun { right: 10%; } }

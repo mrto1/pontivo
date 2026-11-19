@@ -133,18 +133,59 @@ function BuildGraphic() {
   );
 }
 
-/** Brücke über einen Fluss (pons): Zierband, Farben aus den Seiten-Tokens (hell/dunkel) */
+/** Steinbogenbrücke über einen Fluss (pons) mit Spiegelung: Zierband in gedämpften Seitenfarben (hell/dunkel) */
 export function BridgeBand() {
-  const piers = [250, 450, 630, 830];
+  // Brückenkörper: Rechteck mit drei Bogenöffnungen (even-odd), Wasserlinie bei y=120
+  const body = "M130 98Q540 22 950 98V120H130Z M168 120A98 44 0 0 1 364 120Z M442 120A98 44 0 0 1 638 120Z M716 120A98 44 0 0 1 912 120Z";
   return (
-    <svg className={s.band} viewBox="0 0 1080 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-      <rect x="0" y="108" width="1080" height="42" className={s.river} />
-      <path d="M40 124q30-6 60 0t60 0M300 132q30-6 60 0t60 0M600 126q30-6 60 0t60 0M880 134q30-6 60 0t60 0" className={s.wave} />
-      {piers.map((x) => <rect key={x} x={x - 6} y="82" width="12" height="40" className={s.pier} />)}
-      <path d="M0 80H1080" className={s.deck} />
-      <path d="M250 80Q350 36 450 80M450 80Q540 30 630 80M630 80Q730 36 830 80" className={s.arch} />
-      <path d="M0 108Q60 92 130 80M950 80Q1020 92 1080 108" className={s.bank} />
+    <svg className={s.band} viewBox="0 0 1080 190" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <defs>
+        <linearGradient id="pvFade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style={{ stopColor: "var(--pv-paper)", stopOpacity: 0 }} />
+          <stop offset="0.85" style={{ stopColor: "var(--pv-paper)", stopOpacity: 1 }} />
+        </linearGradient>
+        <linearGradient id="pvWater" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style={{ stopColor: "var(--pv-keep)", stopOpacity: 0.16 }} />
+          <stop offset="1" style={{ stopColor: "var(--pv-keep)", stopOpacity: 0 }} />
+        </linearGradient>
+      </defs>
+      <circle cx="790" cy="40" r="18" className={s.sun} />
+      <rect x="0" y="120" width="1080" height="70" fill="url(#pvWater)" />
+      <g transform="translate(0 240) scale(1 -1)" opacity="0.28">
+        <path d={body} fillRule="evenodd" className={s.stone} />
+      </g>
+      <rect x="0" y="120" width="1080" height="70" fill="url(#pvFade)" />
+      <path d={body} fillRule="evenodd" className={s.stone} />
+      <path d="M130 98Q540 22 950 98" className={s.rail} />
+      <path d="M120 126q22-4 44 0t44 0M300 134q26-4 52 0t52 0M560 130q26-4 52 0t52 0M830 136q22-4 44 0t44 0" className={s.wave} />
     </svg>
+  );
+}
+
+/** Beispiel: So sieht eine Hotel-Website aus, die mit Pontivo läuft (gezeichnet, keine echten Fotos) */
+function SiteMock() {
+  return (
+    <figure className={s.mock}>
+      <div className={s.mockFrame} role="img" aria-label="Beispiel einer Hotel-Website mit Pontivo: Titelbild, Suche nach Daten und Gästen, Zimmer mit Preis">
+        <div className={s.mockBar}><i /><i /><i /><span>www.ihr-haus.ch</span></div>
+        <div className={s.mockHero}>
+          <div className={s.mockNav}><b>Haus Beispiel</b><span>Zimmer</span><span>Das Haus</span><span>Lage</span><span>Kontakt</span></div>
+          <div className={s.mockSun} />
+          <div className={s.mockTitle}>Ankommen und durchatmen</div>
+          <div className={s.mockSearch}>
+            <div><small>Anreise</small>12. Dez.</div>
+            <div><small>Abreise</small>14. Dez.</div>
+            <div><small>Gäste</small>2 Erwachsene</div>
+            <button type="button" tabIndex={-1}>Verfügbarkeit prüfen</button>
+          </div>
+        </div>
+        <div className={s.mockRooms}>
+          <div><span className={s.mockPhoto} /><div><b>Doppelzimmer Süd</b><small>Balkon, Frühstück inklusive</small><em>ab CHF 180 pro Nacht</em></div></div>
+          <div><span className={`${s.mockPhoto} ${s.mockPhoto2}`} /><div><b>Familienzimmer</b><small>Platz für vier, zwei Räume</small><em>ab CHF 260 pro Nacht</em></div></div>
+        </div>
+      </div>
+      <figcaption>So kann Ihre Website mit Pontivo aussehen. Layout, Farben, Schrift und Texte stellen Sie selbst ein.</figcaption>
+    </figure>
   );
 }
 
@@ -164,23 +205,22 @@ export function Bausteine({ staticSite, site }: { staticSite?: boolean; site: Re
         <p className={s.intro}>{site.text("bausteine.intro")}</p>
         <div className={s.buildWrap}><BuildGraphic /></div>
         <p className={s.buildNote}>Beispiel: Ein kleines Hotel schaltet Rezeption, Rechnung, Kurtaxe und Statistik ein. Das Chalet nebenan nur Rechnung und Kurtaxe.</p>
-        <h3 className={s.subTitle}>{site.text("web.title")}</h3>
+      </section>
+
+      <section className={s.section} id="website">
+        <h2 className={s.h2}>{site.text("web.title")}</h2>
         <p className={s.intro}>{site.text("web.intro")}</p>
         <div className={s.paths}>
-          <article className={s.path}>
-            <h3>{site.text("web.1.title")}</h3>
-            <p>{site.text("web.1.text")}</p>
-          </article>
-          <article className={`${s.path} ${s.pathMain}`}>
-            <h3>{site.text("web.2.title")}</h3>
-            <p>{site.text("web.2.text")}</p>
-            <ul>{site.lines("web.2.bullets").map((b) => <li key={b}>{b}</li>)}</ul>
-          </article>
-          <article className={s.path}>
-            <h3>{site.text("web.3.title")}</h3>
-            <p>{site.text("web.3.text")}</p>
-          </article>
+          {(["1", "2", "3"] as const).map((n) => (
+            <article key={n} className={s.path}>
+              <span className={s.pathNo}>{n}</span>
+              <h3>{site.text(`web.${n}.title`)}</h3>
+              <p>{site.text(`web.${n}.text`)}</p>
+              <ul>{site.lines(`web.${n}.bullets`).map((b) => <li key={b}>{b}</li>)}</ul>
+            </article>
+          ))}
         </div>
+        <SiteMock />
       </section>
 
       <section className={s.section} id="funktionen">
