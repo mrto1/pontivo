@@ -194,3 +194,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Partner-Schlüssel für mehrere Hotels: Freigabe je Hotel, Abrechnung weiter je Hotel (1,9 %). Gewünscht?
 - Änderung mit Preisdifferenz (Nachzahlung/Rückerstattung) über die API: bisher nur gleicher Preis. Soll ein zweiter Zahlungslink bzw. Teilrückerstattung folgen?
 - Webhooks für Portal-Buchungen (Channex) nicht enthalten.
+
+## Stripe Checkout eingebettet (SPEC 19.25)
+- Vor dem Einschalten beim ersten Hotel: Testbuchung im Stripe-Testmodus (Karte 4242 und TWINT), prüfen ob `Stripe(pk, { stripeAccount })` mit Direct Charges den Rahmen lädt (in der Doku nicht ausdrücklich genannt).
+- Branding des Stripe-Rahmens (Farbe, Schrift, Dunkelmodus) wird im Stripe-Dashboard des Hotels eingestellt; für Pontivo-eigene Hotels vorschlagen oder über Connect-Branding setzen?

@@ -12,7 +12,7 @@ import { env } from "@/src/env";
 
 export const dynamic = "force-dynamic";
 
-const body = createBookingSchema.safeExtend({ return_url: z.string().max(500).optional() });
+const body = createBookingSchema.safeExtend({ return_url: z.string().max(500).optional(), embedded: z.boolean().optional() });
 
 /**
  * Buchung anlegen (SPEC 19.22): reserviert die Zimmer (Hold, 32 Minuten) und liefert den Link zur sicheren Zahlungsseite.
@@ -37,13 +37,13 @@ export async function POST(req: Request) {
     const r = await withIdempotency(a.key, req.headers.get("idempotency-key"), text, async () => {
       // Missbrauchsschutz je Schlüssel und Gast-E-Mail (die IP ist die der Website, nicht des Gastes)
       if (!(await limitByIpAndEmail("api-booking", `key:${a.key.id}`, b.guest.email, { ipLimit: 600, ipWindowMs: 3_600_000, emailLimit: env().NODE_ENV === "production" ? 10 : 10_000, emailWindowMs: 3_600_000 }))) return { status: 429, body: { error: "rate_limited", message: "Zu viele Buchungen für diese E-Mail-Adresse." } };
-      const { booking, checkoutUrl } = await createDirectBooking(a.hotel, {
+      const { booking, checkoutUrl, clientSecret, stripeAccountId } = await createDirectBooking(a.hotel, {
         roomTypeId: b.room_type_id, ratePlanId: b.rate_plan_id, checkin: b.checkin, checkout: b.checkout, adults: b.adults, children: b.children, childrenAges: b.children_ages,
         roomCount: b.rooms, voucherCode: b.voucher_code ?? null, extras: b.extras,
         guest: { firstName: b.guest.first_name, lastName: b.guest.last_name, email: b.guest.email, phone: b.guest.phone, language: b.guest.language, notes: b.guest.notes, marketingConsent: b.guest.marketing_consent },
-      }, { returnUrl });
+      }, { returnUrl, embedded: b.embedded });
       await audit(db(), { hotelId: a.hotel.id, actor: `api:${a.key.id}`, action: "api.booking.create", entity: "booking", entityId: booking.id, details: { reference: booking.reference } });
-      return { status: 201, body: { reference: booking.reference, status: booking.status, checkout_url: checkoutUrl, hold_expires_at: booking.holdExpiresAt, total_rappen: booking.totalRappen } };
+      return { status: 201, body: { reference: booking.reference, status: booking.status, checkout_url: clientSecret ? null : checkoutUrl, ...(clientSecret ? { client_secret: clientSecret, stripe_account: stripeAccountId, publishable_key: env().STRIPE_PUBLISHABLE_KEY ?? null } : {}), hold_expires_at: booking.holdExpiresAt, total_rappen: booking.totalRappen } };
     });
     return apiJson(r.body, r.status, r.replayed ? { "idempotent-replayed": "true" } : {});
   } catch (e) {

@@ -4,6 +4,7 @@ import { t, type Locale } from "@/src/i18n/dict";
 import { extraAmount, extraMaxQuantity, perPerson, type ExtraUnit } from "@/src/domain/extras";
 import { formatChf } from "@/src/domain/money";
 import { solvePow } from "./pow-client";
+import { EmbeddedCheckout } from "./EmbeddedCheckout";
 
 export type FormExtra = { id: string; name: string; description: string; priceRappen: number; unit: ExtraUnit; maxQuantity: number; mandatory: boolean; active: boolean; roomTypeIds: string[] };
 
@@ -28,6 +29,7 @@ export function BookingForm(props: {
   baseTotalRappen?: number;
 }) {
   const d = t(props.locale);
+  const [pay, setPay] = useState<{ clientSecret: string; publishableKey: string; stripeAccount?: string; token: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Absenden erst nach der Hydrierung (sonst würde der Browser die Daten per GET an die URL hängen)
@@ -75,12 +77,17 @@ export function BookingForm(props: {
     }).catch(() => null);
     if (res?.ok) {
       const j = await res.json();
+      if (j.client_secret && j.publishable_key) { setPay({ clientSecret: j.client_secret, publishableKey: j.publishable_key, stripeAccount: j.stripe_account, token: j.token }); setBusy(false); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
       window.location.href = j.checkout_url;
       return;
     }
     setBusy(false);
     const code = res ? ((await res.json().catch(() => ({}))) as { error?: string }).error : undefined;
     setError(res?.status === 409 ? d.soldOut : code === "voucher_invalid" || code === "voucher_expired" || code === "voucher_empty" ? d[code] : d.error);
+  }
+
+  if (pay) {
+    return <EmbeddedCheckout clientSecret={pay.clientSecret} publishableKey={pay.publishableKey} stripeAccount={pay.stripeAccount} errorText={d.error} cancelHref={`${props.base}/b/${pay.token}?cancelled_payment=1`} cancelText={d.payAbort} />;
   }
 
   return (

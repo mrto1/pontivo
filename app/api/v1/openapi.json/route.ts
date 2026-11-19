@@ -41,7 +41,7 @@ export function GET() {
           adults: { type: "integer" }, children: { type: "integer" }, children_ages: { type: "array", items: { type: "integer" } }, rooms: { type: "integer", default: 1 },
           guest: { type: "object", required: ["first_name", "last_name", "email"], properties: { first_name: { type: "string" }, last_name: { type: "string" }, email: { type: "string" }, phone: { type: "string" }, language: { type: "string", enum: ["de", "en", "fr", "it", "nl"] }, notes: { type: "string" }, marketing_consent: { type: "boolean" } } },
           terms_accepted: { type: "boolean", enum: [true] }, voucher_code: { type: "string" }, extras: { type: "array", items: { type: "object", properties: { id: { type: "string" }, quantity: { type: "integer" } } } },
-          return_url: { type: "string", description: "Rückkehr nach der Zahlung; Ursprung muss im Admin erlaubt sein. Es werden reference und result (paid|cancelled) angehängt." } } },
+          return_url: { type: "string", description: "Rückkehr nach der Zahlung; Ursprung muss im Admin erlaubt sein. Es werden reference und result (paid|cancelled) angehängt." }, embedded: { type: "boolean", description: "true: Zahlung eingebettet. Die Antwort enthält statt checkout_url die Felder client_secret, stripe_account und publishable_key (Stripe.js mit stripeAccount initialisieren, createEmbeddedCheckoutPage)." } } },
         Event: { type: "object", properties: { id: { type: "string", format: "uuid" }, type: { type: "string" }, created_at: { type: "string", format: "date-time" }, data: { type: "object", description: "reference, status, checkin, checkout, adults, children, total_rappen, source; bei Storno zusätzlich refund_rappen, fee_rappen. Keine Gästedaten." } } },
       },
     },

@@ -11,6 +11,7 @@ import { todayIn } from "@/src/domain/dates";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { env } from "@/src/env";
 import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
+import { setEmbeddedCheckout } from "@/src/services/payment-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,13 @@ async function saveTax(f: FormData) {
     back(hotel.id, `Fehler: ${(e as Error).message}`);
   }
   back(hotel.id, "Kurtaxe bestätigt");
+}
+
+async function saveEmbedded(f: FormData) {
+  "use server";
+  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
+  await setEmbeddedCheckout(hotel, s(f, "embedded") === "on", actor);
+  back(hotel.id, "Gespeichert");
 }
 
 async function stripeOnboarding(f: FormData) {
@@ -169,6 +177,14 @@ export default async function Settings({ params, searchParams }: { params: Promi
           <span className="muted">TWINT aktiv</span><span>{hotel.stripeTwintActive ? "ja" : "nein"}</span>
           <span className="muted">Plattformgebühr</span><span>{hotel.platformFeeBps / 100} % pro Direktbuchung</span>
         </div>
+        {isOwner && provider === "stripe" && env().STRIPE_PUBLISHABLE_KEY ? (
+          <form action={saveEmbedded} className="stack">
+            {hidden}
+            <label className="check"><input type="checkbox" name="embedded" defaultChecked={hotel.content.payment?.embedded === true} /> Zahlung auf Ihrer Website einbetten (der Gast bleibt auf der Seite)</label>
+            <p className="muted small">Die Karteneingabe liegt in einem Rahmen von Stripe, Pontivo sieht keine Kartendaten. Erst nach einer Testbuchung einschalten. Aus: Weiterleitung auf die Stripe-Seite wie bisher.</p>
+            <button className="btn secondary small">Speichern</button>
+          </form>
+        ) : null}
         {isOwner && provider === "stripe" && !hotel.stripeChargesEnabled && env().STRIPE_PUBLISHABLE_KEY && sp.stripe !== "return" ? (
           <StripeOnboarding
             hotelId={hotel.id}

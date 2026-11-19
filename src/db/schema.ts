@@ -68,6 +68,8 @@ export type HotelContent = {
   photos?: { url: string; alt?: string }[];
   /** Website-Schnittstelle: erlaubte Rückkehr-Adressen nach der Zahlung (nur Ursprung, https) */
   api?: { returnOrigins?: string[] };
+  /** Zahlung (SPEC 19.25): Stripe Checkout eingebettet statt Weiterleitung */
+  payment?: { embedded?: boolean };
   /** Angebotene Sprachen der Website (src/i18n/dict.ts hotelLocales), fehlt = Deutsch und Englisch */
   languages?: string[];
   /** Automatische Übersetzungen pro Monat ("YYYY-MM" → Anzahl), für das Limit */

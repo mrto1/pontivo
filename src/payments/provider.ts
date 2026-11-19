@@ -8,6 +8,8 @@ export type CheckoutArgs = {
   lang: "de" | "en" | "fr" | "it" | "nl";
   successUrl: string;
   cancelUrl: string;
+  /** SPEC 19.25: eingebettetes Checkout (ui_mode embedded_page); dann zählt successUrl als return_url und es gibt keine cancelUrl */
+  embedded?: boolean;
   /** Zeile für die Zahlungsseite, z. B. "Aufenthalt Demo Gasthof, 2026-12-01–2026-12-03" */
   description: string;
 };
@@ -62,7 +64,7 @@ export interface PaymentProvider {
   readonly name: "fake" | "stripe";
   /** true: Zahlung gilt sofort als erfolgt (nur Entwicklung/Tests) */
   readonly confirmsImmediately: boolean;
-  createCheckout(args: CheckoutArgs): Promise<{ url: string; sessionId: string }>;
+  createCheckout(args: CheckoutArgs): Promise<{ url: string; sessionId: string; clientSecret?: string }>;
   createPaymentCheckout(args: PaymentCheckoutArgs): Promise<{ url: string; sessionId: string }>;
   refund(args: RefundArgs): Promise<{ refundId: string }>;
   /** Checkout im Modus «setup»: Karte speichern, nichts belasten */

@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     if (!(await limitByIpAndEmail("booking", ip, body.guest.email, { ipLimit: 30, ipWindowMs: 3_600_000, emailLimit: env().NODE_ENV === "production" ? 10 : 10_000, emailWindowMs: 3_600_000 }))) return json({ error: "rate_limited" }, 429);
     const hotel = await resolvePublicHotel(req.headers.get("host"), body.hotel);
     if (!hotel) return json({ error: "hotel_not_found" }, 404);
-    const { booking, checkoutUrl } = await createDirectBooking(
+    const { booking, checkoutUrl, clientSecret, stripeAccountId } = await createDirectBooking(
       hotel,
       {
         roomTypeId: body.room_type_id,
@@ -44,8 +44,9 @@ export async function POST(req: Request) {
           marketingConsent: body.guest.marketing_consent,
         },
       },
-      { ip },
+      { ip, embedded: hotel.content.payment?.embedded === true && !!env().STRIPE_PUBLISHABLE_KEY },
     );
+    if (clientSecret) return json({ client_secret: clientSecret, stripe_account: stripeAccountId, publishable_key: env().STRIPE_PUBLISHABLE_KEY, reference: booking.reference, token: booking.publicToken }, 201);
     return json({ checkout_url: checkoutUrl, reference: booking.reference }, 201);
   } catch (e) {
     return errorResponse(e);

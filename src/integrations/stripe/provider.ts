@@ -43,13 +43,17 @@ export class StripePaymentProvider implements PaymentProvider {
         customer_email: a.guestEmail,
         locale: a.lang,
         expires_at: Math.floor(booking.holdExpiresAt.getTime() / 1000),
-        success_url: a.successUrl,
-        cancel_url: a.cancelUrl,
+        // SPEC 19.25: eingebettet = ui_mode embedded_page mit return_url (Stripe-Doku «Embed a checkout page in your site»), sonst gehostet mit success_url/cancel_url
+        ...(a.embedded ? { ui_mode: "embedded_page" as const, return_url: a.successUrl } : { success_url: a.successUrl, cancel_url: a.cancelUrl }),
         // Zahlarten kommen aus den Stripe-Einstellungen (dynamisch). TWINT nur, wenn aktiv und unter dem Limit.
         ...(twintAllowed ? {} : { excluded_payment_method_types: ["twint"] }),
       },
-      { stripeAccount: hotel.stripeAccountId, idempotencyKey: `checkout-${booking.id}` },
+      { stripeAccount: hotel.stripeAccountId, idempotencyKey: a.embedded ? `checkout-emb-${booking.id}` : `checkout-${booking.id}` },
     );
+    if (a.embedded) {
+      if (!session.client_secret) throw new Error("Stripe lieferte kein client_secret");
+      return { url: "", sessionId: session.id, clientSecret: session.client_secret };
+    }
     if (!session.url) throw new Error("Stripe lieferte keine Checkout-URL");
     return { url: session.url, sessionId: session.id };
   }

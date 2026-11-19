@@ -168,8 +168,8 @@ export class RollbackSoldOut extends Error {}
 export async function createDirectBooking(
   hotel: Hotel,
   input: CreateBookingInput,
-  opts: { now?: Date; ip?: string; /** Rückkehr-Adresse der eigenen Website (SPEC 19.22), vom Aufrufer gegen die erlaubten Ursprünge geprüft */ returnUrl?: string } = {},
-): Promise<{ booking: Booking; checkoutUrl: string }> {
+  opts: { now?: Date; ip?: string; /** Rückkehr-Adresse der eigenen Website (SPEC 19.22), vom Aufrufer gegen die erlaubten Ursprünge geprüft */ returnUrl?: string; /** SPEC 19.25: eingebettetes Checkout anfordern (liefert clientSecret statt Weiterleitung) */ embedded?: boolean } = {},
+): Promise<{ booking: Booking; checkoutUrl: string; clientSecret?: string; stripeAccountId?: string }> {
   const provider = await getPaymentProvider();
   if (!isBookable(hotel, provider.name)) throw new BookingError("hotel_not_bookable", 403);
 
@@ -290,7 +290,7 @@ export async function createDirectBooking(
     await confirmBooking(booking.id, { method: "voucher", actor: "guest" });
     return { booking, checkoutUrl: `${base}/b/${booking.publicToken}?paid=1` };
   }
-  let checkout: { url: string; sessionId: string };
+  let checkout: { url: string; sessionId: string; clientSecret?: string };
   try {
     checkout = await provider.createCheckout({
       hotel,
@@ -300,6 +300,7 @@ export async function createDirectBooking(
       successUrl: opts.returnUrl ? withParams(opts.returnUrl, { reference: booking.reference, result: "paid" }) : `${base}/b/${booking.publicToken}?paid=1`,
       cancelUrl: opts.returnUrl ? withParams(opts.returnUrl, { reference: booking.reference, result: "cancelled" }) : `${base}/b/${booking.publicToken}?cancelled_payment=1`,
       description: `${t(lang).stay} ${hotel.name}, ${input.checkin} – ${input.checkout}`,
+      embedded: opts.embedded,
     });
   } catch (e) {
     await releaseHold(booking.id, { reason: "checkout_failed", actor: "system" });
@@ -319,7 +320,7 @@ export async function createDirectBooking(
   if (provider.confirmsImmediately) {
     await confirmBooking(booking.id, { sessionId: checkout.sessionId, method: provider.name, actor: "system" });
   }
-  return { booking, checkoutUrl: checkout.url };
+  return { booking, checkoutUrl: checkout.url, ...(checkout.clientSecret ? { clientSecret: checkout.clientSecret, stripeAccountId: hotel.stripeAccountId ?? undefined } : {}) };
 }
 
 // ---------------------------------------------------------------- Bestätigung (5.4)
