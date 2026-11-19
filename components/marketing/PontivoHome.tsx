@@ -2,7 +2,7 @@ import { Bricolage_Grotesque, Instrument_Sans } from "next/font/google";
 import s from "./marketing.module.css";
 import { DEFAULT_PLATFORM_FEE_BPS } from "@/src/domain/fee";
 import { SavingsCalculator } from "./SavingsCalculator";
-import { AlpineBand, Bausteine } from "./Modules";
+import { BridgeBand, Bausteine } from "./Modules";
 import { resolveSite, type ResolvedSite } from "@/src/domain/pontivo-site";
 
 const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["700", "800"], variable: "--pv-display", display: "swap" });
@@ -52,8 +52,7 @@ export function PontivoHome({ contact, site: siteIn, account, children }: { cont
         <header className={s.head}>
           <a className={s.logo} href="/"><Logo />{contact.name}</a>
           <nav className={s.headLinks} aria-label="Hauptnavigation">
-            <a href="#wege">Angebot</a>
-            <a href="#bausteine">Bausteine</a>
+            <a href="#bausteine">Baukasten</a>
             <a href="#funktionen">Funktionen</a>
             <a href="#ablauf">Ablauf</a>
             <a href="#rechner">Rechner</a>
@@ -105,27 +104,7 @@ export function PontivoHome({ contact, site: siteIn, account, children }: { cont
           </figure>
         </section>
 
-        <AlpineBand />
-
-        <section className={s.section} id="wege">
-          <h2 className={s.h2}>{site.text("wege.title")}</h2>
-          <p className={s.intro}>{site.text("wege.intro")}</p>
-          <div className={s.paths}>
-            <article className={`${s.path} ${s.pathMain}`}>
-              <h3>{site.text("wege.1.title")}</h3>
-              <p>{site.text("wege.1.text")}</p>
-              <ul>{site.lines("wege.1.bullets").map((b) => <li key={b}>{b}</li>)}</ul>
-            </article>
-            <article className={s.path}>
-              <h3>{site.text("wege.2.title")}</h3>
-              <p>{site.text("wege.2.text")}</p>
-            </article>
-            <article className={s.path}>
-              <h3>{site.text("wege.3.title")}</h3>
-              <p>{site.text("wege.3.text")}</p>
-            </article>
-          </div>
-        </section>
+        <BridgeBand />
 
         <Bausteine staticSite={st} site={site} />
 

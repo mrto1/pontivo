@@ -198,3 +198,4 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 ## Stripe Checkout eingebettet (SPEC 19.25)
 - Vor dem Einschalten beim ersten Hotel: Testbuchung im Stripe-Testmodus (Karte 4242 und TWINT), prüfen ob `Stripe(pk, { stripeAccount })` mit Direct Charges den Rahmen lädt (in der Doku nicht ausdrücklich genannt).
 - Branding des Stripe-Rahmens (Farbe, Schrift, Dunkelmodus) wird im Stripe-Dashboard des Hotels eingestellt; für Pontivo-eigene Hotels vorschlagen oder über Connect-Branding setzen?
+- [ ] Impressum: Betreiber ist die Lynxora GmbH, Konradstrasse 1, 8400 Winterthur (Standardwert im Code, überschreibbar mit `PLATFORM_OPERATOR`/`PLATFORM_ADDRESS`). UID (`PLATFORM_UID`) und MWST-Pflicht eintragen bzw. bestätigen; Hinweis auf Handelsregister/MWST steht bewusst nicht im Impressum, bis die Angaben vorliegen. Auf dem Server prüfen, dass `PLATFORM_OPERATOR`/`PLATFORM_ADDRESS` nicht mehr den alten Namen enthalten.

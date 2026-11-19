@@ -35,8 +35,9 @@ const schema = z.object({
   AUTH_SECRET: z.string().min(16).optional(),
   // Betreiber der Plattform (für AGB, Datenschutz, Fusszeile)
   PLATFORM_NAME: z.string().default("Pontivo"),
-  PLATFORM_OPERATOR: z.string().optional(), // z. B. "Pontivo, Inhaber Vorname Guidali"
-  PLATFORM_ADDRESS: z.string().optional(), // z. B. "Musterstrasse 1, 8400 Winterthur"
+  PLATFORM_OPERATOR: z.string().optional(), // Standard: "Lynxora GmbH"
+  PLATFORM_ADDRESS: z.string().optional(), // Standard: "Konradstrasse 1, 8400 Winterthur"
+  PLATFORM_UID: z.string().optional(), // UID der Gesellschaft (CHE-…), erscheint im Impressum
   PLATFORM_CONTACT_EMAIL: z.string().optional(),
   PLATFORM_PHONE: z.string().optional(),
   DEMO_HOTEL_SLUG: z.string().default("demo-gasthof"),

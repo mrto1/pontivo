@@ -17,11 +17,11 @@ export type LegalDoc = { title: string; intro: string; sections: Section[]; draf
 
 export function platformInfo() {
   const e = env();
-  const missing = !e.PLATFORM_OPERATOR || !e.PLATFORM_ADDRESS || !e.PLATFORM_CONTACT_EMAIL;
+  const missing = !e.PLATFORM_CONTACT_EMAIL;
   return {
     name: e.PLATFORM_NAME,
-    operator: e.PLATFORM_OPERATOR ?? `[Betreiber ${e.PLATFORM_NAME}]`,
-    address: e.PLATFORM_ADDRESS ?? "[Adresse Betreiber]",
+    operator: e.PLATFORM_OPERATOR ?? "Lynxora GmbH",
+    address: e.PLATFORM_ADDRESS ?? "Konradstrasse 1, 8400 Winterthur",
     email: e.PLATFORM_CONTACT_EMAIL ?? "[E-Mail Betreiber]",
     hosting: e.HOSTING_PROVIDER ?? "[Hosting-Anbieter, Land]",
     missing,

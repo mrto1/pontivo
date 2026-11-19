@@ -37,88 +37,88 @@ export const SITE_FIELDS: SiteField[] = [
     "default": "Gespräch vereinbaren"
   },
   {
-    "key": "wege.title",
-    "group": "Angebot (drei Wege)",
-    "label": "Überschrift",
-    "multiline": false,
-    "default": "Passend zu Ihrer heutigen Website"
-  },
-  {
-    "key": "wege.intro",
-    "group": "Angebot (drei Wege)",
-    "label": "Einleitung",
-    "multiline": true,
-    "default": "Sie entscheiden, wie viel {name} übernimmt. Buchung, Zahlung und der Abgleich mit Booking.com sind bei allen drei Wegen gleich."
-  },
-  {
-    "key": "wege.1.title",
-    "group": "Angebot (drei Wege)",
-    "label": "Weg 1: Titel",
-    "multiline": false,
-    "default": "Ihre Website bleibt, die Buchung kommt von uns"
-  },
-  {
-    "key": "wege.1.text",
-    "group": "Angebot (drei Wege)",
-    "label": "Weg 1: Text",
-    "multiline": true,
-    "default": "Auf Ihrer Website erscheint ein Knopf «Jetzt buchen» oder eine Suchleiste mit Daten und Personen. Die Buchungsseite trägt Ihr Logo und Ihre Farben."
-  },
-  {
-    "key": "wege.1.bullets",
-    "group": "Angebot (drei Wege)",
-    "label": "Weg 1: Stichpunkte (eine Zeile pro Punkt)",
-    "multiline": true,
-    "default": "Funktioniert mit Wix, WordPress, Jimdo und jeder anderen Website\nEinfachste Variante: den bestehenden «Buchen»-Link umstellen\nKein Relaunch, keine neue Agentur"
-  },
-  {
-    "key": "wege.2.title",
-    "group": "Angebot (drei Wege)",
-    "label": "Weg 2: Titel",
-    "multiline": false,
-    "default": "Neue Website mit Buchung"
-  },
-  {
-    "key": "wege.2.text",
-    "group": "Angebot (drei Wege)",
-    "label": "Weg 2: Text",
-    "multiline": true,
-    "default": "Für Hotels ohne Online-Buchung oder mit veralteter Seite: Startseite, Zimmer mit Fotos und Buchung auf Deutsch und Englisch, unter Ihrer Domain."
-  },
-  {
-    "key": "wege.3.title",
-    "group": "Angebot (drei Wege)",
-    "label": "Weg 3: Titel",
-    "multiline": false,
-    "default": "Wechsel von Ihrer heutigen Buchungsmaschine"
-  },
-  {
-    "key": "wege.3.text",
-    "group": "Angebot (drei Wege)",
-    "label": "Weg 3: Text",
-    "multiline": true,
-    "default": "Statt einer festen Monatsgebühr zahlen Sie nur bei einer Buchung. Dazu TWINT, Abgleich mit Booking.com und alles an einem Ort."
-  },
-  {
     "key": "bausteine.title",
-    "group": "Baukasten und Funktionen",
+    "group": "Angebot (drei Wege)",
     "label": "Baukasten: Überschrift",
     "multiline": false,
     "default": "Ein Baukasten: Sie nehmen, was Sie brauchen"
   },
   {
     "key": "bausteine.intro",
-    "group": "Baukasten und Funktionen",
+    "group": "Angebot (drei Wege)",
     "label": "Baukasten: Einleitung",
     "multiline": true,
     "default": "Der Kern, also Direktbuchung und Zahlung, ist immer dabei. Alles andere schalten Sie mit einem Klick ein oder aus. Ein Chalet braucht keine Rezeption, ein Hotel mit Team schon. Ausgeschaltetes verschwindet aus dem Menü, Ihre Daten bleiben erhalten."
+  },
+  {
+    "key": "web.title",
+    "group": "Angebot (drei Wege)",
+    "label": "Website: Überschrift",
+    "multiline": false,
+    "default": "Die Website ist ein Baustein unter mehreren"
+  },
+  {
+    "key": "web.intro",
+    "group": "Angebot (drei Wege)",
+    "label": "Website: Einleitung",
+    "multiline": true,
+    "default": "Sie entscheiden, wie viel {name} übernimmt. Buchung, Zahlung und der Abgleich mit Booking.com sind bei allen drei Wegen gleich. Auch der Wechsel von Ihrer heutigen Buchungsmaschine ist möglich: Statt einer festen Monatsgebühr zahlen Sie nur bei einer Buchung."
+  },
+  {
+    "key": "web.1.title",
+    "group": "Angebot (drei Wege)",
+    "label": "Website 1: Titel",
+    "multiline": false,
+    "default": "Neue Website mit Pontivo"
+  },
+  {
+    "key": "web.1.text",
+    "group": "Angebot (drei Wege)",
+    "label": "Website 1: Text",
+    "multiline": true,
+    "default": "Für Hotels ohne Online-Buchung oder mit veralteter Seite: Startseite, Zimmer mit Fotos und Buchung auf Deutsch und Englisch, unter Ihrer Domain. Layout, Schrift, Farbe und Logo stellen Sie selbst ein."
+  },
+  {
+    "key": "web.2.title",
+    "group": "Angebot (drei Wege)",
+    "label": "Website 2: Titel",
+    "multiline": false,
+    "default": "Eigene Website, Buchung von uns"
+  },
+  {
+    "key": "web.2.text",
+    "group": "Angebot (drei Wege)",
+    "label": "Website 2: Text",
+    "multiline": true,
+    "default": "Ihre Seite bleibt. Wir liefern die Buchungsmaschine zum Einbetten: ein «Jetzt buchen»-Knopf, eine Suchleiste oder die ganze Buchungsstrecke direkt auf Ihrer Seite, mit Zahlung ohne Seitenwechsel. Logo und Farben übernehmen wir."
+  },
+  {
+    "key": "web.2.bullets",
+    "group": "Angebot (drei Wege)",
+    "label": "Website 2: Stichpunkte (eine Zeile pro Punkt)",
+    "multiline": true,
+    "default": "Funktioniert mit Wix, WordPress, Jimdo und jeder anderen Website\nEinfachste Variante: den bestehenden «Buchen»-Link umstellen\nKein Relaunch, keine neue Agentur"
+  },
+  {
+    "key": "web.3.title",
+    "group": "Angebot (drei Wege)",
+    "label": "Website 3: Titel",
+    "multiline": false,
+    "default": "Volle Integration über die API"
+  },
+  {
+    "key": "web.3.text",
+    "group": "Angebot (drei Wege)",
+    "label": "Website 3: Text",
+    "multiline": true,
+    "default": "Suche, Preise, Buchung, Änderung und Storno laufen über unsere API, die Oberfläche gestalten Sie vollständig selbst. Dank KI-Assistenten ist so eine Integration heute in Tagen statt Monaten gemacht, auch ohne eigenes Entwicklerteam."
   },
   {
     "key": "funktionen.title",
     "group": "Baukasten und Funktionen",
     "label": "Funktionen: Überschrift",
     "multiline": false,
-    "default": "Alles, was ein kleines Haus braucht"
+    "default": "Alles, was Sie als Gastgeber brauchen"
   },
   {
     "key": "funktionen.intro",

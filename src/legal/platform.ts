@@ -16,7 +16,7 @@ export function platformImprint(): LegalDoc {
     draftNote: "",
     sections: [
       { h: "Anbieter", p: [p.operator, p.address, `E-Mail: ${p.email}`, ...(e.PLATFORM_PHONE ? [`Telefon: ${e.PLATFORM_PHONE}`] : [])] },
-      { h: "Rechtsform", p: ["Einzelunternehmen nach Schweizer Recht. Nicht im Handelsregister eingetragen, nicht mehrwertsteuerpflichtig."] },
+      { h: "Rechtsform", p: ["Gesellschaft mit beschränkter Haftung (GmbH) nach Schweizer Recht.", ...(e.PLATFORM_UID ? [`UID: ${e.PLATFORM_UID}`] : [])] },
       { h: "Haftung für Inhalte und Links", p: [
         "Die Inhalte dieser Website werden mit Sorgfalt erstellt. Für Richtigkeit, Vollständigkeit und Aktualität übernehmen wir keine Gewähr. Für Inhalte verlinkter fremder Websites sind ausschliesslich deren Betreiber verantwortlich.",
         "Auf den Websites der Hotels und Ferienwohnungen, die mit Pontivo erstellt sind, ist der jeweilige Betrieb für Inhalte, Preise und Leistungen verantwortlich; das Impressum des Betriebs steht auf dessen Website.",

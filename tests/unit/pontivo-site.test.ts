@@ -16,7 +16,7 @@ describe("Pontivo-Startseite: Texte", () => {
     expect(s.text("hero.lead")).not.toContain("{");
     expect(s.faq[9].a).toContain("per E-Mail an info@pontivo.ch;");
     expect(resolveSite(null, { ...vars, email: undefined }).faq[9].a).toContain("per E-Mail; zu Unrecht");
-    expect(s.lines("wege.1.bullets")).toHaveLength(3);
+    expect(s.lines("web.2.bullets")).toHaveLength(3);
   });
   it("Überschreibung gilt, leere Überschreibung zählt als Standard, FAQ-Liste ersetzt die Standardliste", () => {
     const s = resolveSite({ texts: { "hero.title": "Neuer Titel für {name}", "hero.ctaMain": "  " }, faq: [{ q: "Frage?", a: "Antwort {fee} %" }] }, vars);

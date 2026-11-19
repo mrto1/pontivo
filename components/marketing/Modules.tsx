@@ -56,13 +56,14 @@ const GROUPS: Group[] = [
       { icon: "card", title: "Zahlung auf Ihr Konto", text: "TWINT, Karte, Apple Pay und Google Pay über Stripe. Das Geld geht direkt an Sie.", tag: "Immer dabei" },
       { icon: "cancel", title: "Storno und Restzahlung", text: "Stornoregeln, Rückerstattung, Anzahlung mit Restzahlung per Link. Alles ohne Telefonate.", tag: "Immer dabei" },
       { icon: "gift", title: "Gutscheine", text: "Gutscheine online verkaufen und im Haus einlösen.", tag: "Standard" },
-      { icon: "bag", title: "Upselling", text: "Frühstück, Spa oder Parkplatz vor der Anreise anbieten, mit Mail an den Gast.", tag: "Zusatzpreis" },
+      { icon: "bag", title: "Upselling (KI-Modul)", text: "Das KI-Modul schlägt Gästen vor der Anreise passende Extras vor, etwa Frühstück, Spa oder Parkplatz. Der Versand läuft automatisch, Sie geben die Angebote frei.", tag: "Zusatzpreis" },
+      { icon: "chart", title: "Preisempfehlung (KI-Modul)", text: "Die KI schlägt Preise nach Auslastung und Nachfrage vor. Sie entscheiden, nichts wird ohne Ihre Freigabe geändert. Im KI-Zusatz für CHF 29 im Monat.", tag: "Zusatzpreis" },
     ],
   },
   {
     id: "web", title: "Website und Auftritt", lead: "Neue Website oder Buchung auf Ihrer bestehenden.",
     mods: [
-      { icon: "palette", title: "Hotel-Website", text: "8 Layouts und 8 Schriftpaare, Logo und Farbe, Texte auf Deutsch und Englisch mit KI-Übersetzung.", tag: "Standard" },
+      { icon: "palette", title: "Hotel-Website", text: "9 Layouts und 8 Schriftpaare, Logo und Farbe, Texte auf Deutsch und Englisch mit KI-Übersetzung.", tag: "Standard" },
       { icon: "globe", title: "In Ihre Website einbauen", text: "Knopf oder Suchleiste für Wix, WordPress, Jimdo und jede andere Seite.", tag: "Standard" },
       { icon: "chat", title: "KI-Chat für Gäste", text: "Beantwortet Fragen zum Haus und zur Umgebung, auch während des Aufenthalts.", tag: "Zusatzpreis" },
       { icon: "mail", title: "Eigene Mail-Texte", text: "Ihre Worte in Bestätigung, Vor der Anreise und Nachher. Rechtliche Teile bleiben fest.", tag: "Standard" },
@@ -132,15 +133,17 @@ function BuildGraphic() {
   );
 }
 
-/** Alpen und Brücke: Zierband, gleiche Bildsprache wie das Logo */
-export function AlpineBand() {
+/** Brücke über einen Fluss (pons): Zierband, Farben aus den Seiten-Tokens (hell/dunkel) */
+export function BridgeBand() {
+  const piers = [250, 450, 630, 830];
   return (
     <svg className={s.band} viewBox="0 0 1080 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-      <path d="M0 150V92l90-52 70 46 110-70 120 82 80-44 130 84 100-60 120 74 90-58 160 70v66z" className={s.mtFar} />
-      <path d="M0 150v-40l120-30 90 34 110-46 150 52 90-30 140 40 110-36 130 34 140-24v46z" className={s.mtNear} />
-      <path d="M380 150 Q540 40 700 150" fill="none" className={s.bridge} />
-      <path d="M380 150H700" className={s.bridge} />
-      <path d="M0 146H1080" className={s.lake} />
+      <rect x="0" y="108" width="1080" height="42" className={s.river} />
+      <path d="M40 124q30-6 60 0t60 0M300 132q30-6 60 0t60 0M600 126q30-6 60 0t60 0M880 134q30-6 60 0t60 0" className={s.wave} />
+      {piers.map((x) => <rect key={x} x={x - 6} y="82" width="12" height="40" className={s.pier} />)}
+      <path d="M0 80H1080" className={s.deck} />
+      <path d="M250 80Q350 36 450 80M450 80Q540 30 630 80M630 80Q730 36 830 80" className={s.arch} />
+      <path d="M0 108Q60 92 130 80M950 80Q1020 92 1080 108" className={s.bank} />
     </svg>
   );
 }
@@ -161,6 +164,23 @@ export function Bausteine({ staticSite, site }: { staticSite?: boolean; site: Re
         <p className={s.intro}>{site.text("bausteine.intro")}</p>
         <div className={s.buildWrap}><BuildGraphic /></div>
         <p className={s.buildNote}>Beispiel: Ein kleines Hotel schaltet Rezeption, Rechnung, Kurtaxe und Statistik ein. Das Chalet nebenan nur Rechnung und Kurtaxe.</p>
+        <h3 className={s.subTitle}>{site.text("web.title")}</h3>
+        <p className={s.intro}>{site.text("web.intro")}</p>
+        <div className={s.paths}>
+          <article className={s.path}>
+            <h3>{site.text("web.1.title")}</h3>
+            <p>{site.text("web.1.text")}</p>
+          </article>
+          <article className={`${s.path} ${s.pathMain}`}>
+            <h3>{site.text("web.2.title")}</h3>
+            <p>{site.text("web.2.text")}</p>
+            <ul>{site.lines("web.2.bullets").map((b) => <li key={b}>{b}</li>)}</ul>
+          </article>
+          <article className={s.path}>
+            <h3>{site.text("web.3.title")}</h3>
+            <p>{site.text("web.3.text")}</p>
+          </article>
+        </div>
       </section>
 
       <section className={s.section} id="funktionen">

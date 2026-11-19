@@ -73,8 +73,8 @@
 
 /* ---------- Abschnitte ---------- */
 .section { padding: 72px 0; border-top: 1px solid var(--pv-line); }
-.h2 { font-family: var(--pv-display), sans-serif; font-weight: 800; font-size: clamp(1.8rem, 3.4vw, 2.6rem); letter-spacing: -0.03em; line-height: 1.08; margin: 0 0 16px; max-width: 22ch; }
-.intro { color: var(--pv-quiet); max-width: 60ch; margin: 0 0 40px; }
+.h2 { font-family: var(--pv-display), sans-serif; font-weight: 800; font-size: clamp(1.8rem, 3.4vw, 2.6rem); letter-spacing: -0.03em; line-height: 1.08; margin: 0 0 16px; max-width: 32ch; }
+.intro { color: var(--pv-quiet); max-width: 78ch; margin: 0 0 40px; }
 
 .steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; counter-reset: step; }
 .steps li { counter-increment: step; position: relative; padding-top: 58px; }
@@ -88,7 +88,7 @@
 .benefit dd { margin: 0; color: var(--pv-quiet); }
 
 /* ---------- Drei Wege ---------- */
-.paths { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 20px; align-items: stretch; }
+.paths { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 20px; align-items: stretch; }
 .path { border: 1.5px solid var(--pv-line); border-radius: 16px; padding: 26px; }
 .path h3 { margin: 0 0 10px; font-size: 1.2rem; line-height: 1.25; }
 .path p { margin: 0; color: var(--pv-quiet); }
@@ -161,10 +161,13 @@
 
 /* ---------- Bausteine, Funktionen, Ablauf ---------- */
 .band { display: block; width: 100%; height: 150px; margin: 0 0 8px; }
-.mtFar { fill: color-mix(in srgb, var(--pv-keep) 14%, var(--pv-paper)); }
-.mtNear { fill: color-mix(in srgb, var(--pv-keep) 28%, var(--pv-paper)); }
-.bridge { stroke: var(--pv-ink); stroke-width: 4; stroke-linecap: round; fill: none; }
-.lake { stroke: var(--pv-keep); stroke-width: 3; opacity: .5; }
+.river { fill: color-mix(in srgb, var(--pv-keep) 22%, var(--pv-paper)); }
+.wave { stroke: var(--pv-keep); stroke-width: 2; fill: none; opacity: .5; stroke-linecap: round; }
+.pier { fill: var(--pv-ink); }
+.deck { stroke: var(--pv-ink); stroke-width: 5; stroke-linecap: round; }
+.arch { stroke: var(--pv-keep); stroke-width: 4; fill: none; stroke-linecap: round; }
+.bank { fill: none; stroke: var(--pv-ink); stroke-width: 3; opacity: .35; }
+.subTitle { font-family: var(--pv-display), sans-serif; font-size: 1.5rem; letter-spacing: -0.02em; margin: 56px 0 12px; }
 
 .buildWrap { background: var(--pv-white); border-radius: 18px; padding: 20px; box-shadow: 0 1px 0 var(--pv-line), 0 18px 40px -28px rgba(19, 38, 46, 0.35); margin: 28px 0 14px; overflow-x: auto; }
 .buildSvg { display: block; width: 100%; min-width: 680px; height: auto; font-family: var(--pv-body), system-ui, sans-serif; }

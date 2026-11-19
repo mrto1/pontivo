@@ -60,7 +60,7 @@ Ausfüllen (zufällige Werte mit `openssl rand -hex 32`):
 - `GUEST_DATA_KEY`: `openssl rand -base64 32` – **sicher aufbewahren** (z. B. Passwortmanager). Ohne ihn sind gespeicherte Ausweisnummern und Geburtsdaten nicht mehr lesbar.
 - `STRIPE_SECRET_KEY`: zuerst den **Test**-Schlüssel `sk_test_…`, live erst mit dem ersten Hotel
 - `POSTMARK_SERVER_TOKEN`, `EMAIL_FROM` (siehe Schritt 7)
-- `PLATFORM_OPERATOR`, `PLATFORM_ADDRESS`, `PLATFORM_CONTACT_EMAIL`: erscheinen in AGB und Datenschutz
+- `PLATFORM_OPERATOR` (Standard «Lynxora GmbH»), `PLATFORM_ADDRESS` (Standard «Konradstrasse 1, 8400 Winterthur»), `PLATFORM_UID`, `PLATFORM_CONTACT_EMAIL`: erscheinen in Impressum, AGB und Datenschutz. Auf dem Server alte Werte (Einzelunternehmen) entfernen oder ersetzen
 
 `PAYMENT_PROVIDER=fake` ist in Produktion gesperrt (Buchungen würden ohne Zahlung bestätigt).
 
