@@ -35,6 +35,7 @@ export function PontivoHome({ contact, site: siteIn, account, children }: { cont
 
   return (
     <div className={`${s.page} ${display.variable} ${body.variable}`}>
+      <div className={s.heroImg} aria-hidden="true" />
       <div className={s.wrap}>
         <header className={s.head}>
           <a className={s.logo} href="/"><Logo />{contact.name}</a>

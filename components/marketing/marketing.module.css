@@ -241,3 +241,19 @@
 .mockPhoto { flex: none; width: 110px; height: 80px; border-radius: 8px; background: linear-gradient(135deg, #7fa3a8, #d9c3a0); }
 .mockPhoto2 { background: linear-gradient(135deg, #a39a7f, #7fa3a8); }
 @media (max-width: 640px) { .mockRooms { grid-template-columns: 1fr; } .mockNav span { display: none; } .mockSun { right: 10%; } }
+
+/* Hintergrundbild hinter Kopfzeile und Einstieg: Foto (Tag/Nacht), links und unten in die Seitenfarbe verlaufend, damit der Text lesbar bleibt */
+.page { position: relative; overflow-x: clip; }
+.page > .wrap { position: relative; }
+.heroImg { position: absolute; top: 0; left: 0; right: 0; height: 860px; background: url("/marketing/hero-hell.webp") 70% 40% / cover no-repeat; pointer-events: none; }
+.heroImg::after { content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, transparent 55%, var(--pv-paper) 100%),
+    linear-gradient(90deg, color-mix(in srgb, var(--pv-paper) 92%, transparent) 0%, color-mix(in srgb, var(--pv-paper) 78%, transparent) 38%, color-mix(in srgb, var(--pv-paper) 18%, transparent) 75%, transparent 100%); }
+@media (prefers-color-scheme: dark) { .heroImg { background-image: url("/marketing/hero-dunkel.webp"); } }
+@media (max-width: 860px) {
+  .heroImg { height: 760px; background-position: 78% 30%; }
+  .heroImg::after { background:
+    linear-gradient(180deg, transparent 50%, var(--pv-paper) 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--pv-paper) 80%, transparent), color-mix(in srgb, var(--pv-paper) 70%, transparent)); }
+}
