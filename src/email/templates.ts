@@ -418,23 +418,34 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
       const deParts = [
         d.shortfall ? `Im ${d.month} sind ${pct} % von Direktbuchungen und Gutscheinen von ${d.fees} angefallen. Bis zur Mindestgebühr von ${d.minimum} fehlten ${d.shortfall}.` : "",
         ai ? `KI-Chat: ${[d.aiModule ? `Modul ${d.aiModule}` : "", d.aiPacks ? `Zusatzpakete ${d.aiPacks}` : ""].filter(Boolean).join(", ")}.` : "",
-        `Insgesamt wurden ${d.amount} Ihrer Karte ${d.card} belastet.`,
+        d.vat ? `Darin enthalten ist die Mehrwertsteuer von ${d.vat}.` : "",
+        `Insgesamt wurden ${d.amount} Ihrer Karte ${d.card} belastet.${d.invoiceNo ? ` Rechnung ${d.invoiceNo}: siehe Link unten.` : ""}`,
       ].filter(Boolean);
       const enParts = [
         d.shortfall ? `In ${d.month} the ${pct} % fees amounted to ${d.fees}. The difference to the minimum of ${d.minimum} was ${d.shortfall}.` : "",
         ai ? `AI chat: ${[d.aiModule ? `module ${d.aiModule}` : "", d.aiPacks ? `extra packs ${d.aiPacks}` : ""].filter(Boolean).join(", ")}.` : "",
-        `A total of ${d.amount} was charged to your card ${d.card}.`,
+        d.vat ? `This includes VAT of ${d.vat}.` : "",
+        `A total of ${d.amount} was charged to your card ${d.card}.${d.invoiceNo ? ` Invoice ${d.invoiceNo}: see the link below.` : ""}`,
       ].filter(Boolean);
       return wrap(c, l, de ? `${env().PLATFORM_NAME}: Abrechnung ${d.month}` : `${env().PLATFORM_NAME}: statement ${d.month}`,
         de ? ["Guten Tag,", ...deParts] : ["Hello,", ...enParts],
-        [`${de ? "Monat" : "Month"}: ${d.month}`, ...(d.shortfall ? [`${pct} %: ${d.fees}`, `Minimum: ${d.minimum}`] : []), ...(d.aiModule ? [`${de ? "KI-Chat Modul" : "AI chat module"}: ${d.aiModule}`] : []), ...(d.aiPacks ? [`${de ? "KI-Chat Zusatzpakete" : "AI chat extra packs"}: ${d.aiPacks}`] : []), `${de ? "Belastet" : "Charged"}: ${d.amount}`]);
+        [`${de ? "Monat" : "Month"}: ${d.month}`, ...(d.shortfall ? [`${pct} %: ${d.fees}`, `Minimum: ${d.minimum}`] : []), ...(d.aiModule ? [`${de ? "KI-Chat Modul" : "AI chat module"}: ${d.aiModule}`] : []), ...(d.aiPacks ? [`${de ? "KI-Chat Zusatzpakete" : "AI chat extra packs"}: ${d.aiPacks}`] : []), `${de ? "Belastet" : "Charged"}: ${d.amount}`],
+        d.invoiceId ? { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/plattform-rechnung/${d.invoiceId}`, label: de ? `Rechnung ${d.invoiceNo} ansehen` : `View invoice ${d.invoiceNo}` } : undefined);
+    }
+    case "host_invoice": {
+      const d = c.data as Record<string, string>;
+      return wrap(c, l, de ? `${env().PLATFORM_NAME}: Rechnung ${d.invoiceNo} (${d.month})` : `${env().PLATFORM_NAME}: invoice ${d.invoiceNo} (${d.month})`,
+        de ? ["Guten Tag,", `Ihre Rechnung für ${d.month} liegt bereit. Die Plattformgebühr von ${d.withheld} wurde bereits bei den Buchungen über Stripe einbehalten, es ist nichts mehr zu bezahlen.`]
+          : ["Hello,", `your invoice for ${d.month} is ready. The platform fee of ${d.withheld} was already withheld via Stripe; nothing is due.`],
+        [`${de ? "Rechnung" : "Invoice"}: ${d.invoiceNo}`, `${de ? "Netto" : "Net"}: ${d.net}`, ...(d.vat ? [`${de ? "MWST" : "VAT"}: ${d.vat}`] : []), `${de ? "Total" : "Total"}: ${d.gross}`],
+        { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/plattform-rechnung/${d.invoiceId}`, label: de ? "Rechnung ansehen" : "View invoice" });
     }
     case "host_charge_failed": {
       const d = c.data as Record<string, string | boolean>;
       return wrap(c, l, de ? `${env().PLATFORM_NAME}: Zahlung fehlgeschlagen` : `${env().PLATFORM_NAME}: payment failed`,
         de ? ["Guten Tag,", `die Abrechnung für ${d.month} (${d.amount}) konnte nicht von Ihrer Karte abgebucht werden. ${d.last ? "Das war der letzte automatische Versuch." : "Wir versuchen es in drei Tagen erneut."} Bitte hinterlegen Sie im Admin eine gültige Karte.`]
           : ["Hello,", `the statement for ${d.month} (${d.amount}) could not be charged to your card. Please add a valid card in the admin.`],
-        [], { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/settings#karte`, label: de ? "Karte erneuern" : "Update card" });
+        [...(d.invoiceNo ? [`${de ? "Rechnung" : "Invoice"}: ${d.invoiceNo}`] : [])], { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/settings#karte`, label: de ? "Karte erneuern" : "Update card" });
     }
     case "platform_onboarding_alert": {
       const d = c.data as Record<string, unknown>;

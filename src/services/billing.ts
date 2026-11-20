@@ -10,6 +10,8 @@ import { audit } from "./audit";
 import { aiBillFor, hotelsWithAiModule } from "./ai-module";
 import { monthlyReport } from "./report";
 import { shiftMonth } from "./overview";
+import { billMonth, invoiceNumber, vatApplies, type PlatformVat } from "../domain/platform-invoice";
+import { getPlatformVat } from "./platform-settings";
 
 /**
  * Mindestgebühr (Bedingungen für Gastgeber, Ziffer 2): Plattformgebühr (Standard 1,9 %) pro Direktbuchung/Gutschein, mindestens monthly_minimum_rappen
@@ -41,25 +43,38 @@ export function firstBilledMonth(hotel: Pick<Hotel, "liveSince" | "timezone">): 
  * Abrechnungszeilen für den Vormonat anlegen (idempotent), dann fällige Belastungen ausführen.
  * Betrag = Differenz zur Mindestgebühr + KI-Chat (Modulpreis und Zusatzpakete, SPEC 14b). Eine Belastung pro Monat.
  */
-export async function runMonthlyMinimum(now = new Date()): Promise<{ created: number; charged: number; failed: number }> {
+export async function runMonthlyMinimum(now = new Date(), vatOverride?: PlatformVat): Promise<{ created: number; charged: number; failed: number }> {
   const month = shiftMonth(todayIn("Europe/Zurich", now).slice(0, 7), -1);
   const list = await db().select().from(hotels).where(inArray(hotels.status, ["live", "paused"]));
   const aiHotels = new Set(await hotelsWithAiModule());
+  const vat = vatOverride ?? await getPlatformVat(); // vatOverride nur für Tests
+  const vatOn = vatApplies(vat, month);
+  const today = todayIn("Europe/Zurich", now);
   let created = 0;
   for (const h of list) {
+    const [exists] = await db().select({ id: platformCharges.id }).from(platformCharges).where(and(eq(platformCharges.hotelId, h.id), eq(platformCharges.month, month)));
+    if (exists) continue;
     const first = firstBilledMonth(h);
     const minApplies = h.monthlyMinimumRappen > 0 && !!first && month >= first;
     const ai = aiHotels.has(h.id) ? await aiBillFor(h.id, month) : null;
     const aiTotal = ai?.totalRappen ?? 0;
-    if (!minApplies && aiTotal === 0) continue;
-    const fees = h.monthlyMinimumRappen > 0 ? await feesForMonth(h, month) : 0;
-    const shortfall = minApplies ? Math.max(0, h.monthlyMinimumRappen - fees) : 0;
-    const charge = shortfall + aiTotal;
+    const fees = await feesForMonth(h, month);
+    // Nichts zu verrechnen (kein Minimum, kein KI-Chat, keine Gebühren): keine Rechnung
+    if (!minApplies && aiTotal === 0 && fees === 0) continue;
+    const b = billMonth({ feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, aiRappen: aiTotal, vatBps: vatOn ? vat.bps : 0 });
+    const [{ n }] = rows<{ n: number }>(await db().execute(sql`SELECT nextval('platform_invoice_seq')::int AS n`));
     const ins = await db().insert(platformCharges).values({
-      hotelId: h.id, month, feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, chargeRappen: charge,
-      aiModuleRappen: ai?.moduleRappen ?? 0, aiPacksRappen: ai?.packsRappen ?? 0, status: charge > 0 ? "pending" : "none",
+      hotelId: h.id, month, feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, chargeRappen: b.payRappen,
+      aiModuleRappen: ai?.moduleRappen ?? 0, aiPacksRappen: ai?.packsRappen ?? 0, status: b.payRappen > 0 ? "pending" : "none",
+      netRappen: b.netRappen, vatBps: vatOn ? vat.bps : 0, vatRappen: b.vatRappen, vatNumber: vatOn ? vat.number : null,
+      invoiceNo: invoiceNumber(Number(today.slice(0, 4)), n), invoiceDate: today,
     }).onConflictDoNothing().returning({ id: platformCharges.id });
     created += ins.length;
+    // Nichts von der Karte zu belasten: die Rechnung geht trotzdem per Mail (Gebühren sind schon über Stripe einbehalten)
+    if (ins.length && b.payRappen === 0) {
+      await enqueueEmail(db(), { hotelId: h.id, template: "host_invoice", to: h.contactEmail, language: "de",
+        data: { month, invoiceNo: invoiceNumber(Number(today.slice(0, 4)), n), invoiceId: ins[0].id, net: formatChf(b.netRappen), vat: b.vatRappen ? formatChf(b.vatRappen) : "", gross: formatChf(b.grossRappen), withheld: formatChf(b.withheldRappen) } });
+    }
   }
   const r = await processCharges(now);
   return { created, ...r };
@@ -90,10 +105,11 @@ export async function processCharges(now = new Date()): Promise<{ charged: numbe
       }).where(eq(platformCharges.id, c.id));
       await audit(tx, { hotelId: h.id, actor: "system", action: res.ok ? "billing.minimum_charged" : "billing.minimum_failed", entity: "platform_charge", entityId: c.id,
         details: { month: c.month, amount: c.chargeRappen, attempt, error: res.ok ? null : res.error } });
-      const shortfall = c.chargeRappen - c.aiModuleRappen - c.aiPacksRappen;
+      const shortfall = Math.max(0, c.minimumRappen - c.feesRappen);
       const data = {
         month: c.month, fees: formatChf(c.feesRappen), minimum: formatChf(c.minimumRappen), amount: formatChf(c.chargeRappen), card: h.billingCardLabel ?? "", attempt, last: attempt >= MAX_ATTEMPTS,
         shortfall: shortfall > 0 ? formatChf(shortfall) : "", aiModule: c.aiModuleRappen > 0 ? formatChf(c.aiModuleRappen) : "", aiPacks: c.aiPacksRappen > 0 ? formatChf(c.aiPacksRappen) : "",
+        vat: c.vatRappen > 0 ? formatChf(c.vatRappen) : "", invoiceNo: c.invoiceNo ?? "", invoiceId: c.id,
       };
       await enqueueEmail(tx, { hotelId: h.id, template: res.ok ? "host_minimum_charged" : "host_charge_failed", to: h.contactEmail, language: "de", data });
       if (!res.ok && attempt >= MAX_ATTEMPTS && env().PLATFORM_ALERT_EMAIL) {
@@ -135,4 +151,24 @@ export async function finishCardSetup(hotel: Hotel, sessionId: string, actor: st
 
 export async function chargesOf(hotelId: string) {
   return db().select().from(platformCharges).where(eq(platformCharges.hotelId, hotelId)).orderBy(sql`${platformCharges.month} DESC`).limit(24);
+}
+
+// ---------------------------------------------------------------- Plattform-Verwaltung
+
+/** Letzte Rechnungen aller Betriebe (Plattform-Verwaltung) */
+export async function listPlatformInvoices(limit = 40) {
+  return db().select({ c: platformCharges, hotelName: hotels.name }).from(platformCharges)
+    .innerJoin(hotels, eq(hotels.id, platformCharges.hotelId))
+    .orderBy(sql`${platformCharges.createdAt} DESC`).limit(limit);
+}
+
+/** Fehlgeschlagene Belastung nochmals versuchen lassen (der Worker belastet beim nächsten Lauf, spätestens nach einer Minute) */
+export async function retryCharge(chargeId: string, actor: string): Promise<boolean> {
+  const [c] = await db().select().from(platformCharges).where(eq(platformCharges.id, chargeId));
+  if (!c || c.status !== "failed") return false;
+  await db().transaction(async (tx) => {
+    await tx.update(platformCharges).set({ status: "pending", attempts: 0, updatedAt: new Date() }).where(eq(platformCharges.id, chargeId));
+    await audit(tx, { hotelId: c.hotelId, actor, action: "billing.retry", entity: "platform_charge", entityId: chargeId, details: { month: c.month } });
+  });
+  return true;
 }

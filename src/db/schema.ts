@@ -613,10 +613,18 @@ export const platformCharges = pgTable("platform_charges", {
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   error: text("error"),
   attempts: integer("attempts").notNull().default(0),
+  /** Rechnung an das Hotel (SPEC 19.30): Wert aller Leistungen ohne MWST, MWST-Satz und -Betrag, Nummer und Datum; chargeRappen = bei der Karte noch zu belasten (inkl. MWST) */
+  netRappen: integer("net_rappen").notNull().default(0),
+  vatBps: integer("vat_bps").notNull().default(0),
+  vatRappen: integer("vat_rappen").notNull().default(0),
+  vatNumber: text("vat_number"),
+  invoiceNo: text("invoice_no").unique(),
+  invoiceDate: date("invoice_date", { mode: "string" }),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 export type PlatformCharge = typeof platformCharges.$inferSelect;
+
 
 /** KI-Chat-Tarife (Migration 0020, SPEC 14b). pack_size 0 = keine Zusatzpakete */
 export const aiPlans = pgTable("ai_plans", {

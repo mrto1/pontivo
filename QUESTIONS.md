@@ -210,3 +210,11 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Lücke = freie Nächte je Zimmertyp (Summe über alle Zimmer), keine Zimmernummern (ASSUMPTION). Genügt das oder soll der Zimmerplan massgebend sein?
 - Abbruch-Mail ist standardmässig aus (nDSG/UWG). Rechtlich mit Datenschutzerklärung und AGB abklären, bevor sie als Standard eingeschaltet wird.
 - Lückenfüller gilt nur für Direktbuchungen; Rabatte für OTA-Kanäle bewusst nicht (Preisparität).
+
+## Rechnung an das Hotel, MWST der Plattform (SPEC 19.30)
+- MWST-Pflicht von Lynxora: ab wann und mit welcher Nummer? (Schalter in der Plattform-Verwaltung, bis dahin keine MWST.) Mit Treuhänder klären: Leistungsdatum bei Beginn mitten im Monat, MWST auf bereits einbehaltene Stripe-Gebühren (heute: MWST wird zusätzlich der Karte belastet).
+- Rechnungs-PDF ist die Druckansicht des Browsers. Reicht das oder soll ein echtes PDF (mit QR-Zahlteil, falls später Rechnungen per Einzahlung statt Karte) erzeugt werden?
+- Banana: Sollen die Rechnungen im monatlichen Export (`pontivo-JJJJ-MM.txt`) mit MWST-Code und Rechnungsnummer erscheinen? (Heute enthält der Export noch keine MWST-Aufteilung.)
+
+## Testumgebung int (SPEC 19.30)
+- int läuft auf demselben VPS. Bei spürbarer Last oder wenn Kunden-Daten und Tests getrennt sein müssen: eigener zweiter VPS (Skripte bleiben gleich).

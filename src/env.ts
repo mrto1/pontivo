@@ -42,6 +42,7 @@ const schema = z.object({
   PLATFORM_OPERATOR: z.string().optional(), // Standard: "Lynxora GmbH"
   PLATFORM_ADDRESS: z.string().optional(), // Standard: "Konradstrasse 1, 8400 Winterthur"
   PLATFORM_UID: z.string().optional(), // UID der Gesellschaft (CHE-…), erscheint im Impressum
+  PLATFORM_VAT_NUMBER: z.string().optional(), // MWST-Nummer (CHE-… MWST), nur als Vorgabe; der Schalter in der Plattform-Verwaltung gilt
   PLATFORM_CONTACT_EMAIL: z.string().optional(),
   PLATFORM_PHONE: z.string().optional(),
   DEMO_HOTEL_SLUG: z.string().default("demo-gasthof"),

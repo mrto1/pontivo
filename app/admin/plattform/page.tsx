@@ -5,6 +5,11 @@ import { getHotelById } from "@/src/services/hotels";
 import { addMember, removeMember, setHotelStatus } from "@/src/services/settings";
 import { requestLoginLink } from "@/src/auth/session";
 import { roleLabel, ROLE_LABEL, type Role } from "@/src/domain/roles";
+import { getPlatformVat, savePlatformVat } from "@/src/services/platform-settings";
+import { listPlatformInvoices, retryCharge, processCharges } from "@/src/services/billing";
+import { formatChf } from "@/src/domain/money";
+import { formatBps } from "@/src/domain/invoice";
+import { todayIn } from "@/src/domain/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +25,24 @@ async function hotelStatus(formData: FormData) {
   if (!hotel || !["live", "paused"].includes(status)) back("Betrieb nicht gefunden", "error");
   try { await setHotelStatus(hotel!, status as "live" | "paused", `user:${admin.id}`); } catch (e) { back((e as Error).message, "error"); }
   back(`«${hotel!.name}»: ${status === "live" ? "wieder online" : "pausiert"}`);
+}
+
+async function saveVat(formData: FormData) {
+  "use server";
+  const admin = await requirePlatformAdmin();
+  const on = formData.get("liable") === "on";
+  try {
+    await savePlatformVat({ liableFrom: on ? String(formData.get("from") ?? "") : null, bps: Math.round(Number(String(formData.get("rate") ?? "8.1").replace(",", ".")) * 100), number: String(formData.get("number") ?? "") }, `user:${admin.id}`);
+  } catch (e) { back((e as Error).message, "error"); }
+  back(on ? "MWST-Pflicht gespeichert: gilt für Rechnungen ab dem eingetragenen Datum (Leistungsmonat)" : "MWST-Pflicht ausgeschaltet: neue Rechnungen ohne MWST");
+}
+
+async function retryInvoice(formData: FormData) {
+  "use server";
+  const admin = await requirePlatformAdmin();
+  const ok = await retryCharge(String(formData.get("id")), `user:${admin.id}`);
+  if (ok) await processCharges();
+  back(ok ? "Belastung nochmals versucht" : "Nichts zu wiederholen", ok ? "done" : "error");
 }
 
 async function memberAdd(formData: FormData) {
@@ -80,6 +103,8 @@ export default async function Plattform({ searchParams }: { searchParams: Promis
   await requirePlatformAdmin();
   const sp = await searchParams;
   const { hotels, users } = await platformOverview();
+  const vat = await getPlatformVat();
+  const invoices = await listPlatformInvoices();
   const STATUS: Record<string, string> = { live: "online", draft: "Entwurf", paused: "pausiert" };
   return (
     <main className="wrap admin-main">
@@ -92,6 +117,36 @@ export default async function Plattform({ searchParams }: { searchParams: Promis
         {sp.error && sp.error !== "confirm" && sp.error !== "user" ? <p className="notice warn">{sp.error}</p> : null}
         {sp.error === "confirm" ? <p className="notice warn">Bestätigung stimmt nicht, nichts gelöscht.</p> : null}
         {sp.error === "user" ? <p className="notice warn">Dieser Benutzer kann nicht gelöscht werden (Plattform-Admin oder man selbst).</p> : null}
+
+        <section className="card stack" id="mwst">
+          <h2 style={{ margin: 0 }}>MWST der Plattform</h2>
+          <p className="muted small" style={{ margin: 0 }}>Ab wann ist {`Lynxora`} MWST-pflichtig? Ab diesem Datum weisen neue Rechnungen an die Betriebe die MWST aus und belasten sie zusätzlich (die Preise verstehen sich ohne MWST, Bedingungen für Gastgeber Ziffer 2). Massgebend ist der letzte Tag des Leistungsmonats; beginnt die Pflicht mitten im Monat, gilt sie für den ganzen Monat. Bereits ausgestellte Rechnungen ändern sich nicht.</p>
+          <form action={saveVat} className="stack" style={{ maxWidth: 460 }}>
+            <label className="check"><input type="checkbox" name="liable" defaultChecked={!!vat.liableFrom} /> MWST-pflichtig</label>
+            <label>ab Datum<input type="date" name="from" defaultValue={vat.liableFrom ?? todayIn("Europe/Zurich")} /></label>
+            <label>Satz in % (Normalsatz seit 2024: 8,1)<input name="rate" inputMode="decimal" defaultValue={String(vat.bps / 100)} /></label>
+            <label>MWST-Nummer<input name="number" placeholder="CHE-123.456.789 MWST" defaultValue={vat.number} /></label>
+            <div><button className="btn">Speichern</button></div>
+          </form>
+          <p className="small">{vat.liableFrom ? <>Aktuell: <strong>MWST-pflichtig ab {vat.liableFrom}</strong>, Satz {formatBps(vat.bps)}.</> : <>Aktuell: <strong>nicht MWST-pflichtig</strong>, Rechnungen ohne MWST.</>}</p>
+        </section>
+
+        <section className="stack" id="rechnungen">
+          <h2 style={{ margin: 0 }}>Rechnungen an die Betriebe</h2>
+          {invoices.length === 0 ? <p className="muted small">Noch keine. Der Worker erstellt sie am 1. des Monats für den Vormonat.</p> : (
+            <table className="table small">
+              <thead><tr><th>Nr.</th><th>Betrieb</th><th>Monat</th><th>Netto</th><th>MWST</th><th>Belastet</th><th>Status</th><th></th></tr></thead>
+              <tbody>{invoices.map(({ c, hotelName }) => (
+                <tr key={c.id}>
+                  <td>{c.invoiceNo ? <a href={`/mypontivo/${c.hotelId}/plattform-rechnung/${c.id}`} target="_blank">{c.invoiceNo}</a> : "–"}</td>
+                  <td>{hotelName}</td><td>{c.month}</td><td>{formatChf(c.netRappen)}</td><td>{c.vatRappen ? formatChf(c.vatRappen) : "–"}</td><td>{formatChf(c.chargeRappen)}</td>
+                  <td>{c.status === "succeeded" ? "bezahlt" : c.status === "none" ? "nichts fällig" : c.status === "pending" ? "offen" : <span className="badge warn">fehlgeschlagen ({c.attempts}×)</span>}</td>
+                  <td>{c.status === "failed" ? <form action={retryInvoice}><input type="hidden" name="id" value={c.id} /><button className="btn secondary">Erneut versuchen</button></form> : null}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          )}
+        </section>
 
         <section className="stack" id="betriebe">
           <h2 style={{ margin: 0 }}>Betriebe ({hotels.length})</h2>
