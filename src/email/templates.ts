@@ -10,6 +10,8 @@ import { tr } from "../domain/blocks";
 import { U } from "../i18n/upsell";
 import { F } from "../i18n/feedback";
 import { fillPlaceholders, isMailTemplate, mailTextFor } from "../domain/mail-texts";
+import { D } from "../i18n/direct";
+import { benefitText } from "../domain/direct-tools";
 
 /**
  * E-Mail-Texte (SPEC 10): an Gäste in allen Website-Sprachen, an das Hotel DE/EN.
@@ -142,6 +144,7 @@ function summary(c: EmailContext, l: Locale): string[] {
     `${m.room}: ${c.roomType ? roomName(c.roomType, l) : "-"}${c.plan ? ` · ${planName(c.plan, l)}` : ""}`,
     `${m.guests}: ${b.adults}${b.children ? ` + ${b.children} ${m.children}` : ""}`,
     ...(c.extras ?? []).map((x) => `${tr(x.name, l)}${x.quantity > 1 ? ` × ${x.quantity}` : ""}: ${formatChf(x.amountRappen)}`),
+    ...(b.discountRappen > 0 ? [`${D[l].mailDiscount}: − ${formatChf(b.discountRappen)}`] : []),
     `${m.total}: ${formatChf(b.totalRappen)}${b.touristTaxRappen ? ` (${m.inclTax} ${formatChf(b.touristTaxRappen)})` : ""}`,
     ...(b.voucherRappen > 0 ? [`${t(l).voucherPaid}: − ${formatChf(b.voucherRappen)}`, `${t(l).cardPaid}: ${formatChf(b.totalRappen - b.voucherRappen)}`] : []),
     ...(b.balanceRappen > 0 && !b.balancePaidAt && !b.balanceOnsiteAt
@@ -220,7 +223,7 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
 
   switch (template) {
     case "booking_confirmed":
-      return wrap(c, gl, m.confirmedSubject(ref), [hi + ",", m.confirmedText],
+      return wrap(c, gl, m.confirmedSubject(ref), [hi + ",", m.confirmedText, ...(b?.directBenefits?.length ? [`${D[gl].mailBenefits}: ${b.directBenefits.map((x) => benefitText(x, gl)).filter(Boolean).join(" · ")}`] : [])],
         [...summary(c, gl), ...(c.plan ? [`${m.cancellation}: ${cancellationPolicyText(c.plan, gl)}`] : [])], link);
     case "balance_due":
     case "balance_reminder": {
@@ -315,6 +318,18 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
         [de ? (c.data.done ? `Die Anmelde-Adresse Ihres Kontos wurde auf ${String(c.data.newEmail)} geändert. Ab jetzt melden Sie sich nur noch mit der neuen Adresse an.` : `Für Ihr Konto wurde beantragt, die Anmelde-Adresse auf ${String(c.data.newEmail)} zu ändern. Sie ändert sich erst, wenn die neue Adresse bestätigt wird.`) : (c.data.done ? `The sign-in address of your account was changed to ${String(c.data.newEmail)}.` : `A change of your sign-in address to ${String(c.data.newEmail)} was requested. It only takes effect once the new address is confirmed.`),
           de ? "Waren Sie das nicht? Melden Sie sich sofort an und prüfen Sie unter «Mein Konto, Sicherheit» Ihre Passkeys und die Zwei-Faktor-Anmeldung, oder schreiben Sie uns." : "Was this not you? Sign in right away and check your passkeys and two-factor sign-in under My account, Security, or write to us."],
         []);
+    case "booking_recovery": {
+      const dm = D[gl];
+      return wrap(c, gl, dm.recoverySubject(c.hotel.name), [hi + ",", dm.recoveryText, dm.recoveryText2], summary(c, gl).slice(1, 6),
+        { href: String(c.data.url ?? c.baseUrl), label: dm.recoveryButton });
+    }
+    case "waitlist_available": {
+      const dm = D[gl];
+      const name = String(c.data.name ?? "").trim();
+      const dates = `${formatDay(String(c.data.checkin), gl)} – ${formatDay(String(c.data.checkout), gl)}`;
+      return wrap(c, gl, dm.waitMailSubject(c.hotel.name), [m.hi(name || null) + ",", dm.waitMailText(dates), dm.waitMailNote, `${dm.waitMailCancel}: ${String(c.data.cancelUrl ?? "")}`], [],
+        { href: String(c.data.url ?? c.baseUrl), label: dm.waitMailButton });
+    }
     case "upsell_offer": {
       const u = U[gl];
       return wrap(c, gl, u.mailSubject(c.hotel.name), [hi + ",", u.mailText], summary(c, gl), b ? { href: `${c.baseUrl}/b/${b.publicToken}/upsell`, label: u.mailButton } : undefined);

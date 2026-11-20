@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       if (!(await limitByIpAndEmail("api-booking", `key:${a.key.id}`, b.guest.email, { ipLimit: 600, ipWindowMs: 3_600_000, emailLimit: env().NODE_ENV === "production" ? 10 : 10_000, emailWindowMs: 3_600_000 }))) return { status: 429, body: { error: "rate_limited", message: "Zu viele Buchungen für diese E-Mail-Adresse." } };
       const { booking, checkoutUrl, clientSecret, stripeAccountId } = await createDirectBooking(a.hotel, {
         roomTypeId: b.room_type_id, ratePlanId: b.rate_plan_id, checkin: b.checkin, checkout: b.checkout, adults: b.adults, children: b.children, childrenAges: b.children_ages,
-        roomCount: b.rooms, voucherCode: b.voucher_code ?? null, extras: b.extras,
+        roomCount: b.rooms, voucherCode: b.voucher_code ?? null, companyCode: b.company_code ?? null, extras: b.extras,
         guest: { firstName: b.guest.first_name, lastName: b.guest.last_name, email: b.guest.email, phone: b.guest.phone, language: b.guest.language, notes: b.guest.notes, marketingConsent: b.guest.marketing_consent },
       }, { returnUrl, embedded: b.embedded });
       await audit(db(), { hotelId: a.hotel.id, actor: `api:${a.key.id}`, action: "api.booking.create", entity: "booking", entityId: booking.id, details: { reference: booking.reference } });

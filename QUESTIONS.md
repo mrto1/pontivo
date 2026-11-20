@@ -204,3 +204,9 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Posteingang: Anfragen und Portal-Nachrichten stehen untereinander mit Quellenfilter. Soll es eine einzige zeitlich gemischte Liste werden?
 - Eigene Rollen: Welche weiteren Seiten sollen anhakbar sein (heute nur Seiten, die schon für «Mitarbeitende» offen sind)? (Standardrollen Rezeption, Reinigung, Buchhaltung, Service sind je Betrieb änderbar, entschieden am 20.11.2026; Inhaber, Manager und Mitarbeitende bleiben fest: sollen auch sie anpassbar werden?)
 - Favicon auf Hotel-Websites: Pontivo-Logo oder das Logo des Hotels (falls hochgeladen)?
+
+## Direktbuchungs-Werkzeuge (SPEC 19.29)
+- Firmencode «auf Rechnung»: Buchung wird sofort bestätigt, Plattformgebühr 0 (ASSUMPTION). Soll Pontivo auch dafür 1,9 % vom Hotel berechnen (Rechnung an das Hotel)?
+- Lücke = freie Nächte je Zimmertyp (Summe über alle Zimmer), keine Zimmernummern (ASSUMPTION). Genügt das oder soll der Zimmerplan massgebend sein?
+- Abbruch-Mail ist standardmässig aus (nDSG/UWG). Rechtlich mit Datenschutzerklärung und AGB abklären, bevor sie als Standard eingeschaltet wird.
+- Lückenfüller gilt nur für Direktbuchungen; Rabatte für OTA-Kanäle bewusst nicht (Preisparität).

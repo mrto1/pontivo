@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { t, type Locale } from "@/src/i18n/dict";
+import { D } from "@/src/i18n/direct";
 import { extraAmount, extraMaxQuantity, perPerson, type ExtraUnit } from "@/src/domain/extras";
 import { formatChf } from "@/src/domain/money";
 import { solvePow } from "./pow-client";
@@ -27,6 +28,9 @@ export function BookingForm(props: {
   extras?: FormExtra[];
   nights?: number;
   baseTotalRappen?: number;
+  /** Firmencode (SPEC 19.29): wird mitgeschickt; `payOnInvoice` = ohne Kartenzahlung, Rechnung an die Firma */
+  companyCode?: string;
+  payOnInvoice?: boolean;
 }) {
   const d = t(props.locale);
   const [pay, setPay] = useState<{ clientSecret: string; publishableKey: string; stripeAccount?: string; token: string } | null>(null);
@@ -72,6 +76,7 @@ export function BookingForm(props: {
         },
         terms_accepted: f.get("terms") === "on",
         voucher_code: String(f.get("voucher") ?? "").trim() || null,
+        company_code: props.companyCode || null,
         extras: Object.entries(qty).filter(([, q]) => q > 0).map(([id, quantity]) => ({ id, quantity })),
       }),
     }).catch(() => null);
@@ -83,7 +88,7 @@ export function BookingForm(props: {
     }
     setBusy(false);
     const code = res ? ((await res.json().catch(() => ({}))) as { error?: string }).error : undefined;
-    setError(res?.status === 409 ? d.soldOut : code === "voucher_invalid" || code === "voucher_expired" || code === "voucher_empty" ? d[code] : d.error);
+    setError(res?.status === 409 ? d.soldOut : code === "voucher_invalid" || code === "voucher_expired" || code === "voucher_empty" ? d[code] : code === "code_invalid" ? D[props.locale].codeInvalid : code === "voucher_not_with_invoice" ? D[props.locale].invoiceFail : d.error);
   }
 
   if (pay) {
@@ -126,7 +131,7 @@ export function BookingForm(props: {
         <div><label>{d.phone}</label><input name="phone" type="tel" autoComplete="tel" /></div>
       </div>
       <div style={{ marginTop: 12 }}><label>{d.notes}</label><textarea name="notes" rows={2} /></div>
-      {props.vouchers ? (
+      {props.vouchers && !props.payOnInvoice ? (
         <details className="voucher-redeem" style={{ marginTop: 12 }}>
           <summary className="small">{d.voucherHave}</summary>
           <div style={{ marginTop: 8, maxWidth: 320 }}>
@@ -148,8 +153,8 @@ export function BookingForm(props: {
         </span>
       </label>
       {error ? <p className="notice warn" role="alert">{error}</p> : null}
-      <button className="btn" type="submit" disabled={busy || !ready} style={{ marginTop: 12 }}>{d.payNow}</button>
-      <p className="muted small">{d.payMethods}</p>
+      <button className="btn" type="submit" disabled={busy || !ready} style={{ marginTop: 12 }}>{props.payOnInvoice ? D[props.locale].payInvoice : d.payNow}</button>
+      <p className="muted small">{props.payOnInvoice ? D[props.locale].invoiceNote : d.payMethods}</p>
     </form>
   );
 }

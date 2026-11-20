@@ -94,6 +94,8 @@ export type HotelContent = {
   accounting?: { accounts?: Partial<import("../domain/accounting-export").AccountMap> };
   /** Bewertungen einholen (SPEC 19.2): Link zur öffentlichen Bewertungsseite und ab welcher Note er gezeigt wird */
   feedback?: { reviewUrl?: string; minScore?: number };
+  /** Direktbuchungs-Werkzeuge (SPEC 19.29), alle je Betrieb ein-/ausschaltbar */
+  direct?: import("../domain/direct-tools").DirectSettings;
   /** Nuki Web API: Token verschlüsselt (SPEC 18.5) */
   nuki?: { tokenEnc?: string };
 };
@@ -260,6 +262,14 @@ export const bookings = pgTable("bookings", {
   checkout: date("checkout", { mode: "string" }).notNull(),
   /** Firmenkunde, dem die Buchung in Rechnung gestellt wird (SPEC 19.7) */
   companyId: uuid("company_id"),
+  /** Firmencode, mit dem gebucht wurde, und angewandter Rabatt (SPEC 19.29); der Rabatt steckt schon in den Zimmerpreisen */
+  companyCodeId: uuid("company_code_id"),
+  discountRappen: integer("discount_rappen").notNull().default(0),
+  discountKind: text("discount_kind").$type<"company" | "gap">(),
+  /** Direktvorteile zum Buchungszeitpunkt (Texte je Sprache), damit spätere Änderungen die Zusage nicht ändern */
+  directBenefits: jsonb("direct_benefits").$type<Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>[]>().notNull().default([]),
+  /** Erinnerungsmail nach abgebrochener Buchung gesendet */
+  recoverySentAt: ts("recovery_sent_at"),
   adults: integer("adults").notNull(),
   children: integer("children").notNull().default(0),
   childrenAges: jsonb("children_ages").$type<number[]>().notNull().default([]),
@@ -1091,6 +1101,40 @@ export const companies = pgTable("companies", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type Company = typeof companies.$inferSelect;
+
+/** Firmencode (SPEC 19.29): Rabatt und optional Rechnung für eine Firma, im Buchungsfenster einzugeben */
+export const companyCodes = pgTable("company_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  companyId: uuid("company_id").notNull(),
+  code: text("code").notNull(),
+  discountBps: integer("discount_bps").notNull().default(0),
+  payOnInvoice: boolean("pay_on_invoice").notNull().default(false),
+  validFrom: date("valid_from", { mode: "string" }),
+  validUntil: date("valid_until", { mode: "string" }),
+  active: boolean("active").notNull().default(true),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type CompanyCode = typeof companyCodes.$inferSelect;
+
+/** Warteliste (SPEC 19.29): Gast wird benachrichtigt, sobald für seine Daten etwas frei ist */
+export const waitlistEntries = pgTable("waitlist_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  email: text("email").notNull(),
+  name: text("name").notNull().default(""),
+  language: text("language").notNull().default("de"),
+  checkin: date("checkin", { mode: "string" }).notNull(),
+  checkout: date("checkout", { mode: "string" }).notNull(),
+  adults: integer("adults").notNull().default(2),
+  children: integer("children").notNull().default(0),
+  childAges: integer("child_ages").array().notNull().default([]),
+  token: text("token").notNull().unique(),
+  status: text("status").$type<"waiting" | "notified" | "cancelled" | "expired">().notNull().default("waiting"),
+  notifiedAt: ts("notified_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type WaitlistEntry = typeof waitlistEntries.$inferSelect;
 
 export const invoiceDunnings = pgTable("invoice_dunnings", {
   id: uuid("id").primaryKey().defaultRandom(),

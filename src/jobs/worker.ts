@@ -1,6 +1,8 @@
 /**
  * Hintergrund-Jobs mit pg-boss (SPEC 2): eigener Prozess `npm run worker`.
  * - holds:   abgelaufene Holds freigeben (jede Minute, SPEC 5.5)
+ * - waitlist: Warteliste prüfen und Gäste benachrichtigen (alle 5 Minuten, SPEC 19.29)
+ * - booking-recovery: Erinnerung nach abgebrochener Buchung (alle 10 Minuten, SPEC 19.29)
  * - emails:  E-Mail-Outbox senden (jede Minute, SPEC 10)
  * - push:    Push-Mitteilungen an die Geräte der Mitarbeitenden senden (jede Minute)
  * - horizon: Verfügbarkeit/Preise auf 18 Monate auffüllen (täglich 03:15, SPEC 4)
@@ -31,11 +33,14 @@ import { balanceJob } from "../services/balance";
 import { monthlyAccountingJob } from "../services/accounting";
 import { aiPricingJob } from "../services/ai-pricing";
 import { deliverDue, webhookCleanup } from "../services/webhooks";
+import { recoveryJob, waitlistJob } from "../services/direct-tools";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "webhooks", cron: "* * * * *", run: () => deliverDue() },
   { name: "webhook-cleanup", cron: "50 3 * * *", run: () => webhookCleanup() },
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
+  { name: "waitlist", cron: "*/5 * * * *", run: () => waitlistJob() },
+  { name: "booking-recovery", cron: "*/10 * * * *", run: () => recoveryJob() },
   { name: "emails", cron: "* * * * *", run: () => sendDueEmails() },
   { name: "push", cron: "* * * * *", run: () => sendDuePushes() },
   { name: "pricing", cron: "30 3 * * *", run: () => aiPricingJob() },

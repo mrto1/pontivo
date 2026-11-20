@@ -787,3 +787,9 @@ pre { overflow-x: auto; }
 .choice > strong { padding-right: 28px; }
 .mode-pick > label.mode-opt, .mode-pick > label:has(> input[type="radio"]):not(.check) { display: flex; padding: 10px 12px; }
 .mode-pick > label:has(> input[type="radio"]) > input[type="radio"] { position: static; margin: 3px 0 0; width: 20px; height: 20px; }
+
+/* Direktvorteile im Buchungsfenster (SPEC 19.29) */
+.direct-benefits { margin-top: 10px; padding: 8px 12px; border-left: 3px solid var(--brand, #0b7285); background: color-mix(in srgb, var(--brand, #0b7285) 8%, transparent); border-radius: 0 6px 6px 0; }
+.direct-benefits ul { margin: 4px 0 0; padding-left: 18px; }
+.direct-benefits li { margin: 2px 0; }
+.waitlist-form { margin-top: 16px; }

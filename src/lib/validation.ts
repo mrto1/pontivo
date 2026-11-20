@@ -27,6 +27,8 @@ export const createBookingSchema = z
     }),
     terms_accepted: z.literal(true),
     voucher_code: z.string().trim().max(40).optional().nullable(),
+    /** Firmencode (SPEC 19.29) */
+    company_code: z.string().trim().max(40).optional().nullable(),
     extras: z.array(z.object({ id: z.string().uuid(), quantity: z.number().int().min(0).max(50) })).max(30).default([]),
   })
   .refine((v) => v.children_ages.length === 0 || v.children_ages.length === v.children, {

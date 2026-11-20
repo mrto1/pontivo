@@ -64,6 +64,8 @@ export function evaluateOffer(
   inv: InvRow[],
   rates: RateRow[],
   needRooms = 1,
+  /** Lückenfüller (SPEC 19.29): der Mindestaufenthalt gilt nicht, wenn der Aufenthalt eine Lücke genau füllt */
+  ignoreMinStay = false,
 ): { ok: true; rates: RateRow[] } | { ok: false; reason: Rejection } {
   if (!fitsRoom(q, room)) return { ok: false, reason: "occupancy" };
   const nights = nightsOf(q.checkin, q.checkout);
@@ -81,7 +83,7 @@ export function evaluateOffer(
   }
   const arrival = stayRates[0];
   if (arrival.closedToArrival) return { ok: false, reason: "closed_to_arrival" };
-  if (nights.length < arrival.minStayArrival) return { ok: false, reason: "min_stay" };
+  if (!ignoreMinStay && nights.length < arrival.minStayArrival) return { ok: false, reason: "min_stay" };
   if (arrival.maxStay !== null && nights.length > arrival.maxStay) return { ok: false, reason: "max_stay" };
   const dep = rateBy.get(q.checkout);
   if (dep && dep.closedToDeparture) return { ok: false, reason: "closed_to_departure" };

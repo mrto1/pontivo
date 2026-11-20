@@ -12,6 +12,7 @@ import { cancellationPolicyText } from "../domain/cancellation";
 import { taxRuleFor } from "./hotels";
 import { planName, roomDescription, roomName } from "../domain/i18n-names";
 import { splitGuests } from "../domain/multiroom";
+import { applyDiscount, bestAdjustment, fillsGap, gapSettings, type Adjustment } from "../domain/direct-tools";
 
 export type SearchInput = StayQuery & { childrenAges?: (number | null)[]; /** Anzahl gleicher Zimmer (SPEC 19.6), Standard 1; Personen werden gleichmässig verteilt */ rooms?: number };
 
@@ -27,6 +28,9 @@ export type Offer = {
   mandatoryExtras: { name: string; amountRappen: number }[];
   totalRappen: number;
   cancellationPolicy: string;
+  /** Rabatt (Firmencode oder Lückenfüller, SPEC 19.29), steckt schon in den Nachtpreisen; `discountRappen` ist die Ersparnis gegenüber dem normalen Preis */
+  adjustment: Adjustment | null;
+  discountRappen: number;
 };
 
 export type SearchResult =
@@ -40,7 +44,7 @@ export type SearchResult =
 export async function searchOffers(
   hotel: Hotel,
   input: SearchInput,
-  opts: { lang?: Locale; roomTypeId?: string; ratePlanId?: string; now?: Date; ex?: Executor; needRooms?: number } = {},
+  opts: { lang?: Locale; roomTypeId?: string; ratePlanId?: string; now?: Date; ex?: Executor; needRooms?: number; /** Rabatt eines gültigen Firmencodes in Basispunkten */ companyDiscountBps?: number } = {},
 ): Promise<SearchResult> {
   if ((input.rooms ?? 1) > 1) return searchMultiRoom(hotel, input, opts);
   const ex = opts.ex ?? db();
@@ -81,8 +85,9 @@ export async function searchOffers(
       and(
         eq(inventoryDays.hotelId, hotel.id),
         inArray(inventoryDays.roomTypeId, rts.map((r) => r.id)),
-        gte(inventoryDays.night, input.checkin),
-        lte(inventoryDays.night, addDays(input.checkout, -1)),
+        // eine Nacht davor und die Abreisenacht dazu: der Lückenfüller muss die Nachbarnächte kennen
+        gte(inventoryDays.night, addDays(input.checkin, -1)),
+        lte(inventoryDays.night, input.checkout),
       ),
     );
   const rates = rps.length
@@ -102,26 +107,36 @@ export async function searchOffers(
   const extraDefs = await ex.select().from(extras).where(and(eq(extras.hotelId, hotel.id), eq(extras.active, true), eq(extras.mandatory, true))).orderBy(asc(extras.sortOrder), asc(extras.createdAt));
   const persons = input.adults + input.children;
 
+  const gaps = gapSettings(hotel.content.direct);
+  const companyAdj: Adjustment | null = opts.companyDiscountBps && opts.companyDiscountBps > 0 ? { kind: "company", bps: opts.companyDiscountBps } : null;
   const offers: Offer[] = [];
   const rejected: { roomTypeId: string; ratePlanId: string; reason: Rejection }[] = [];
   for (const rt of rts) {
     const rtInv = inv.filter((i) => i.roomTypeId === rt.id);
+    // Lückenfüller: füllt dieser Aufenthalt eine kurze Lücke genau?
+    const inGap = gaps.enabled && fillsGap(rtInv.map((i) => ({ night: i.night, free: i.total - i.booked - i.blocked - i.externalBlocked })), input.checkin, input.checkout, gaps.maxNights);
+    const gapAdj: Adjustment | null = inGap && gaps.discountBps > 0 ? { kind: "gap", bps: gaps.discountBps } : null;
+    const adjustment = bestAdjustment([companyAdj, gapAdj]);
+    const ignoreMinStay = inGap && gaps.relaxMinStay;
     for (const rp of rps.filter((p) => p.roomTypeId === rt.id)) {
       // fester Anreisetag (z. B. nur Samstag)
       if (rp.arrivalWeekdays.length && !rp.arrivalWeekdays.includes(weekday(input.checkin))) {
         rejected.push({ roomTypeId: rt.id, ratePlanId: rp.id, reason: "closed_to_arrival" });
         continue;
       }
-      if (nights.length < rp.minNights) {
+      if (!ignoreMinStay && nights.length < rp.minNights) {
         rejected.push({ roomTypeId: rt.id, ratePlanId: rp.id, reason: "min_stay" });
         continue;
       }
-      const res = evaluateOffer(input, rt, rtInv, rates.filter((r) => r.ratePlanId === rp.id), opts.needRooms ?? 1);
+      const res = evaluateOffer(input, rt, rtInv, rates.filter((r) => r.ratePlanId === rp.id), opts.needRooms ?? 1, ignoreMinStay);
       if (!res.ok) {
         rejected.push({ roomTypeId: rt.id, ratePlanId: rp.id, reason: res.reason });
         continue;
       }
-      const priced = priceStay(res.rates, rp, input.adults, input.children);
+      const full = priceStay(res.rates, rp, input.adults, input.children);
+      const priced = adjustment
+        ? (() => { const nightly = full.nightly.map((n) => ({ night: n.night, price_rappen: applyDiscount(n.price_rappen, adjustment.bps) })); return { nightly, roomsTotalRappen: nightly.reduce((s, n) => s + n.price_rappen, 0) }; })()
+        : full;
       const mand = resolveExtras(extraDefs, [], { roomTypeId: rt.id, nights: nights.length, persons });
       offers.push({
         roomType: { id: rt.id, name: roomName(rt, lang), description: roomDescription(rt, lang), photos: rt.photos, maxOccupancy: rt.maxOccupancy },
@@ -141,6 +156,8 @@ export async function searchOffers(
         mandatoryExtras: mand.lines.map((l) => ({ name: tr(l.extra.name, lang), amountRappen: l.amountRappen })),
         totalRappen: grandTotal(priced.roomsTotalRappen, touristTax, hotel.touristTaxIncludedInPrice) + mand.totalRappen,
         cancellationPolicy: cancellationPolicyText(rp, lang),
+        adjustment,
+        discountRappen: full.roomsTotalRappen - priced.roomsTotalRappen,
       });
     }
   }
@@ -177,6 +194,7 @@ async function searchMultiRoom(hotel: Hotel, input: SearchInput, opts: Parameter
       extrasRappen: ps.reduce((a, p) => a + p.extrasRappen, 0),
       mandatoryExtras: ps.flatMap((p) => p.mandatoryExtras),
       totalRappen: ps.reduce((a, p) => a + p.totalRappen, 0),
+      discountRappen: ps.reduce((a, p) => a + p.discountRappen, 0),
     });
   }
   const rejected = ok[0].rejected.filter((r) => !offers.some((o) => o.ratePlan.id === r.ratePlanId));

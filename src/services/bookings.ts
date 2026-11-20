@@ -23,6 +23,8 @@ import { isBookable } from "./hotels";
 import { searchOffers, type Offer } from "./search";
 import { MAX_ROOMS, splitGuests } from "../domain/multiroom";
 import { enqueueUpsellOffer } from "./upsell";
+import { benefitsFor } from "../domain/direct-tools";
+import { resolveCode } from "./direct-tools";
 import { pushForBooking } from "../push/service";
 import { env } from "../env";
 
@@ -59,6 +61,8 @@ export type GuestInput = {
 export type CreateBookingInput = {
   /** Gutschein-Code (optional): Betrag wird angerechnet, Rest per Karte/TWINT */
   voucherCode?: string | null;
+  /** Firmencode (optional, SPEC 19.29): Firmenrabatt und, wenn der Code es erlaubt, Buchung auf Rechnung */
+  companyCode?: string | null;
   roomTypeId: string;
   ratePlanId: string;
   checkin: string;
@@ -98,11 +102,11 @@ export function lineTotals(lines: RoomLine[]) {
 }
 
 /** Jedes Zimmer wie bei der Einzelbuchung serverseitig bepreisen (Verfügbarkeit: bei gleichem Typ mehrfach nötig) */
-export async function priceRoomLines(hotel: Hotel, stay: { checkin: string; checkout: string }, lines: RoomLine[], lang: Locale, now: Date | undefined, ex?: Executor): Promise<Offer[]> {
+export async function priceRoomLines(hotel: Hotel, stay: { checkin: string; checkout: string }, lines: RoomLine[], lang: Locale, now: Date | undefined, ex?: Executor, companyDiscountBps?: number): Promise<Offer[]> {
   const offers: Offer[] = [];
   for (const l of lines) {
     const need = lines.filter((x) => x.roomTypeId === l.roomTypeId).length;
-    const search = await searchOffers(hotel, { ...stay, adults: l.adults, children: l.children, childrenAges: l.childrenAges }, { lang, roomTypeId: l.roomTypeId, ratePlanId: l.ratePlanId, now, ex, needRooms: need });
+    const search = await searchOffers(hotel, { ...stay, adults: l.adults, children: l.children, childrenAges: l.childrenAges }, { lang, roomTypeId: l.roomTypeId, ratePlanId: l.ratePlanId, now, ex, needRooms: need, companyDiscountBps });
     if (!search.ok) throw new BookingError(search.error, 400);
     const offer = search.offers[0];
     if (!offer) {
@@ -176,7 +180,12 @@ export async function createDirectBooking(
   const lines = roomLinesOf(input);
   const tot = lineTotals(lines);
   const stay = { checkin: input.checkin, checkout: input.checkout };
-  const offers = await priceRoomLines(hotel, stay, lines, input.guest.language, opts.now);
+  // Firmencode (SPEC 19.29): gültig prüfen; ein ungültiger Code bricht ab, statt still den normalen Preis zu verlangen
+  const rc = input.companyCode?.trim() ? await resolveCode(hotel, input.companyCode, input.checkin) : null;
+  if (input.companyCode?.trim() && !rc) throw new BookingError("code_invalid", 400);
+  if (rc?.payOnInvoice && input.voucherCode?.trim()) throw new BookingError("voucher_not_with_invoice", 400);
+  const onInvoice = !!rc?.payOnInvoice;
+  const offers = await priceRoomLines(hotel, stay, lines, input.guest.language, opts.now, undefined, rc && rc.code.discountBps > 0 ? rc.code.discountBps : undefined);
   const offer = offers[0];
   const now = opts.now ?? new Date();
   const today = todayIn(hotel.timezone, now);
@@ -204,9 +213,10 @@ export async function createDirectBooking(
         // (am Gutschein hat Pontivo beim Verkauf schon verdient)
         const vt = input.voucherCode?.trim() ? await takeVoucherForBooking(tx, hotel, input.voucherCode, totalRappen, today) : null;
         const voucherRappen = vt?.amountRappen ?? 0;
-        const fee = platformFee(totalRappen - voucherRappen, hotel.platformFeeBps);
+        // ASSUMPTION (SPEC 19.29): Bei «auf Rechnung» gibt es keine Kartenzahlung und damit keine Plattformgebühr über Stripe (wie bei Buchungen der Rezeption)
+        const fee = onInvoice ? 0 : platformFee(totalRappen - voucherRappen, hotel.platformFeeBps);
         // Anzahlung statt voller Zahlung, wenn das Hotel sie eingeschaltet hat und die Anreise weit genug weg ist (SPEC 5.9)
-        const plan = planPayment(hotel, totalRappen - voucherRappen, input.checkin, today);
+        const plan = onInvoice ? ({ kind: "full" } as const) : planPayment(hotel, totalRappen - voucherRappen, input.checkin, today);
         const [g] = await tx
           .insert(guests)
           .values({
@@ -245,6 +255,11 @@ export async function createDirectBooking(
             voucherId: vt?.voucher.id ?? null,
             voucherRappen,
             holdExpiresAt,
+            companyId: rc?.company.id ?? null,
+            companyCodeId: rc?.code.id ?? null,
+            discountRappen: sum((o) => o.discountRappen),
+            discountKind: offers.find((o) => o.adjustment)?.adjustment?.kind ?? null,
+            directBenefits: benefitsFor(hotel.content.direct, nightsOf(input.checkin, input.checkout).length).map((x) => x.text),
             guestNotes: input.guest.notes ?? null,
           })
           .returning();
@@ -286,6 +301,12 @@ export async function createDirectBooking(
   const lang = input.guest.language;
   const cardTotal = booking.totalRappen - booking.voucherRappen;
   const cardRappen = cardTotal - booking.balanceRappen; // heute zu zahlen (Anzahlung oder alles)
+  if (onInvoice) {
+    // Auf Rechnung: sofort bestätigt, bezahlt wird später gegen die Rechnung an die Firma (Debitoren)
+    await confirmBooking(booking.id, { method: "invoice", actor: "guest" });
+    const [done] = await db().select().from(bookings).where(eq(bookings.id, booking.id));
+    return { booking: done, checkoutUrl: `${base}/b/${booking.publicToken}?paid=1` };
+  }
   if (cardRappen <= 0) {
     await confirmBooking(booking.id, { method: "voucher", actor: "guest" });
     return { booking, checkoutUrl: `${base}/b/${booking.publicToken}?paid=1` };

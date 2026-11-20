@@ -1,8 +1,12 @@
 "use client";
 import { useState } from "react";
 import { t, type Locale } from "@/src/i18n/dict";
+import { D } from "@/src/i18n/direct";
 
-export function SearchBar({ action, locale, defaults, today, plan }: {
+export function SearchBar({ action, locale, defaults, today, plan, codes, code }: {
+  /** Das Hotel hat Firmencodes: Feld «Code» anzeigen (SPEC 19.29) */
+  codes?: boolean;
+  code?: string;
   action: string;
   /** Angebot/Tarif beibehalten (Baustein «Angebote») */
   plan?: string;
@@ -50,6 +54,12 @@ export function SearchBar({ action, locale, defaults, today, plan }: {
           </select>
         </div>
       ))}
+      {codes || code ? (
+        <div>
+          <label htmlFor="code">{D[locale].codeHave}</label>
+          <input id="code" name="code" defaultValue={code ?? ""} autoComplete="off" maxLength={24} style={{ textTransform: "uppercase" }} />
+        </div>
+      ) : null}
       <button className="btn" type="submit">{d.search}</button>
     </form>
   );

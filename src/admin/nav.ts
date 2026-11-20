@@ -46,7 +46,7 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
         tabs: [
           { key: "home", label: "Übersicht", href: base },
           sep(link("rooms", "Zimmer und Tarife")),
-          { ...link("site", "Website und Buchung"), tabs: [link("site", "Website und Buchung"), link("api", "Schnittstelle (API)")] },
+          { ...link("site", "Website und Buchung"), tabs: [link("site", "Website und Buchung"), link("direct", "Direktbuchung", "direktbuchung"), link("api", "Schnittstelle (API)")] },
           sep(link("team", "Team")),
           { ...link("settings", "Einstellungen"), tabs: [link("settings", "Betrieb"), link("funktionen", "Funktionen"), link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt")] },
           sep({ ...link("statistics", "Statistik"), tabs: [link("statistics", "Statistik"), link("hesta", "HESTA", "statistics/hesta")] }),

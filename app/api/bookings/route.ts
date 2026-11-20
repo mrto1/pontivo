@@ -33,6 +33,7 @@ export async function POST(req: Request) {
         childrenAges: body.children_ages,
         roomCount: body.rooms,
         voucherCode: body.voucher_code ?? null,
+        companyCode: body.company_code ?? null,
         extras: body.extras,
         guest: {
           firstName: body.guest.first_name,
