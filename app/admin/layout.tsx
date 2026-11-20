@@ -1,23 +1,32 @@
 import type { Metadata } from "next";
+import { currentUserId } from "@/src/auth/guard";
+import { getUser } from "@/src/auth/session";
+import { platformNav, PLATFORM_HOME } from "@/src/admin/platform-nav";
+import { initials } from "@/src/domain/avatar";
+import { AdminNav } from "@/components/admin/AdminNav";
+import { SectionTabs } from "@/components/admin/SectionTabs";
 
 // /admin ist die Plattform-Verwaltung (nur Plattform-Admins, Einstieg: /admin).
 // Die Hotel-Oberfläche heisst myPontivo und liegt unter /mypontivo.
 export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const dynamic = "force-dynamic";
 
-export default function PlatformAdminLayout({ children }: { children: React.ReactNode }) {
+export default async function PlatformAdminLayout({ children }: { children: React.ReactNode }) {
+  const id = await currentUserId();
+  const user = id ? await getUser(id) : null;
+  const nav = platformNav();
   return (
     <div className="pv-admin">
       <header className="admin-head">
         <div className="wrap">
-          <a href="/admin/plattform" className="brand admin-brand">myPontivo<span className="muted" style={{ fontWeight: 400 }}> · Plattform</span></a>
-          <nav className="admin-nav" aria-label="Plattform">
-            <a href="/admin/plattform">Verwaltung</a>
-            <a href="/admin/plattform/website">Website-Texte</a>
-          </nav>
-          <a href="/mypontivo" className="small" style={{ marginLeft: "auto" }}>Zu meinen Betrieben</a>
+          <a href={PLATFORM_HOME} className="brand admin-brand">myPontivo<span className="muted" style={{ fontWeight: 400 }}> · Plattform</span></a>
+          {user?.isPlatformAdmin ? <AdminNav nav={nav} home={PLATFORM_HOME} userLabel={`${user.email} · Zu meinen Betrieben`} initials={initials(user.name, user.email)} /> : null}
         </div>
       </header>
-      {children}
+      <main className="wrap admin-main">
+        {user?.isPlatformAdmin ? <SectionTabs nav={nav} home={PLATFORM_HOME} /> : null}
+        {children}
+      </main>
     </div>
   );
 }

@@ -1,306 +1,74 @@
-import { redirect } from "next/navigation";
 import { requirePlatformAdmin } from "@/src/auth/guard";
-import { addPlatformAdmin, deleteHotelCascade, deleteUserAccount, platformOverview, removePlatformAdmin, resetUserSecurity } from "@/src/services/platform-admin";
-import { getHotelById } from "@/src/services/hotels";
-import { addMember, removeMember, setHotelStatus } from "@/src/services/settings";
-import { requestLoginLink } from "@/src/auth/session";
-import { roleLabel, ROLE_LABEL, type Role } from "@/src/domain/roles";
-import { getPlatformVat, savePlatformVat } from "@/src/services/platform-settings";
-import { listPlatformInvoices, retryCharge, processCharges } from "@/src/services/billing";
-import { formatChf } from "@/src/domain/money";
-import { formatBps } from "@/src/domain/invoice";
-import { todayIn } from "@/src/domain/dates";
+import { platformOverview } from "@/src/services/platform-admin";
 import { healthByHotel } from "@/src/services/health";
 import { HEALTH_LABEL } from "@/src/domain/health";
-import { importSchoolHolidays, schoolHolidayStats } from "@/src/services/holidays";
+import { listPlatformInvoices } from "@/src/services/billing";
+import { cockpit } from "@/src/services/sales";
+import { getPlatformVat } from "@/src/services/platform-settings";
+import { schoolHolidayStats } from "@/src/services/holidays";
+import { todayIn } from "@/src/domain/dates";
+import { PageHead } from "./Flash";
 
 export const dynamic = "force-dynamic";
 
-const fmt = (d: Date) => d.toLocaleDateString("de-CH");
+const AREAS: { href: string; title: string; text: string }[] = [
+  { href: "/admin/plattform/betriebe", title: "Betriebe", text: "Status, Team, Ampel, pausieren und löschen." },
+  { href: "/admin/plattform/benutzer", title: "Benutzer", text: "Konten, Login-Link, Sicherheit zurücksetzen." },
+  { href: "/admin/plattform/vertrieb", title: "Vertrieb", text: "Leads, Status, nächste Schritte, persönliche Mails." },
+  { href: "/admin/plattform/rechnungen", title: "Rechnungen", text: "Monatsrechnungen an die Betriebe, Belastungen." },
+  { href: "/admin/plattform/mwst", title: "MWST", text: "MWST-Pflicht der Plattform, Satz und Nummer." },
+  { href: "/admin/plattform/admins", title: "Plattform-Admins", text: "Wer diese Verwaltung sehen darf." },
+  { href: "/admin/plattform/website", title: "Website-Texte", text: "Texte der Pontivo-Startseite." },
+  { href: "/admin/plattform/schulferien", title: "Schulferien", text: "Kantonale Ferien für die Preisempfehlung einspielen." },
+];
 
-const back = (msg: string, key: "done" | "error" = "done") => redirect(`/admin/plattform?${key}=${encodeURIComponent(msg)}`);
-
-async function hotelStatus(formData: FormData) {
-  "use server";
-  const admin = await requirePlatformAdmin();
-  const hotel = await getHotelById(String(formData.get("id") ?? ""));
-  const status = String(formData.get("status"));
-  if (!hotel || !["live", "paused"].includes(status)) back("Betrieb nicht gefunden", "error");
-  try { await setHotelStatus(hotel!, status as "live" | "paused", `user:${admin.id}`); } catch (e) { back((e as Error).message, "error"); }
-  back(`«${hotel!.name}»: ${status === "live" ? "wieder online" : "pausiert"}`);
-}
-
-async function saveVat(formData: FormData) {
-  "use server";
-  const admin = await requirePlatformAdmin();
-  const on = formData.get("liable") === "on";
-  try {
-    await savePlatformVat({ liableFrom: on ? String(formData.get("from") ?? "") : null, bps: Math.round(Number(String(formData.get("rate") ?? "8.1").replace(",", ".")) * 100), number: String(formData.get("number") ?? "") }, `user:${admin.id}`);
-  } catch (e) { back((e as Error).message, "error"); }
-  back(on ? "MWST-Pflicht gespeichert: gilt für Rechnungen ab dem eingetragenen Datum (Leistungsmonat)" : "MWST-Pflicht ausgeschaltet: neue Rechnungen ohne MWST");
-}
-
-async function importSchool(formData: FormData) {
-  "use server";
-  const admin = await requirePlatformAdmin();
-  const r = await importSchoolHolidays(String(formData.get("csv") ?? ""), `user:${admin.id}`);
-  if (!r.imported) back(r.errors.slice(0, 3).join(" · "), "error");
-  back(`${r.imported} Schulferien-Einträge importiert${r.errors.length ? `, ${r.errors.length} Zeilen übersprungen (${r.errors.slice(0, 2).join("; ")})` : ""}`);
-}
-
-async function adminAdd(formData: FormData) {
-  "use server";
-  const admin = await requirePlatformAdmin();
-  const email = String(formData.get("email") ?? "");
-  try {
-    const r = await addPlatformAdmin(email, String(formData.get("name") ?? ""), `user:${admin.id}`);
-    const sent = await requestLoginLink(r.email);
-    back(`${r.email} ist jetzt Plattform-Admin${sent ? " (Login-Link per E-Mail gesendet)" : " (Login unter /mypontivo/login)"}`);
-  } catch (e) { back((e as Error).message, "error"); }
-}
-
-async function adminRemove(formData: FormData) {
-  "use server";
-  const admin = await requirePlatformAdmin();
-  try { await removePlatformAdmin(String(formData.get("id")), admin.id, `user:${admin.id}`); } catch (e) { back((e as Error).message, "error"); }
-  back("Plattform-Admin-Recht entzogen (das Konto bleibt bestehen)");
-}
-
-async function retryInvoice(formData: FormData) {
-  "use server";
-  const admin = await requirePlatformAdmin();
-  const ok = await retryCharge(String(formData.get("id")), `user:${admin.id}`);
-  if (ok) await processCharges();
-  back(ok ? "Belastung nochmals versucht" : "Nichts zu wiederholen", ok ? "done" : "error");
-}
-
-async function memberAdd(formData: FormData) {
-  "use server";
-  const admin = await requirePlatformAdmin();
-  const role = String(formData.get("role")) as Role;
-  try { await addMember(String(formData.get("hotelId")), String(formData.get("email")), role, `user:${admin.id}`); } catch (e) { back((e as Error).message, "error"); }
-  back("Mitglied gespeichert (der Zugang erfolgt über die Anmeldung mit dieser E-Mail)");
-}
-
-async function memberRemove(formData: FormData) {
-  "use server";
-  const admin = await requirePlatformAdmin();
-  await removeMember(String(formData.get("hotelId")), String(formData.get("userId")), `user:${admin.id}`);
-  back("Mitgliedschaft entfernt");
-}
-
-async function securityReset(formData: FormData) {
-  "use server";
-  const admin = await requirePlatformAdmin();
-  await resetUserSecurity(String(formData.get("id")), `user:${admin.id}`);
-  back("Sicherheit zurückgesetzt: Passkeys, Authenticator und Wiederherstellungscodes entfernt");
-}
-
-async function sendLink(formData: FormData) {
-  "use server";
+export default async function Uebersicht() {
   await requirePlatformAdmin();
-  const link = await requestLoginLink(String(formData.get("email")));
-  back(link ? "Login-Link per E-Mail gesendet" : "Kein Link möglich (Konto unbekannt oder «Nur Passkey» aktiv; zuerst Sicherheit zurücksetzen)", link ? "done" : "error");
-}
-
-async function removeHotel(formData: FormData) {
-  "use server";
-  const admin = await requirePlatformAdmin();
-  const id = String(formData.get("id") ?? "");
-  const { hotels } = await platformOverview();
-  const h = hotels.find((x) => x.id === id);
-  if (!h) redirect("/admin/plattform");
-  // Löschen nur, wenn der Name genau eingetippt wurde
-  if (String(formData.get("confirm") ?? "").trim() !== h.name) redirect("/admin/plattform?error=confirm");
-  await deleteHotelCascade(id, `user:${admin.id}`);
-  redirect(`/admin/plattform?done=${encodeURIComponent(`Betrieb «${h.name}» gelöscht`)}`);
-}
-
-async function removeUser(formData: FormData) {
-  "use server";
-  const admin = await requirePlatformAdmin();
-  const id = String(formData.get("id") ?? "");
-  const { users } = await platformOverview();
-  const u = users.find((x) => x.id === id);
-  if (!u || u.isPlatformAdmin || u.id === admin.id) redirect("/admin/plattform?error=user");
-  if (String(formData.get("confirm") ?? "").trim().toLowerCase() !== u.email.toLowerCase()) redirect("/admin/plattform?error=confirm");
-  await deleteUserAccount(id, `user:${admin.id}`);
-  redirect(`/admin/plattform?done=${encodeURIComponent(`Benutzer ${u.email} gelöscht`)}`);
-}
-
-export default async function Plattform({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  const me = await requirePlatformAdmin();
-  const sp = await searchParams;
-  const { hotels, users } = await platformOverview();
-  const vat = await getPlatformVat();
-  const schoolStats = await schoolHolidayStats(todayIn("Europe/Zurich"));
-  const invoices = await listPlatformInvoices();
-  const health = await healthByHotel();
-  const STATUS: Record<string, string> = { live: "online", draft: "Entwurf", paused: "pausiert" };
+  const today = todayIn("Europe/Zurich");
+  const [{ hotels, users }, health, invoices, sales, vat, school] = await Promise.all([platformOverview(), healthByHotel(), listPlatformInvoices(), cockpit(), getPlatformVat(), schoolHolidayStats(today)]);
+  const live = hotels.filter((h) => h.status === "live").length;
+  const attention = hotels.flatMap((h) => { const x = health.get(h.id); return x && x.level !== "green" ? [{ h, x }] : []; });
+  const failed = invoices.filter(({ c }) => c.status === "failed");
+  const todo: { key: string; level: "red" | "yellow"; text: React.ReactNode }[] = [
+    ...failed.map(({ c, hotelName }) => ({ key: `inv${c.id}`, level: "red" as const, text: <><a href="/admin/plattform/rechnungen">Belastung fehlgeschlagen</a>: {hotelName}, {c.month} ({c.attempts}×)</> })),
+    ...attention.map(({ h, x }) => ({ key: `h${h.id}`, level: x.level as "red" | "yellow", text: <><a href="/admin/plattform/betriebe">{h.name}</a>: {HEALTH_LABEL[x.level]}{x.reasons[0] ? ` (${x.reasons[0].text})` : ""}</> })),
+    ...(sales.due ? [{ key: "leads", level: "yellow" as const, text: <><a href="/admin/plattform/vertrieb">{sales.due} Lead{sales.due === 1 ? "" : "s"}</a>: nächster Schritt fällig</> }] : []),
+    ...(school.length === 0 ? [{ key: "school", level: "yellow" as const, text: <><a href="/admin/plattform/schulferien">Schulferien</a>: noch keine eingespielt (Preisempfehlung ohne Ferienvorschläge)</> }] : []),
+  ];
+  // Rot zuerst, höchstens 8 Zeilen (die ganze Liste steht unter «Betriebe»)
+  const shown = [...todo].sort((a, b) => Number(b.level === "red") - Number(a.level === "red")).slice(0, 8);
   return (
-    <main className="wrap admin-main">
-      <div className="stack" style={{ gap: 24 }}>
-        <header className="stack" style={{ gap: 6 }}>
-          <h1 style={{ margin: 0 }}>Plattform-Verwaltung</h1>
-          <p className="muted small" style={{ margin: 0 }}>Nur für Pontivo-Admins. Löschen ist endgültig und nimmt alle Daten mit (Buchungen, Rechnungen, Gäste, Mails). Zur Bestätigung den Namen bzw. die E-Mail eintippen.</p>
-        </header>
-        <p className="small" style={{ margin: 0 }}><a href="/admin/plattform/vertrieb">Vertriebs-Cockpit</a> · <a href="#admins">Plattform-Admins</a> · <a href="#mwst">MWST</a> · <a href="#schulferien">Schulferien</a> · <a href="#rechnungen">Rechnungen</a> · <a href="#betriebe">Betriebe</a> · <a href="#benutzer">Benutzer</a></p>
-        {sp.done ? <p className="notice">{sp.done}</p> : null}
-        {sp.error && sp.error !== "confirm" && sp.error !== "user" ? <p className="notice warn">{sp.error}</p> : null}
-        {sp.error === "confirm" ? <p className="notice warn">Bestätigung stimmt nicht, nichts gelöscht.</p> : null}
-        {sp.error === "user" ? <p className="notice warn">Dieser Benutzer kann nicht gelöscht werden (Plattform-Admin oder man selbst).</p> : null}
+    <div className="stack" style={{ gap: 24 }}>
+      <PageHead title="Plattform-Verwaltung">Nur für Pontivo-Admins. Hier siehst du den Stand der Plattform und was Aufmerksamkeit braucht. Die Bereiche findest du oben im Menü.</PageHead>
 
-        <section className="card stack" id="admins">
-          <h2 style={{ margin: 0 }}>Plattform-Admins ({users.filter((u) => u.isPlatformAdmin).length})</h2>
-          <p className="muted small" style={{ margin: 0 }}>Alle hier eingetragenen Personen sehen diese Verwaltung und alle Betriebe. Jede Person meldet sich mit ihrer eigenen E-Mail an (empfohlen: Passkey oder Authenticator unter Mein Konto). Jede Änderung steht im Protokoll.</p>
-          <ul className="plat-list">
-            {users.filter((u) => u.isPlatformAdmin).map((u) => (
-              <li key={u.id}>
-                <span>{u.email}{u.name ? <span className="muted small"> · {u.name}</span> : null}{u.id === me.id ? <> <span className="badge">du</span></> : null} <span className="muted small">· {u.passkeys || u.totp ? "zweiter Faktor eingerichtet" : "nur E-Mail-Link"}</span></span>
-                {u.id !== me.id ? <form action={adminRemove}><input type="hidden" name="id" value={u.id} /><button className="btn secondary small">Recht entziehen</button></form> : null}
-              </li>
-            ))}
-          </ul>
-          <form action={adminAdd} className="form-row">
-            <div><label>E-Mail</label><input name="email" type="email" placeholder="name@pontivo.ch" required /></div>
-            <div><label>Name (optional)</label><input name="name" /></div>
-            <div><button className="btn small">Als Plattform-Admin hinzufügen</button></div>
-          </form>
-        </section>
+      <section className="tiles">
+        <a className="card tile" href="/admin/plattform/betriebe" style={{ textDecoration: "none", color: "inherit" }}><span className="muted small">Betriebe online</span><strong>{live} <span className="muted small" style={{ fontWeight: 400 }}>von {hotels.length}</span></strong></a>
+        <a className="card tile" href="/admin/plattform/benutzer" style={{ textDecoration: "none", color: "inherit" }}><span className="muted small">Benutzer</span><strong>{users.length}</strong></a>
+        <a className="card tile" href="/admin/plattform/vertrieb" style={{ textDecoration: "none", color: "inherit" }}><span className="muted small">Offene Leads</span><strong>{sales.funnel.open}</strong></a>
+        <a className="card tile" href="/admin/plattform/rechnungen" style={{ textDecoration: "none", color: "inherit" }}><span className="muted small">Fehlgeschlagene Belastungen</span><strong>{failed.length}</strong></a>
+      </section>
 
-        <section className="card stack" id="mwst">
-          <h2 style={{ margin: 0 }}>MWST der Plattform</h2>
-          <p className="muted small" style={{ margin: 0 }}>Ab wann ist {`Lynxora`} MWST-pflichtig? Ab diesem Datum weisen neue Rechnungen an die Betriebe die MWST aus und belasten sie zusätzlich (die Preise verstehen sich ohne MWST, Bedingungen für Gastgeber Ziffer 2). Massgebend ist der letzte Tag des Leistungsmonats; beginnt die Pflicht mitten im Monat, gilt sie für den ganzen Monat. Bereits ausgestellte Rechnungen ändern sich nicht.</p>
-          <form action={saveVat} className="stack" style={{ maxWidth: 460 }}>
-            <label className="check"><input type="checkbox" name="liable" defaultChecked={!!vat.liableFrom} /> MWST-pflichtig</label>
-            <label>ab Datum<input type="date" name="from" defaultValue={vat.liableFrom ?? todayIn("Europe/Zurich")} /></label>
-            <label>Satz in % (Normalsatz seit 2024: 8,1)<input name="rate" inputMode="decimal" defaultValue={String(vat.bps / 100)} /></label>
-            <label>MWST-Nummer<input name="number" placeholder="CHE-123.456.789 MWST" defaultValue={vat.number} /></label>
-            <div><button className="btn">Speichern</button></div>
-          </form>
-          <p className="small">{vat.liableFrom ? <>Aktuell: <strong>MWST-pflichtig ab {vat.liableFrom}</strong>, Satz {formatBps(vat.bps)}.</> : <>Aktuell: <strong>nicht MWST-pflichtig</strong>, Rechnungen ohne MWST.</>}</p>
-        </section>
+      <section className="card stack">
+        <h2 style={{ margin: 0 }}>Braucht Aufmerksamkeit</h2>
+        {todo.length === 0 ? <p className="muted small" style={{ margin: 0 }}>Alles in Ordnung.</p> : (
+          <>
+            <ul className="ampel-reasons small" style={{ margin: 0 }}>{shown.map((t) => <li key={t.key} className={`ampel-${t.level}`}>{t.text}</li>)}</ul>
+            {todo.length > shown.length ? <p className="small" style={{ margin: 0 }}>… und {todo.length - shown.length} weitere. <a href="/admin/plattform/betriebe">Alle Betriebe ansehen</a></p> : null}
+          </>
+        )}
+        <p className="muted small" style={{ margin: 0 }}>MWST: {vat.liableFrom ? `pflichtig ab ${vat.liableFrom}` : "nicht pflichtig"} · Schulferien eingespielt: {school.length ? school.map((x) => `${x.canton} ${x.n}`).join(", ") : "keine"}</p>
+      </section>
 
-        <section className="card stack" id="schulferien">
-          <h2 style={{ margin: 0 }}>Schulferien importieren</h2>
-          <p className="muted small" style={{ margin: 0 }}>Die Daten stammen von den kantonalen Erziehungsdirektionen und werden hier eingespielt, nicht im Code gepflegt. Je Zeile: <code>Kanton;Name;von;bis</code> (z. B. <code>ZH;Herbstferien;2027-10-02;2027-10-17</code>, Datum auch als TT.MM.JJJJ). Bestehende Einträge (gleicher Kanton, Name und Beginn) werden aktualisiert. Die Betriebe sehen die Ferien ihres Kantons als Vorschlag in der Preisempfehlung.</p>
-          <form action={importSchool} className="stack">
-            <textarea name="csv" rows={6} required placeholder="Kanton;Name;von;bis" />
-            <div><button className="btn">Importieren</button></div>
-          </form>
-          <p className="small">{schoolStats.length ? <>Eingespielt (noch nicht vorbei): {schoolStats.map((x) => `${x.canton} ${x.n}`).join(" · ")}</> : "Noch keine Schulferien eingespielt."}</p>
-        </section>
-
-        <section className="stack" id="rechnungen">
-          <h2 style={{ margin: 0 }}>Rechnungen an die Betriebe</h2>
-          {invoices.length === 0 ? <p className="muted small">Noch keine. Der Worker erstellt sie am 1. des Monats für den Vormonat.</p> : (
-            <table className="table small">
-              <thead><tr><th>Nr.</th><th>Betrieb</th><th>Monat</th><th>Netto</th><th>MWST</th><th>Belastet</th><th>Status</th><th></th></tr></thead>
-              <tbody>{invoices.map(({ c, hotelName }) => (
-                <tr key={c.id}>
-                  <td>{c.invoiceNo ? <a href={`/mypontivo/${c.hotelId}/plattform-rechnung/${c.id}`} target="_blank">{c.invoiceNo}</a> : "–"}</td>
-                  <td>{hotelName}</td><td>{c.month}</td><td>{formatChf(c.netRappen)}</td><td>{c.vatRappen ? formatChf(c.vatRappen) : "–"}</td><td>{formatChf(c.chargeRappen)}</td>
-                  <td>{c.status === "succeeded" ? "bezahlt" : c.status === "none" ? "nichts fällig" : c.status === "pending" ? "offen" : <span className="badge warn">fehlgeschlagen ({c.attempts}×)</span>}</td>
-                  <td>{c.status === "failed" ? <form action={retryInvoice}><input type="hidden" name="id" value={c.id} /><button className="btn secondary">Erneut versuchen</button></form> : null}</td>
-                </tr>
-              ))}</tbody>
-            </table>
-          )}
-        </section>
-
-        <section className="stack" id="betriebe">
-          <h2 style={{ margin: 0 }}>Betriebe ({hotels.length})</h2>
-          {hotels.map((h) => (
-            <article key={h.id} className="card stack">
-              <div className="plat-head">
-                <div>
-                  <h3 style={{ margin: 0 }}><a href={`/mypontivo/${h.id}`}>{h.name}</a> <span className={`badge${h.status === "live" ? "" : " warn"}`}>{STATUS[h.status] ?? h.status}</span>{health.get(h.id) ? <> <span className={`ampel ampel-${health.get(h.id)!.level}`} title={HEALTH_LABEL[health.get(h.id)!.level]}>{HEALTH_LABEL[health.get(h.id)!.level]}</span></> : null}</h3>
-                  {health.get(h.id)?.reasons.length ? <ul className="ampel-reasons small">{health.get(h.id)!.reasons.map((r) => <li key={r.text} className={`ampel-${r.level}`}>{r.text}</li>)}</ul> : null}
-                  <p className="muted small" style={{ margin: "4px 0 0" }}>{h.bookings} Buchungen · {h.invoices} Rechnungen · angelegt {fmt(h.createdAt)}</p>
-                </div>
-                {h.status === "live" || h.status === "paused" ? (
-                  <form action={hotelStatus}>
-                    <input type="hidden" name="id" value={h.id} />
-                    <input type="hidden" name="status" value={h.status === "live" ? "paused" : "live"} />
-                    <button className="btn secondary small">{h.status === "live" ? "Pausieren" : "Wieder online"}</button>
-                  </form>
-                ) : null}
-              </div>
-
-              <div className="stack" style={{ gap: 8 }}>
-                <h4 className="plat-label">Team</h4>
-                {h.members.length ? (
-                  <ul className="plat-list">
-                    {h.members.map((m) => (
-                      <li key={m.userId}>
-                        <span>{m.email} <span className="muted small">· {roleLabel(m.role as Role)}</span></span>
-                        <form action={memberRemove}>
-                          <input type="hidden" name="hotelId" value={h.id} /><input type="hidden" name="userId" value={m.userId} />
-                          <button className="btn secondary small" title="Mitgliedschaft entfernen">Entfernen</button>
-                        </form>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <p className="muted small" style={{ margin: 0 }}>Noch niemand.</p>}
-                <form action={memberAdd} className="form-row">
-                  <input type="hidden" name="hotelId" value={h.id} />
-                  <div><label>E-Mail</label><input name="email" type="email" placeholder="name@beispiel.ch" required /></div>
-                  <div><label>Rolle</label><select name="role">{(Object.keys(ROLE_LABEL) as (keyof typeof ROLE_LABEL)[]).map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}</select></div>
-                  <div><button className="btn small">Hinzufügen</button></div>
-                </form>
-              </div>
-
-              <details className="plat-danger">
-                <summary>Betrieb löschen</summary>
-                <form action={removeHotel} className="form-row" style={{ marginTop: 10 }}>
-                  <input type="hidden" name="id" value={h.id} />
-                  <div><label>Zur Bestätigung den Namen eintippen</label><input name="confirm" placeholder={h.name} aria-label={`Namen von ${h.name} zur Bestätigung`} required /></div>
-                  <div><button className="btn secondary small">Endgültig löschen</button></div>
-                </form>
-                {h.status === "live" || h.invoices > 0 ? <p className="small muted" style={{ margin: "8px 0 0" }}>Achtung: Rechnungen müssen in der Schweiz 10 Jahre aufbewahrt werden.</p> : null}
-              </details>
-            </article>
+      <section className="stack">
+        <h2 style={{ margin: 0 }}>Bereiche</h2>
+        <div className="tiles" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))" }}>
+          {AREAS.map((a) => (
+            <a key={a.href} className="card tile" href={a.href} style={{ textDecoration: "none", color: "inherit" }}>
+              <strong style={{ fontSize: "1.05rem" }}>{a.title}</strong><span className="muted small">{a.text}</span>
+            </a>
           ))}
-        </section>
-
-        <section className="stack" id="benutzer">
-          <h2 style={{ margin: 0 }}>Benutzer ({users.length})</h2>
-          <p className="small muted" style={{ margin: 0 }}>Ein gelöschter Benutzer verliert seine Zugänge. Seine Betriebe bleiben bestehen (vorher ggf. den Betrieb löschen).</p>
-          <div className="card" style={{ padding: 0 }}>
-            <table className="table" style={{ border: 0 }}>
-              <thead><tr><th>E-Mail</th><th>Betriebe</th><th>Sicherheit</th><th>Angelegt</th><th></th></tr></thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id}>
-                    <td>{u.email}{u.isPlatformAdmin ? <> <span className="badge">Plattform-Admin</span></> : null}</td>
-                    <td className="small">{u.hotels.map((h) => `${h.name} (${h.role})`).join(", ") || "–"}</td>
-                    <td className="small">
-                      <div>{u.passkeys} Passkey{u.passkeys === 1 ? "" : "s"}{u.totp ? ", 2FA" : ""}{u.emailLoginDisabled ? ", nur Passkey" : ""}</div>
-                      <div className="plat-actions">
-                        <form action={sendLink}><input type="hidden" name="email" value={u.email} /><button className="btn secondary small">Login-Link senden</button></form>
-                        {u.passkeys || u.totp || u.emailLoginDisabled ? <form action={securityReset}><input type="hidden" name="id" value={u.id} /><button className="btn secondary small">Sicherheit zurücksetzen</button></form> : null}
-                      </div>
-                    </td>
-                    <td>{fmt(u.createdAt)}</td>
-                    <td>
-                      {u.isPlatformAdmin ? <span className="muted">–</span> : (
-                        <details className="plat-danger">
-                          <summary>Löschen</summary>
-                          <form action={removeUser} className="stack" style={{ marginTop: 8, minWidth: 220 }}>
-                            <input type="hidden" name="id" value={u.id} />
-                            <input name="confirm" placeholder={u.email} aria-label={`E-Mail von ${u.email} zur Bestätigung`} required />
-                            <button className="btn secondary small">Endgültig löschen</button>
-                          </form>
-                        </details>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-    </main>
+        </div>
+      </section>
+    </div>
   );
 }

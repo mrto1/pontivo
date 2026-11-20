@@ -41,7 +41,7 @@ export default async function AdminHome() {
       )}
       <p className="small muted">Umsatz = bestätigte Buchungen dieses Monats (nach Bestätigungsdatum), ohne Abzüge.</p>
       {canAdd ? <p><a className="btn secondary small" href="/mypontivo/neu">Weiteren Betrieb anlegen</a></p> : null}
-      {user.isPlatformAdmin ? <p style={{ marginTop: 24 }}><a href="/admin/plattform">Plattform-Verwaltung (Betriebe und Benutzer löschen)</a></p> : null}
+      {user.isPlatformAdmin ? <p style={{ marginTop: 24 }}><a href="/admin/plattform">Plattform-Verwaltung</a></p> : null}
       <p style={{ marginTop: 8 }}><a href="/mypontivo/konto">Sicherheit: Passkey und Authenticator</a></p>
       <form action="/api/auth/logout" method="post" style={{ marginTop: 8 }}><button className="btn secondary small">Abmelden</button></form>
     </main>

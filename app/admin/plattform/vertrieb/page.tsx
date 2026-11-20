@@ -51,10 +51,9 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
   const filter = sp.status ?? "";
   const withEvents = await Promise.all(leads.map(async (l) => ({ l, events: await leadEvents(l.id, 8) })));
   return (
-    <main className="wrap admin-main">
+    <div>
       <div className="stack" style={{ gap: 24 }}>
         <header className="stack" style={{ gap: 6 }}>
-          <p className="small" style={{ margin: 0 }}><a href="/admin/plattform">← Plattform-Verwaltung</a></p>
           <h1 style={{ margin: 0 }}>Vertriebs-Cockpit</h1>
           <p className="muted small" style={{ margin: 0 }}>Interessenten, Status und persönliche Nachrichten. Selbst registrierte Betriebe erscheinen automatisch; wird ein Betrieb online geschaltet, gilt der Lead als gewonnen. Nachrichten gehen einzeln an eine Person, kein Massenversand.</p>
         </header>
@@ -150,6 +149,6 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
           );
         })}
       </div>
-    </main>
+    </div>
   );
 }
