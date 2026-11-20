@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
-import { isLimitedRole, LANDING } from "@/src/domain/roles";
+import { isLimitedRole, landingFor } from "@/src/domain/roles";
 import { atLeast } from "@/src/auth/session";
 import { bpsOf, formatChf } from "@/src/domain/money";
 import { overview, PERIOD_LABEL, PERIODS, setOtaCommission, type Period } from "@/src/services/overview";
@@ -24,7 +24,7 @@ export default async function Overview({ params, searchParams }: { params: Promi
   const { hotelId } = await params;
   const sp = await searchParams;
   const { hotel, role } = await requireHotel(hotelId, "staff", "home");
-  if (isLimitedRole(role)) redirect(`/mypontivo/${hotel.id}/${LANDING[role]}`);
+  if (isLimitedRole(role)) redirect(`/mypontivo/${hotel.id}/${landingFor(role)}`);
   // Zahlen zu Umsatz und Gebühren nur für Inhaber und Geschäftsführung (wie die Abrechnung)
   if (!atLeast(role, "manager")) redirect(`/mypontivo/${hotel.id}/bookings`);
   // Einrichtung läuft: Übersicht zeigt die Einrichtungskarte (das Menü bleibt voll, nichts ist gesperrt)
@@ -35,18 +35,24 @@ export default async function Overview({ params, searchParams }: { params: Promi
     return (
       <div className="stack">
         <h1 style={{ margin: 0 }}>Willkommen bei myPontivo</h1>
-        <section className="card stack">
-          <h2 style={{ margin: 0 }}>Einrichtung: {done} von {steps.length} Schritten</h2>
-          <p className="muted" style={{ margin: 0 }}>Sobald Zimmer und Preise erfasst sind und Sie online gehen, füllen sich Kalender, Statistik und diese Übersicht. Sie können jederzeit alle Seiten ansehen.</p>
-          <ol className="stack" style={{ margin: 0, paddingLeft: 20 }}>
+        <section className="card stack setup-card">
+          <div className="setup-head">
+            <div>
+              <h2 style={{ margin: 0 }}>Einrichtung: {done} von {steps.length} Schritten</h2>
+              <p className="muted small" style={{ margin: "4px 0 0" }}>Sobald Zimmer und Preise erfasst sind und Sie online gehen, füllen sich Kalender, Statistik und diese Übersicht. Alle Seiten können Sie schon jetzt ansehen.</p>
+            </div>
+            <a className="btn" href={`/mypontivo/${hotel.id}/einrichten?step=${next}`}>Einrichtung fortsetzen</a>
+          </div>
+          <div className="setup-bar" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done} aria-label="Fortschritt der Einrichtung"><span style={{ width: `${Math.round((done / steps.length) * 100)}%` }} /></div>
+          <ol className="setup-steps">
             {steps.map((x) => (
-              <li key={x.key}>
+              <li key={x.key} className={x.done ? "done" : x.key === next ? "next" : undefined}>
+                <span className="setup-mark" aria-hidden="true">{x.done ? "✓" : ""}</span>
                 <a href={`/mypontivo/${hotel.id}/einrichten?step=${x.key}`}>{x.title}</a>
-                {x.done ? <span className="badge" style={{ marginLeft: 8 }}>erledigt</span> : x.required ? null : <span className="muted small"> (optional)</span>}
+                {x.done ? <span className="muted small">erledigt</span> : x.key === next ? <span className="badge">als Nächstes</span> : x.required ? null : <span className="muted small">optional</span>}
               </li>
             ))}
           </ol>
-          <p style={{ margin: 0 }}><a className="btn" href={`/mypontivo/${hotel.id}/einrichten?step=${next}`}>Einrichtung fortsetzen</a></p>
         </section>
       </div>
     );
@@ -98,7 +104,7 @@ export default async function Overview({ params, searchParams }: { params: Promi
         <div className="card tile">
           <span className="muted small">Anfragen</span>
           <strong>{o.inquiries}</strong>
-          <span className="muted small"><a href={`/mypontivo/${hotel.id}/inquiries`}>ansehen</a></span>
+          <span className="muted small"><a href={`/mypontivo/${hotel.id}/inbox?quelle=web`}>ansehen</a></span>
         </div>
       </div>
 

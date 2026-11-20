@@ -199,3 +199,8 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Vor dem Einschalten beim ersten Hotel: Testbuchung im Stripe-Testmodus (Karte 4242 und TWINT), prüfen ob `Stripe(pk, { stripeAccount })` mit Direct Charges den Rahmen lädt (in der Doku nicht ausdrücklich genannt).
 - Branding des Stripe-Rahmens (Farbe, Schrift, Dunkelmodus) wird im Stripe-Dashboard des Hotels eingestellt; für Pontivo-eigene Hotels vorschlagen oder über Connect-Branding setzen?
 - [ ] Impressum: Betreiber ist die Lynxora GmbH, Konradstrasse 1, 8400 Winterthur (Standardwert im Code, überschreibbar mit `PLATFORM_OPERATOR`/`PLATFORM_ADDRESS`). UID (`PLATFORM_UID`) und MWST-Pflicht eintragen bzw. bestätigen; Hinweis auf Handelsregister/MWST steht bewusst nicht im Impressum, bis die Angaben vorliegen. Auf dem Server prüfen, dass `PLATFORM_OPERATOR`/`PLATFORM_ADDRESS` nicht mehr den alten Namen enthalten.
+
+## Menü, Team, Posteingang (SPEC 19.28)
+- Posteingang: Anfragen und Portal-Nachrichten stehen untereinander mit Quellenfilter. Soll es eine einzige zeitlich gemischte Liste werden?
+- Eigene Rollen: Welche weiteren Seiten sollen anhakbar sein (heute nur Seiten, die schon für «Mitarbeitende» offen sind)? Sollen die Standardrollen je Betrieb änderbar werden statt nur als Vorlage zu dienen?
+- Favicon auf Hotel-Websites: Pontivo-Logo oder das Logo des Hotels (falls hochgeladen)?

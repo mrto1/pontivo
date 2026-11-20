@@ -150,6 +150,10 @@ details > summary::-webkit-details-marker { display: none; }
 .section-tabs::-webkit-scrollbar { display: none; }
 .section-tabs a { padding: 10px 16px; color: var(--muted); text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .section-tabs a.active { color: var(--ink); font-weight: 600; border-bottom-color: var(--accent); }
+.section-tabs:has(+ .section-tabs.sub) { margin-bottom: 0; }
+.section-tabs.sub { font-size: .92rem; background: var(--accent-soft); padding: 0 8px; border-radius: 0 0 8px 8px; }
+.section-tabs.sub a { padding: 8px 14px; }
+.section-tabs .tab-sep { flex: 0 0 auto; align-self: center; width: 1px; height: 18px; margin: 0 6px; background: var(--line); }
 .more-group h3 { font-family: var(--font); font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 4px; }
 .more-group a { display: block; padding: 10px 0; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
 .more-group a.active { font-weight: 600; color: var(--accent); }
@@ -191,6 +195,7 @@ details > summary::-webkit-details-marker { display: none; }
 .cal .rp-row td.sticky { padding-left: 26px; font-weight: 500; box-shadow: inset 4px 0 0 var(--line); }
 .cal .rp-row td { color: var(--ink); }
 .cal-lab { display: block; font-size: .7rem; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.cal td.cal-notarif { text-align: left; white-space: normal; color: var(--muted); font-size: .85rem; background: var(--warn-soft); }
 .cal-free { display: block; font-weight: 700; font-size: 1rem; }
 .cal-sub { display: block; font-size: .68rem; color: var(--muted); font-weight: 500; }
 .cal .tag { display: block; font-size: .65rem; color: var(--warn); }
@@ -742,3 +747,43 @@ pre { overflow-x: auto; }
 .seg { overflow-x: auto; scrollbar-width: none; }
 .seg::-webkit-scrollbar { display: none; }
 .seg a { white-space: nowrap; }
+
+/* Einrichtung auf der Übersicht */
+.setup-head { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.setup-bar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.setup-bar span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.setup-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.setup-steps li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.setup-steps li.next { border-color: var(--accent); background: var(--accent-soft); }
+.setup-steps a { flex: 1 1 auto; color: var(--ink); text-decoration: none; font-weight: 500; }
+.setup-steps a:hover { text-decoration: underline; }
+.setup-mark { flex: 0 0 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: .8rem; font-weight: 700; color: var(--accent-ink); }
+.setup-steps li.done .setup-mark { background: var(--accent); border-color: var(--accent); }
+.setup-steps li.next .setup-mark { border-color: var(--accent); }
+
+/* Hilfe: Begriffsregister */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-link { padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: .85rem; color: var(--ink); text-decoration: none; background: var(--surface); }
+.chip-link:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+/* Plattform-Verwaltung */
+.plat-head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.plat-label { margin: 0; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.plat-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.plat-list li { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.plat-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.plat-danger > summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
+.plat-danger[open] > summary { color: var(--ink); }
+
+/* Viele Reiter (z. B. Übersicht = Mein Betrieb): auf dem Desktop umbrechen statt versteckt wegscrollen */
+@media (min-width: 761px) {
+  .section-tabs { flex-wrap: wrap; overflow: visible; }
+}
+
+/* Auswahlkarten (Layout, Schrift) und Betriebsart: die allgemeine Beschriftung für Radiobuttons (Zeile 88) darf sie nicht verbiegen */
+.choice.choice:has(> input[type="radio"]):not(.check) { display: flex; flex-direction: column; gap: 6px; padding: 12px; }
+.choice.choice > input[type="radio"] { position: absolute; top: 12px; right: 12px; left: auto; margin: 0; width: 20px; height: 20px; }
+.choice > strong, .choice > .small { display: block; }
+.choice > strong { padding-right: 28px; }
+.mode-pick > label.mode-opt, .mode-pick > label:has(> input[type="radio"]):not(.check) { display: flex; padding: 10px 12px; }
+.mode-pick > label:has(> input[type="radio"]) > input[type="radio"] { position: static; margin: 3px 0 0; width: 20px; height: 20px; }

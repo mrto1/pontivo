@@ -51,7 +51,7 @@ export default async function OfferAdmin({ params, searchParams }: { params: Pro
         {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
         <p className="muted small">Gesendet an {offer.customerEmail}. Der Kunde sieht es unter <code>/o/{offer.publicToken}</code>. {offer.decisionNote ? <>Nachricht des Kunden: «{offer.decisionNote}»</> : null}</p>
         <OfferSheet hotel={hotel} offer={offer} lines={lines} resourceNames={names} />
-        <p><a href={`/mypontivo/${hotel.id}/inquiries`}>Zurück zu den Anfragen</a></p>
+        <p><a href={`/mypontivo/${hotel.id}/inbox?quelle=web`}>Zurück zu den Anfragen</a></p>
       </div>
     );
   }

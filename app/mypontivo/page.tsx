@@ -28,7 +28,7 @@ export default async function AdminHome() {
                 <td><a href={`/mypontivo/${r.hotelId}`}>{r.name}</a>{r.setupOpen ? <span className="badge warn" style={{ marginLeft: 8 }}>Einrichtung offen</span> : null}</td>
                 <td>{STATUS[r.status] ?? r.status}</td>
                 <td>{r.arrivals}</td><td>{r.departures}</td><td>{r.inHouse}</td>
-                <td>{r.newInquiries > 0 ? <a href={`/mypontivo/${r.hotelId}/inquiries`}><strong>{r.newInquiries}</strong></a> : 0}</td>
+                <td>{r.newInquiries > 0 ? <a href={`/mypontivo/${r.hotelId}/inbox?quelle=web`}><strong>{r.newInquiries}</strong></a> : 0}</td>
                 <td>{r.monthBookings}</td><td>{formatChf(r.monthRevenueRappen)}</td>
                 <td>{roles.get(r.hotelId)}</td>
               </tr>

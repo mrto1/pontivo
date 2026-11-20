@@ -1,10 +1,9 @@
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
-import { ROLE_LABEL, type Role } from "@/src/domain/roles";
 import { taxRuleFor } from "@/src/services/hotels";
 import { ZodError } from "zod";
-import { addMember, confirmTouristTax, setDeposit, goLiveProblems, listMembers, removeMember, setHotelStatus, updateHotelSettings } from "@/src/services/settings";
+import { confirmTouristTax, setDeposit, goLiveProblems, setHotelStatus, updateHotelSettings } from "@/src/services/settings";
 import { onboardingLink, refreshAccountStatus } from "@/src/integrations/stripe/onboarding";
 import { chargesOf, startCardSetup } from "@/src/services/billing";
 import { todayIn } from "@/src/domain/dates";
@@ -117,25 +116,6 @@ async function changeStatus(f: FormData) {
   back(hotel.id, `Status: ${status}`);
 }
 
-async function memberAdd(f: FormData) {
-  "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
-  try {
-    await addMember(hotel.id, s(f, "email"), (s(f, "role") || "staff") as Role, actor);
-  } catch (e) {
-    back(hotel.id, `Fehler: ${(e as Error).message}`);
-  }
-  back(hotel.id, "Mitglied gespeichert");
-}
-
-async function memberRemove(f: FormData) {
-  "use server";
-  const { hotel, actor, user } = await requireHotel(s(f, "hotelId"), "owner");
-  if (s(f, "userId") === user.id) back(hotel.id, "Sie können sich nicht selbst entfernen");
-  await removeMember(hotel.id, s(f, "userId"), actor);
-  back(hotel.id, "Mitglied entfernt");
-}
-
 export default async function Settings({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
@@ -144,7 +124,6 @@ export default async function Settings({ params, searchParams }: { params: Promi
   const isOwner = atLeast(role, "owner");
   const rule = await taxRuleFor(hotel, todayIn(hotel.timezone));
   const problems = await goLiveProblems(hotel);
-  const members = isOwner ? await listMembers(hotel.id) : [];
   const provider = env().PAYMENT_PROVIDER;
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
   const charges = await chargesOf(hotel.id);
@@ -287,24 +266,8 @@ export default async function Settings({ params, searchParams }: { params: Promi
 
       {isOwner ? (
         <section className="card stack">
-          <h2>Mitglieder</h2>
-          <table className="table">
-            <tbody>
-              {members.map((m) => (
-                <tr key={m.user.id}>
-                  <td>{m.user.email}</td><td>{ROLE_LABEL[m.role as Role] ?? m.role}</td>
-                  <td><form action={memberRemove}>{hidden}<input type="hidden" name="userId" value={m.user.id} /><button className="btn secondary small">Entfernen</button></form></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <form action={memberAdd} className="inline-form">
-            {hidden}
-            <div><label>E-Mail</label><input name="email" type="email" required /></div>
-            <div><label>Rolle</label><select name="role" defaultValue="staff"><option value="owner">Inhaber</option><option value="manager">Manager</option><option value="staff">Mitarbeitende</option><option value="reception">Rezeption (ohne Statistik und Preise)</option><option value="housekeeping">Reinigung (nur Reinigungsliste)</option><option value="accounting">Buchhaltung (nur Rechnungen und Statistik)</option><option value="service">Service (nur Restaurant: bestellen und kassieren)</option></select></div>
-            <button className="btn">Hinzufügen</button>
-          </form>
-          <p className="muted small">Inhaber: alles. Manager: alles ausser Mitglieder und Stripe. Mitarbeitende: Kalender und Buchungen lesen, No-Show. Rezeption: Tagesgeschäft ohne Statistik, Abrechnung und Einstellungen. Reinigung: nur die Reinigungsliste. Buchhaltung: nur Rechnungen und Statistik.</p>
+          <h2>Team</h2>
+          <p className="muted small" style={{ margin: 0 }}>Wer Zugang hat und welche Seiten jede Rolle sieht, verwalten Sie unter <a href={`/mypontivo/${hotel.id}/team`}>Team</a>.</p>
         </section>
       ) : null}
     </div>

@@ -423,7 +423,7 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
         <fieldset className="plain"><legend className="small muted">Anlässe zur Auswahl</legend>
           <div className="weekdays">{INQUIRY_KINDS.map((k) => <label key={k}><input type="checkbox" name="kinds" value={k} defaultChecked={b.kinds.includes(k)} />{KIND_LABEL[k]}</label>)}</div>
         </fieldset>
-        <p className="muted small">Anfragen kommen per E-Mail an {hotelEmail} und stehen unter <a href={`/mypontivo/${hotelId}/inquiries`}>Anfragen</a>.</p>
+        <p className="muted small">Anfragen kommen per E-Mail an {hotelEmail} und stehen unter <a href={`/mypontivo/${hotelId}/inbox?quelle=web`}>Anfragen</a>.</p>
       </>);
     case "menu":
       return (<>

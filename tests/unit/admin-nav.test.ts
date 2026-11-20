@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminNav, allPages, isActive, sectionFor } from "../../src/admin/nav";
+import { adminNav, allPages, bestMatch, isActive, sectionFor } from "../../src/admin/nav";
 import { GET as manifest } from "../../app/mypontivo/manifest.webmanifest/route";
 import { GET as sw } from "../../app/mypontivo/sw.js/route";
 import { GET as icon } from "../../app/mypontivo/pwa-icon/[size]/route";
@@ -13,29 +13,45 @@ describe("Admin-Menü", () => {
     const keys = all.map((i) => i.key);
     expect(new Set(keys).size).toBe(keys.length);
     for (const i of all) expect(i.href.startsWith("/mypontivo/h1")).toBe(true);
-    expect(nav.primary.length).toBeLessThanOrEqual(4); // passt in die untere Leiste
-    expect(keys).toEqual(expect.arrayContaining(["home", "calendar", "bookings", "guests", "inquiries", "vouchers", "report", "rooms", "site", "channex", "embed", "settings"]));
+    expect(nav.primary.length).toBeLessThanOrEqual(4); // passt in die untere Leiste, kein «Mehr»
+    expect(nav.primary.map((i) => i.label)).toEqual(["Übersicht", "Kalender", "Buchungen", "Gäste"]);
+    expect(keys).toEqual(expect.arrayContaining(["home", "calendar", "plan", "pricing", "channex", "ical", "bookings", "report", "guests", "inbox", "vouchers", "rooms", "site", "api", "team", "settings", "funktionen", "terminal", "access", "posbridge", "migration", "firstweek", "help"]));
+    expect(keys).not.toContain("embed");
+    expect(keys).not.toContain("inquiries");
   });
 
-  it("zusammengelegte Punkte: Gäste, Angebot und Vertrieb haben Reiter; im Menü steht nur der Sammelpunkt", () => {
+  it("Kalender, Buchungen und Gäste haben Reiter, Trenner trennen Gruppen", () => {
     const nav = adminNav(hotel);
-    const menu = [...nav.primary, ...nav.groups.flatMap((g) => g.items)].map((i) => i.label);
-    expect(menu).toEqual(expect.arrayContaining(["Gäste", "Angebot", "Vertrieb"]));
-    expect(menu).not.toEqual(expect.arrayContaining(["Anfragen"]));
+    const tabs = (k: string) => nav.primary.find((i) => i.key === k)!.tabs!;
+    expect(tabs("calendar").map((t) => t.key)).toEqual(["calendar", "plan", "pricing", "channex", "ical"]);
+    expect(tabs("bookings").map((t) => t.key)).not.toContain("plan");
+    expect(tabs("guests").map((t) => t.key)).toEqual(["guests", "guestbook", "inbox", "marketing", "vouchers", "feedback", "ki-chat", "upsell", "mailtexts"]);
+    expect(tabs("guests").filter((t) => t.sep).map((t) => t.key)).toEqual(["inbox", "ki-chat"]);
+    expect(tabs("guests")[0].label).toBe("Check-in");
+  });
+
+  it("Übersicht enthält «Mein Betrieb» als Reiter mit zweiter Reihe", () => {
+    const nav = adminNav(hotel);
     const home = "/mypontivo/h1";
-    expect(sectionFor("/mypontivo/h1/inquiries", nav, home)?.label).toBe("Gäste");
-    expect(sectionFor("/mypontivo/h1/site/blocks", nav, home)?.label).toBe("Angebot");
-    expect(sectionFor("/mypontivo/h1/channex/booking", nav, home)?.label).toBe("Vertrieb");
-    expect(sectionFor("/mypontivo/h1/preise", nav, home)?.label).toBe("Kalender"); // Preisempfehlung ist Reiter beim Kalender
-    expect(sectionFor("/mypontivo/h1/home", nav, home)).toBeNull();
-    const guests = nav.primary.find((i) => i.key === "guests")!;
-    expect(isActive("/mypontivo/h1/vouchers", guests, home)).toBe(true); // Reiter hält den Sammelpunkt aktiv
+    const overview = nav.primary[0];
+    expect(overview.tabs!.map((t) => t.label)).toEqual(["Übersicht", "Zimmer und Tarife", "Website und Buchung", "Team", "Einstellungen", "Statistik", "Buchhaltung", "Restaurant"]);
+    expect(sectionFor("/mypontivo/h1/rooms", nav, home)?.label).toBe("Übersicht");
+    expect(sectionFor("/mypontivo/h1/site/blocks", nav, home)?.label).toBe("Übersicht");
+    expect(sectionFor("/mypontivo/h1/zutritt", nav, home)?.label).toBe("Übersicht");
+    expect(sectionFor("/mypontivo/h1/channex/booking", nav, home)?.label).toBe("Kalender");
+    expect(sectionFor("/mypontivo/h1/preise", nav, home)?.label).toBe("Kalender");
+    expect(sectionFor("/mypontivo/h1/inbox", nav, home)?.label).toBe("Gäste");
+    expect(sectionFor("/mypontivo/h1/hilfe", nav, home)?.label).toBe("Mein Konto");
+    expect(sectionFor("/mypontivo/h1/mypontivo", nav, home)?.label).toBe("Mein Konto");
+    expect(isActive("/mypontivo/h1/vouchers", nav.primary[3], home)).toBe(true); // Reiter hält den Sammelpunkt aktiv
+    expect(isActive("/mypontivo/h1/zutritt", overview, home)).toBe(true);
+    expect(bestMatch("/mypontivo/h1/invoices/tagesabschluss", nav.primary[2], home)).toBeGreaterThan(bestMatch("/mypontivo/h1/invoices/tagesabschluss", { key: "x", label: "x", href: "/mypontivo/h1/invoices" }, home));
   });
 
   it("Das Menü ist immer vollständig: kein «Einrichten»-Punkt, Konto über den Avatar", () => {
-    const keys = allPages(adminNav(hotel)).map((i) => i.key);
-    expect(keys).not.toContain("einrichten");
-    expect(keys).toEqual(expect.arrayContaining(["calendar", "rooms", "site", "settings", "bookings"]));
+    const nav = adminNav(hotel);
+    expect(allPages(nav).map((i) => i.key)).not.toContain("einrichten");
+    expect(nav.account.href).toBe("/mypontivo/h1/mypontivo");
   });
 
   it("aktive Seite: Übersicht nur exakt, andere auch bei Unterseiten", () => {

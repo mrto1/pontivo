@@ -43,7 +43,7 @@ export default async function WebsiteEditor({ searchParams }: { searchParams: Pr
   };
   return (
     <main className="wrap admin-main" style={{ maxWidth: 820 }}>
-      <p><a href="/admin/plattform">← Plattform-Verwaltung</a> · <a href="/" target="_blank">Startseite ansehen ↗</a></p>
+      <p><a href="/" target="_blank">Startseite ansehen ↗</a></p>
       <h1>Texte der Pontivo-Website</h1>
       <p className="muted">Hier änderst du die Texte der Startseite. Änderungen sind sofort sichtbar. Ein Feld auf den ursprünglichen Text zurückzusetzen heisst: den alten Text wieder eintragen oder das Feld leeren. Platzhalter: <code>{"{name}"}</code> (Plattformname), <code>{"{fee}"}</code> (Gebühr in Prozent), <code>{"{emailTo}"}</code> (« an info@…», leer ohne Adresse). Impressum, Datenschutz und Bedingungen bearbeitest du nicht hier (rechtliche Texte), ebenso die einzelnen Funktionskarten.</p>
       {sp.saved ? <p className="notice">Gespeichert.</p> : null}

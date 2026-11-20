@@ -1510,3 +1510,12 @@ export const nativePushTokens = pgTable("native_push_tokens", {
   appVersion: text("app_version"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+/** Eigene Rollen eines Betriebs: Name und freigegebene Seiten (Menü-Schlüssel); Mitglieder mit role = 'custom:<id>' */
+export const hotelRoles = pgTable("hotel_roles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: text("name").notNull(),
+  areas: text("areas").array().notNull().default([]),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});

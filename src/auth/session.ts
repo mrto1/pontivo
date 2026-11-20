@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { db } from "../db/client";
-import { hotelMembers, hotels, loginTokens, users } from "../db/schema";
+import { hotelMembers, hotelRoles, hotels, loginTokens, users } from "../db/schema";
+import { encodeCustomRole } from "../domain/roles";
 import { sha256 } from "../domain/ids";
 import { requireEnv, env } from "../env";
 import { enqueueEmail } from "../email/enqueue";
@@ -113,7 +114,7 @@ export async function hotelsForUser(userId: string) {
     .innerJoin(hotels, eq(hotels.id, hotelMembers.hotelId))
     .where(eq(hotelMembers.userId, userId))
     .orderBy(hotels.name);
-  return rows.map((r) => ({ hotel: r.hotel, role: r.role as Role }));
+  return Promise.all(rows.map(async (r) => ({ hotel: r.hotel, role: (await resolveRole(r.hotel.id, r.role)) ?? ("service" as Role) })));
 }
 
 /** Rolle eines Benutzers in einem Hotel, null = kein Zugriff (SPEC 3) */
@@ -122,7 +123,14 @@ export async function roleIn(userId: string, hotelId: string): Promise<Role | nu
   if (!u) return null;
   if (u.isPlatformAdmin) return "owner";
   const [m] = await db().select().from(hotelMembers).where(and(eq(hotelMembers.userId, userId), eq(hotelMembers.hotelId, hotelId)));
-  return (m?.role as Role) ?? null;
+  return m ? resolveRole(hotelId, m.role) : null;
+}
+
+/** In der DB steht bei eigenen Rollen `custom:<id>`; hier wird daraus die Rolle mit Name und Seiten. Rolle gelöscht = kein Zugriff. */
+async function resolveRole(hotelId: string, stored: string): Promise<Role | null> {
+  if (!stored.startsWith("custom:")) return stored as Role;
+  const [r] = await db().select().from(hotelRoles).where(and(eq(hotelRoles.id, stored.slice(7)), eq(hotelRoles.hotelId, hotelId)));
+  return r ? encodeCustomRole(r.name, r.areas) : null;
 }
 
 export const atLeast = atLeastRole;

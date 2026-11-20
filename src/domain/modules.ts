@@ -33,11 +33,11 @@ export const MODULES: ModuleDef[] = [
   { key: "api", label: "Website-Schnittstelle (API)", description: "Ihre eigene Website zeigt Verfügbarkeit und Preise und legt Buchungen über eine Schnittstelle an; bezahlt wird über die sichere Zahlungsseite. Gleiche Gebühr wie bei der Buchung auf Pontivo, keine Zusatzgebühr für die Schnittstelle. Eigener Schlüssel, jederzeit widerrufbar.", deps: [], defaultOn: false, navKeys: ["api"] },
   { key: "posbridge", label: "Kassen-Schnittstelle", description: "Ihre Restaurantkasse bucht Posten direkt aufs Zimmer: eine kleine Schnittstelle mit eigenem Schlüssel (widerrufbar). Die Posten erscheinen in der Hotelrechnung.", deps: ["invoicing"], defaultOn: false, navKeys: ["posbridge"] },
   { key: "pos", label: "Restaurant und Kasse", description: "Bestellen am Tisch, Kassieren (bar, Karte, TWINT, aufs Zimmer), Tagesabschluss. Bons sind unveränderbar und lückenlos nummeriert.", deps: ["invoicing"], defaultOn: false, navKeys: ["restaurant", "kasse", "positems", "posclose"] },
-  { key: "inbox", label: "Posteingang", description: "Nachrichten von Booking.com, Airbnb und Expedia an einem Ort lesen und beantworten, mit Mitteilung bei neuen Nachrichten. Braucht den Channel-Manager und die Channex-App «Messages» (kostet bei Channex extra).", deps: ["channex"], defaultOn: false, navKeys: ["inbox"] },
+  { key: "inbox", label: "Posteingang", description: "Nachrichten von Booking.com, Airbnb und Expedia an einem Ort lesen und beantworten, mit Mitteilung bei neuen Nachrichten. Braucht den Channel-Manager und die Channex-App «Messages» (kostet bei Channex extra).", deps: ["channex"], defaultOn: false, navKeys: [] }, // «Posteingang» ist hidden, wenn auch «Anfragen» aus ist (hiddenNavKeys)
   { key: "feedback", label: "Bewertungen", description: "Nach dem Aufenthalt fragen die Gäste, wie es war. Zufriedene Gäste bekommen den Link zu Ihrer Bewertungsseite, unzufriedene schreiben Ihnen direkt. Gesendet wird mit der Nachher-Mail.", deps: [], defaultOn: false, navKeys: ["feedback"] },
   { key: "pricing_rules", label: "Preisempfehlung", description: "Schlägt Preise nach Ihren Regeln vor (Auslastung, Last Minute, Wochentag, Ereignisse), mit Mindest- und Höchstpreis. Sie bestätigen; auf Wunsch wird innerhalb Ihres Preiskorridors automatisch übernommen.", deps: [], defaultOn: false, navKeys: ["pricing"] },
   { key: "vouchers", label: "Gutscheine", description: "Gutscheine online verkaufen und im Haus einlösen.", deps: [], defaultOn: true, navKeys: ["vouchers"] },
-  { key: "inquiries", label: "Anfragen", description: "Anfragen von der Website und aus dem Chat (z. B. Gruppen, Sonderwünsche).", deps: [], defaultOn: true, navKeys: ["inquiries"] },
+  { key: "inquiries", label: "Anfragen", description: "Anfragen von der Website und aus dem Chat (z. B. Gruppen, Sonderwünsche).", deps: [], defaultOn: true, navKeys: [] },
 ];
 
 export const MODULE_KEYS = MODULES.map((m) => m.key);
@@ -63,7 +63,10 @@ export function isOn(rows: ModuleRow[], key: string): boolean {
 
 /** Menüpunkte, die wegen ausgeschalteter Module verschwinden */
 export function hiddenNavKeys(rows: ModuleRow[]): Set<string> {
-  return new Set(MODULES.filter((m) => !isOn(rows, m.key)).flatMap((m) => m.navKeys));
+  const hidden = new Set(MODULES.filter((m) => !isOn(rows, m.key)).flatMap((m) => m.navKeys));
+  // Gemeinsamer Posteingang: Anfragen (Website, Chat) und Portal-Nachrichten; weg nur, wenn beides aus ist
+  if (!isOn(rows, "inquiries") && !isOn(rows, "inbox")) hidden.add("inbox");
+  return hidden;
 }
 
 /** Prüft, ob ein Wechsel erlaubt ist. Gibt eine Erklärung zurück, wenn nicht. */

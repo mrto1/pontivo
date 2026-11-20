@@ -2,7 +2,10 @@ import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { createImprintPage, createPage, deletePage, documentLibrary, ensureHomePage, listPages, movePage, removeDocument, SiteError } from "@/src/services/site";
-import { publicBase, updateDesign, updateLanguages } from "@/src/services/brand";
+import { publicBase, setLogo, updateBrand, updateDesign, updateLanguages } from "@/src/services/brand";
+import { env } from "@/src/env";
+import { CopyBox } from "@/components/admin/CopyBox";
+import { WidgetPreview } from "@/components/admin/WidgetPreview";
 import { hotelLocales, LOCALE_NAMES, LOCALES } from "@/src/i18n/dict";
 import { translationEnabled, translationsLeft } from "@/src/services/translate";
 import { FONTS, LAYOUTS, fontOf, layoutOf } from "@/src/domain/theme";
@@ -35,6 +38,28 @@ async function saveIntro(f: FormData) {
   await run(f, async ({ hotel, actor }) => {
     await updateHotelIntro(hotel, { headlineDe: s(f, "headlineDe"), introDe: s(f, "introDe"), headlineEn: s(f, "headlineEn"), introEn: s(f, "introEn") }, actor);
     return { to: `/mypontivo/${hotel.id}/site?msg=${encodeURIComponent("Gespeichert")}` };
+  });
+}
+
+/** Wie wird Pontivo genutzt (eigene Website oder nur Buchung), Hauptfarbe, Adresse der eigenen Website */
+async function saveBrand(f: FormData) {
+  "use server";
+  await run(f, async ({ hotel, actor }) => {
+    await updateBrand(hotel, {
+      mode: f.get("mode") === "booking_only" ? "booking_only" : "website",
+      color: String(f.get("useColor")) === "on" ? String(f.get("color")) : null,
+      websiteUrl: String(f.get("websiteUrl") ?? "").trim() || null,
+    }, actor);
+    return { to: `/mypontivo/${hotel.id}/site?msg=${encodeURIComponent("Gespeichert")}#betriebsart` };
+  });
+}
+
+async function removeLogo(f: FormData) {
+  "use server";
+  await run(f, async ({ hotel, actor }) => {
+    const old = await setLogo(hotel.id, null, actor);
+    if (old) await deleteImage(old);
+    return { to: `/mypontivo/${hotel.id}/site?msg=${encodeURIComponent("Logo entfernt")}#logo` };
   });
 }
 
@@ -110,41 +135,72 @@ export default async function Site({ params, searchParams }: { params: Promise<{
   const langs = hotelLocales(hotel);
   const kb = (n: number) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
+  const brand = hotel.content.brand ?? {};
+  const lang = hotel.defaultLanguage === "en" ? "en" : "de";
+  const scriptSrc = `${env().APP_BASE_URL}/widget/${hotel.slug}.js`;
+  const link = `${base}/${lang}`;
+  const button = `<div data-pontivo="${hotel.slug}" data-mode="button"></div>\n<script src="${scriptSrc}" async></script>`;
+  const search = `<div data-pontivo="${hotel.slug}" data-mode="search"></div>\n<script src="${scriptSrc}" async></script>`;
+
   return (
     <div className="stack">
-      <h1>Website</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
-      {bookingOnly ? <p className="notice warn small">Dieses Hotel nutzt «nur Buchung» (siehe Einbinden). Seiten hier erscheinen trotzdem unter der Pontivo-Adresse, aber nicht im Menü der Buchungsseite.</p> : null}
+      <h1>Website und Buchung</h1>
+      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") || sp.msg.startsWith("Logo:") ? "warn" : ""}`}>{sp.msg}</p> : null}
 
-      <section className="card stack">
-        <h2>Startseite</h2>
-        {home ? (
-          <p><a className="btn" href={`/mypontivo/${hotel.id}/site/${home.id}`}>Startseite bearbeiten</a> <a href={`${base}/de`} target="_blank">ansehen</a></p>
-        ) : canEdit ? (
-          <>
-            <form action={saveIntro} className="stack">
-              {hidden}
-              <p className="small muted" style={{ margin: 0 }}>Einfache Startseite: Titel und Einleitung, darunter Ihre Zimmer.</p>
-              <div className="form-grid">
-                <div><label>Titel (DE)</label><input name="headlineDe" defaultValue={hotel.content?.de?.headline ?? ""} /></div>
-                <div><label>Titel (EN)</label><input name="headlineEn" defaultValue={hotel.content?.en?.headline ?? ""} /></div>
-                <div><label>Einleitung (DE)</label><textarea name="introDe" rows={3} defaultValue={hotel.content?.de?.intro ?? ""} /></div>
-                <div><label>Einleitung (EN)</label><textarea name="introEn" rows={3} defaultValue={hotel.content?.en?.intro ?? ""} /></div>
+      <section className="card stack" id="betriebsart">
+        <h2>Wie nutzen Sie {env().PLATFORM_NAME}?</h2>
+        <form action={saveBrand} className="stack">
+          {hidden}
+          <div className="mode-pick">
+            <label>
+              <input type="radio" name="mode" value="booking_only" defaultChecked={bookingOnly} disabled={!canEdit} />
+              <span><strong>Wir behalten unsere Website</strong><span className="muted small">{env().PLATFORM_NAME} übernimmt nur die Buchung. Der Gast kommt über einen Knopf auf unserer Website zur Buchungsseite.</span></span>
+            </label>
+            <label>
+              <input type="radio" name="mode" value="website" defaultChecked={!bookingOnly} disabled={!canEdit} />
+              <span><strong>{env().PLATFORM_NAME} ist unsere Website</strong><span className="muted small">Startseite, Zimmer und Buchung unter unserer eigenen Domain.</span></span>
+            </label>
+          </div>
+          <div className="form-grid">
+            <div><label>Adresse der eigenen Website</label><input name="websiteUrl" type="url" placeholder="https://www.hotel.ch" defaultValue={brand.websiteUrl ?? ""} disabled={!canEdit} /></div>
+            <div>
+              <label>Hauptfarbe (Knöpfe, Links)</label>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <input name="color" type="color" defaultValue={brand.color ?? "#2f5d50"} style={{ width: 64, height: 42, padding: 2 }} disabled={!canEdit} />
+                <label className="check" style={{ margin: 0 }}><input type="checkbox" name="useColor" defaultChecked={!!brand.color} disabled={!canEdit} />verwenden</label>
               </div>
-              <div><button className="btn">Speichern</button></div>
-            </form>
-            <form action={startHome} className="stack">
-              {hidden}
-              <p className="small muted" style={{ margin: 0 }}>Mehr Freiheit: Mit dem Editor gestalten Sie die Startseite aus Bausteinen. Die bisherigen Texte werden übernommen.</p>
-              <div><button className="btn secondary">Startseite gestalten</button></div>
-            </form>
-          </>
-        ) : null}
+            </div>
+          </div>
+          {canEdit ? <button className="btn">Speichern</button> : null}
+        </form>
+        <p className="muted small" style={{ margin: 0 }}>Je nach Auswahl zeigt diese Seite nur, was Sie brauchen: mit eigener Website die Einbindung in Ihre Seite, mit {env().PLATFORM_NAME} als Website zusätzlich Startseite, Seiten und Dokumente.</p>
       </section>
+
+      {bookingOnly ? (
+        <section className="card stack" id="einbinden">
+          <h2>Auf der eigenen Website einbinden</h2>
+          <p className="small">Drei Möglichkeiten – von ganz einfach bis eingebaut. Alle führen zur Buchungsseite im Erscheinungsbild des Hotels.</p>
+
+          <h3>Einfachste Lösung: bestehenden «Buchen»-Link ersetzen</h3>
+          <p className="small muted">Funktioniert mit jedem Baukasten (Wix, Jimdo, WordPress, Webflow …): beim Knopf oder Menüpunkt «Buchen» diese Adresse eintragen.</p>
+          <CopyBox text={link} label="Link zur Buchungsseite" />
+
+          <h3>Knopf «Jetzt buchen»</h3>
+          <p className="small muted">Diesen Code an der Stelle einfügen, wo der Knopf erscheinen soll (in WordPress z. B. mit einem «HTML»-Block). Eigener Text: <code>data-label=&quot;Zimmer buchen&quot;</code>. Andere Sprache: <code>data-lang=&quot;en&quot;</code> (oder fr, it, nl, wenn unten unter Sprachen gewählt).</p>
+          <CopyBox text={button} label="Code für den Knopf" />
+          <div className="card"><WidgetPreview src={scriptSrc} slug={hotel.slug} mode="button" /></div>
+
+          <h3>Suchleiste mit Daten und Personen</h3>
+          <p className="small muted">Der Gast wählt die Daten direkt auf Ihrer Website und sieht danach sofort die freien Zimmer.</p>
+          <CopyBox text={search} label="Code für die Suchleiste" />
+          <div className="card" style={{ background: "var(--accent-soft)" }}><WidgetPreview src={scriptSrc} slug={hotel.slug} mode="search" /></div>
+          {hotel.status !== "live" ? <p className="notice warn small">Das Hotel ist noch nicht live – Gäste sehen auf der Buchungsseite einen Hinweis statt Angeboten.</p> : null}
+        </section>
+      ) : null}
 
       <section className="card stack" id="gestaltung">
         <h2>Gestaltung</h2>
-        <p className="muted small">Layout und Schrift gelten für alle Seiten und die Buchungsstrecke. Hauptfarbe und Logo stellen Sie unter <a href={`/mypontivo/${hotel.id}/embed`}>Einbinden</a> ein.</p>
+        <p className="muted small">Layout und Schrift gelten für alle Seiten und die Buchungsstrecke. Hauptfarbe stellen Sie oben ein, das Logo weiter unten.</p>
         <form action={saveDesign} className="stack">
           {hidden}
           <fieldset className="plain" disabled={!canEdit}>
@@ -177,6 +233,22 @@ export default async function Site({ params, searchParams }: { params: Promise<{
         </form>
       </section>
 
+      <section className="card stack" id="logo">
+        <h2>Logo</h2>
+        {brand.logoUrl ? <img src={brand.logoUrl} alt="Logo" style={{ maxHeight: 60, maxWidth: 240, objectFit: "contain", alignSelf: "flex-start" }} /> : <p className="muted small">Noch kein Logo – oben auf der Buchungsseite steht dann der Hotelname.</p>}
+        {canEdit ? (
+          <div className="inline-form">
+            <form action={`/api/admin/hotels/${hotel.id}/photos`} method="post" encType="multipart/form-data" className="inline-form">
+              <input type="hidden" name="target" value="logo" />
+              <div><label>Logo hochladen (PNG mit transparentem Hintergrund, JPG oder WebP)</label><input type="file" name="file" accept="image/png,image/jpeg,image/webp" required /></div>
+              <button className="btn small">Hochladen</button>
+            </form>
+            {brand.logoUrl ? <form action={removeLogo}>{hidden}<button className="btn secondary small">Logo entfernen</button></form> : null}
+          </div>
+        ) : null}
+        <p className="small"><a href={link} target="_blank">Buchungsseite ansehen</a></p>
+      </section>
+
       <section className="card stack" id="sprachen">
         <h2>Sprachen</h2>
         <p className="muted small">Deutsch ist immer dabei. Für jede weitere Sprache erscheint auf der Website ein Sprachwechsel, und Buchung, Bestätigungs-Mail und Stornoseite sind in der Sprache des Gastes. Fehlt ein Text in einer Sprache, zeigt die Website Englisch, sonst Deutsch.</p>
@@ -197,6 +269,34 @@ export default async function Site({ params, searchParams }: { params: Promise<{
             : <>Automatische Übersetzung ist noch nicht eingerichtet; die Felder können Sie im Editor von Hand ausfüllen.</>}
           {" "}AGB und Datenschutz erscheinen auf Französisch, Italienisch und Niederländisch vorerst auf Englisch.
         </p>
+      </section>
+
+      {!bookingOnly ? (
+        <>
+      <section className="card stack">
+        <h2>Startseite</h2>
+        {home ? (
+          <p><a className="btn" href={`/mypontivo/${hotel.id}/site/${home.id}`}>Startseite bearbeiten</a> <a href={`${base}/de`} target="_blank">ansehen</a></p>
+        ) : canEdit ? (
+          <>
+            <form action={saveIntro} className="stack">
+              {hidden}
+              <p className="small muted" style={{ margin: 0 }}>Einfache Startseite: Titel und Einleitung, darunter Ihre Zimmer.</p>
+              <div className="form-grid">
+                <div><label>Titel (DE)</label><input name="headlineDe" defaultValue={hotel.content?.de?.headline ?? ""} /></div>
+                <div><label>Titel (EN)</label><input name="headlineEn" defaultValue={hotel.content?.en?.headline ?? ""} /></div>
+                <div><label>Einleitung (DE)</label><textarea name="introDe" rows={3} defaultValue={hotel.content?.de?.intro ?? ""} /></div>
+                <div><label>Einleitung (EN)</label><textarea name="introEn" rows={3} defaultValue={hotel.content?.en?.intro ?? ""} /></div>
+              </div>
+              <div><button className="btn">Speichern</button></div>
+            </form>
+            <form action={startHome} className="stack">
+              {hidden}
+              <p className="small muted" style={{ margin: 0 }}>Mehr Freiheit: Mit dem Editor gestalten Sie die Startseite aus Bausteinen. Die bisherigen Texte werden übernommen.</p>
+              <div><button className="btn secondary">Startseite gestalten</button></div>
+            </form>
+          </>
+        ) : null}
       </section>
 
       <section className="card stack" id="dokumente">
@@ -261,6 +361,8 @@ export default async function Site({ params, searchParams }: { params: Promise<{
         ) : null}
         <p className="muted small">Die Reihenfolge hier ist die Reihenfolge im Menü. AGB und Datenschutz gibt es automatisch.</p>
       </section>
+        </>
+      ) : null}
     </div>
   );
 }

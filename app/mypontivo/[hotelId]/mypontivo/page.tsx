@@ -1,5 +1,5 @@
 import { requireHotel } from "@/src/auth/guard";
-import { ROLE_LABEL } from "@/src/domain/roles";
+import { roleLabel } from "@/src/domain/roles";
 import { hasTotp, listPasskeys, recoveryCodesLeft } from "@/src/services/mfa";
 import { AccountSecurity } from "@/components/admin/AccountSecurity";
 import { ChangeEmail } from "@/components/admin/ChangeEmail";
@@ -21,7 +21,7 @@ export default async function MyPontivo({ params }: { params: Promise<{ hotelId:
         <h1 style={{ marginBottom: 4 }}>Mein Konto</h1>
         <div className="mp-top">
           <strong>{user.email}</strong>
-          <span className="muted">{user.isPlatformAdmin ? "Plattformbetreiber" : ROLE_LABEL[role]} bei {hotel.name}</span>
+          <span className="muted">{user.isPlatformAdmin ? "Plattformbetreiber" : roleLabel(role)} bei {hotel.name}</span>
         </div>
         <p style={{ marginTop: 8 }}><ChangeEmail current={user.email} needsCode={totp} /></p>
       </header>

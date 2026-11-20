@@ -2,7 +2,7 @@ import { requireHotel } from "@/src/auth/guard";
 import { hotelsForUser } from "@/src/auth/session";
 import { adminNav } from "@/src/admin/nav";
 import { hiddenNavKeys } from "@/src/domain/modules";
-import { isLimitedRole, ROLE_AREAS, ROLE_LABEL } from "@/src/domain/roles";
+import { areasOf, isLimitedRole, roleLabel } from "@/src/domain/roles";
 import { moduleRows } from "@/src/services/modules";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { PasskeyNudge } from "@/components/admin/PasskeyNudge";
@@ -22,7 +22,7 @@ export default async function HotelAdminLayout({ children, params }: { children:
     // eingeschränkte Rollen: alles ausblenden, was nicht zu ihren Bereichen gehört
     const keys = (items: { key: string; tabs?: unknown[] }[]): string[] => items.flatMap((i) => [i.key, ...keys((i.tabs ?? []) as { key: string }[])]);
     const full = adminNav(hotel);
-    for (const k of [...keys(full.primary), ...full.groups.flatMap((g) => keys(g.items))]) if (!ROLE_AREAS[role].includes(k)) hidden.add(k);
+    for (const k of [...keys(full.primary), ...keys([full.account])]) if (!areasOf(role).includes(k)) hidden.add(k);
   }
   const nav = adminNav(hotel, hidden);
   const home = `/mypontivo/${hotel.id}`;
@@ -49,7 +49,7 @@ export default async function HotelAdminLayout({ children, params }: { children:
             </details>
           ) : null}
           {steps ? <a href={`${home}/einrichten`} className="setup-chip" title="Einrichtung fortsetzen">Einrichtung {doneCount} von {steps.length}</a> : null}
-          <AdminNav nav={nav} home={home} userLabel={`${user.email} · ${ROLE_LABEL[role]}`} initials={initials(user.name, user.email)} />
+          <AdminNav nav={nav} home={home} userLabel={`${user.email} · ${roleLabel(role)}`} initials={initials(user.name, user.email)} />
         </div>
       </header>
       <main className="wrap admin-main">

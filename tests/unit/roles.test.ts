@@ -44,7 +44,7 @@ describe("Rollen (SPEC 17.4)", () => {
     const nav = adminNav(hotel);
     const keys = new Set<string>();
     const walk = (items: { key: string; tabs?: { key: string }[] }[]) => items.forEach((i) => { keys.add(i.key); walk(i.tabs ?? []); });
-    walk(nav.primary); nav.groups.forEach((g) => walk(g.items));
+    walk(nav.primary); walk([nav.account]);
     for (const areas of Object.values(ROLE_AREAS)) for (const a of areas) if (a !== "layout" && a !== "mypontivo") expect(keys.has(a), a).toBe(true);
   });
 });

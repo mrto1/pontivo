@@ -98,7 +98,16 @@ async function saveRoom(f: FormData) {
       await updateRoomType(hotel.id, id, roomInput(f), actor);
       return "Zimmertyp gespeichert";
     }
-    await createRoomType(hotel.id, roomInput(f), actor);
+    const input = roomInput(f);
+    const rt = await createRoomType(hotel.id, input, actor);
+    // Mit Startpreis gleich einen Tarif «Standard» anlegen: ohne Tarif ist ein Zimmertyp weder buchbar noch im Kalender bearbeitbar
+    if (chf(f, "startPrice") > 0) {
+      await createRatePlan(hotel.id, rt.id, {
+        name: "Standard", board: "none", mealRappen: 0, freeCancelHours: 48, cancelFeeBps: 10000, // ASSUMPTION: kostenlos stornierbar bis 2 Tage vorher, danach 100 %
+        baseOccupancy: Math.min(2, input.maxOccupancy), extraAdultRappen: 0, singleDiscountRappen: 0, minNights: 1, arrivalWeekdays: [], active: true,
+      }, chf(f, "startPrice"), actor);
+      return "Zimmertyp mit Tarif «Standard» angelegt. Preise pro Tag passen Sie im Kalender an.";
+    }
     return "Zimmertyp angelegt. Jetzt einen Tarif hinzufügen.";
   }, id ? `#rt-${id}` : "");
 }
@@ -206,6 +215,11 @@ function RoomForm({ hotelId, rt, canEdit, nextOrder = 0, langs }: { hotelId: str
           {rt?.i18n?.[l]?.description ? <textarea name={`description.${l}`} defaultValue={rt.i18n[l]!.description} hidden readOnly /> : null}
         </span>
       ))}
+      {!rt && canEdit ? (
+        <div className="form-grid">
+          <div><label>Startpreis CHF pro Nacht (optional)</label><input name="startPrice" inputMode="decimal" placeholder="z. B. 180" title="Legt gleich den Tarif «Standard» an. Weitere Tarife und Tagespreise später." /></div>
+        </div>
+      ) : null}
       <label className="check"><input type="checkbox" name="active" defaultChecked={rt?.active ?? true} disabled={!canEdit} />Buchbar (auf der Website und bei Portalen)</label>
       {canEdit ? <button className="btn">{rt ? "Zimmertyp speichern" : "Zimmertyp anlegen"}</button> : null}
     </form>

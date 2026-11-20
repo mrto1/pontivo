@@ -23,9 +23,10 @@ describe("Modul-Register", () => {
     expect(keys).not.toEqual(expect.arrayContaining(["invoices"]));
     const b = nav.primary.find((i) => i.key === "bookings")!;
     expect(b.tabs?.map((t) => t.key)).toEqual(["bookings", "report"]);
-    // nur Rechnung aus: Buchungen behält Reiter Heute und Zimmerplan
+    expect(nav.primary.find((i) => i.key === "calendar")!.tabs?.map((t) => t.key)).not.toContain("plan");
+    // nur Rechnung aus: Buchungen behält den Reiter Heute (Zimmerplan liegt beim Kalender)
     const nav2 = adminNav(hotel, hiddenNavKeys([{ module: "invoicing", enabled: false }]));
-    expect(nav2.primary.find((i) => i.key === "bookings")!.tabs?.map((t) => t.key)).toEqual(["bookings", "frontdesk", "plan", "report"]);
+    expect(nav2.primary.find((i) => i.key === "bookings")!.tabs?.map((t) => t.key)).toEqual(["bookings", "frontdesk", "report"]);
     expect(nav2.primary.length).toBeLessThanOrEqual(4);
   });
   it("Abhängigkeiten werden geprüft", () => {

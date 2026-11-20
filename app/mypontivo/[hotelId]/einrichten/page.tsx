@@ -432,7 +432,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
         <div className="stack">
           <p className="notice">✓ {hotel.name} ist online und buchbar.</p>
           <p><a className="btn" href={preview} target="_blank">Website ansehen ↗</a> <a className="btn secondary" href={`/mypontivo/${hotel.id}`}>Zur Übersicht</a></p>
-          <p className="small muted">Nächste Schritte: Website gestalten unter <a href={`/mypontivo/${hotel.id}/site`}>Website</a>, Buchungsknopf auf Ihrer bisherigen Website einbinden unter <a href={`/mypontivo/${hotel.id}/embed`}>Einbinden</a>, Link im Google-Unternehmensprofil eintragen.</p>
+          <p className="small muted">Nächste Schritte: Website gestalten unter <a href={`/mypontivo/${hotel.id}/site`}>Website und Buchung</a>, Buchungsknopf auf Ihrer bisherigen Website einbinden ebenfalls dort, Link im Google-Unternehmensprofil eintragen.</p>
         </div>
       ) : (
         <div className="stack">
@@ -460,7 +460,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           <p className="small muted">Funktioniert mit jedem Baukasten (Wix, Jimdo, WordPress, Squarespace …). Falls Ihre Seite schon einen Knopf «Buchen» oder «Anfragen» hat: dort diese Adresse eintragen.</p>
           <CopyBox text={link} label="Link zur Buchungsseite" />
           <h3>2. Knopf «Jetzt buchen» einfügen</h3>
-          <p className="small muted">Code in einen «HTML»- oder «Code»-Block einfügen. Weitere Varianten (Suchleiste mit Daten) unter <a href={`/mypontivo/${hotel.id}/embed`}>Einbinden</a>.</p>
+          <p className="small muted">Code in einen «HTML»- oder «Code»-Block einfügen. Weitere Varianten (Suchleiste mit Daten) unter <a href={`/mypontivo/${hotel.id}/site#einbinden`}>Website und Buchung</a>.</p>
           <CopyBox text={button} label="Code für den Knopf" />
           <h3>3. Jemand anderes macht Ihre Website?</h3>
           <p className="small muted">Schicken Sie diese Seite oder den Link oben an Ihre Webagentur – mehr braucht es nicht.</p>

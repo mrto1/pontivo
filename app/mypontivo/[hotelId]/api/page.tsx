@@ -75,7 +75,7 @@ export default async function ApiPage({ params, searchParams }: { params: Promis
       <h1>Website-Schnittstelle</h1>
       {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
       <p className="muted">Für Websites, die nicht mit Pontivo gebaut sind: Ihre Website holt Verfügbarkeit und Preise und legt Buchungen an. Bezahlt wird auf der sicheren Zahlungsseite, danach ist die Buchung bestätigt und der Gast bekommt die Mail. Es gilt dieselbe Gebühr wie bei einer Buchung auf Pontivo, die Schnittstelle selbst kostet nichts extra.</p>
-      <p className="notice warn small">Der Schlüssel gehört nur auf den Server Ihrer Website, nie in den Browser oder in Skripte, die Besucher laden. Für reine Einbindung ohne Programmierung gibt es unter «Einbinden» das fertige Buchungs-Widget.</p>
+      <p className="notice warn small">Der Schlüssel gehört nur auf den Server Ihrer Website, nie in den Browser oder in Skripte, die Besucher laden. Für reine Einbindung ohne Programmierung gibt es unter «Website und Buchung» das fertige Buchungs-Widget.</p>
       {sp.new ? (
         <div className="card stack">
           <h2>Neuer Schlüssel</h2>

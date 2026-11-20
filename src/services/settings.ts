@@ -122,7 +122,7 @@ export async function listMembers(hotelId: string) {
 }
 
 export async function addMember(hotelId: string, email: string, role: Role, actor: string) {
-  if (!(role in ROLE_LABEL)) throw new Error("Unbekannte Rolle.");
+  if (!(role in ROLE_LABEL)) throw new Error("Unbekannte Rolle."); // eigene Rollen: src/services/team.ts
   const e = z.string().trim().email().parse(email).toLowerCase();
   const [u] = await db().insert(users).values({ email: e }).onConflictDoUpdate({ target: users.email, set: { email: e } }).returning();
   await db().insert(hotelMembers).values({ hotelId, userId: u.id, role }).onConflictDoUpdate({ target: [hotelMembers.hotelId, hotelMembers.userId], set: { role } });

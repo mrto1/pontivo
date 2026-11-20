@@ -157,6 +157,14 @@ export default async function Calendar({ params, searchParams }: { params: Promi
                     );
                   })}
                 </tr>
+                {!cal.ratePlans.some((p) => p.roomTypeId === rt.id) ? (
+                  <tr className="rp-row">
+                    <td className="sticky"><span className="rp-name muted">Kein Tarif</span></td>
+                    <td colSpan={days.length} className="cal-notarif">
+                      Ohne Tarif ist «{rt.name}» nicht buchbar und hier ohne Preise. {canEdit ? <a href={`/mypontivo/${hotel.id}/rooms#rt-${rt.id}`}>Tarif anlegen</a> : "Bitte den Inhaber oder Manager einen Tarif anlegen lassen."}
+                    </td>
+                  </tr>
+                ) : null}
                 {cal.ratePlans.filter((p) => p.roomTypeId === rt.id).map((p) => (
                   <tr key={p.id} className="rp-row">
                     <td className="sticky"><span className="rp-name">{p.name}</span><span className="cal-lab">Preis CHF pro Nacht</span></td>
@@ -228,7 +236,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
           <aside className="card stack">
             <h3>Zimmer und Tarife</h3>
             <p className="muted small" style={{ margin: 0 }}>
-              Zimmertypen, Anzahl Zimmer, Fotos, Tarife und Extras ändern oder neu anlegen Sie unter «Zimmer». Der Kalender zeigt dann automatisch die neuen Zeilen.
+              Zimmertypen, Anzahl Zimmer, Fotos, Tarife und Extras ändern oder neu anlegen Sie unter «Übersicht → Zimmer und Tarife». Der Kalender zeigt dann automatisch die neuen Zeilen.
             </p>
             <div><a className="btn secondary" href={`/mypontivo/${hotel.id}/rooms`}>Zimmer anpassen</a></div>
             <p className="muted small" style={{ margin: 0 }}>
