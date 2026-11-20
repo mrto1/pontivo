@@ -222,3 +222,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 ## Vertriebs-Cockpit (SPEC 19.31)
 - Mails an Interessenten: Absender ist `EMAIL_FROM` (Postmark), Antworten kommen dorthin bzw. an `PLATFORM_CONTACT_EMAIL`. Gewünscht: eigener Absender (z. B. martin@pontivo.ch) mit Reply-To? Kaltakquise per E-Mail (UWG Art. 3 Abs. 1 lit. o): nur an Geschäftskontakte mit Abmeldemöglichkeit; Vorlagen vor Einsatz prüfen.
 - Schwellen der Gesundheits-Ampel (30 Tage ohne Buchung, 60/14 Tage Preishorizont) sind Annahmen und lassen sich in `src/domain/health.ts` anpassen.
+
+## Wiederkehr-Mail und Monatsmail (SPEC 19.32)
+- Wiederkehr-Mail ist Werbung: rechtlich (UWG Art. 3 Abs. 1 lit. o, nDSG) nur mit Einwilligung des Gasts. Wir verlangen `marketing_consent` und bieten Abmelden; Standard ist aus. Einwilligungstext im Buchungsfenster vor Start mit Rechtsberatung prüfen.
+- Zeitpunkt (330 Tage) und «gleicher Wochentag ein Jahr später» (364 Tage) sind Annahmen.

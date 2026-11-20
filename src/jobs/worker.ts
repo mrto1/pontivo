@@ -3,6 +3,7 @@
  * - holds:   abgelaufene Holds freigeben (jede Minute, SPEC 5.5)
  * - waitlist: Warteliste prüfen und Gäste benachrichtigen (alle 5 Minuten, SPEC 19.29)
  * - booking-recovery: Erinnerung nach abgebrochener Buchung (alle 10 Minuten, SPEC 19.29)
+ * - winback: Wiederkehr-Mail an Gäste mit Werbe-Einwilligung (täglich 10:10, SPEC 19.32)
  * - monthly-mail: Monatsmail an die Inhaber (am 2. des Monats 07:30, SPEC 19.32)
  * - emails:  E-Mail-Outbox senden (jede Minute, SPEC 10)
  * - push:    Push-Mitteilungen an die Geräte der Mitarbeitenden senden (jede Minute)
@@ -34,7 +35,7 @@ import { balanceJob } from "../services/balance";
 import { monthlyAccountingJob } from "../services/accounting";
 import { aiPricingJob } from "../services/ai-pricing";
 import { deliverDue, webhookCleanup } from "../services/webhooks";
-import { recoveryJob, waitlistJob } from "../services/direct-tools";
+import { recoveryJob, waitlistJob, winbackJob } from "../services/direct-tools";
 import { monthlyMailJob } from "../services/monthly-mail";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
@@ -43,6 +44,7 @@ const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
   { name: "waitlist", cron: "*/5 * * * *", run: () => waitlistJob() },
   { name: "booking-recovery", cron: "*/10 * * * *", run: () => recoveryJob() },
+  { name: "winback", cron: "10 10 * * *", run: () => winbackJob() },
   { name: "monthly-mail", cron: "30 7 2 * *", run: () => monthlyMailJob() },
   { name: "emails", cron: "* * * * *", run: () => sendDueEmails() },
   { name: "push", cron: "* * * * *", run: () => sendDuePushes() },

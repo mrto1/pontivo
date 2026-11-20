@@ -10,7 +10,7 @@ import { tr } from "../domain/blocks";
 import { U } from "../i18n/upsell";
 import { F } from "../i18n/feedback";
 import { fillPlaceholders, isMailTemplate, mailTextFor } from "../domain/mail-texts";
-import { D } from "../i18n/direct";
+import { D, WINBACK } from "../i18n/direct";
 import { benefitText } from "../domain/direct-tools";
 
 /**
@@ -322,6 +322,13 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
       const dm = D[gl];
       return wrap(c, gl, dm.recoverySubject(c.hotel.name), [hi + ",", dm.recoveryText, dm.recoveryText2], summary(c, gl).slice(1, 6),
         { href: String(c.data.url ?? c.baseUrl), label: dm.recoveryButton });
+    }
+    case "winback": {
+      // Wiederkehr-Mail (SPEC 19.32): nur mit Werbe-Einwilligung, Abmeldelink in jeder Mail (DSG/UWG)
+      const wb = WINBACK[gl];
+      const stay = new Intl.DateTimeFormat(gl, { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${String(c.data.stayMonth)}-01T00:00:00Z`));
+      return wrap(c, gl, wb.subject(c.hotel.name), [hi + ",", wb.text(c.hotel.name, stay), wb.text2, `${wb.unsub}: ${String(c.data.unsubscribeUrl ?? "")}`], [],
+        { href: String(c.data.url ?? c.baseUrl), label: wb.button });
     }
     case "waitlist_available": {
       const dm = D[gl];

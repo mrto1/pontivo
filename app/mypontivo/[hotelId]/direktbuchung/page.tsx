@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
 import { hotelLocales, formatDay, LOCALE_NAMES, type Locale } from "@/src/i18n/dict";
-import { gapSettings, MAX_BENEFITS, MAX_GAP_NIGHTS, recoveryEnabled, waitlistEnabled, type Benefit } from "@/src/domain/direct-tools";
+import { gapSettings, MAX_BENEFITS, MAX_GAP_NIGHTS, recoveryEnabled, waitlistEnabled, winbackSettings, WINBACK_MAX_DAYS, WINBACK_MIN_DAYS, type Benefit } from "@/src/domain/direct-tools";
 import { moduleOn } from "@/src/services/modules";
 import { listCompanies } from "@/src/services/debtors";
 import { cancelWaitlistEntry, deleteCode, DirectError, listCodes, listGaps, listWaitlist, saveCode, saveDirectSettings } from "@/src/services/direct-tools";
@@ -45,6 +45,11 @@ async function toggleSave(f: FormData) {
   "use server";
   await run(f, "Gespeichert", ({ hotel, actor }) =>
     saveDirectSettings(hotel.id, s(f, "what") === "recovery" ? { recovery: { enabled: f.get("enabled") === "on" } } : { waitlist: { enabled: f.get("enabled") === "on" } }, actor), `#${s(f, "what") === "recovery" ? "abbruch" : "warteliste"}`);
+}
+async function winbackSave(f: FormData) {
+  "use server";
+  await run(f, "Gespeichert", ({ hotel, actor }) =>
+    saveDirectSettings(hotel.id, { winback: { enabled: f.get("enabled") === "on", afterDays: Number(s(f, "days")) || undefined } }, actor), "#wiederkehr");
 }
 async function codeSave(f: FormData) {
   "use server";
@@ -209,6 +214,17 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
         <form action={toggleSave} className="inline-form">
           {hidden}<input type="hidden" name="what" value="recovery" />
           <label className="check"><input type="checkbox" name="enabled" defaultChecked={recoveryEnabled(d)} /> Erinnerung senden</label>
+          <button className="btn secondary small">Speichern</button>
+        </form>
+      </section>
+
+      <section className="card stack" id="wiederkehr">
+        <h2>Wiederkehr-Mail</h2>
+        <p className="muted small" style={{ margin: 0 }}>Rund ein Jahr nach dem Aufenthalt geht Gästen, die direkt gebucht und dem Erhalt von Angeboten zugestimmt haben, einmalig eine Einladung zu: mit ihren Daten vom letzten Mal, einem Link zur Buchung und Abmelde-Link. Wer sich abmeldet, bekommt nichts mehr. Es gibt höchstens eine Mail pro Adresse in 300 Tagen, und keine, wenn der Gast schon wieder gebucht hat. Standardmässig aus.</p>
+        <form action={winbackSave} className="inline-form">
+          {hidden}
+          <label className="check"><input type="checkbox" name="enabled" defaultChecked={winbackSettings(d).enabled} /> Einladung senden</label>
+          <label>Tage nach der Abreise <input name="days" type="number" min={WINBACK_MIN_DAYS} max={WINBACK_MAX_DAYS} defaultValue={winbackSettings(d).afterDays} style={{ width: 90 }} /></label>
           <button className="btn secondary small">Speichern</button>
         </form>
       </section>

@@ -16,6 +16,8 @@ export type DirectSettings = {
   recovery?: { enabled?: boolean };
   /** Warteliste bei Ausgebucht (Standard an) */
   waitlist?: { enabled?: boolean };
+  /** Wiederkehr-Mail: einmalige Einladung rund ein Jahr nach dem Aufenthalt, nur Gäste mit Werbe-Einwilligung (Standard aus) */
+  winback?: { enabled?: boolean; afterDays?: number };
 };
 
 export const MAX_BENEFITS = 4;
@@ -33,6 +35,14 @@ export const gapSettings = (d?: DirectSettings) => ({
   relaxMinStay: d?.gaps?.relaxMinStay !== false,
 });
 export const waitlistEnabled = (d?: DirectSettings) => d?.waitlist?.enabled !== false;
+export const WINBACK_MIN_DAYS = 200;
+export const WINBACK_MAX_DAYS = 400;
+export const WINBACK_DEFAULT_DAYS = 330;
+// ASSUMPTION: 330 Tage nach der Abreise (gut 11 Monate): Einladung rund einen Monat vor dem Jahrestag des Aufenthalts.
+export const winbackSettings = (d?: DirectSettings) => ({
+  enabled: d?.winback?.enabled === true,
+  afterDays: Math.min(WINBACK_MAX_DAYS, Math.max(WINBACK_MIN_DAYS, Math.round(d?.winback?.afterDays ?? WINBACK_DEFAULT_DAYS))),
+});
 export const recoveryEnabled = (d?: DirectSettings) => d?.recovery?.enabled === true;
 
 // ---------------------------------------------------------------- Direktvorteile

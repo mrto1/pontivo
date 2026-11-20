@@ -2,7 +2,7 @@ import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, ne, sql } from "driz
 import { db, rows, type Executor } from "../db/client";
 import { bookingRooms, bookings, companies, companyCodes, guests, hotels, inventoryDays, roomTypes, waitlistEntries, type Company, type CompanyCode, type Hotel, type WaitlistEntry } from "../db/schema";
 import {
-  MAX_CODE_DISCOUNT_BPS, RECOVERY_AFTER_MIN, RECOVERY_WITHIN_HOURS, cleanBenefits, codeUsable, findGaps, gapSettings, normalizeCode, recoveryEnabled, waitlistEnabled,
+  MAX_CODE_DISCOUNT_BPS, RECOVERY_AFTER_MIN, RECOVERY_WITHIN_HOURS, cleanBenefits, codeUsable, findGaps, gapSettings, normalizeCode, recoveryEnabled, waitlistEnabled, winbackSettings,
   type DirectSettings, type Gap,
 } from "../domain/direct-tools";
 import { MAX_NIGHTS } from "../domain/availability";
@@ -13,6 +13,7 @@ import { enqueueEmail } from "../email/enqueue";
 import { audit } from "./audit";
 import { moduleOn } from "./modules";
 import { publicBase } from "./brand";
+import { unsubscribeUrl } from "./newsletter";
 import { isBookable } from "./hotels";
 import { searchOffers } from "./search";
 import type { Locale } from "../i18n/dict";
@@ -42,6 +43,7 @@ export async function saveDirectSettings(hotelId: string, patch: DirectSettings,
   }
   if (patch.recovery) next.recovery = { enabled: patch.recovery.enabled === true };
   if (patch.waitlist) next.waitlist = { enabled: patch.waitlist.enabled !== false };
+  if (patch.winback) { const w = winbackSettings({ winback: patch.winback }); next.winback = { enabled: patch.winback.enabled === true, afterDays: w.afterDays }; }
   await db().update(hotels).set({ content: { ...h.content, direct: next }, updatedAt: new Date() }).where(eq(hotels.id, hotelId));
   await audit(db(), { hotelId, actor, action: "hotel.direct_settings", entity: "hotel", entityId: hotelId, details: patch as Record<string, unknown> });
   return next;
@@ -274,3 +276,47 @@ export async function recoveryJob(now = new Date()): Promise<{ sent: number }> {
   return { sent };
 }
 
+
+// ---------------------------------------------------------------- Wiederkehr-Mail
+
+/**
+ * Job (täglich): Gäste, die vor N Tagen (Standard 330) abgereist sind, bekommen einmalig eine Einladung mit ihren Daten ein Jahr später.
+ * Nur direkt gebuchte Aufenthalte, nur mit Werbe-Einwilligung (die beim Abmelden widerrufen wird), nur wenn der Betrieb es eingeschaltet hat,
+ * nicht bei bestehender Buchung ab heute und höchstens eine Mail je Adresse und Betrieb in 300 Tagen. Abmelde-Link in jeder Mail.
+ */
+export async function winbackJob(now = new Date()): Promise<{ sent: number }> {
+  const list = await db().select().from(hotels).where(eq(hotels.status, "live"));
+  let sent = 0;
+  for (const hotel of list) {
+    const w = winbackSettings(hotel.content.direct);
+    if (!w.enabled || !isBookable(hotel, env().PAYMENT_PROVIDER)) continue;
+    const today = todayIn(hotel.timezone, now);
+    const departed = addDays(today, -w.afterDays);
+    const stays = await db().select().from(bookings).where(and(eq(bookings.hotelId, hotel.id), eq(bookings.status, "confirmed"), eq(bookings.source, "direct"), eq(bookings.checkout, departed)));
+    for (const b of stays) {
+      if (!b.guestId) continue;
+      const [g] = await db().select().from(guests).where(eq(guests.id, b.guestId));
+      if (!g?.email || !g.marketingConsent) continue;
+      const email = g.email.toLowerCase();
+      const [{ n }] = rows<{ n: number }>(await db().execute(sql`
+        SELECT count(*)::int AS n FROM bookings o JOIN guests og ON og.id = o.guest_id
+         WHERE o.hotel_id = ${hotel.id} AND lower(og.email) = ${email} AND o.status IN ('confirmed','hold') AND o.checkout >= ${today}::date`));
+      if (n > 0) continue;
+      const [{ r }] = rows<{ r: number }>(await db().execute(sql`
+        SELECT count(*)::int AS r FROM email_outbox WHERE hotel_id = ${hotel.id} AND template = 'winback' AND lower(to_email) = ${email}
+           AND send_after > ${new Date(now.getTime() - 300 * 864e5).toISOString()}::timestamptz`));
+      if (r > 0) continue;
+      // Wunschdaten: gleicher Zeitraum ein Jahr später (364 Tage = gleicher Wochentag), nur wenn sie mindestens eine Woche entfernt liegen
+      const checkin = addDays(b.checkin, 364), checkout = addDays(b.checkout, 364);
+      const dates = checkin >= addDays(today, 7);
+      const lang = isLocale(g.language) ? g.language : "de";
+      await enqueueEmail(db(), { hotelId: hotel.id, bookingId: b.id, template: "winback", to: g.email, language: lang, data: {
+        stayMonth: b.checkin.slice(0, 7), unsubscribeUrl: unsubscribeUrl(hotel.id, g.email),
+        url: dates ? bookUrl(hotel, lang, { checkin, checkout, adults: b.adults, children: b.children, ages: b.childrenAges }) : `${publicBase(hotel)}/${lang}/book`,
+      } });
+      await audit(db(), { hotelId: hotel.id, actor: "system", action: "booking.winback_mail", entity: "booking", entityId: b.id });
+      sent++;
+    }
+  }
+  return { sent };
+}

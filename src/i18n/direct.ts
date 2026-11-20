@@ -76,3 +76,13 @@ export const D: Record<Locale, DirectMsg> = {
     waitMailSubject: (h) => `Nu beschikbaar: uw data bij ${h}`, waitMailText: (d) => `voor uw data (${d}) is er weer iets vrij. Wie het eerst boekt, krijgt de kamer.`, waitMailButton: "Nu bekijken en boeken", waitMailNote: "Dit is de enige e-mail over uw verzoek.", waitMailCancel: "Afmelden van de wachtlijst",
   },
 };
+
+/** Wiederkehr-Mail (SPEC 19.32): einmalige Einladung rund ein Jahr nach dem Aufenthalt, nur mit Werbe-Einwilligung */
+export type WinbackMsg = { subject: (h: string) => string; text: (h: string, stay: string) => string; text2: string; button: string; unsub: string };
+export const WINBACK: Record<Locale, WinbackMsg> = {
+  de: { subject: (h) => `Wieder bei ${h} zu Gast?`, text: (h, s) => `Sie waren im ${s} bei ${h} zu Gast. Wir würden uns freuen, Sie wieder zu begrüssen.`, text2: "Bei Direktbuchung erhalten Sie die besten Konditionen. Ihre Daten vom letzten Mal sind mit einem Klick eingetragen.", button: "Daten prüfen und buchen", unsub: "Keine Einladungen mehr erhalten" },
+  en: { subject: (h) => `Stay with ${h} again?`, text: (h, s) => `You stayed with ${h} in ${s}. We would love to welcome you back.`, text2: "Booking direct gets you the best conditions. Your dates from last time are filled in with one click.", button: "Check dates and book", unsub: "Stop receiving invitations" },
+  fr: { subject: (h) => `De nouveau chez ${h} ?`, text: (h, s) => `Vous avez séjourné chez ${h} en ${s}. Nous serions heureux de vous accueillir à nouveau.`, text2: "En réservant en direct, vous bénéficiez des meilleures conditions. Les dates de votre dernier séjour sont préremplies.", button: "Vérifier les dates et réserver", unsub: "Ne plus recevoir d'invitations" },
+  it: { subject: (h) => `Di nuovo da ${h}?`, text: (h, s) => `Siete stati ospiti di ${h} a ${s}. Saremmo lieti di riaccogliervi.`, text2: "Prenotando direttamente ottenete le migliori condizioni. Le date dell'ultima volta sono già inserite.", button: "Controlla le date e prenota", unsub: "Non ricevere più inviti" },
+  nl: { subject: (h) => `Weer te gast bij ${h}?`, text: (h, s) => `U was in ${s} te gast bij ${h}. We zouden u graag opnieuw verwelkomen.`, text2: "Bij directe boeking krijgt u de beste voorwaarden. De data van de vorige keer zijn met één klik ingevuld.", button: "Data controleren en boeken", unsub: "Geen uitnodigingen meer ontvangen" },
+};

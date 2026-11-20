@@ -88,3 +88,12 @@ describe("Firmencode und Schalter", () => {
     expect(recoveryEnabled({ recovery: { enabled: true } })).toBe(true);
   });
 });
+
+import { winbackSettings } from "../../src/domain/direct-tools";
+describe("Wiederkehr-Mail: Einstellungen", () => {
+  it("Standard aus, 330 Tage, Grenzen 200 bis 400", () => {
+    expect(winbackSettings(undefined)).toEqual({ enabled: false, afterDays: 330 });
+    expect(winbackSettings({ winback: { enabled: true, afterDays: 5 } })).toEqual({ enabled: true, afterDays: 200 });
+    expect(winbackSettings({ winback: { enabled: true, afterDays: 900 } }).afterDays).toBe(400);
+  });
+});
