@@ -1584,3 +1584,33 @@ export const hotelRoleOverrides = pgTable(
   },
   (t) => [primaryKey({ columns: [t.hotelId, t.role] })],
 );
+
+/** Vertriebs-Cockpit (SPEC 19.31): Interessenten der Plattform */
+export const salesLeads = pgTable("sales_leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  contactName: text("contact_name").notNull().default(""),
+  email: text("email").notNull().default(""),
+  phone: text("phone").notNull().default(""),
+  website: text("website").notNull().default(""),
+  canton: char("canton", { length: 2 }),
+  source: text("source").$type<"manuell" | "registrierung" | "empfehlung" | "messe" | "anfrage">().notNull().default("manuell"),
+  status: text("status").$type<"neu" | "kontaktiert" | "demo" | "angebot" | "gewonnen" | "verloren">().notNull().default("neu"),
+  notes: text("notes").notNull().default(""),
+  nextActionAt: date("next_action_at", { mode: "string" }),
+  hotelId: uuid("hotel_id"),
+  doNotContact: boolean("do_not_contact").notNull().default(false),
+  lastMailAt: ts("last_mail_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+export type SalesLead = typeof salesLeads.$inferSelect;
+
+export const salesLeadEvents = pgTable("sales_lead_events", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  leadId: uuid("lead_id").notNull(),
+  kind: text("kind").$type<"created" | "status" | "mail" | "note">().notNull(),
+  text: text("text").notNull().default(""),
+  actor: text("actor").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});

@@ -134,6 +134,7 @@ export default async function Plattform({ searchParams }: { searchParams: Promis
           <h1 style={{ margin: 0 }}>Plattform-Verwaltung</h1>
           <p className="muted small" style={{ margin: 0 }}>Nur für Pontivo-Admins. Löschen ist endgültig und nimmt alle Daten mit (Buchungen, Rechnungen, Gäste, Mails). Zur Bestätigung den Namen bzw. die E-Mail eintippen.</p>
         </header>
+        <p className="small" style={{ margin: 0 }}><a href="/admin/plattform/vertrieb">Vertriebs-Cockpit</a> · <a href="#admins">Plattform-Admins</a> · <a href="#mwst">MWST</a> · <a href="#rechnungen">Rechnungen</a> · <a href="#betriebe">Betriebe</a> · <a href="#benutzer">Benutzer</a></p>
         {sp.done ? <p className="notice">{sp.done}</p> : null}
         {sp.error && sp.error !== "confirm" && sp.error !== "user" ? <p className="notice warn">{sp.error}</p> : null}
         {sp.error === "confirm" ? <p className="notice warn">Bestätigung stimmt nicht, nichts gelöscht.</p> : null}

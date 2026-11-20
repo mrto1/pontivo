@@ -27,6 +27,7 @@ export type TemplateName =
   | "email_change_notice"
   | "channex_alert"
   | "platform_alert"
+  | "sales_lead"
   | "balance_due"
   | "balance_reminder"
   | "balance_paid"

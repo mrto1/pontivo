@@ -218,3 +218,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 
 ## Testumgebung int (SPEC 19.30)
 - int läuft auf demselben VPS. Bei spürbarer Last oder wenn Kunden-Daten und Tests getrennt sein müssen: eigener zweiter VPS (Skripte bleiben gleich).
+
+## Vertriebs-Cockpit (SPEC 19.31)
+- Mails an Interessenten: Absender ist `EMAIL_FROM` (Postmark), Antworten kommen dorthin bzw. an `PLATFORM_CONTACT_EMAIL`. Gewünscht: eigener Absender (z. B. martin@pontivo.ch) mit Reply-To? Kaltakquise per E-Mail (UWG Art. 3 Abs. 1 lit. o): nur an Geschäftskontakte mit Abmeldemöglichkeit; Vorlagen vor Einsatz prüfen.
+- Schwellen der Gesundheits-Ampel (30 Tage ohne Buchung, 60/14 Tage Preishorizont) sind Annahmen und lassen sich in `src/domain/health.ts` anpassen.

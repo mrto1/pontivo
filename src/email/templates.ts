@@ -456,6 +456,13 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
     case "channex_alert":
       return wrap(c, l, `[Channex] ${String(c.data.subject)}${c.data.hotel ? ` – ${c.data.hotel}` : ""}`,
         [String(c.data.subject), String(c.data.details ?? "")]);
+    case "sales_lead": {
+      // Persönliche Nachricht aus dem Vertriebs-Cockpit: Text kommt fertig ausgefüllt in data
+      const d = c.data as { subject?: string; body?: string };
+      const contact = env().PLATFORM_CONTACT_EMAIL;
+      return wrap(c, "de", String(d.subject ?? ""), String(d.body ?? "").split(/\n+/).map((x) => x.trim()).filter(Boolean),
+        [...(contact ? [`Antworten Sie direkt auf diese Nachricht oder schreiben Sie an ${contact}.`] : [])]);
+    }
     case "platform_alert":
       return wrap(c, "de", `[Pontivo] ${String(c.data.subject)}`, [String(c.data.subject), String(c.data.details ?? "")]);
     default:
