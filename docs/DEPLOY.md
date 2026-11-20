@@ -240,8 +240,9 @@ Ein eigener zweiter Server ist nicht nötig (zusätzliche Kosten, mehr Pflege). 
 ## Einmalig einrichten
 
 1. **DNS** (Infomaniak, Zone pontivo.ch): A-Eintrag `int` → IP des VPS.
-2. **Code holen** (auf dem Server, als root bzw. mit `sudo -i`):
+2. **Code holen** (auf dem Server **als root**: zuerst `sudo -i`, sonst meldet git «Permission denied», weil `/opt` root gehört; danach gelten alle Befehle dieses Abschnitts als root, ein `sudo` davor ist dann nicht nötig):
    ```bash
+   sudo -i
    git clone https://github.com/mrto1/pontivo.git /opt/pontivo-int
    cd /opt/pontivo-int/deploy
    cp .env.int.example .env.int
