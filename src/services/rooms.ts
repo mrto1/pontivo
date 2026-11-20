@@ -204,3 +204,24 @@ export async function changePhoto(hotelId: string, roomTypeId: string | null, ur
     await audit(tx, { hotelId, actor, action: `photo.${action}`, entity: roomTypeId ? "room_type" : "hotel", entityId: roomTypeId ?? hotelId, details: { url } });
   });
 }
+
+/** Reihenfolge der Fotos setzen (das erste ist das Titelbild). Unbekannte Adressen werden ignoriert, nicht genannte Fotos bleiben hinten. */
+export async function reorderPhotos(hotelId: string, roomTypeId: string | null, urls: string[], actor: string) {
+  const apply = (list: Photo[]) => {
+    const seen = new Set<string>();
+    const first = urls.flatMap((u) => { const p = list.find((x) => x.url === u); if (!p || seen.has(u)) return []; seen.add(u); return [p]; });
+    return [...first, ...list.filter((x) => !seen.has(x.url))];
+  };
+  await db().transaction(async (tx) => {
+    if (roomTypeId) {
+      const [rt] = await tx.select().from(roomTypes).where(and(eq(roomTypes.id, roomTypeId), eq(roomTypes.hotelId, hotelId)));
+      if (!rt) throw new RoomError("Zimmertyp nicht gefunden");
+      await tx.update(roomTypes).set({ photos: apply(rt.photos) }).where(eq(roomTypes.id, roomTypeId));
+    } else {
+      const [h] = await tx.select().from(hotels).where(eq(hotels.id, hotelId));
+      if (!h) throw new RoomError("Hotel nicht gefunden");
+      await tx.update(hotels).set({ content: { ...h.content, photos: apply(h.content.photos ?? []) } }).where(eq(hotels.id, hotelId));
+    }
+    await audit(tx, { hotelId, actor, action: "photo.order", entity: roomTypeId ? "room_type" : "hotel", entityId: roomTypeId ?? hotelId, details: { count: urls.length } });
+  });
+}

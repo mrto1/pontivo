@@ -4,15 +4,16 @@ import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import {
-  changePhoto, createRatePlan, createRoomType, listRooms, MAX_PHOTOS, RoomError, updateRatePlan, updateRoomType,
+  createRatePlan, createRoomType, listRooms, RoomError, updateRatePlan, updateRoomType,
   type RatePlanInput, type RoomTypeInput,
 } from "@/src/services/rooms";
-import { deleteImage } from "@/src/lib/storage";
 import { decimalToRappen, rappenToDecimal } from "@/src/domain/money";
 import { cancellationPolicyText } from "@/src/domain/cancellation";
 import type { RatePlan, RoomType } from "@/src/db/schema";
 import { boardLabel } from "@/src/domain/board";
 import { hotelLocales, LOCALE_NAMES, type Locale } from "@/src/i18n/dict";
+import { PhotoManager } from "@/components/admin/PhotoManager";
+import { OpenOnHash } from "@/components/admin/OpenOnHash";
 import { translateRooms, translationEnabled, translationsLeft, TranslateError } from "@/src/services/translate";
 
 /** Sprachen ausser Deutsch (Deutsch steht im Hauptfeld) */
@@ -123,70 +124,6 @@ async function savePlan(f: FormData) {
     await createRatePlan(hotel.id, s(f, "roomTypeId"), planInput(f), chf(f, "price"), actor);
     return "Tarif angelegt. Preise pro Tag passt du im Kalender an.";
   }, `#rt-${s(f, "roomTypeId")}`);
-}
-
-async function photoAction(f: FormData) {
-  "use server";
-  const roomTypeId = s(f, "roomTypeId") || null;
-  const action = s(f, "action") === "remove" ? "remove" : "first";
-  await act(f, async ({ hotel, actor }) => {
-    await changePhoto(hotel.id, roomTypeId, s(f, "url"), action, actor);
-    if (action === "remove") await deleteImage(s(f, "url"));
-    return action === "remove" ? "Foto entfernt" : "Titelbild gesetzt";
-  }, roomTypeId ? `#rt-${roomTypeId}` : "#hotel-photos");
-}
-
-function Photos({ hotelId, roomTypeId, photos, canEdit }: { hotelId: string; roomTypeId: string | null; photos: { url: string; alt?: string }[]; canEdit: boolean }) {
-  return (
-    <div className="stack">
-      {photos.length ? (
-        <div className="photo-grid">
-          {photos.map((p, i) => (
-            <figure key={p.url} className="photo">
-              <img src={p.url} alt={p.alt ?? ""} loading="lazy" />
-              {i === 0 ? <span className="badge">Titelbild</span> : null}
-              {canEdit ? (
-                <div className="photo-actions">
-                  {i > 0 ? (
-                    <form action={photoAction}>
-                      <input type="hidden" name="hotelId" value={hotelId} />
-                      <input type="hidden" name="roomTypeId" value={roomTypeId ?? ""} />
-                      <input type="hidden" name="url" value={p.url} />
-                      <input type="hidden" name="action" value="first" />
-                      <button className="btn secondary small">Als Titelbild</button>
-                    </form>
-                  ) : null}
-                  <form action={photoAction}>
-                    <input type="hidden" name="hotelId" value={hotelId} />
-                    <input type="hidden" name="roomTypeId" value={roomTypeId ?? ""} />
-                    <input type="hidden" name="url" value={p.url} />
-                    <input type="hidden" name="action" value="remove" />
-                    <button className="btn secondary small">Entfernen</button>
-                  </form>
-                </div>
-              ) : null}
-            </figure>
-          ))}
-        </div>
-      ) : (
-        <p className="muted small">Noch keine Fotos.</p>
-      )}
-      {canEdit && photos.length < MAX_PHOTOS ? (
-        <form action={`/api/admin/hotels/${hotelId}/photos`} method="post" encType="multipart/form-data" className="inline-form">
-          <input type="hidden" name="roomTypeId" value={roomTypeId ?? ""} />
-          <div style={{ flex: "1 1 220px" }}>
-            <label>Fotos hochladen (JPG, PNG, WebP, max. 8 MB, bis 3 aufs Mal)</label>
-            <input type="file" name="file" accept="image/jpeg,image/png,image/webp" multiple required />
-          </div>
-          <div style={{ flex: "1 1 180px" }}>
-            <label>Bildbeschreibung (optional)</label>
-            <input name="alt" placeholder="z. B. Doppelzimmer mit Seesicht" />
-          </div>
-          <button className="btn small">Hochladen</button>
-        </form>
-      ) : null}
-    </div>
-  );
 }
 
 function RoomForm({ hotelId, rt, canEdit, nextOrder = 0, langs }: { hotelId: string; rt?: RoomType; canEdit: boolean; nextOrder?: number; langs: Locale[] }) {
@@ -304,40 +241,50 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
         </form>
       ) : null}
 
-      <section className="card stack" id="hotel-photos">
-        <h2>Fotos des Hotels</h2>
-        <p className="muted small">Das erste Foto erscheint gross auf der Startseite.</p>
-        <Photos hotelId={hotel.id} roomTypeId={null} photos={hotel.content.photos ?? []} canEdit={canEdit} />
-      </section>
-
+      <OpenOnHash />
       {list.map(({ roomType: rt, plans }) => (
-        <section key={rt.id} className="card stack" id={`rt-${rt.id}`}>
-          <h2>
-            {rt.name} <span className="muted small">({rt.roomCount} Zimmer{rt.active ? "" : ", nicht buchbar"})</span>
-          </h2>
-          <details>
-            <summary className="btn secondary small">Zimmertyp bearbeiten</summary>
-            <div style={{ marginTop: 12 }}><RoomForm hotelId={hotel.id} rt={rt} canEdit={canEdit} langs={langs} /></div>
-          </details>
-          <h3>Fotos</h3>
-          <Photos hotelId={hotel.id} roomTypeId={rt.id} photos={rt.photos} canEdit={canEdit} />
-          <h3>Tarife</h3>
-          {plans.length === 0 ? <p className="notice warn small">Noch kein Tarif – ohne Tarif ist das Zimmer nicht buchbar.</p> : null}
-          {plans.map((p) => (
-            <details key={p.id} className="card">
-              <summary>
-                <strong>{p.name}</strong> <span className="muted small">· {boardLabel(p.board)} · {p.freeCancelHours !== null ? `kostenlos stornierbar bis ${p.freeCancelHours / 24} Tag(e) vorher` : "nicht kostenlos stornierbar"}{p.active ? "" : " · nicht buchbar"}</span>
-              </summary>
-              <div style={{ marginTop: 12 }}><PlanForm hotelId={hotel.id} roomTypeId={rt.id} p={p} canEdit={canEdit} langs={langs} /></div>
-            </details>
-          ))}
-          {canEdit ? (
-            <details>
-              <summary className="btn secondary small">+ Tarif hinzufügen</summary>
-              <div style={{ marginTop: 12 }}><PlanForm hotelId={hotel.id} roomTypeId={rt.id} canEdit={canEdit} langs={langs} /></div>
-            </details>
-          ) : null}
-        </section>
+        <details key={rt.id} className="card rt" id={`rt-${rt.id}`}>
+          <summary className="rt-sum">
+            {rt.photos[0] ? <img className="rt-thumb" src={rt.photos[0].url} alt="" loading="lazy" /> : <span className="rt-thumb rt-thumb-empty" aria-hidden="true" />}
+            <span className="rt-title">
+              <strong>{rt.name}</strong>
+              <span className="muted small">
+                {rt.roomCount} Zimmer · {plans.length === 0 ? "kein Tarif" : `${plans.length} Tarif${plans.length === 1 ? "" : "e"}`}{rt.active ? "" : " · nicht buchbar"}
+              </span>
+            </span>
+            {plans.length === 0 || !rt.active ? <span className="rt-flag warn small">{!rt.active ? "nicht buchbar" : "ohne Tarif"}</span> : null}
+            <span className="rt-chevron" aria-hidden="true" />
+          </summary>
+          <div className="rt-body stack">
+            {canEdit ? (
+              <details className="rt-edit">
+                <summary className="icon-btn" title="Zimmertyp bearbeiten" aria-label="Zimmertyp bearbeiten">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                  <span>Bearbeiten</span>
+                </summary>
+                <div style={{ marginTop: 12 }}><RoomForm hotelId={hotel.id} rt={rt} canEdit={canEdit} langs={langs} /></div>
+              </details>
+            ) : null}
+            <h3>Fotos</h3>
+            <PhotoManager hotelId={hotel.id} roomTypeId={rt.id} photos={rt.photos} canEdit={canEdit} page="rooms" alt="z. B. Doppelzimmer mit Seesicht" />
+            <h3>Tarife</h3>
+            {plans.length === 0 ? <p className="notice warn small">Noch kein Tarif – ohne Tarif ist das Zimmer nicht buchbar.</p> : null}
+            {plans.map((p) => (
+              <details key={p.id} className="card">
+                <summary>
+                  <strong>{p.name}</strong> <span className="muted small">· {boardLabel(p.board)} · {p.freeCancelHours !== null ? `kostenlos stornierbar bis ${p.freeCancelHours / 24} Tag(e) vorher` : "nicht kostenlos stornierbar"}{p.active ? "" : " · nicht buchbar"}</span>
+                </summary>
+                <div style={{ marginTop: 12 }}><PlanForm hotelId={hotel.id} roomTypeId={rt.id} p={p} canEdit={canEdit} langs={langs} /></div>
+              </details>
+            ))}
+            {canEdit ? (
+              <details>
+                <summary className="btn secondary small">+ Tarif hinzufügen</summary>
+                <div style={{ marginTop: 12 }}><PlanForm hotelId={hotel.id} roomTypeId={rt.id} canEdit={canEdit} langs={langs} /></div>
+              </details>
+            ) : null}
+          </div>
+        </details>
       ))}
 
       {canEdit ? (

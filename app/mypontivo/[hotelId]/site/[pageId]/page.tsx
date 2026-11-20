@@ -572,7 +572,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
       ) : (
         <p className="small muted">Die Website ist nur auf Deutsch. Weitere Sprachen wählen Sie unter <a href={`/mypontivo/${hotel.id}/site#sprachen`}>Website → Sprachen</a>.</p>
       )}
-      {!lib.length ? <p className="notice warn small">Noch keine Fotos in der Bibliothek. Fotos laden Sie unter <a href={`/mypontivo/${hotel.id}/rooms`}>Zimmer</a> hoch (Fotos des Hotels oder der Zimmer).</p> : null}
+      {!lib.length ? <p className="notice warn small">Noch keine Fotos in der Bibliothek. Fotos des Hotels laden Sie unter <a href={`/mypontivo/${hotel.id}/site#hotel-photos`}>Website und Buchung</a> hoch, Zimmerfotos unter <a href={`/mypontivo/${hotel.id}/rooms`}>Zimmer und Tarife</a>.</p> : null}
 
       <details className="card" open={!isHome && sp.msg === undefined}>
         <summary><strong>Seiten-Einstellungen</strong> <span className="muted small">Titel, Menü, Adresse, Google</span></summary>

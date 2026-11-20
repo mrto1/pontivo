@@ -5,6 +5,7 @@ import { createImprintPage, createPage, deletePage, documentLibrary, ensureHomeP
 import { publicBase, setLogo, updateBrand, updateDesign, updateLanguages } from "@/src/services/brand";
 import { env } from "@/src/env";
 import { CopyBox } from "@/components/admin/CopyBox";
+import { PhotoManager } from "@/components/admin/PhotoManager";
 import { WidgetPreview } from "@/components/admin/WidgetPreview";
 import { hotelLocales, LOCALE_NAMES, LOCALES } from "@/src/i18n/dict";
 import { translationEnabled, translationsLeft } from "@/src/services/translate";
@@ -247,6 +248,12 @@ export default async function Site({ params, searchParams }: { params: Promise<{
           </div>
         ) : null}
         <p className="small"><a href={link} target="_blank">Buchungsseite ansehen</a></p>
+      </section>
+
+      <section className="card stack" id="hotel-photos">
+        <h2>Fotos des Hotels</h2>
+        <p className="muted small">Das erste Foto ist das Titelbild und erscheint gross auf der Startseite und der Buchungsseite. Fotos der einzelnen Zimmertypen verwalten Sie unter «Zimmer und Tarife».</p>
+        <PhotoManager hotelId={hotel.id} roomTypeId={null} photos={hotel.content.photos ?? []} canEdit={canEdit} page="site" alt="z. B. Hotel mit Blick auf den See" />
       </section>
 
       <section className="card stack" id="sprachen">

@@ -128,7 +128,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
         </PeriodNav>
       </div>
       {sp.msg ? <p className="notice">{sp.msg}</p> : null}
-      <p className="small muted" style={{ margin: 0 }}>Die Zahl ist die Anzahl <strong>freier Zimmer</strong> je Nacht. Rot = ausgebucht. Fahren Sie über eine Zahl, sehen Sie, wie viele gebucht, gesperrt oder über ein Portal belegt sind.</p>
+      <p className="small muted" style={{ margin: 0 }}>Die Zahl ist die Anzahl <strong>freier Zimmer</strong> je Nacht. Rot = ausgebucht. Fahren Sie über eine Zahl (am Handy: antippen), sehen Sie, wie viele gebucht, gesperrt oder über ein Portal belegt sind.</p>
       <div className="scroll-x">
         <table className="cal">
           <thead>
@@ -151,7 +151,8 @@ export default async function Calendar({ params, searchParams }: { params: Promi
                     if (!i) return <td key={d} className="muted">–</td>;
                     const free = i.total - i.booked - i.blocked - i.externalBlocked;
                     return (
-                      <td key={d} className={free <= 0 ? "full" : ""} title={`frei ${free}, gebucht ${i.booked}, gesperrt ${i.blocked}, extern belegt ${i.externalBlocked}`}>
+                      <td key={d} className={free <= 0 ? "full" : ""} tabIndex={0} data-tip-tone={free <= 0 ? "full" : ""} data-tip-title={`${rt.name} · ${WD[weekday(d)]} ${d.slice(8, 10)}.${d.slice(5, 7)}.`}
+                        data-tip={`Frei\t${free}\nGebucht\t${i.booked}\nGesperrt\t${i.blocked}\nExtern belegt\t${i.externalBlocked}`}>
                         <span className="cal-free">{free}</span>
                       </td>
                     );
@@ -239,7 +240,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
               Zimmertypen, Anzahl Zimmer, Fotos, Tarife und Extras ändern oder neu anlegen Sie unter «Mein Betrieb → Zimmer und Tarife». Der Kalender zeigt dann automatisch die neuen Zeilen.
             </p>
             <div><a className="btn secondary" href={`/mypontivo/${hotel.id}/rooms`}>Zimmer anpassen</a></div>
-            <p className="muted small" style={{ margin: 0 }}>
+            <p className="muted small">
               Preise automatisch nach Auslastung anpassen? Das geht unter <a href={`/mypontivo/${hotel.id}/preise`}>Preisempfehlung</a>.
             </p>
           </aside>

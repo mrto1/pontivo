@@ -66,13 +66,20 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
   await page.setInputFiles("input[type=file]", { name: "aussicht.png", mimeType: "image/png", buffer: png });
   await page.getByRole("button", { name: "Hochladen" }).click();
   await expect(page.getByText("1 Foto(s) hochgeladen")).toBeVisible();
-  // Zweites Foto hochladen und als Titelbild setzen (kommt an die erste Stelle)
+  // Zweites Foto hochladen und per Drag & Drop an die erste Stelle ziehen (wird automatisch Titelbild)
   await page.setInputFiles("input[type=file]", { name: "zimmer.png", mimeType: "image/png", buffer: png });
   await page.getByRole("button", { name: "Hochladen" }).click();
   await expect(page.locator("figure.photo")).toHaveCount(2);
   await expect(page.locator("figure.photo").nth(0).locator(".badge")).toHaveText("Titelbild");
+  await page.waitForLoadState("networkidle"); // Seite ist bedienbar (Handler angehängt), bevor gezogen wird
   const second = (await page.locator("figure.photo").nth(1).locator("img").getAttribute("src"))!;
-  await page.locator("figure.photo").nth(1).getByRole("button", { name: "Als Titelbild" }).click();
+  const from = (await page.locator("figure.photo").nth(1).boundingBox())!;
+  const to = (await page.locator("figure.photo").nth(0).boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByText("Reihenfolge gespeichert")).toBeVisible();
   await expect(page.locator("figure.photo").nth(0).locator("img")).toHaveAttribute("src", second);
   await expect(page.locator("figure.photo").nth(0).locator(".badge")).toHaveText("Titelbild");
   await page.getByRole("button", { name: "Weiter" }).click();

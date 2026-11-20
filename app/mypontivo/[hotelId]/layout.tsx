@@ -5,9 +5,8 @@ import { hiddenNavKeys } from "@/src/domain/modules";
 import { areasOf, isLimitedRole, roleLabel } from "@/src/domain/roles";
 import { moduleRows } from "@/src/services/modules";
 import { AdminNav } from "@/components/admin/AdminNav";
-import { PasskeyNudge } from "@/components/admin/PasskeyNudge";
-import { listPasskeys } from "@/src/services/mfa";
 import { SectionTabs } from "@/components/admin/SectionTabs";
+import { TooltipHost } from "@/components/admin/TooltipHost";
 import { SetupNotices } from "@/components/admin/SetupNotices";
 import { atLeast } from "@/src/auth/session";
 import { onboardingSteps } from "@/src/services/onboarding";
@@ -32,7 +31,6 @@ export default async function HotelAdminLayout({ children, params }: { children:
   const banner = manages ? setupBanner(hotel, steps) : null;
   const parallel = manages ? parallelBanner(hotel) : null;
   const doneCount = steps?.filter((x) => x.done).length ?? 0;
-  const noPasskey = (await listPasskeys(user.id)).length === 0;
   const others = (await hotelsForUser(user.id)).filter((x) => x.hotel.id !== hotel.id);
   return (
     <>
@@ -52,9 +50,9 @@ export default async function HotelAdminLayout({ children, params }: { children:
           <AdminNav nav={nav} home={home} userLabel={`${user.email} · ${roleLabel(role)}`} initials={initials(user.name, user.email)} />
         </div>
       </header>
+      <TooltipHost />
       <main className="wrap admin-main">
         <SetupNotices home={home} banner={banner} parallel={parallel} unmet={steps ? unmetNeeds(steps) : []} />
-        {noPasskey ? <PasskeyNudge /> : null}
         <SectionTabs nav={nav} home={home} />
         {children}
       </main>

@@ -5,7 +5,7 @@ import path from "node:path";
 import { and, eq } from "drizzle-orm";
 import { db, closeDb } from "../../src/db/client";
 import { auditLog, channexOutbox, hotels, inventoryDays, ratesDays, roomTypes } from "../../src/db/schema";
-import { addPhoto, changePhoto, createRatePlan, createRoomType, updateRatePlan, updateRoomType, RoomError } from "../../src/services/rooms";
+import { addPhoto, changePhoto, reorderPhotos, createRatePlan, createRoomType, updateRatePlan, updateRoomType, RoomError } from "../../src/services/rooms";
 import { createDirectBooking } from "../../src/services/bookings";
 import { searchOffers } from "../../src/services/search";
 import { saveImage, sniffImage, mediaPath, UploadError } from "../../src/lib/storage";
@@ -120,6 +120,27 @@ describe("Fotos", () => {
     await addPhoto(h.hotel.id, null, { url: "/media/a/hotel.png", alt: "Aussen" }, "t");
     const [hh] = await db().select().from(hotels).where(eq(hotels.id, h.hotel.id));
     expect(hh.content.photos).toEqual([{ url: "/media/a/hotel.png", alt: "Aussen" }]);
+  });
+
+  it("Reihenfolge der Fotos: erstes wird Titelbild, Unbekanntes ignoriert, Fremdes bleibt unberührt, Audit", async () => {
+    const h = await makeHotel();
+    const other = await makeHotel();
+    const rt = h.rooms[0].roomType;
+    for (const n of ["1", "2", "3"]) await addPhoto(h.hotel.id, rt.id, { url: `/media/a/${n}.png`, alt: n }, "t");
+    await reorderPhotos(h.hotel.id, rt.id, ["/media/a/3.png", "/media/x/fremd.png", "/media/a/1.png", "/media/a/3.png"], "t");
+    const [r] = await db().select().from(roomTypes).where(eq(roomTypes.id, rt.id));
+    // genannte zuerst (ohne Doppelte und Unbekannte), nicht genannte hinten; Beschreibung bleibt erhalten
+    expect(r.photos).toEqual([{ url: "/media/a/3.png", alt: "3" }, { url: "/media/a/1.png", alt: "1" }, { url: "/media/a/2.png", alt: "2" }]);
+    // Hotel-Fotos
+    await addPhoto(h.hotel.id, null, { url: "/media/a/h1.png" }, "t");
+    await addPhoto(h.hotel.id, null, { url: "/media/a/h2.png" }, "t");
+    await reorderPhotos(h.hotel.id, null, ["/media/a/h2.png"], "t");
+    const [hh] = await db().select().from(hotels).where(eq(hotels.id, h.hotel.id));
+    expect(hh.content.photos?.map((p) => p.url)).toEqual(["/media/a/h2.png", "/media/a/h1.png"]);
+    // Mandantentrennung: Zimmertyp eines anderen Hotels
+    await expect(reorderPhotos(other.hotel.id, rt.id, [], "t")).rejects.toThrow(RoomError);
+    const logs = await db().select().from(auditLog).where(and(eq(auditLog.hotelId, h.hotel.id), eq(auditLog.action, "photo.order")));
+    expect(logs).toHaveLength(2);
   });
 
   it("Upload-Route verlangt Anmeldung mit Rolle", async () => {

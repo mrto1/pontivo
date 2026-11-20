@@ -7,16 +7,20 @@ import { env } from "@/src/env";
 
 export const dynamic = "force-dynamic";
 
-/** Foto-Upload (Formular mit enctype=multipart/form-data), danach zurück zur Zimmer-Seite */
+/** Foto-Upload (Formular mit enctype=multipart/form-data), danach zurück auf die Seite, von der es kam */
 export async function POST(req: Request, ctx: { params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await ctx.params;
   const userId = readSessionValue((await cookies()).get(SESSION_COOKIE)?.value);
   if (!userId || !atLeast(await roleIn(userId, hotelId), "manager")) return new Response("Not found", { status: 404 });
-  const fromWizard = new URL(req.url).searchParams.get("from") === "wizard";
-  const back = (msg: string, anchor = "") =>
-    Response.redirect(fromWizard
-      ? `${env().APP_BASE_URL}/mypontivo/${hotelId}/einrichten?step=fotos&msg=${encodeURIComponent(msg)}`
-      : `${env().APP_BASE_URL}/mypontivo/${hotelId}/rooms?msg=${encodeURIComponent(msg)}${anchor}`, 303);
+  const from = new URL(req.url).searchParams.get("from");
+  const base = `${env().APP_BASE_URL}/mypontivo/${hotelId}`;
+  const back = (msg: string, anchor = "") => {
+    const m = encodeURIComponent(msg);
+    // Zurück auf die Seite, von der das Formular kam (Assistent, Website-Seite, sonst Zimmer-Seite)
+    if (from === "wizard" || from === "einrichten") return Response.redirect(`${base}/einrichten?step=fotos&msg=${m}`, 303);
+    if (from === "site") return Response.redirect(`${base}/site?msg=${m}#hotel-photos`, 303);
+    return Response.redirect(`${base}/rooms?msg=${m}${anchor}`, 303);
+  };
 
   const len = Number(req.headers.get("content-length") ?? 0);
   if (len > MAX_UPLOAD_BYTES * 3 + 100_000) return back("Zu grosse Datei(en)");

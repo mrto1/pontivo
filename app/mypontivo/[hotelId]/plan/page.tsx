@@ -83,7 +83,7 @@ function cells(bs: PlanBooking[], from: string, hotelId: string) {
     if (!b) { out.push(<td key={i} className="plan-free" />); i++; continue; }
     const len = Math.min(DAYS - i, diffDays(day, b.checkout));
     out.push(
-      <td key={i} colSpan={len} className={`plan-bar ${b.status === "hold" ? "hold" : ""}`} title={`${b.guest} · ${b.reference}`}>
+      <td key={i} colSpan={len} className={`plan-bar ${b.status === "hold" ? "hold" : ""}`} tabIndex={0} data-tip-title={b.guest} data-tip={`Referenz\t${b.reference}\nAnreise\t${b.checkin}\nAbreise\t${b.checkout}${b.status === "hold" ? "\nStatus\treserviert (offen)" : ""}`}>
         <a href={`/mypontivo/${hotelId}/bookings/${b.bookingId}`}>{b.guest}</a>
       </td>,
     );
@@ -111,7 +111,11 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
 
   return (
     <div className="stack">
-      <h1>Zimmerplan</h1>
+      <h1 style={{ marginBottom: 0 }}>Zimmerplan</h1>
+      <p className="muted" style={{ margin: 0, maxWidth: "46rem" }}>
+        Der Zimmerplan zeigt auf einen Blick, welches Zimmer an welchem Tag von wem belegt ist, und wo noch Zimmer frei sind. Sie teilen jeder Buchung eine Zimmernummer zu (von Hand oder automatisch) und können den Gast bei Bedarf in ein anderes Zimmer umquartieren, ohne dass sich Preis oder Verfügbarkeit ändern.
+        Das lohnt sich, sobald Gäste konkrete Zimmer bekommen: Die Reinigungsliste weiss dann, welches Zimmer nach der Abreise zu putzen ist, die Tagesliste, wohin der Gast beim Check-in geht, und Doppelbelegungen sind ausgeschlossen. Ohne Zimmerplan funktioniert das Buchen trotzdem; er ist optional.
+      </p>
       {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
       <PeriodNav prev={`${base}?from=${addDays(from, -7)}`} next={`${base}?from=${addDays(from, 7)}`} todayHref={base} todayActive={from === today} prevLabel="Woche zurück" nextLabel="Woche vor" jump={{ value: from, param: "from" }} />
 

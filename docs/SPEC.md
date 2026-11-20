@@ -998,3 +998,11 @@ Seite `/mypontivo/<hotel>/direktbuchung` (Reiter unter «Website und Buchung», 
 - Die Plattform-Verwaltung (`/admin/plattform`) ist nach Themen in Seiten und Unterseiten gegliedert, mit demselben Menü- und Reiter-Stil wie myPontivo (`src/admin/platform-nav.ts`, `AdminNav`, `SectionTabs`): **Übersicht** (Kennzahlen, «Braucht Aufmerksamkeit», Bereiche) · **Betriebe** (Betriebe | Benutzer) · **Vertrieb** · **Abrechnung** (Rechnungen | MWST) · **Plattform** (Plattform-Admins | Website-Texte | Schulferien). Am Handy untere Leiste mit den fünf Hauptpunkten.
 - Alle Aktionen liegen in `app/admin/plattform/actions.ts`; jede Seite sendet ihren Pfad in `to` mit und kehrt dorthin zurück (erlaubte Ziele sind festgelegt). Alte Anker wie `/admin/plattform#schulferien` gibt es nicht mehr.
 - Abnahme: `tests/unit/platform-nav.test.ts`.
+
+### 19.39 Fotos, Zimmertypen, Kurzinfos
+- Fotos des Hotels liegen unter «Website und Buchung» (`#hotel-photos`), Fotos je Zimmertyp unter «Zimmer und Tarife». Beide nutzen `PhotoManager`/`PhotoGrid`: Reihenfolge per Drag & Drop (Maus: Bild ziehen; Touch: Griff unten links), das erste Foto ist automatisch das Titelbild; rotes ✕ oben rechts entfernt (mit Rückfrage). Es gibt keine Knöpfe «Als Titelbild»/«Entfernen» mehr.
+- Server: `reorderPhotos` (`src/services/rooms.ts`; unbekannte Adressen ignoriert, nicht genannte Fotos bleiben hinten, Audit `photo.order`), Aktion `photoAction` (`app/mypontivo/[hotelId]/photo-actions.ts`, kehrt auf die Ursprungsseite zurück). Upload-Route kennt `from=site|wizard|einrichten`.
+- Zimmertypen sind standardmässig zugeklappt (Vorschaubild, Name, Anzahl Zimmer, Anzahl Tarife, Hinweis «ohne Tarif»/«nicht buchbar»); Aufklappen zeigt Bearbeiten (Stift-Symbol), Fotos und Tarife. Ein Anker `#rt-<id>` klappt die Karte auf (`OpenOnHash`).
+- Kurzinfos: Elemente mit `data-tip`/`data-tip-title` zeigen eine einheitliche Kurzinfo (`TooltipHost`, Maus, Antippen, Tastatur) statt des Browser-Tooltips; verwendet im Kalender (frei/gebucht/gesperrt/extern) und im Zimmerplan.
+- Aktive Umschalter (`.seg`, Sprach-Reiter) sind dezent (leichte Tönung statt voller Akzentfläche). Der Passkey-Hinweis-Banner entfällt (Passkey bleibt freiwillig unter «Mein Konto»).
+- Abnahme: `tests/integration/rooms.test.ts` (Reihenfolge), `tests/e2e/onboarding.spec.ts` (Drag & Drop).

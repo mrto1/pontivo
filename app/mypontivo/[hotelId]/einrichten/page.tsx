@@ -14,8 +14,9 @@ import { moduleRows } from "@/src/services/modules";
 import { setPreviousSoftware } from "@/src/services/migration";
 import { confirmTouristTax } from "@/src/services/settings";
 import { taxRuleFor } from "@/src/services/hotels";
-import { changePhoto, listRooms, MAX_PHOTOS, RoomError } from "@/src/services/rooms";
-import { deleteImage } from "@/src/lib/storage";
+import { listRooms, MAX_PHOTOS, RoomError } from "@/src/services/rooms";
+import { PhotoGrid } from "@/components/admin/PhotoGrid";
+import { photoAction } from "../photo-actions";
 import { listExtras } from "@/src/services/extras";
 import { startCardSetup } from "@/src/services/billing";
 import { onboardingLink, refreshAccountStatus } from "@/src/integrations/stripe/onboarding";
@@ -104,20 +105,6 @@ async function saveArrival(f: FormData) {
 async function saveGuestInfoAction(f: FormData) {
   "use server";
   await step(f, ({ hotel, actor }) => setGuestInfo(hotel, { de: s(f, "de"), en: s(f, "en") }, actor));
-}
-
-/** Foto im Assistenten: als Titelbild setzen (kommt an die erste Stelle) oder entfernen */
-async function photoStep(f: FormData) {
-  "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  const remove = s(f, "action") === "remove";
-  try {
-    await changePhoto(c.hotel.id, null, s(f, "url"), remove ? "remove" : "first", c.actor);
-    if (remove) await deleteImage(s(f, "url"));
-  } catch (e) {
-    redirect(`/mypontivo/${c.hotel.id}/einrichten?step=fotos&error=${encodeURIComponent(errText(e))}`);
-  }
-  redirect(`/mypontivo/${c.hotel.id}/einrichten?step=fotos`);
 }
 
 async function skip(f: FormData) {
@@ -335,14 +322,8 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       const photos = hotel.content.photos ?? [];
       body = (
         <div className="stack">
-          <p>Gute Fotos sind das Wichtigste für Buchungen. Das Titelbild (das erste Foto) erscheint gross auf der Startseite. Jedes andere Foto können Sie mit «Als Titelbild» nach vorne setzen. Querformat, hell, ohne Personen.</p>
-          {photos.length ? <div className="photo-grid">{photos.map((p, i) => (
-            <figure key={p.url} className="photo"><img src={p.url} alt={p.alt ?? ""} />{i === 0 ? <span className="badge">Titelbild</span> : null}
-              <div className="photo-actions">
-                {i > 0 ? <form action={photoStep}>{H}<input type="hidden" name="url" value={p.url} /><input type="hidden" name="action" value="first" /><button className="btn secondary small">Als Titelbild</button></form> : null}
-                <form action={photoStep}>{H}<input type="hidden" name="url" value={p.url} /><input type="hidden" name="action" value="remove" /><button className="btn secondary small">Entfernen</button></form>
-              </div>
-            </figure>))}</div> : null}
+          <p>Gute Fotos sind das Wichtigste für Buchungen. Das Titelbild (das erste Foto) erscheint gross auf der Startseite. Die Reihenfolge ändern Sie, indem Sie ein Foto an eine andere Stelle ziehen; mit dem roten ✕ entfernen Sie es. Querformat, hell, ohne Personen.</p>
+          {photos.length ? <PhotoGrid key={photos.map((p) => p.url).join("|")} photos={photos} canEdit action={photoAction} hidden={{ hotelId: hotel.id, roomTypeId: "", page: "einrichten" }} /> : null}
           {photos.length < MAX_PHOTOS ? (
             <form action={`/api/admin/hotels/${hotel.id}/photos?from=wizard`} method="post" encType="multipart/form-data" className="stack card">
               <div><label>Fotos hochladen (JPG, PNG, WebP, max. 8 MB, bis 3 aufs Mal)</label><input type="file" name="file" accept="image/jpeg,image/png,image/webp" multiple required /></div>
