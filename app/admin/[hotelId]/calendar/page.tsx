@@ -116,6 +116,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
               <a key={r.days} href={`?from=${from}&days=${r.days}`} className={r.days === span ? "on" : ""}>{r.label}</a>
             ))}
           </div>
+          <a className="btn secondary small" href={`/admin/${hotel.id}/calendar/csv?from=${from}&to=${addDays(from, span - 1)}`} title="Angezeigten Zeitraum als CSV für Excel herunterladen">Excel-Export</a>
         </div>
       </div>
       {sp.msg ? <p className="notice">{sp.msg}</p> : null}
