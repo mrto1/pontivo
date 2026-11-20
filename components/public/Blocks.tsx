@@ -1,7 +1,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/src/db/client";
 import { roomTypes, type Hotel } from "@/src/db/schema";
-import { groupDays, lookClass, menuSections, tr, type Block } from "@/src/domain/blocks";
+import { groupDays, lookClass, menuSections, offerActive, tr, type Block } from "@/src/domain/blocks";
 import { RichText } from "./RichText";
 import { MapEmbed } from "./MapEmbed";
 import { fill } from "@/src/i18n/dict";
@@ -165,6 +165,27 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
         );
         break;
       }
+      case "labels": {
+        const items = b.items.filter((it) => it.name);
+        if (!items.length) break;
+        out.push(
+          <section key={b.id} id={`b-${b.id}`} className="blk blk-labels">
+            <Heading text={tr(b.heading, lang)} />
+            <ul className="labels">
+              {items.map((it, i) => {
+                const inner = (<>
+                  {it.image ? <img src={it.image.url} alt={it.image.alt || it.name} loading="lazy" /> : null}
+                  <span className="label-name">{it.name}</span>
+                  {tr(it.level, lang) ? <span className="label-level small muted">{tr(it.level, lang)}</span> : null}
+                  {tr(it.text, lang) ? <span className="label-text small">{tr(it.text, lang)}</span> : null}
+                </>);
+                return <li key={i} className="card label">{it.url ? <a href={it.url} target="_blank" rel="noopener nofollow">{inner}</a> : inner}</li>;
+              })}
+            </ul>
+          </section>,
+        );
+        break;
+      }
       case "faq":
         out.push(
           <section key={b.id} id={`b-${b.id}`} className="blk blk-faq">
@@ -185,14 +206,17 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
           <section key={b.id} id={`b-${b.id}`} className="blk blk-offers">
             <Heading text={tr(b.heading, lang)} />
             <div className="grid">
-              {b.items.filter((it) => tr(it.title, lang)).map((it, i) => {
+              {b.items.filter((it) => tr(it.title, lang) && offerActive(it, today)).map((it, i) => {
                 const q = new URLSearchParams({ ...(it.ratePlanId ? { plan: it.ratePlanId } : {}), nights: String(it.nights) });
+                const inc = tr(it.includes, lang).split("\n").map((x) => x.trim()).filter(Boolean);
                 return (
                   <article key={i} className="card offer-card">
                     {it.image ? <img className="room-photo" src={it.image.url} alt={it.image.alt ?? ""} loading="lazy" /> : null}
                     <h3>{tr(it.title, lang)}</h3>
                     {it.nights > 1 ? <span className="badge">{fill(d.fromNights, { n: it.nights })}</span> : null}
                     <RichText text={tr(it.text, lang)} />
+                    {inc.length ? <><p className="small" style={{ margin: 0 }}><strong>{d.offerIncludes}</strong></p><ul className="offer-includes">{inc.map((x, j) => <li key={j}>{x}</li>)}</ul></> : null}
+                    {it.validTo ? <p className="small muted" style={{ margin: 0 }}>{fill(d.offerValidUntil, { date: shortDate(it.validTo, lang) })}</p> : null}
                     {tr(it.price, lang) ? <p className="offer-price">{tr(it.price, lang)}</p> : null}
                     <a className="btn" href={`${base}/${lang}/book?${q}`}>{d.bookOffer}</a>
                   </article>

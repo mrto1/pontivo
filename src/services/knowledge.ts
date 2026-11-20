@@ -2,7 +2,8 @@ import { and, asc, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { extras, ratePlans, roomTypes, type Hotel } from "../db/schema";
 import { plainText } from "../domain/richtext";
-import { tr, type Block } from "../domain/blocks";
+import { offerActive, tr, type Block } from "../domain/blocks";
+import { todayIn } from "../domain/dates";
 import { planName, roomDescription, roomName } from "../domain/i18n-names";
 import { cancellationPolicyText } from "../domain/cancellation";
 import type { Locale } from "../i18n/dict";
@@ -20,7 +21,8 @@ export type HotelKnowledge = {
   tips: { title: string; text: string; category: string; season: string; distance: string; url: string | null }[];
   facts: { label: string; value: string }[];
   arrival: string[];
-  offers: { title: string; text: string; price: string; minNights: number }[];
+  offers: { title: string; text: string; price: string; includes: string; minNights: number }[];
+  labels: { name: string; level: string; text: string }[];
   /** Zusatzleistungen (Preis in CHF, Einheit z. B. per_night) */
   extras: { name: string; description: string; priceChf: string; unit: string; mandatory: boolean }[];
   /** Speisekarte (Preise in CHF) */
@@ -54,6 +56,7 @@ export async function hotelKnowledge(hotel: Hotel, lang: Locale): Promise<HotelK
     extras: exs.map((e) => ({ name: T(e.name), description: T(e.description), priceChf: (e.priceRappen / 100).toFixed(2), unit: e.unit, mandatory: e.mandatory })),
     menu: blocks.flatMap((b) => (b.type === "menu" ? b.items : [])).map((x) => ({ section: T(x.section), name: T(x.name), text: T(x.text), priceChf: x.priceRappen === null ? null : (x.priceRappen / 100).toFixed(2), diet: x.diet, glutenFree: x.glutenFree })).filter((x) => x.name),
     hours: blocks.flatMap((b) => (b.type === "hours" ? [{ place: b.place, title: T(b.heading), days: b.days, closures: b.closures.map((c) => ({ from: c.from, to: c.to, label: T(c.label) })) }] : [])),
-    offers: blocks.flatMap((b) => (b.type === "offers" ? b.items : [])).map((x) => ({ title: T(x.title), text: T(x.text), price: T(x.price), minNights: x.ratePlanId ? planMin.get(x.ratePlanId) ?? x.nights : x.nights })).filter((x) => x.title),
+    labels: blocks.flatMap((b) => (b.type === "labels" ? b.items : [])).map((x) => ({ name: x.name, level: T(x.level), text: T(x.text) })).filter((x) => x.name),
+    offers: blocks.flatMap((b) => (b.type === "offers" ? b.items.filter((o) => offerActive(o, todayIn(hotel.timezone))) : [])).map((x) => ({ title: T(x.title), text: T(x.text), price: T(x.price), includes: T(x.includes), minNights: x.ratePlanId ? planMin.get(x.ratePlanId) ?? x.nights : x.nights })).filter((x) => x.title),
   };
 }

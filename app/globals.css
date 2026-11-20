@@ -563,9 +563,15 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 .layout-minimal .faq-item { border-width: 0 0 1px; border-radius: 0; background: transparent; }
 .offer-card, .tip { display: flex; flex-direction: column; gap: 8px; }
 .offer-card .btn { margin-top: auto; align-self: flex-start; }
+.offer-includes { margin: 0; padding-left: 1.2em; }
 .offer-price { font-weight: 700; font-size: 1.1rem; margin: 0; }
 .tip-tags { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .tip h3, .offer-card h3 { margin: 0; }
+.labels { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+.label { padding: 0; }
+.label > a, .label > :not(a) { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 18px; text-align: center; color: var(--ink); text-decoration: none; min-width: 140px; }
+.label img { max-height: 64px; max-width: 160px; width: auto; object-fit: contain; }
+.label-name { font-weight: 600; }
 .inquiry, .voucher-form { margin-top: 12px; }
 .hp { position: absolute !important; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .target-only { display: none; } .target-only:target { display: block; }

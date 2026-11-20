@@ -45,6 +45,14 @@ export const blockSchema = z.discriminatedUnion("type", [
     })).max(12).default([]),
     moreUrl: httpUrl.nullable().default(null),
   }),
+  // Auszeichnungen und Labels (z. B. Swisstainable, ISO, Familienfreundlich): nur eigene, tatsächlich erhaltene Labels
+  z.object({
+    id: z.string(), type: z.literal("labels"), heading: l10n(200),
+    items: z.array(z.object({
+      name: z.string().trim().max(80).default(""), level: l10n(60), text: l10n(400),
+      image: image.nullable().default(null), url: httpUrl.nullable().default(null),
+    })).max(12).default([]),
+  }),
   z.object({ id: z.string(), type: z.literal("faq"), heading: l10n(200), items: z.array(z.object({ q: l10n(300), a: l10n(2000) })).max(30).default([]) }),
   // Angebote/Pakete: verweisen auf einen Tarif (z. B. «3 Nächte mit Halbpension», Mindestnächte im Tarif)
   z.object({
@@ -52,6 +60,10 @@ export const blockSchema = z.discriminatedUnion("type", [
     items: z.array(z.object({
       title: l10n(120), text: l10n(1000), image: image.nullable().default(null), price: l10n(80),
       ratePlanId: z.string().uuid().nullable().default(null), nights: z.number().int().min(1).max(60).default(1),
+      /** Inklusivleistungen: eine pro Zeile (Paket «3 Nächte mit Halbpension, Wellness-Eintritt, Late Check-out») */
+      includes: l10n(800),
+      /** Gültigkeit (leer = immer); nach «bis» verschwindet das Angebot von selbst */
+      validFrom: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/).default(""), validTo: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/).default(""),
     })).max(12).default([]),
   }),
   // Ausflugstipps: strukturiert, damit auch der spätere KI-Chat sie kennt (src/services/knowledge.ts)
@@ -102,6 +114,7 @@ export const BLOCK_TYPES: { type: BlockType; label: string; hint: string }[] = [
   { type: "downloads", label: "Downloads (PDF)", hint: "Speisekarte, Preisliste, Seminarunterlagen – aus Ihren Dokumenten" },
   { type: "offers", label: "Angebote & Pakete", hint: "z. B. «3 Nächte mit Halbpension», direkt buchbar über einen Tarif" },
   { type: "reviews", label: "Gästestimmen", hint: "Echte Bewertungen mit Name und Quelle, Link zu allen Bewertungen" },
+  { type: "labels", label: "Auszeichnungen & Labels", hint: "z. B. Swisstainable, Familienfreundlich, Wellness-Label – mit Logo, Stufe und Link. Nur Labels, die Ihr Betrieb wirklich führt" },
   { type: "faq", label: "Häufige Fragen", hint: "Fragen und Antworten zum Aufklappen – spart Anrufe, hilft bei Google" },
   { type: "tips", label: "Ausflugstipps", hint: "Wanderungen, Ausflüge, Restaurants in der Umgebung" },
   { type: "inquiry", label: "Anfrageformular", hint: "Tischreservation, Gruppen, Seminare, Hochzeiten – kommt per E-Mail und im Admin an" },
@@ -111,6 +124,9 @@ export const BLOCK_TYPES: { type: BlockType; label: string; hint: string }[] = [
 export function newBlock(type: BlockType, id: string): Block {
   return blockSchema.parse({ id, type });
 }
+
+/** Gilt ein Angebot am Tag `today`? (leere Grenze = offen) */
+export const offerActive = (o: { validFrom?: string; validTo?: string }, today: string) => (!o.validFrom || o.validFrom <= today) && (!o.validTo || o.validTo >= today);
 
 /** Text in der gewünschten Sprache, sonst Englisch, sonst Deutsch (fallbackChain) */
 export function tr(v: L | undefined, lang: Locale): string {

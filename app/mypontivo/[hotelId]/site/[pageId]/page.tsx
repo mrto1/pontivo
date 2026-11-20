@@ -125,6 +125,11 @@ function blockFromForm(f: FormData, type: BlockType, id: string, alts: Map<strin
       const r = Number(s(f, `${k}.rating`));
       return { quote, author: s(f, `${k}.author`), source: s(f, `${k}.source`), date: s(f, `${k}.date`), rating: r >= 1 && r <= 5 ? r : null, url: s(f, `${k}.url`) || null };
     }) };
+    case "labels": return { id, type, heading: l10n(f, "heading"), items: rows(f, (k) => {
+      const name = s(f, `${k}.name`);
+      if (!name) return null;
+      return { name, level: l10n(f, `${k}.level`), text: l10n(f, `${k}.text`), image: img(`${k}.image`), url: s(f, `${k}.url`) || null };
+    }) };
     case "faq": return { id, type, heading: l10n(f, "heading"), items: rows(f, (k) => {
       const q = l10n(f, `${k}.q`), a = l10n(f, `${k}.a`);
       return Object.values(q).some(Boolean) ? { q, a } : null;
@@ -132,7 +137,8 @@ function blockFromForm(f: FormData, type: BlockType, id: string, alts: Map<strin
     case "offers": return { id, type, heading: l10n(f, "heading"), items: rows(f, (k) => {
       const title = l10n(f, `${k}.title`);
       if (!Object.values(title).some(Boolean)) return null;
-      return { title, text: l10n(f, `${k}.text`), price: l10n(f, `${k}.price`), image: img(`${k}.image`), ratePlanId: s(f, `${k}.plan`) || null, nights: Math.max(1, Number(s(f, `${k}.nights`)) || 1) };
+      return { title, text: l10n(f, `${k}.text`), price: l10n(f, `${k}.price`), image: img(`${k}.image`), ratePlanId: s(f, `${k}.plan`) || null, nights: Math.max(1, Number(s(f, `${k}.nights`)) || 1),
+        includes: l10n(f, `${k}.includes`), validFrom: s(f, `${k}.validFrom`), validTo: s(f, `${k}.validTo`) };
     }) };
     case "tips": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro"), items: rows(f, (k) => {
       const title = l10n(f, `${k}.title`);
@@ -369,6 +375,23 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
         <datalist id="review-sources"><option value="Google" /><option value="Booking.com" /><option value="Tripadvisor" /><option value="Gästebuch" /><option value="E-Mail" /></datalist>
         <div><label>Link «Alle Bewertungen ansehen» (z. B. Google)</label><input name="moreUrl" defaultValue={b.moreUrl ?? ""} placeholder="https://g.page/…" /></div>
       </>);
+    case "labels":
+      return (<>
+        <p className="notice small">Nur Auszeichnungen zeigen, die Ihr Betrieb <strong>tatsächlich führt</strong> (z. B. Swisstainable mit der richtigen Stufe). Irreführende Labels sind unlauter (UWG). Logo am besten aus den Unterlagen des Labels in die Foto-Bibliothek laden und beim Label verlinken (Nutzungsregeln des Labels beachten).</p>
+        <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
+        {Items(b.items.length + 2, (i, k) => {
+          const it = b.items[i];
+          return (<>
+            <div className="form-grid">
+              <div><label>Name des Labels {i + 1}</label><input name={`${k}.name`} defaultValue={it?.name ?? ""} placeholder="z. B. Swisstainable" maxLength={80} /></div>
+              <div><label>Link (optional)</label><input name={`${k}.url`} defaultValue={it?.url ?? ""} placeholder="https://…" /></div>
+            </div>
+            <LField name={`${k}.level`} label="Stufe (optional, z. B. «Level II – engaged»)" value={it?.level} max={60} langs={langs} />
+            <LField name={`${k}.text`} label="Kurztext (optional)" value={it?.text} rows={2} max={400} langs={langs} />
+            <ImagePick name={`${k}.image`} lib={lib} value={it?.image?.url} />
+          </>);
+        })}
+      </>);
     case "faq":
       return (<>
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
@@ -387,8 +410,11 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
           return (<>
             <LField name={`${k}.title`} label={`Angebot ${i + 1}`} value={it?.title} max={120} langs={langs} />
             <LField name={`${k}.text`} label="Beschreibung" value={it?.text} rows={3} max={1000} langs={langs} />
+            <LField name={`${k}.includes`} label="Inklusive (eine Leistung pro Zeile, optional)" value={it?.includes} rows={3} max={800} langs={langs} />
             <LField name={`${k}.price`} label="Preis-Hinweis (optional)" value={it?.price} max={80} langs={langs} />
             <div className="form-grid">
+              <div><label>gültig von (optional)</label><input name={`${k}.validFrom`} type="date" defaultValue={it?.validFrom ?? ""} /></div>
+              <div><label>gültig bis (optional)</label><input name={`${k}.validTo`} type="date" defaultValue={it?.validTo ?? ""} /></div>
               <div><label>Tarif</label><select name={`${k}.plan`} defaultValue={it?.ratePlanId ?? ""}><option value="">alle Tarife</option>{plans.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
               <div><label>Nächte vorschlagen</label><input name={`${k}.nights`} type="number" min={1} max={60} defaultValue={it?.nights ?? 2} /></div>
             </div>

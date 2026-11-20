@@ -14,7 +14,7 @@ import { hotelKnowledge } from "../../src/services/knowledge";
 import { faqJsonLd, hotelJsonLd, ldJson } from "../../src/lib/structured-data";
 import { setPaymentProvider, type PaymentProvider } from "../../src/payments/provider";
 import { safeBack } from "../../src/lib/back";
-import { blockSchema } from "../../src/domain/blocks";
+import { blockSchema, offerActive } from "../../src/domain/blocks";
 import { inDays, makeHotel, cardStubs } from "../helpers";
 
 afterAll(closeDb);
@@ -134,6 +134,17 @@ describe("Bausteine, strukturierte Daten, Übersetzung, Wissen", () => {
   it("neue Bausteine validieren: Gästestimmen brauchen echte Links, FAQ, Tipps, Anfrage", () => {
     expect(blockSchema.parse({ id: "r", type: "reviews", items: [{ quote: { de: "Super" }, author: "Sandra M.", source: "Google", date: "2026-08", rating: 5 }] })).toMatchObject({ type: "reviews" });
     expect(() => blockSchema.parse({ id: "r", type: "reviews", moreUrl: "javascript:alert(1)" })).toThrow();
+    // Angebote: Inklusivleistungen und Gültigkeit
+    const offer = blockSchema.parse({ id: "o", type: "offers", items: [{ title: { de: "3 Nächte" }, includes: { de: "Halbpension\nWellness" }, validFrom: "2027-01-01", validTo: "2027-03-31" }] });
+    expect(offer.type === "offers" && offer.items[0].validTo).toBe("2027-03-31");
+    expect(() => blockSchema.parse({ id: "o", type: "offers", items: [{ title: { de: "x" }, validTo: "bald" }] })).toThrow();
+    expect(offerActive({ validFrom: "2027-01-01", validTo: "2027-03-31" }, "2027-03-31")).toBe(true);
+    expect(offerActive({ validFrom: "2027-01-01", validTo: "2027-03-31" }, "2027-04-01")).toBe(false);
+    expect(offerActive({ validFrom: "2027-01-01", validTo: "" }, "2026-12-31")).toBe(false);
+    expect(offerActive({}, "2027-04-01")).toBe(true);
+    // Auszeichnungen und Labels: generisch für alle Betriebe, nur http(s)-Links
+    expect(blockSchema.parse({ id: "l", type: "labels", items: [{ name: "Swisstainable", level: { de: "Level II – engaged" }, url: "https://www.swisstainable.ch" }] })).toMatchObject({ type: "labels" });
+    expect(() => blockSchema.parse({ id: "l", type: "labels", items: [{ name: "X", url: "javascript:alert(1)" }] })).toThrow();
     expect(() => blockSchema.parse({ id: "r", type: "reviews", items: [{ quote: {}, rating: 6 }] })).toThrow();
     expect(blockSchema.parse({ id: "i", type: "inquiry" })).toMatchObject({ kinds: ["group", "seminar", "wedding"] });
     expect(() => blockSchema.parse({ id: "i", type: "inquiry", kinds: [] })).toThrow();

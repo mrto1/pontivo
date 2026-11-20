@@ -969,3 +969,13 @@ Seite `/mypontivo/<hotel>/direktbuchung` (Reiter unter «Website und Buchung», 
 - **Schulferien** (`school_holidays`, Migration 0070): Referenzdaten der Plattform ohne Mandantenbezug, in der Plattform-Verwaltung als CSV (`Kanton;Name;von;bis`) importiert, nie im Code. Ohne Import gibt es keine Schulferien-Vorschläge.
 - **Übernahme:** Auf «Preisempfehlung» zeigt der Abschnitt «Feiertage und Schulferien» die Vorschläge der nächsten 13 Monate für den Kanton des Betriebs, ohne bereits eingetragene. Der Manager wählt aus und gibt je Art einen Zuschlag in % an; daraus werden Preis-Ereignisse (`pricing_events`). Die Preise ändern sich nicht von selbst, die Ereignisse fliessen nur in die Vorschläge der Preisempfehlung ein. Protokoll `platform.school_holidays_imported`, `pricing.event.add`.
 - Abnahme: `tests/unit/holidays.test.ts`, `tests/integration/holidays.test.ts`.
+
+### 19.34 Baustein «Auszeichnungen & Labels»
+- Allgemeiner Baustein für alle Betriebe (`labels` in `src/domain/blocks.ts`): bis 12 Labels mit Name, Stufe (je Sprache), Kurztext, Logo aus der Foto-Bibliothek und Link (nur http/https, `rel="noopener nofollow"`). Typisch: Swisstainable, Familienfreundlich, Wellness-Label, Bio. Kein Code für einzelne Labels, kein Hotel-Sonderfall: ein Label ist Inhalt (Daten) des Betriebs.
+- Der Hinweis im Editor mahnt: nur Labels zeigen, die der Betrieb tatsächlich führt (UWG). Pontivo prüft das Label nicht. Der KI-Chat kennt die Labels (`knowledge.labels`).
+- Abnahme: `tests/integration/website-extras.test.ts`.
+
+### 19.35 Pakete im Baustein «Angebote»
+- Ein Paket ist ein Angebot im Baustein `offers` mit Tarif (Verpflegung, Mindestnächte, feste Anreisetage im Tarif), Beschreibung, **Inklusivleistungen** (eine pro Zeile, je Sprache) und optionaler **Gültigkeit** (`validFrom`, `validTo`, nach dem Enddatum verschwindet das Angebot von der Website und aus dem Wissen des KI-Chats). Der Preis kommt aus dem Tarif (Zimmerpreis der gebuchten Nächte), der Preis-Hinweis ist ein Freitext. Keine zweite Preislogik: Rabatte für Pakete laufen über den Tarif.
+- ASSUMPTION: Inklusivleistungen sind Text; sie werden nicht einzeln abgerechnet (Verpflegung mit Wert ist im Tarif abgebildet, `meal_rappen`). Eine eigene Seite je Paket kann der Betrieb mit einer Seite und diesem Baustein anlegen.
+- Abnahme: `tests/integration/website-extras.test.ts`.
