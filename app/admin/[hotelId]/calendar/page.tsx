@@ -116,7 +116,15 @@ export default async function Calendar({ params, searchParams }: { params: Promi
               <a key={r.days} href={`?from=${from}&days=${r.days}`} className={r.days === span ? "on" : ""}>{r.label}</a>
             ))}
           </div>
-          <a className="btn secondary small" href={`/admin/${hotel.id}/calendar/csv?from=${from}&to=${addDays(from, span - 1)}`} title="Angezeigten Zeitraum als CSV für Excel herunterladen">Excel-Export</a>
+          <details className="export-pop">
+            <summary className="btn secondary small">Excel-Export</summary>
+            <form method="get" action={`/admin/${hotel.id}/calendar/csv`} className="export-card">
+              <div><label>Von</label><input type="date" name="from" defaultValue={from} required /></div>
+              <div><label>Bis (inkl.)</label><input type="date" name="to" defaultValue={addDays(from, span - 1)} required /></div>
+              <button className="btn small">CSV herunterladen</button>
+              <p className="muted small" style={{ margin: 0 }}>Höchstens 366 Tage, für Excel (Semikolon, UTF-8).</p>
+            </form>
+          </details>
         </div>
       </div>
       {sp.msg ? <p className="notice">{sp.msg}</p> : null}
@@ -193,24 +201,27 @@ export default async function Calendar({ params, searchParams }: { params: Promi
             <button className="btn">Alle speichern</button>
           </form>
 
-          <form action={saveBlock} className="card stack">
+          <form action={saveBlock} className="card stack" style={{ gridColumn: "1 / -1" }}>
             <h3>Zimmer sperren / freigeben</h3>
+            <p className="muted small" style={{ margin: 0 }}>
+              Sperrt Zimmer für einen Zeitraum, zum Beispiel für Renovation oder Eigenbedarf. Mit Anzahl 0 geben Sie gesperrte Zimmer wieder frei.
+            </p>
             <input type="hidden" name="hotelId" value={hotel.id} />
             <input type="hidden" name="viewFrom" value={from} />
             <input type="hidden" name="viewDays" value={span} />
-            <div>
-              <label>Zimmertyp</label>
-              <select name="roomTypeId" required>
-                {cal.roomTypes.map((r) => <option key={r.id} value={r.id}>{r.name} ({r.roomCount})</option>)}
-              </select>
-            </div>
-            <div className="inline-form">
+            <div className="form-row">
+              <div>
+                <label>Zimmertyp</label>
+                <select name="roomTypeId" required>
+                  {cal.roomTypes.map((r) => <option key={r.id} value={r.id}>{r.name} ({r.roomCount})</option>)}
+                </select>
+              </div>
               <div><label>Von</label><input type="date" name="from" defaultValue={from} required /></div>
               <div><label>Bis (inkl.)</label><input type="date" name="to" defaultValue={from} required /></div>
+              <div><label>Gesperrte Zimmer</label><input name="blocked" type="number" min={0} defaultValue={1} required title="0 = freigeben" /></div>
             </div>
             <Weekdays />
-            <div><label>Anzahl gesperrte Zimmer (0 = freigeben)</label><input name="blocked" type="number" min={0} defaultValue={1} required /></div>
-            <button className="btn">Speichern</button>
+            <div><button className="btn">Speichern</button></div>
           </form>
         </div>
       ) : null}

@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { exportLimited } from "@/src/lib/export-limit";
 import { atLeast, readSessionValue, roleIn, SESSION_COOKIE } from "@/src/auth/session";
 import { getHotelById } from "@/src/services/hotels";
 import { isMonth } from "@/src/services/report";
@@ -12,6 +13,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ hotelId: string
   const { hotelId } = await ctx.params;
   const userId = readSessionValue((await cookies()).get(SESSION_COOKIE)?.value);
   if (!userId || !atLeast(await roleIn(userId, hotelId), "manager")) return new Response("Not found", { status: 404 });
+  const limited = await exportLimited(userId, hotelId);
+  if (limited) return limited;
   const u = new URL(req.url);
   const quarter = u.searchParams.get("quarter");
   const month = quarter ?? u.searchParams.get("month");

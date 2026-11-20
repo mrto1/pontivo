@@ -16,3 +16,14 @@ describe("calendarCsv", () => {
     expect(l[2]).toBe('2026-11-21;Sa;"Doppel; Zimmer";;;;;;Flexibel;;;;;');
   });
 });
+
+import { exportLimited } from "@/src/lib/export-limit";
+describe("exportLimited", () => {
+  it("sperrt nach 20 Exporten in 10 Minuten", async () => {
+    const u = `u-${Math.random()}`;
+    for (let i = 0; i < 20; i++) expect(await exportLimited(u, "h1")).toBeNull();
+    const r = await exportLimited(u, "h1");
+    expect(r?.status).toBe(429);
+    expect(r?.headers.get("retry-after")).toBe("600");
+  });
+});

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
+import { exportLimited } from "@/src/lib/export-limit";
 import { exportCsv } from "@/src/services/pos";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ hotelId:
   const { hotelId } = await params;
   const c = await requireHotel(hotelId, "manager");
   await requireModule(c.hotel.id, "pos");
+  const limited = await exportLimited(c.user.id, c.hotel.id);
+  if (limited) return limited;
   const u = new URL(req.url);
   const from = u.searchParams.get("from") ?? "", to = u.searchParams.get("to") ?? "";
   if (!DAY.test(from) || !DAY.test(to)) notFound();
