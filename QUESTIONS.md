@@ -236,3 +236,8 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Inhalte fremder Websites (Texte, Beschreibungen) können urheberrechtlich geschützt sein: der Betrieb übernimmt nur Texte seiner eigenen Website. Hinweis in den Bedingungen für Gastgeber ergänzen.
 - Websites, die erst im Browser aufgebaut werden (JavaScript), liefern zu wenig Text; dafür das PDF verwenden. Kein Browser-Rendering vorgesehen (Kosten, Sicherheit).
 - Noch nicht übernommen: Preise, Extras, Fotos, Tarife. Fotos von der alten Website zu übernehmen wäre ein eigener Schritt (Urheberrecht, Grösse).
+
+## Deploy-Zugänge (SPEC 19.37)
+- Annahme: Benutzer `ubuntu` hat `sudo` ohne Passwort. Wenn nicht, schlägt der Zugang mit «sudo verlangt ein Passwort» fehl; dann eine sudoers-Regel nur für `deploy-gate.sh` anlegen.
+- Brute-Force-Schutz nur durch 3 s Verzögerung, Protokoll und den nötigen Schlüssel. Gewünscht: Sperre nach mehreren Fehlversuchen oder Benachrichtigung bei Fehlversuchen?
+- Das Programm ist nicht signiert (SmartScreen-Hinweis). Signierung kostet ein Zertifikat; bei mehr Nutzern lohnt sich das.

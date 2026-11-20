@@ -986,3 +986,10 @@ Seite `/mypontivo/<hotel>/direktbuchung` (Reiter unter «Website und Buchung», 
 - **Kostenbremsen:** `SETUP_RUNS_PER_MONTH` Läufe je Betrieb (Standard 3, inkl. fehlgeschlagener; nicht erreichbare Website zählt nicht), `SETUP_RUNS_PER_DAY_TOTAL` Läufe aller Betriebe je 24 Stunden (Standard 100), höchstens 24 000 Zeichen Text, 3000 Antwort-Tokens, Prüfung der Grenzen vor dem KI-Aufruf, Sperre je Betrieb gegen Doppelklick.
 - **Übernahme nach Prüfung:** gewählte Zimmertypen werden ohne Preise angelegt (bereits vorhandene Namen übersprungen), Fragen als Baustein «Häufige Fragen» auf die Startseite, Einleitung nur wenn noch keine steht. Danach werden die Entwurfsdaten gelöscht. Protokoll `setup_import.start/adopt/discard`. Der Text der Quelle gilt als nicht vertrauenswürdig (Anweisung in der KI-Vorgabe, Prüfung durch den Betrieb).
 - Abnahme: `tests/unit/setup-import.test.ts`, `tests/integration/setup-import.test.ts`.
+
+### 19.37 Deploy-Zugänge (Windows-Programm)
+- Zum Ausrollen vom PC aus gibt es pro Person einen **eigenen Zugang**: eigener SSH-Schlüssel mit erzwungenem Befehl (`deploy/deploy-gate.sh <name>`, `restrict`, kein Terminal, kein Port-Forwarding) und eigenes **Passwort** (`$6$`-Hash in `/etc/pontivo-deploy/users`, nie im Klartext, nie im Protokoll). Das Passwort kommt als erste Zeile über stdin, nicht in der Befehlszeile.
+- Erlaubte Aktionen: `test`, `status`, `int`, `prod` (alles andere wird abgelehnt); Namen nur `^[a-z][a-z0-9_-]{1,19}$`. Ein Ausroll-Vorgang zugleich (`flock`). Protokoll `/var/log/pontivo-deploy.log` (Person, Zeit, Aktion, Fehlversuche). Verwaltung: `deploy/deploy-user.sh add|passwd|remove|list|log`.
+- Das Windows-Programm (`tools/PontivoDeploy`) erzeugt den Schlüssel auf dem PC der Person und zeigt den Befehl für den Server. Es folgt dem hellen/dunklen Modus von Windows.
+- ASSUMPTION: `ubuntu` darf `sudo -n` ohne Passwort. Schutz gegen Raten nur über 3 s Wartezeit und Protokoll (SSH-Zugang selbst bleibt nur mit Schlüssel möglich, ein Angreifer braucht also Schlüssel UND Passwort).
+- Abnahme: `tests/unit/deploy-gate.test.ts`.

@@ -17,7 +17,7 @@ Diese Seite ist der Einstieg: zuerst «Was will ich tun?», darunter der Spickze
 
 Alles auf dem Server, nach `ssh ubuntu@IP-DES-VPS` und `sudo -i` (dann ist kein `sudo` mehr nötig).
 
-**Vom Windows-PC aus, ohne Terminal:** `tools\PontivoDeploy\PontivoDeploy.exe` doppelklicken (eine einzelne Datei, nichts zu installieren). Das Fenster hat zwei Knöpfe: «1. Auf INT ausrollen» und «2. INT auf PROD ausrollen» (mit Rückfrage). «Verbindung testen» prüft Zugang und Rechte, «Stand anzeigen» zeigt, was auf int und prod läuft. Es ist nur eine Oberfläche für `ship.sh` auf dem Server (Einrichtung siehe unten) und braucht dieselbe SSH-Anmeldung per Schlüssel wie `scripts\pull-backups.ps1`. Windows zeigt beim ersten Start «Weitere Informationen» → «Trotzdem ausführen», weil die Datei nicht signiert ist. Quelltext und Neu-Bauen: `tools/PontivoDeploy/README.md`.
+**Vom Windows-PC aus, ohne Terminal:** `tools\PontivoDeploy\PontivoDeploy.exe` doppelklicken (eine einzelne Datei, nichts zu installieren, folgt dem hellen/dunklen Modus von Windows). Jede Person hat einen **eigenen Schlüssel und ein eigenes Passwort**; der Schlüssel kann auf dem Server nur ausrollen, sonst nichts. Einrichten, entziehen und Protokoll: [4-ausrollen.md](deploy/4-ausrollen.md#deploy-zugänge-für-das-windows-programm). Windows zeigt beim ersten Start «Weitere Informationen» → «Trotzdem ausführen», weil die Datei nicht signiert ist. Quelltext und Neu-Bauen: `tools/PontivoDeploy/README.md`.
 
 **Neue Version ausrollen: ein Befehl.**
 ```bash
