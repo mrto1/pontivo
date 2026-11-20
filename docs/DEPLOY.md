@@ -17,7 +17,15 @@ Diese Seite ist der Einstieg: zuerst «Was will ich tun?», darunter der Spickze
 
 Alles auf dem Server, nach `ssh ubuntu@IP-DES-VPS` und `sudo -i` (dann ist kein `sudo` mehr nötig).
 
-**Neue Version ausrollen** (immer erst int, dann prod):
+**Neue Version ausrollen: ein Befehl.**
+```bash
+ausrollen
+```
+Das rollt auf int aus und wartet. Du testest auf https://int.pontivo.ch und tippst `j`, dann wird die Version freigegeben und auf prod ausgerollt (inkl. Prüfung). Mit `n` bleibt prod unberührt. Weitere Formen: `ausrollen prod` (nur prod, mit der Version, die gerade auf int läuft), `ausrollen int` (nur int), `ausrollen int mein-branch`.
+
+Einmalig einrichten (als root): `ln -sf /opt/pontivo-int/deploy/ship.sh /usr/local/bin/ausrollen`. Falls `ship.sh` noch nicht existiert: einmal `cd /opt/pontivo-int/deploy && ./deploy-int.sh`.
+
+Ohne Abkürzung entspricht das diesen drei Schritten:
 ```bash
 cd /opt/pontivo-int/deploy && ./deploy-int.sh   # 1. neuesten Stand auf int ausrollen, auf https://int.pontivo.ch testen
 cd /opt/pontivo/deploy && ./release.sh          # 2. die getestete Version freigeben
