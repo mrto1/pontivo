@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import CalendarJump from "@/components/admin/CalendarJump";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { calendarData, setBlocked, updateRatesBatch, type RateChange, type RateRow } from "@/src/services/inventory";
@@ -10,7 +11,7 @@ import { decimalToRappen, rappenToDecimal } from "@/src/domain/money";
 export const dynamic = "force-dynamic";
 
 const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-const DAYS = 90;
+const RANGES = [{ days: 14, label: "2 Wochen" }, { days: 31, label: "1 Monat" }, { days: 90, label: "3 Monate" }];
 const MAX_ROWS = 12;
 
 function tri(v: FormDataEntryValue | null): boolean | undefined {
@@ -21,7 +22,7 @@ async function saveRates(formData: FormData) {
   "use server";
   const hotelId = String(formData.get("hotelId"));
   const { actor } = await requireHotel(hotelId, "manager");
-  const back = `/admin/${hotelId}/calendar?from=${formData.get("viewFrom")}`;
+  const back = `/admin/${hotelId}/calendar?from=${formData.get("viewFrom")}&days=${formData.get("viewDays") ?? ""}`;
   const count = Math.min(MAX_ROWS, Number(formData.get("rows") ?? 1) || 1);
   const rows: RateRow[] = [];
   for (let i = 0; i < count; i++) {
@@ -62,7 +63,7 @@ async function saveBlock(formData: FormData) {
   const { actor } = await requireHotel(hotelId, "manager");
   const from = String(formData.get("from"));
   const to = String(formData.get("to"));
-  const back = `/admin/${hotelId}/calendar?from=${formData.get("viewFrom")}`;
+  const back = `/admin/${hotelId}/calendar?from=${formData.get("viewFrom")}&days=${formData.get("viewDays") ?? ""}`;
   if (!isDay(from) || !isDay(to) || to < from) redirect(`${back}&msg=${encodeURIComponent("Ungültiger Zeitraum")}`);
   const n = await setBlocked(hotelId, String(formData.get("roomTypeId")), from, to, Number(formData.get("blocked") ?? 0), {
     weekdays: formData.getAll("wd").map(Number),
@@ -91,8 +92,9 @@ export default async function Calendar({ params, searchParams }: { params: Promi
   const { hotel, role } = await requireHotel(hotelId, "staff", "calendar");
   const today = todayIn(hotel.timezone);
   const from = sp.from && isDay(sp.from) ? sp.from : today;
-  const cal = await calendarData(hotel.id, from, DAYS);
-  const days = Array.from({ length: DAYS }, (_, i) => addDays(from, i));
+  const span = RANGES.find((r) => String(r.days) === sp.days)?.days ?? 14;
+  const cal = await calendarData(hotel.id, from, span);
+  const days = Array.from({ length: span }, (_, i) => addDays(from, i));
   const invKey = new Map(cal.inventory.map((r) => [`${r.roomTypeId}|${r.night}`, r]));
   const rateKey = new Map(cal.rates.map((r) => [`${r.ratePlanId}|${r.night}`, r]));
   const canEdit = atLeast(role, "manager");
@@ -100,11 +102,21 @@ export default async function Calendar({ params, searchParams }: { params: Promi
 
   return (
     <div className="stack">
-      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+      <div className="cal-head">
         <h1 style={{ margin: 0 }}>Kalender</h1>
-        <a className="btn secondary small" href={`?from=${addDays(from, -30)}`}>← 30 Tage</a>
-        <a className="btn secondary small" href={`?from=${today}`}>Heute</a>
-        <a className="btn secondary small" href={`?from=${addDays(from, 30)}`}>30 Tage →</a>
+        <div className="cal-tools">
+          <div className="seg" role="group" aria-label="Zeitraum verschieben">
+            <a href={`?from=${addDays(from, -span)}&days=${span}`} aria-label="Zurück" title="Zurück">‹</a>
+            <a href={`?from=${today}&days=${span}`} className={from === today ? "on" : ""}>Heute</a>
+            <a href={`?from=${addDays(from, span)}&days=${span}`} aria-label="Vor" title="Vor">›</a>
+          </div>
+          <CalendarJump from={from} days={span} />
+          <div className="seg" role="group" aria-label="Anzeige">
+            {RANGES.map((r) => (
+              <a key={r.days} href={`?from=${from}&days=${r.days}`} className={r.days === span ? "on" : ""}>{r.label}</a>
+            ))}
+          </div>
+        </div>
       </div>
       {sp.msg ? <p className="notice">{sp.msg}</p> : null}
       <p className="small muted" style={{ margin: 0 }}>Die Zahl ist die Anzahl <strong>freier Zimmer</strong> je Nacht. Rot = ausgebucht. Fahren Sie über eine Zahl, sehen Sie, wie viele gebucht, gesperrt oder über ein Portal belegt sind.</p>
@@ -167,6 +179,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
             </p>
             <input type="hidden" name="hotelId" value={hotel.id} />
             <input type="hidden" name="viewFrom" value={from} />
+            <input type="hidden" name="viewDays" value={span} />
             <input type="hidden" name="rows" value={rowCount} />
             <div className="scroll-x">
               <table className="rate-rows">
@@ -202,7 +215,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
                 </tbody>
               </table>
             </div>
-            {rowCount < MAX_ROWS ? <a className="small" href={`?from=${from}&rows=${rowCount + 2}`}>+ weitere Zeilen</a> : null}
+            {rowCount < MAX_ROWS ? <a className="small" href={`?from=${from}&days=${span}&rows=${rowCount + 2}`}>+ weitere Zeilen</a> : null}
             <Weekdays />
             <button className="btn">Alle speichern</button>
           </form>
@@ -211,6 +224,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
             <h3>Zimmer sperren / freigeben</h3>
             <input type="hidden" name="hotelId" value={hotel.id} />
             <input type="hidden" name="viewFrom" value={from} />
+            <input type="hidden" name="viewDays" value={span} />
             <div>
               <label>Zimmertyp</label>
               <select name="roomTypeId" required>

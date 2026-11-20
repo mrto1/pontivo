@@ -687,3 +687,12 @@ table.plan tr.plan-off { opacity: .55; }
 .switch .switch-state { order: 1; min-width: 2.2em; text-align: right; }
 .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 999px; }
 @media (prefers-reduced-motion: reduce) { .switch::before, .switch::after { transition: none; } }
+
+.cal-head { display: flex; gap: 12px 20px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.cal-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); overflow: hidden; }
+.seg a { padding: 7px 14px; font-size: .88rem; font-weight: 500; color: var(--ink); text-decoration: none; border-right: 1px solid var(--line); transition: background .15s, color .15s; }
+.seg a:last-child { border-right: 0; }
+.seg a:hover { background: var(--accent-soft); }
+.seg a.on { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.cal-date { padding: 7px 12px; border-radius: 999px; font-size: .88rem; width: auto; }
