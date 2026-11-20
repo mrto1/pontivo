@@ -49,12 +49,12 @@ export function AdminNav({ nav, home, userLabel, initials }: { nav: Nav; home: s
     <>
       <nav className="admin-nav" aria-label="Hauptmenü">
         {nav.primary.map((i) => <a key={i.key} href={i.href} className={a(i)} aria-current={isActive(pathname, i, home) ? "page" : undefined}>{i.label}</a>)}
+        {hasMore ? (
+          <button type="button" className={`more-btn${moreActive ? " active" : ""}`} aria-expanded={open} aria-controls="admin-more" onClick={() => setOpen((v) => !v)}>
+            Mehr <span aria-hidden>▾</span>
+          </button>
+        ) : null}
       </nav>
-      {hasMore ? (
-        <button type="button" className={`more-btn${moreActive ? " active" : ""}`} aria-expanded={open} aria-controls="admin-more" onClick={() => setOpen((v) => !v)}>
-          Mehr <span aria-hidden>▾</span>
-        </button>
-      ) : null}
       <a href={mypontivo} className={`avatar-link${myActive ? " active" : ""}`} aria-current={myActive ? "page" : undefined} aria-label={`Mein Konto (${userLabel})`} title={userLabel}>{initials}</a>
 
       <nav className="tabbar" aria-label="Hauptmenü">
