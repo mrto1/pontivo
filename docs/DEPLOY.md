@@ -27,7 +27,7 @@ Manager → Domains → pontivo.ch → DNS-Zone:
 | A | `@` (pontivo.ch) | IP des VPS |
 | A | `www` | IP des VPS |
 
-Bestehende A- oder AAAA-Einträge für `@` und `www`, die noch auf das Webhosting zeigen, **löschen**. E-Mail-Einträge (MX usw.) nicht anfassen.
+Bestehende A- oder AAAA-Einträge für `@` und `www`, die noch auf das Webhosting zeigen, **löschen**. Infomaniak weist beim Ändern eines A-Eintrags darauf hin, dass auch der AAAA-Eintrag (IPv6) angepasst werden muss: Hat der VPS eine IPv6-Adresse (steht im Manager beim VPS), je einen AAAA-Eintrag mit dieser Adresse anlegen, sonst alte AAAA-Einträge löschen. Ein AAAA, der noch aufs Webhosting zeigt, führt Besucher mit IPv6 auf den falschen Server. E-Mail-Einträge (MX usw.) nicht anfassen.
 Die Änderung braucht einige Minuten bis wenige Stunden. Prüfen: `nslookup pontivo.ch` zeigt die IP des VPS.
 
 Das Webhosting wird danach nicht mehr gebraucht. E-Mail-Adressen wie info@pontivo.ch laufen über Infomaniak Mail und sind davon unabhängig.
@@ -239,7 +239,7 @@ Ein eigener zweiter Server ist nicht nötig (zusätzliche Kosten, mehr Pflege). 
 
 ## Einmalig einrichten
 
-1. **DNS** (Infomaniak, Zone pontivo.ch): A-Eintrag `int` → IP des VPS.
+1. **DNS** (Infomaniak, Zone pontivo.ch): A-Eintrag `int` → IP des VPS. Hat der VPS eine IPv6-Adresse, zusätzlich AAAA-Eintrag `int` → diese IPv6; sonst darf für `int` kein AAAA existieren (auch kein Platzhalter `*`, der auf das alte Webhosting zeigt).
 2. **Code holen** (auf dem Server **als root**: zuerst `sudo -i`, sonst meldet git «Permission denied», weil `/opt` root gehört; danach gelten alle Befehle dieses Abschnitts als root, ein `sudo` davor ist dann nicht nötig):
    ```bash
    sudo -i
