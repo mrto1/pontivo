@@ -25,7 +25,7 @@ describe("Admin-Menü", () => {
     const tabs = (k: string) => nav.primary.find((i) => i.key === k)!.tabs!;
     expect(tabs("calendar").map((t) => t.key)).toEqual(["calendar", "plan", "pricing", "channex", "ical"]);
     expect(tabs("bookings").map((t) => t.key)).not.toContain("plan");
-    expect(tabs("guests").map((t) => t.key)).toEqual(["guests", "guestbook", "inbox", "marketing", "vouchers", "feedback", "ki-chat", "upsell", "mailtexts"]);
+    expect(tabs("guests").map((t) => t.key)).toEqual(["guests", "guestbook", "inbox", "marketing", "vouchers", "feedback", "gaesteportal", "ki-chat", "upsell", "mailtexts"]);
     expect(tabs("guests")[0].label).toBe("Online-Check-in");
   });
 

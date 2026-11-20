@@ -193,20 +193,20 @@ export async function planBookings(hotelId: string, from: string, days: number):
   return out;
 }
 
-export type DayRow = { bookingId: string; reference: string; guest: string; persons: number; checkin: string; checkout: string; rooms: string[]; typeNames: string[]; status: string };
+export type DayRow = { bookingId: string; reference: string; guest: string; persons: number; checkin: string; checkout: string; rooms: string[]; typeNames: string[]; status: string; guestCheckedOut?: boolean };
 
 /** Anreisen, Abreisen, im Haus für einen Tag (nur bestätigte Buchungen) */
 export async function dayLists(hotelId: string, day: string): Promise<{ arrivals: DayRow[]; departures: DayRow[]; inHouse: DayRow[] }> {
   const r = await db().select({
     bookingId: bookings.id, reference: bookings.reference, status: bookings.status, checkin: bookings.checkin, checkout: bookings.checkout, first: guests.firstName, last: guests.lastName,
-    adults: bookings.adults, children: bookings.children, room: rooms.number, typeName: roomTypes.name,
+    adults: bookings.adults, children: bookings.children, guestCheckoutAt: bookings.guestCheckoutAt, room: rooms.number, typeName: roomTypes.name,
   }).from(bookings).leftJoin(guests, eq(guests.id, bookings.guestId))
     .innerJoin(bookingRooms, eq(bookingRooms.bookingId, bookings.id)).innerJoin(roomTypes, eq(roomTypes.id, bookingRooms.roomTypeId)).leftJoin(rooms, eq(rooms.id, bookingRooms.roomId))
     .where(and(eq(bookings.hotelId, hotelId), eq(bookings.status, "confirmed"), sql`${bookings.checkin} <= ${day}`, sql`${bookings.checkout} >= ${day}`))
     .orderBy(asc(guests.lastName));
   const map = new Map<string, DayRow>();
   for (const x of r) {
-    const cur = map.get(x.bookingId) ?? { bookingId: x.bookingId, reference: x.reference, guest: [x.first, x.last].filter(Boolean).join(" ") || x.reference, persons: x.adults + x.children, checkin: x.checkin, checkout: x.checkout, rooms: [], typeNames: [], status: x.status };
+    const cur = map.get(x.bookingId) ?? { bookingId: x.bookingId, reference: x.reference, guest: [x.first, x.last].filter(Boolean).join(" ") || x.reference, persons: x.adults + x.children, checkin: x.checkin, checkout: x.checkout, rooms: [], typeNames: [], status: x.status, guestCheckedOut: !!x.guestCheckoutAt };
     if (x.room) cur.rooms.push(x.room);
     if (!cur.typeNames.includes(x.typeName)) cur.typeNames.push(x.typeName);
     map.set(x.bookingId, cur);

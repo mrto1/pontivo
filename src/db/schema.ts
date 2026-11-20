@@ -100,6 +100,24 @@ export type HotelContent = {
   direct?: import("../domain/direct-tools").DirectSettings;
   /** Nuki Web API: Token verschlüsselt (SPEC 18.5) */
   nuki?: { tokenEnc?: string };
+  /** Gästeportal (SPEC 19.41): Wunschliste, Tipps und Infos, Türcode */
+  portal?: PortalSettings;
+};
+
+export type PortalI18n = Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>;
+export type PortalSettings = {
+  /** Wünsche anbieten (Standard an) */
+  requests?: boolean;
+  /** Wunschliste; fehlt = Standardliste (src/domain/portal.ts) */
+  wishes?: { id: string; label: PortalI18n }[];
+  /** Tipps und Infos als Liste (zusätzlich zum Freitext «Infos für den Aufenthalt») */
+  tips?: { id: string; title: PortalI18n; text: PortalI18n }[];
+  /** Türcode im Portal zeigen (Standard an, nur mit Modul Zutritt) */
+  doorCode?: boolean;
+  /** Rechnung bis jetzt (Posten aufs Zimmer, offener Betrag) im Portal zeigen, Standard an */
+  folio?: boolean;
+  /** Gast kann am Abreisetag selbst auschecken, Standard an */
+  selfCheckout?: boolean;
 };
 
 export type HotelDocument = { url: string; title: Partial<Record<"de" | "en" | "fr" | "it" | "nl", string>>; bytes: number };
@@ -288,6 +306,8 @@ export const bookings = pgTable("bookings", {
   balanceDueOn: date("balance_due_on", { mode: "string" }),
   balancePaidAt: ts("balance_paid_at"),
   balanceOnsiteAt: ts("balance_onsite_at"),
+  /** Gast hat im Portal selbst ausgecheckt (SPEC 19.41) */
+  guestCheckoutAt: ts("guest_checkout_at"),
   balanceRequestedAt: ts("balance_requested_at"),
   balanceRemindedAt: ts("balance_reminded_at"),
   balanceAlertedAt: ts("balance_alerted_at"),
@@ -564,6 +584,22 @@ export const inquiries = pgTable("inquiries", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type Inquiry = typeof inquiries.$inferSelect;
+
+/** Gästeportal (SPEC 19.41): Wünsche zu einer Buchung */
+export const guestRequests = pgTable("guest_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  bookingId: uuid("booking_id").notNull(),
+  itemId: text("item_id").notNull().default(""),
+  label: text("label").notNull(),
+  message: text("message").notNull().default(""),
+  status: text("status").$type<"open" | "done">().notNull().default("open"),
+  note: text("note").notNull().default(""),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  doneAt: ts("done_at"),
+  doneBy: text("done_by"),
+});
+export type GuestRequest = typeof guestRequests.$inferSelect;
 
 export const vouchers = pgTable("vouchers", {
   id: uuid("id").primaryKey().defaultRandom(),

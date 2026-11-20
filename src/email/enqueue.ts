@@ -12,6 +12,7 @@ export type TemplateName =
   | "hotel_voucher_sold"
   | "inquiry_received"
   | "inquiry_confirmation"
+  | "guest_request"
   | "booking_confirmed"
   | "hotel_new_booking"
   | "booking_cancelled"

@@ -28,6 +28,8 @@ export type HotelKnowledge = {
   /** Speisekarte (Preise in CHF) */
   menu: { section: string; name: string; text: string; priceChf: string | null; diet: string; glutenFree: boolean }[];
   /** Öffnungszeiten (Restaurant, Rezeption …): Tag 0 = Montag, leere Liste = geschlossen */
+  /** Tipps und Infos aus dem Gästeportal (SPEC 19.41), dieselben Texte wie im Portal */
+  stayTips: { title: string; text: string }[];
   hours: { place: string; title: string; days: { from: string; to: string }[][]; closures: { from: string; to: string; label: string }[] }[];
 };
 
@@ -56,6 +58,7 @@ export async function hotelKnowledge(hotel: Hotel, lang: Locale): Promise<HotelK
     extras: exs.map((e) => ({ name: T(e.name), description: T(e.description), priceChf: (e.priceRappen / 100).toFixed(2), unit: e.unit, mandatory: e.mandatory })),
     menu: blocks.flatMap((b) => (b.type === "menu" ? b.items : [])).map((x) => ({ section: T(x.section), name: T(x.name), text: T(x.text), priceChf: x.priceRappen === null ? null : (x.priceRappen / 100).toFixed(2), diet: x.diet, glutenFree: x.glutenFree })).filter((x) => x.name),
     hours: blocks.flatMap((b) => (b.type === "hours" ? [{ place: b.place, title: T(b.heading), days: b.days, closures: b.closures.map((c) => ({ from: c.from, to: c.to, label: T(c.label) })) }] : [])),
+    stayTips: (hotel.content.portal?.tips ?? []).map((x) => ({ title: tr(x.title, lang).trim(), text: tr(x.text, lang).trim() })).filter((x) => x.title),
     labels: blocks.flatMap((b) => (b.type === "labels" ? b.items : [])).map((x) => ({ name: x.name, level: T(x.level), text: T(x.text) })).filter((x) => x.name),
     offers: blocks.flatMap((b) => (b.type === "offers" ? b.items.filter((o) => offerActive(o, todayIn(hotel.timezone))) : [])).map((x) => ({ title: T(x.title), text: T(x.text), price: T(x.price), includes: T(x.includes), minNights: x.ratePlanId ? planMin.get(x.ratePlanId) ?? x.nights : x.nights })).filter((x) => x.title),
   };

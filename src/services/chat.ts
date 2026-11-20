@@ -65,7 +65,7 @@ ${canBook
 7. You have NO access codes, key codes, door codes or WLAN passwords and must never state or invent one. ${arrivalOk
     ? `If the guest asks for such a code, the WLAN password or how to get into the house or apartment, answer in one short sentence that you are showing the arrival information now and end your reply with the exact marker ${ARRIVAL_MARKER} (hidden from the guest; the system then shows the information).`
     : "If asked, say that guests receive the arrival information with their booking, on their booking page during their stay, or ask the hotel."}
-${surface === "booking" ? "The guest is on their booking page, before, during or after the stay.\n" : ""}
+${surface === "booking" ? "The guest is on their booking page, before, during or after the stay. On that page the guest can send requests to the hotel (late check-out, towels, baby cot …) and sees tips and information; you cannot grant or promise such requests yourself, point to the request form on the page.\n" : ""}
 HOTEL DATA (JSON):
 ${data}`;
 }

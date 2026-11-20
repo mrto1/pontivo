@@ -241,3 +241,9 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Annahme: Benutzer `ubuntu` hat `sudo` ohne Passwort. Wenn nicht, schlägt der Zugang mit «sudo verlangt ein Passwort» fehl; dann eine sudoers-Regel nur für `deploy-gate.sh` anlegen.
 - Brute-Force-Schutz nur durch 3 s Verzögerung, Protokoll und den nötigen Schlüssel. Gewünscht: Sperre nach mehreren Fehlversuchen oder Benachrichtigung bei Fehlversuchen?
 - Das Programm ist nicht signiert (SmartScreen-Hinweis). Signierung kostet ein Zertifikat; bei mehr Nutzern lohnt sich das.
+
+## Gästeportal (SPEC 19.41)
+- Selbst-Check-out beendet den Aufenthalt nicht von selbst: Buchung bleibt «bestätigt», der Türcode gilt bis zur Check-out-Zeit weiter. Gewünscht: Code sofort widerrufen und Zimmer automatisch auf «schmutzig» setzen (Housekeeping)? Erst mit einem Betrieb klären.
+- Rechnung bis jetzt zeigt Posten aufs Zimmer, aber keine Zahlung per Karte im Portal für Restposten (die gibt es bisher nur für die Restzahlung der Buchung). Gewünscht: Bezahlen der Zimmerrechnung beim Check-out per Link?
+- FR/IT/NL-Texte des Portals und der Standardwünsche sind maschinell erstellt, Muttersprachler-Prüfung offen.
+- Eigene Wünsche und Tipps sind nur Deutsch/Englisch erfassbar (übrige Sprachen fallen zurück); weitere Sprachen später mit automatischer Übersetzung wie bei der Website?

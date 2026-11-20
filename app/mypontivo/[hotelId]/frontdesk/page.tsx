@@ -17,7 +17,7 @@ function List({ title, rows, hotelId, empty }: { title: string; rows: DayRow[]; 
           <tbody>
             {rows.map((r) => (
               <tr key={r.bookingId}>
-                <td>{r.guest}</td>
+                <td>{r.guest}{r.guestCheckedOut ? <> <span className="badge">ausgecheckt (Portal)</span></> : null}</td>
                 <td>{r.persons}</td>
                 <td>{r.rooms.length ? r.rooms.join(", ") : <span className="muted small">{r.typeNames.join(", ")} (nicht zugewiesen)</span>}</td>
                 <td className="small">{formatDay(r.checkin, "de")} – {formatDay(r.checkout, "de")}</td>

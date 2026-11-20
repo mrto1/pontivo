@@ -397,6 +397,13 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
         [`${de ? "Anlass" : "Occasion"}: ${KIND_DE[String(d.kind)] ?? d.kind}`, `${de ? "Name" : "Name"}: ${d.name}`, `E-Mail: ${d.email}`, ...(d.phone ? [`${de ? "Telefon" : "Phone"}: ${d.phone}`] : []),
           ...(d.dateFrom ? [`${de ? "Datum" : "Date"}: ${formatDay(String(d.dateFrom), l)}${d.dateTo ? ` – ${formatDay(String(d.dateTo), l)}` : ""}`] : []), ...(d.timeOfDay ? [`${de ? "Uhrzeit" : "Time"}: ${d.timeOfDay}`] : []), ...(d.persons ? [`${de ? "Personen" : "Guests"}: ${d.persons}`] : [])]);
     }
+    case "guest_request": {
+      const d = c.data as Record<string, string | number | null>;
+      return wrap(c, l, `${de ? "Gästewunsch" : "Guest request"} ${d.reference}: ${d.label}`,
+        [de ? "Ein Gast hat über sein Gästeportal einen Wunsch gemeldet. Sie sehen ihn im Posteingang und können ihn dort als erledigt markieren (der Gast sieht den Stand)." : "A guest sent a request through the guest portal. You can see it in the inbox and mark it as done there (the guest sees the status).", String(d.message ?? "")],
+        [`${de ? "Buchung" : "Booking"}: ${d.reference}`, `${de ? "Aufenthalt" : "Stay"}: ${formatDay(String(d.checkin), l)} – ${formatDay(String(d.checkout), l)}`, `${de ? "Wunsch" : "Request"}: ${d.label}`],
+        { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/inbox?quelle=wuensche`, label: de ? "Zum Posteingang" : "Open inbox" });
+    }
     case "offer_sent": {
       const link = { href: `${c.baseUrl}/o/${c.data.token}`, label: gl === "de" ? "Angebot ansehen und zusagen" : "View and accept the offer" };
       // ASSUMPTION: Angebots-Mails nur Deutsch und Englisch (andere Sprachen erhalten Englisch)

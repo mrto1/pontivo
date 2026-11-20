@@ -9,6 +9,7 @@ import { listInquiries, setInquiryStatus } from "@/src/services/inquiries";
 import { createOfferFromInquiry, listOffers, OfferError } from "@/src/services/offers";
 import { OFFER_STATUS_LABEL } from "@/src/domain/offers";
 import { formatDay } from "@/src/i18n/dict";
+import { listGuestRequests, openGuestRequestCount, setGuestRequestDone } from "@/src/services/guest-requests";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -51,6 +52,14 @@ async function toggle(f: FormData) {
   redirect(`/mypontivo/${c.hotel.id}/inbox?quelle=web`);
 }
 
+async function wishDone(f: FormData) {
+  "use server";
+  const c = await requireHotel(String(f.get("hotelId")), "staff", "inbox");
+  const done = f.get("done") === "1";
+  await setGuestRequestDone(c.hotel.id, String(f.get("id")), done, c.actor, String(f.get("note") ?? ""));
+  redirect(`/mypontivo/${c.hotel.id}/inbox?quelle=wuensche`);
+}
+
 async function makeOffer(f: FormData) {
   "use server";
   const c = await requireHotel(String(f.get("hotelId")), "manager");
@@ -74,9 +83,12 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
   const portalOn = isOn(rows, "inbox");
   const canEdit = atLeast(role, "manager");
   // Quelle: alles | web (Website und Chat) | portal
-  const quelle = sp.quelle === "web" && webOn ? "web" : sp.quelle === "portal" && portalOn ? "portal" : sp.thread && portalOn ? "portal" : "alle";
-  const showWeb = webOn && quelle !== "portal";
-  const showPortal = portalOn && quelle !== "web";
+  const quelle = sp.quelle === "wuensche" ? "wuensche" : sp.quelle === "web" && webOn ? "web" : sp.quelle === "portal" && portalOn ? "portal" : sp.thread && portalOn ? "portal" : "alle";
+  const showWeb = webOn && (quelle === "alle" || quelle === "web");
+  const showWishes = quelle === "alle" || quelle === "wuensche";
+  const wishList = showWishes ? await listGuestRequests(hotel.id) : [];
+  const openWishes = await openGuestRequestCount(hotel.id);
+  const showPortal = portalOn && (quelle === "alle" || quelle === "portal");
   const closed = sp.closed === "1";
   const threads = showPortal ? await listThreads(hotel.id, { closed }) : [];
   const open = showPortal && sp.thread ? await openThread(hotel.id, sp.thread) : null;
@@ -86,13 +98,13 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
   const openInq = list.filter((x) => x.status === "new").length;
   const unread = threads.reduce((n, { t }) => n + (t.unread ?? 0), 0);
   const q = (v: string) => `/mypontivo/${hotel.id}/inbox${v === "alle" ? "" : `?quelle=${v}`}`;
-  const sources = [{ k: "alle", label: "Alle" }, ...(webOn ? [{ k: "web", label: "Website und Chat" }] : []), ...(portalOn ? [{ k: "portal", label: "Portale" }] : [])];
+  const sources = [{ k: "alle", label: "Alle" }, ...(webOn ? [{ k: "web", label: "Website und Chat" }] : []), ...(portalOn ? [{ k: "portal", label: "Portale" }] : []), { k: "wuensche", label: `Gästewünsche${openWishes ? ` (${openWishes})` : ""}` }];
   return (
     <div className="stack">
       <h1>Posteingang</h1>
       {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
       <div className="cal-tools">
-        {sources.length > 2 ? (
+        {sources.length > 1 ? (
           <div className="seg" role="group" aria-label="Quelle">
             {sources.map((x) => <a key={x.k} href={q(x.k)} className={x.k === quelle ? "on" : ""}>{x.label}</a>)}
           </div>
@@ -102,6 +114,32 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
           {portalOn ? <>Portal-Nachrichten beantworten Sie hier, die Antwort geht über den Channel-Manager ans Portal. {unread ? <strong>{unread} ungelesen.</strong> : null}</> : null}
         </p>
       </div>
+
+      {showWishes && (quelle === "wuensche" || wishList.length) ? (
+        <section className="stack" id="wuensche">
+          <h2>Gästewünsche aus dem Gästeportal</h2>
+          {wishList.length ? (
+            <div className="stack">
+              {wishList.map(({ r, reference, checkin, checkout, bookingId }) => (
+                <article key={r.id} className="card stack" style={{ opacity: r.status === "done" ? 0.65 : 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
+                    <h3 style={{ margin: 0 }}>{r.label} · <a href={`/mypontivo/${hotel.id}/bookings/${bookingId}`}>{reference}</a></h3>
+                    <span className="small muted">{fmt(r.createdAt)} · Aufenthalt {formatDay(checkin, "de")} – {formatDay(checkout, "de")}</span>
+                  </div>
+                  {r.message ? <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{r.message}</p> : null}
+                  {r.status === "done" && r.note ? <p className="small muted" style={{ margin: 0 }}>Antwort an den Gast: {r.note}</p> : null}
+                  <form action={wishDone} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                    <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={r.id} />
+                    <input type="hidden" name="done" value={r.status === "open" ? "1" : "0"} />
+                    {r.status === "open" ? <input name="note" maxLength={300} placeholder="Kurze Antwort an den Gast (optional)" aria-label="Antwort an den Gast" style={{ flex: "1 1 240px" }} /> : null}
+                    <button className="btn secondary small">{r.status === "open" ? "Erledigt (Gast sieht es)" : "Wieder öffnen"}</button>
+                  </form>
+                </article>
+              ))}
+            </div>
+          ) : <p className="muted">Noch keine Wünsche. Gäste melden sie auf ihrer Buchungsseite; Sie legen die Wunschliste unter <a href={`/mypontivo/${hotel.id}/gaesteportal`}>Gäste → Gästeportal</a> fest.</p>}
+        </section>
+      ) : null}
 
       {showWeb ? (
         <section className="stack" id="anfragen">

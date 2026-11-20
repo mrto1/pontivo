@@ -8,7 +8,7 @@ import {
   retentionUntil, setGuestsModule, submitCheckin, touristTaxList, touristTaxQuarter, quarterMonths, quarterOf, shiftQuarter, isTaxQuarter, taxListCsv, verifyRegistration,
 } from "../../src/services/guests";
 import { decryptField, encryptField } from "../../src/lib/guest-crypto";
-import { addDays } from "../../src/domain/dates";
+import { addDays, todayIn } from "../../src/domain/dates";
 import { guest, inDays, makeHotel } from "../helpers";
 
 afterAll(closeDb);
@@ -145,7 +145,8 @@ describe("M4 Modul Online-Check-in", () => {
     const b = await hotelWithBooking();
     for (const x of [a, b]) await submitCheckin(x.booking.publicToken, { persons: [adult("Anna"), adult("Beat")], confirm: true, signature: PNG });
     const now = new Date();
-    const today = new Date(now.getTime()).toISOString().slice(0, 10);
+    // Hotelzeit, nicht UTC: zwischen 00:00 und 01:00 (Winter) liegen beide auf verschiedenen Tagen
+    const today = todayIn("Europe/Zurich", now);
     // a: Frist lief gestern ab → löschen; b: Frist ist heute → bleibt
     await db().update(guestRegistrations).set({ retentionUntil: addDays(today, -2) }).where(eq(guestRegistrations.bookingId, a.booking.id));
     await db().update(guestRegistrations).set({ retentionUntil: addDays(today, 1) }).where(eq(guestRegistrations.bookingId, b.booking.id));

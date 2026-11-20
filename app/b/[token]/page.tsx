@@ -18,9 +18,45 @@ import { balanceOpen } from "@/src/services/balance";
 import { fill } from "@/src/i18n/dict";
 import { PORTAL } from "@/src/i18n/portal";
 import { offerForBooking } from "@/src/services/upsell";
+import { redirect } from "next/navigation";
+import { todayIn } from "@/src/domain/dates";
+import { requestsEnabled, selfCheckoutEnabled, selfCheckoutOpen, wishLabel, wishOptions } from "@/src/domain/portal";
+import { MAX_MESSAGE, RequestError, createGuestRequest, requestsOfBooking, requestsOpen, selfCheckout } from "@/src/services/guest-requests";
+import { portalDoorCodes, portalFolio } from "@/src/services/guest-portal";
 
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false } };
+
+/** Wunsch senden (Link ist der Zugang; Grenzen pro Buchung in src/services/guest-requests.ts) */
+async function sendWish(f: FormData) {
+  "use server";
+  const token = String(f.get("token") ?? "");
+  const lang = String(f.get("lang") ?? "de");
+  const found = await getBookingByToken(token);
+  if (!found) notFound();
+  let q = "wish=1";
+  try {
+    await createGuestRequest(found.hotel, found.booking.id, { itemId: String(f.get("item") ?? ""), message: String(f.get("message") ?? "") }, todayIn(found.hotel.timezone), lang);
+  } catch (e) {
+    if (!(e instanceof RequestError)) throw e;
+    q = `wisherr=${e.code === "empty" ? "empty" : e.code === "closed" ? "closed" : "many"}`;
+  }
+  redirect(`/b/${token}?lang=${lang}&${q}#wuensche`);
+}
+
+async function doCheckout(f: FormData) {
+  "use server";
+  const token = String(f.get("token") ?? "");
+  const lang = String(f.get("lang") ?? "de");
+  const found = await getBookingByToken(token);
+  if (!found) notFound();
+  try {
+    await selfCheckout(found.hotel, found.booking.id, todayIn(found.hotel.timezone));
+  } catch (e) {
+    if (!(e instanceof RequestError)) throw e;
+  }
+  redirect(`/b/${token}?lang=${lang}&out=1`);
+}
 
 export default async function BookingView({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { token } = await params;
@@ -41,6 +77,15 @@ export default async function BookingView({ params, searchParams }: { params: Pr
   const pt = PORTAL[locale];
   const guestInfo = booking.status === "confirmed" ? tr(hotel.content.guestInfo, locale).trim() : "";
   const extrasOffer = await offerForBooking(token);
+  const portal = hotel.content.portal;
+  const today = todayIn(hotel.timezone);
+  const tips = booking.status === "confirmed" ? (portal?.tips ?? []).map((x) => ({ id: x.id, title: tr(x.title, locale).trim(), text: tr(x.text, locale).trim() })).filter((x) => x.title) : [];
+  const door = await portalDoorCodes(token, hotel, booking);
+  const folio = await portalFolio(hotel, booking);
+  const myRequests = booking.status === "confirmed" ? await requestsOfBooking(hotel.id, booking.id) : [];
+  const canWish = requestsEnabled(portal) && requestsOpen(booking, today);
+  const wishes = wishOptions(portal);
+  const canOut = selfCheckoutOpen(booking, today, selfCheckoutEnabled(portal));
   return (
     <Shell hotel={hotel} locale={locale} base={base} chatToken={token}>
       <section style={{ padding: "32px 0" }}>
@@ -97,6 +142,94 @@ export default async function BookingView({ params, searchParams }: { params: Pr
           <div className="card" style={{ marginTop: 16 }}>
             <h3>{CHAT_TEXT[locale].arrivalTitle}</h3>
             <p style={{ whiteSpace: "pre-wrap" }}>{arrival}</p>
+          </div>
+        ) : null}
+        {door.codes.length ? (
+          <div className="card" style={{ marginTop: 16 }}>
+            <h3>{pt.keyTitle}</h3>
+            <p>{pt.keyText}</p>
+            {door.codes.map((c) => (
+              <p key={c.lock} style={{ margin: "8px 0" }}>
+                <span className="muted small">{c.lock}</span><br />
+                <strong style={{ fontSize: "1.8rem", letterSpacing: "0.2em", fontVariantNumeric: "tabular-nums" }}>{c.code}</strong>
+                <span className="muted small"> · {pt.keyUntil} {c.validUntil.toLocaleString(locale === "de" ? "de-CH" : locale, { timeZone: hotel.timezone, dateStyle: "short", timeStyle: "short" })}</span>
+              </p>
+            ))}
+          </div>
+        ) : door.waitingForCheckin ? (
+          <div className="card" style={{ marginTop: 16 }}>
+            <h3>{pt.keyTitle}</h3>
+            <p>{pt.keyNeedCheckin}</p>
+          </div>
+        ) : null}
+        {tips.length ? (
+          <div className="card" style={{ marginTop: 16 }}>
+            <h3>{pt.tipsTitle}</h3>
+            <ul className="list">
+              {tips.map((x) => <li key={x.id}><strong>{x.title}</strong>{x.text ? <div className="small" style={{ whiteSpace: "pre-wrap" }}>{x.text}</div> : null}</li>)}
+            </ul>
+          </div>
+        ) : null}
+        {folio && (folio.items.length || folio.openRappen > 0) ? (
+          <div className="card" style={{ marginTop: 16 }}>
+            <h3>{pt.folioTitle}</h3>
+            <table className="rows">
+              <tbody>
+                {folio.items.map((x) => <tr key={x.id}><td>{x.description}{x.quantity > 1 ? ` × ${x.quantity}` : ""}</td><td>{formatChf(x.quantity * x.unitPriceRappen)}</td></tr>)}
+                <tr><td><strong>{pt.folioOpen}</strong></td><td><strong>{formatChf(Math.max(0, folio.openRappen))}</strong></td></tr>
+              </tbody>
+            </table>
+            <p className="small muted">{pt.folioNote}</p>
+          </div>
+        ) : null}
+        {canWish || myRequests.length ? (
+          <div className="card" id="wuensche" style={{ marginTop: 16 }}>
+            <h3>{pt.wishTitle}</h3>
+            {sp.wish ? <p className="notice">{pt.wishSent}</p> : null}
+            {sp.wisherr ? <p className="notice warn">{pt.wishErr[sp.wisherr as "empty" | "many" | "closed"] ?? pt.wishErr.many}</p> : null}
+            {canWish ? (
+              <form action={sendWish} className="stack">
+                <p>{pt.wishText}</p>
+                <input type="hidden" name="token" value={token} /><input type="hidden" name="lang" value={locale} />
+                {wishes.length ? (
+                  <select name="item" aria-label={pt.wishPick} defaultValue="">
+                    <option value="">{pt.wishPick}</option>
+                    {wishes.map((w) => <option key={w.id} value={w.id}>{wishLabel(w, locale)}</option>)}
+                  </select>
+                ) : null}
+                <textarea name="message" rows={2} maxLength={MAX_MESSAGE} placeholder={pt.wishFree} aria-label={pt.wishFree} />
+                <div><button className="btn">{pt.wishSend}</button></div>
+              </form>
+            ) : null}
+            {myRequests.length ? (
+              <>
+                <h4 style={{ marginTop: 16 }}>{pt.wishListTitle}</h4>
+                <ul className="list">
+                  {myRequests.filter((r) => r.itemId !== "checkout").map((r) => {
+                    const opt = wishes.find((w) => w.id === r.itemId);
+                    return (
+                      <li key={r.id}>
+                        <span className={`badge ${r.status === "done" ? "" : "warn"}`}>{r.status === "done" ? pt.wishDone : pt.wishOpen}</span>{" "}
+                        <strong>{opt ? wishLabel(opt, locale) : r.itemId ? r.label : ""}</strong>{r.message ? <span className="small"> {r.itemId ? "· " : ""}{r.message}</span> : null}
+                        {r.status === "done" && r.note ? <div className="small muted">{r.note}</div> : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            ) : null}
+          </div>
+        ) : null}
+        {booking.guestCheckoutAt || sp.out ? (
+          <div className="card" style={{ marginTop: 16 }}><p style={{ margin: 0 }}>✓ {pt.outDone}</p></div>
+        ) : canOut ? (
+          <div className="card" style={{ marginTop: 16 }}>
+            <h3>{pt.outTitle}</h3>
+            <p>{pt.outText}</p>
+            <form action={doCheckout}>
+              <input type="hidden" name="token" value={token} /><input type="hidden" name="lang" value={locale} />
+              <button className="btn">{pt.outButton}</button>
+            </form>
           </div>
         ) : null}
         {ci?.open ? (
