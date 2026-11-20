@@ -58,6 +58,7 @@ Das Programm `tools\PontivoDeploy\PontivoDeploy.exe` meldet sich nicht als Admin
 cd /opt/pontivo-int/deploy
 ./deploy-user.sh list                 # wer hat Zugang
 ./deploy-user.sh passwd anna          # Passwort ändern
+./deploy-user.sh relink anna          # Schlüssel-Eintrag auf das aktuelle Format bringen (nach einem Update von deploy-gate.sh nötig, wenn «Unbekannte Aktion» erscheint)
 ./deploy-user.sh remove anna          # Zugang entziehen (Schlüssel und Passwort weg)
 ./deploy-user.sh log 50               # letzte 50 Zeilen des Protokolls
 ```

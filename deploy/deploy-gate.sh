@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Eingang für das Windows-Programm PontivoDeploy (und jeden anderen Deploy-Zugang).
 # Wird von SSH als erzwungener Befehl gestartet (siehe deploy-user.sh): der Schlüssel dieser Person kann NUR das hier ausführen.
-#   Aufruf durch SSH:  deploy-gate.sh <name>      Aktion in SSH_ORIGINAL_COMMAND: test | status | int | prod
+#   Aufruf durch SSH:  deploy-gate.sh <name> <aktion>      Aktion: test | status | int | prod
 #   Erste Zeile von stdin: das Deploy-Passwort dieser Person.
 # Prüft Passwort (Hash in /etc/pontivo-deploy/users), erlaubt nur die vier Aktionen, sperrt parallele Läufe, schreibt ein Protokoll.
 set -uo pipefail
 NAME="${1:-}"
-ACTION="${SSH_ORIGINAL_COMMAND:-}"
+# sudo verwirft die Umgebung: die Aktion kommt als 2. Argument ("$SSH_ORIGINAL_COMMAND" im erzwungenen Befehl); Umgebung nur als Rückfall (Tests).
+ACTION="${2:-${SSH_ORIGINAL_COMMAND:-}}"
 DB="${PONTIVO_DEPLOY_DB:-/etc/pontivo-deploy/users}"
 LOG="${PONTIVO_DEPLOY_LOG:-/var/log/pontivo-deploy.log}"
 SHIP="${PONTIVO_SHIP:-/opt/pontivo-int/deploy/ship.sh}"

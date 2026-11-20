@@ -3,6 +3,7 @@
 # und ein eigenes Passwort. Protokoll: /var/log/pontivo-deploy.log
 #   ./deploy-user.sh add anna "ssh-ed25519 AAAA… kommentar"    Person hinzufügen (fragt nach einem neuen Passwort)
 #   ./deploy-user.sh passwd anna                               Passwort ändern
+#   ./deploy-user.sh relink anna                               Schlüssel-Eintrag auf das aktuelle Format bringen
 #   ./deploy-user.sh remove anna                               Zugang entziehen
 #   ./deploy-user.sh list                                      Personen anzeigen
 #   ./deploy-user.sh log [Anzahl Zeilen]                       Protokoll anzeigen
@@ -34,6 +35,11 @@ set_password() {
   mv "$DB.tmp" "$DB"; chmod 600 "$DB"
 }
 
+write_key_line() { # name, "typ schlüssel"
+  # Die gewünschte Aktion geht als Argument an das Gate ($SSH_ORIGINAL_COMMAND wird von der Shell des Benutzers als EIN Wort eingesetzt).
+  printf 'restrict,command="sudo -n %s %s \\"$SSH_ORIGINAL_COMMAND\\"" %s pontivo-deploy:%s\n' "$GATE" "$1" "$2" "$1" >> "$AUTH"
+}
+
 case "$cmd" in
   add)
     valid_name "$name"
@@ -43,7 +49,7 @@ case "$cmd" in
     read_password; set_password
     mkdir -p "$(dirname "$AUTH")"; touch "$AUTH"
     keytype_and_body="$(printf '%s' "$key" | cut -d' ' -f1,2)"
-    printf 'restrict,command="sudo -n %s %s" %s pontivo-deploy:%s\n' "$GATE" "$name" "$keytype_and_body" "$name" >> "$AUTH"
+    write_key_line "$name" "$keytype_and_body"
     chmod 600 "$AUTH"; [ -z "${PONTIVO_TEST:-}" ] && chown "$SSH_USER": "$AUTH" 2>/dev/null || true
     echo "Zugang für «$name» eingerichtet. Dieser Schlüssel kann nur ausrollen (Passwort nötig)."
     ;;
@@ -51,6 +57,16 @@ case "$cmd" in
     valid_name "$name"
     grep -q -E "^${name}:" "$DB" 2>/dev/null || die "«$name» gibt es nicht."
     read_password; set_password; echo "Passwort für «$name» geändert."
+    ;;
+  relink)
+    valid_name "$name"
+    line="$(grep -F " pontivo-deploy:${name}" "$AUTH" 2>/dev/null | head -n1 || true)"
+    [ -n "$line" ] || die "Für «$name» gibt es keinen Schlüssel-Eintrag."
+    body="$(printf '%s' "$line" | awk '{print $(NF-2) " " $(NF-1)}')"
+    grep -v -F " pontivo-deploy:${name}" "$AUTH" > "$AUTH.tmp" || true
+    cat "$AUTH.tmp" > "$AUTH"; rm -f "$AUTH.tmp"
+    write_key_line "$name" "$body"
+    echo "Schlüssel-Eintrag für «$name» erneuert (Passwort unverändert)."
     ;;
   remove)
     valid_name "$name"
@@ -65,5 +81,5 @@ case "$cmd" in
     tail -n "${name:-40}" "$LOG" 2>/dev/null || echo "(noch kein Protokoll)"
     ;;
   *)
-    sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac

@@ -18,8 +18,9 @@ function user(args: string[], password = "geheim-passwort-1") {
   });
 }
 function gate(name: string, action: string, stdin: string) {
-  return spawnSync("bash", [GATE, name], {
-    env: { ...process.env, ...env, SSH_ORIGINAL_COMMAND: action },
+  // wie im erzwungenen Befehl: sudo verwirft die Umgebung, die Aktion kommt als 2. Argument
+  return spawnSync("bash", [GATE, name, action], {
+    env: { ...process.env, ...env },
     input: stdin,
     encoding: "utf8",
   });
@@ -52,7 +53,7 @@ describe("deploy-user.sh", () => {
     expect(db).toMatch(/^anna:\$6\$[0-9a-f]+\$/);
     expect(db).not.toContain("geheim-passwort-1");
     const auth = readFileSync(env.PONTIVO_AUTH_FILE, "utf8");
-    expect(auth).toContain('restrict,command="sudo -n /opt/pontivo-int/deploy/deploy-gate.sh anna" ssh-ed25519 AAAA');
+    expect(auth).toContain('restrict,command="sudo -n /opt/pontivo-int/deploy/deploy-gate.sh anna \\"$SSH_ORIGINAL_COMMAND\\"" ssh-ed25519 AAAA');
     expect(auth).toContain("pontivo-deploy:anna");
   });
 
@@ -74,6 +75,19 @@ describe("deploy-user.sh", () => {
     expect(user(["remove", "anna"]).status).toBe(0);
     expect(readFileSync(env.PONTIVO_DEPLOY_DB, "utf8")).not.toContain("anna");
     expect(readFileSync(env.PONTIVO_AUTH_FILE, "utf8")).not.toContain("anna");
+  });
+
+  it("relink bringt einen alten Eintrag ins neue Format, Passwort bleibt", () => {
+    user(["add", "anna", KEY]);
+    const old = `restrict,command="sudo -n /opt/pontivo-int/deploy/deploy-gate.sh anna" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeKeyForTestsOnly1234567890abcdefgh pontivo-deploy:anna\n`;
+    writeFileSync(env.PONTIVO_AUTH_FILE, old);
+    expect(user(["relink", "anna"]).status).toBe(0);
+    const auth = readFileSync(env.PONTIVO_AUTH_FILE, "utf8");
+    expect(auth).toContain('\\"$SSH_ORIGINAL_COMMAND\\"');
+    expect(auth.match(/pontivo-deploy:anna/g)?.length).toBe(1);
+    expect(auth).toContain("AAAAC3NzaC1lZDI1NTE5AAAAIFakeKeyForTestsOnly1234567890abcdefgh pontivo-deploy:anna");
+    expect(gate("anna", "test", "geheim-passwort-1\n").status).toBe(0);
+    expect(user(["relink", "nobody"]).status).not.toBe(0);
   });
 
   it("remove entfernt nur die gemeinte Person", () => {
@@ -167,8 +181,8 @@ describe("deploy-gate.sh", () => {
   });
 
   it("Verbindungsabbruch bricht das Ausrollen nicht ab", async () => {
-    const child = spawn("bash", [GATE, "anna"], {
-      env: { ...process.env, ...env, SSH_ORIGINAL_COMMAND: "int", PONTIVO_FAKE_SLEEP: "2" },
+    const child = spawn("bash", [GATE, "anna", "int"], {
+      env: { ...process.env, ...env, PONTIVO_FAKE_SLEEP: "2" },
       stdio: ["pipe", "pipe", "pipe"],
     });
     child.stdin.write("geheim-passwort-1\n");
