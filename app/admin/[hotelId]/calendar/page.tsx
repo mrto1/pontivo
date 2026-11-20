@@ -107,6 +107,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
         <a className="btn secondary small" href={`?from=${addDays(from, 30)}`}>30 Tage →</a>
       </div>
       {sp.msg ? <p className="notice">{sp.msg}</p> : null}
+      <p className="small muted" style={{ margin: 0 }}>Die grosse Zahl ist die Anzahl <strong>freier Zimmer</strong> je Tag. Darunter steht, was davon abgeht: <em>geb.</em> = gebucht, <em>gesp.</em> = von Ihnen gesperrt, <em>ext.</em> = über ein Portal belegt. Ohne Zusatz ist nichts belegt. Rot = ausgebucht.</p>
       <div className="scroll-x">
         <table className="cal">
           <thead>
@@ -122,24 +123,25 @@ export default async function Calendar({ params, searchParams }: { params: Promi
           <tbody>
             {cal.roomTypes.map((rt) => (
               <Fragment key={rt.id}>
-                <tr>
-                  <td className="sticky">{rt.name} <span className="muted">({rt.roomCount})</span><br /><span className="muted small">frei / gebucht / gesperrt</span></td>
+                <tr className="rt-row">
+                  <td className="sticky"><strong>{rt.name}</strong> <span className="muted">({rt.roomCount} Zimmer)</span><span className="cal-lab">freie Zimmer pro Nacht</span></td>
                   {days.map((d) => {
                     const i = invKey.get(`${rt.id}|${d}`);
                     if (!i) return <td key={d} className="muted">–</td>;
                     const free = i.total - i.booked - i.blocked - i.externalBlocked;
                     return (
                       <td key={d} className={free <= 0 ? "full" : ""} title={`frei ${free}, gebucht ${i.booked}, gesperrt ${i.blocked}, extern belegt ${i.externalBlocked}`}>
-                        {free}
-                        <span className="muted"> /{i.booked}</span>
-                        {i.blocked ? <span className="blk"> /{i.blocked}</span> : null}
+                        <span className="cal-free">{free}</span>
+                        {i.booked ? <span className="cal-sub">{i.booked} geb.</span> : null}
+                        {i.blocked ? <span className="cal-sub blk">{i.blocked} gesp.</span> : null}
+                        {i.externalBlocked ? <span className="cal-sub blk">{i.externalBlocked} ext.</span> : null}
                       </td>
                     );
                   })}
                 </tr>
                 {cal.ratePlans.filter((p) => p.roomTypeId === rt.id).map((p) => (
-                  <tr key={p.id}>
-                    <td className="sticky" style={{ fontWeight: 400 }}>↳ {p.name}</td>
+                  <tr key={p.id} className="rp-row">
+                    <td className="sticky"><span className="rp-name">{p.name}</span><span className="cal-lab">Preis CHF pro Nacht</span></td>
                     {days.map((d) => {
                       const r = rateKey.get(`${p.id}|${d}`);
                       if (!r) return <td key={d} className="muted">–</td>;

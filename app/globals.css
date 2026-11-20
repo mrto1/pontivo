@@ -34,6 +34,7 @@
 /* Admin, Login und Plattform-Bereich (myPontivo): gleiche Farben wie die Pontivo-Website (Petrol, Tinte, kühles Weiss).
    Hotel-Websites bleiben bei den Standardwerten oben. */
 :root:has(.pv-admin), :root:has(.pv-site) {
+  color-scheme: light dark;
   --bg: #f6f7f9; --surface: #ffffff; --ink: #0e1726; --muted: #566075; --line: #e1e6ee;
   --accent: #0b7285; --accent-ink: #ffffff; --accent-soft: #e3f1f4;
   --serif: var(--font);
@@ -143,14 +144,26 @@ details > summary::-webkit-details-marker { display: none; }
 .table th, .table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; font-size: .9rem; vertical-align: top; }
 .table th { color: var(--muted); font-weight: 600; font-size: .8rem; }
 .table tr.over td { background: var(--warn-soft); }
-.scroll-x { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
-.cal { border-collapse: separate; border-spacing: 0; font-size: .78rem; }
-.cal th, .cal td { padding: 4px 6px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); text-align: center; white-space: nowrap; background: var(--surface); }
-.cal th.sticky, .cal td.sticky { position: sticky; left: 0; z-index: 1; text-align: left; min-width: 170px; font-weight: 600; }
+.scroll-x { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--muted) 45%, var(--surface)) transparent; }
+.scroll-x::-webkit-scrollbar { height: 10px; }
+.scroll-x::-webkit-scrollbar-track { background: transparent; }
+.scroll-x::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--muted) 40%, var(--surface)); border-radius: 999px; border: 2px solid var(--surface); }
+.scroll-x::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+.cal { border-collapse: separate; border-spacing: 0; font-size: .85rem; }
+.cal th, .cal td { padding: 10px 8px; min-width: 56px; line-height: 1.25; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); text-align: center; white-space: nowrap; background: var(--surface); }
+.cal th.sticky, .cal td.sticky { position: sticky; left: 0; z-index: 1; text-align: left; min-width: 190px; font-weight: 600; }
 .cal .we { background: var(--accent-soft); }
 .cal .full { color: var(--danger); font-weight: 700; }
 .cal .blk { color: var(--warn); }
 .cal .ss { text-decoration: line-through; color: var(--muted); }
+.cal .rt-row td { border-top: 2px solid var(--line); }
+.cal .rt-row td:not(.full) { background: var(--accent-soft); }
+.cal .rt-row td.sticky { background: var(--accent-soft); font-weight: 400; }
+.cal .rp-row td.sticky { padding-left: 26px; font-weight: 500; box-shadow: inset 4px 0 0 var(--line); }
+.cal .rp-row td { color: var(--ink); }
+.cal-lab { display: block; font-size: .7rem; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.cal-free { display: block; font-weight: 700; font-size: 1rem; }
+.cal-sub { display: block; font-size: .68rem; color: var(--muted); font-weight: 500; }
 .cal .tag { display: block; font-size: .65rem; color: var(--warn); }
 .rate-rows { border-collapse: collapse; font-size: .85rem; }
 .rate-rows th { text-align: left; font-weight: 600; font-size: .75rem; color: var(--muted); padding: 2px 6px 4px 0; white-space: nowrap; }
