@@ -11,6 +11,8 @@ import { fontVars } from "@/components/public/fonts";
 import { ZodError } from "zod";
 import { tr } from "@/src/domain/blocks";
 
+import { updateHotelIntro } from "@/src/services/settings";
+
 export const dynamic = "force-dynamic";
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -26,6 +28,14 @@ async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>
     else throw e;
   }
   redirect(typeof r === "string" ? `/mypontivo/${c.hotel.id}/site?msg=${encodeURIComponent(r)}` : r.to);
+}
+
+async function saveIntro(f: FormData) {
+  "use server";
+  await run(f, async ({ hotel, actor }) => {
+    await updateHotelIntro(hotel, { headlineDe: s(f, "headlineDe"), introDe: s(f, "introDe"), headlineEn: s(f, "headlineEn"), introEn: s(f, "introEn") }, actor);
+    return { to: `/mypontivo/${hotel.id}/site?msg=${encodeURIComponent("Gespeichert")}` };
+  });
 }
 
 async function startHome(f: FormData) {
@@ -111,7 +121,24 @@ export default async function Site({ params, searchParams }: { params: Promise<{
         {home ? (
           <p><a className="btn" href={`/mypontivo/${hotel.id}/site/${home.id}`}>Startseite bearbeiten</a> <a href={`${base}/de`} target="_blank">ansehen</a></p>
         ) : canEdit ? (
-          <form action={startHome}>{hidden}<p className="small">Heute zeigt die Startseite Titel, Einleitung und Zimmer aus den Einstellungen. Mit dem Editor gestalten Sie sie frei aus Bausteinen – die bisherigen Texte werden übernommen.</p><button className="btn">Startseite gestalten</button></form>
+          <>
+            <form action={saveIntro} className="stack">
+              {hidden}
+              <p className="small muted" style={{ margin: 0 }}>Einfache Startseite: Titel und Einleitung, darunter Ihre Zimmer.</p>
+              <div className="form-grid">
+                <div><label>Titel (DE)</label><input name="headlineDe" defaultValue={hotel.content?.de?.headline ?? ""} /></div>
+                <div><label>Titel (EN)</label><input name="headlineEn" defaultValue={hotel.content?.en?.headline ?? ""} /></div>
+                <div><label>Einleitung (DE)</label><textarea name="introDe" rows={3} defaultValue={hotel.content?.de?.intro ?? ""} /></div>
+                <div><label>Einleitung (EN)</label><textarea name="introEn" rows={3} defaultValue={hotel.content?.en?.intro ?? ""} /></div>
+              </div>
+              <div><button className="btn">Speichern</button></div>
+            </form>
+            <form action={startHome} className="stack">
+              {hidden}
+              <p className="small muted" style={{ margin: 0 }}>Mehr Freiheit: Mit dem Editor gestalten Sie die Startseite aus Bausteinen. Die bisherigen Texte werden übernommen.</p>
+              <div><button className="btn secondary">Startseite gestalten</button></div>
+            </form>
+          </>
         ) : null}
       </section>
 

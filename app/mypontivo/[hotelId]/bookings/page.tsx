@@ -1,7 +1,8 @@
 import { requireHotel } from "@/src/auth/guard";
 import { listBookings } from "@/src/services/admin-bookings";
 import { formatChf } from "@/src/domain/money";
-import { isDay } from "@/src/domain/dates";
+import { isDay, todayIn } from "@/src/domain/dates";
+import { atLeast } from "@/src/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,8 @@ const SOURCE = ["", "direct", "booking_com", "expedia", "airbnb", "other_ota", "
 export default async function Bookings({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "bookings");
+  const { hotel, role } = await requireHotel(hotelId, "staff", "bookings");
+  const month = todayIn(hotel.timezone).slice(0, 7);
   const f = {
     from: sp.from && isDay(sp.from) ? sp.from : undefined,
     to: sp.to && isDay(sp.to) ? sp.to : undefined,
@@ -24,6 +26,17 @@ export default async function Bookings({ params, searchParams }: { params: Promi
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <h1 style={{ margin: 0 }}>Buchungen</h1>
         <a className="btn small" href={`/mypontivo/${hotel.id}/bookings/new`}>+ Buchung erfassen</a>
+        {atLeast(role, "manager") ? (
+          <details className="export-pop" style={{ marginLeft: "auto" }}>
+            <summary className="btn secondary small">Abrechnung exportieren</summary>
+            <form method="get" className="export-card">
+              <div><label>Monat (nach Bestätigung der Buchung)</label><input type="month" name="month" defaultValue={month} required /></div>
+              <button className="btn small" formAction={`/mypontivo/${hotel.id}/report/csv`}>CSV für Excel</button>
+              <button className="btn secondary small" formAction={`/mypontivo/${hotel.id}/report/print`} formTarget="_blank">PDF / Drucken</button>
+              <p className="muted small" style={{ margin: 0 }}>Mit Umsatz, Kurtaxe, Erstattungen und Plattformgebühr je Buchung. Die Übersicht nach Quelle sehen Sie im Reiter «Abrechnung».</p>
+            </form>
+          </details>
+        ) : null}
       </div>
       <form className="card inline-form" method="get">
         <div><label>Anreise ab</label><input type="date" name="from" defaultValue={f.from} /></div>

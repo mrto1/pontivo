@@ -26,7 +26,6 @@ async function saveHotel(f: FormData) {
       name: s(f, "name"), legalName: s(f, "legalName"), addressLine: s(f, "addressLine"), postalCode: s(f, "postalCode"), city: s(f, "city"),
       contactEmail: s(f, "contactEmail"), contactPhone: s(f, "contactPhone"), checkinTime: s(f, "checkinTime").slice(0, 5), checkoutTime: s(f, "checkoutTime").slice(0, 5),
       defaultLanguage: s(f, "defaultLanguage") === "en" ? "en" : "de", touristTaxIncludedInPrice: f.get("taxIncluded") === "on",
-      headlineDe: s(f, "headlineDe"), introDe: s(f, "introDe"), headlineEn: s(f, "headlineEn"), introEn: s(f, "introEn"),
     }, actor);
   } catch (e) {
     back(hotel.id, `Fehler: ${(e as Error).message}`);
@@ -266,7 +265,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
         </form>
 
         <form action={saveHotel} className="card stack">
-          <h2>Hotel und Website</h2>
+          <h2>Betriebsdaten</h2>
           {hidden}
           <div className="form-grid">
             <div><label>Name</label><input name="name" defaultValue={hotel.name} required /></div>
@@ -281,12 +280,6 @@ export default async function Settings({ params, searchParams }: { params: Promi
             <div><label>Standardsprache</label><select name="defaultLanguage" defaultValue={hotel.defaultLanguage}><option value="de">Deutsch</option><option value="en">Englisch</option></select></div>
           </div>
           <label className="check"><input type="checkbox" name="taxIncluded" defaultChecked={hotel.touristTaxIncludedInPrice} />Kurtaxe ist im Zimmerpreis inbegriffen</label>
-          <div className="form-grid">
-            <div><label>Titel (DE)</label><input name="headlineDe" defaultValue={hotel.content?.de?.headline ?? ""} /></div>
-            <div><label>Titel (EN)</label><input name="headlineEn" defaultValue={hotel.content?.en?.headline ?? ""} /></div>
-            <div><label>Einleitung (DE)</label><textarea name="introDe" rows={3} defaultValue={hotel.content?.de?.intro ?? ""} /></div>
-            <div><label>Einleitung (EN)</label><textarea name="introEn" rows={3} defaultValue={hotel.content?.en?.intro ?? ""} /></div>
-          </div>
           <button className="btn">Speichern</button>
         </form>
         </>

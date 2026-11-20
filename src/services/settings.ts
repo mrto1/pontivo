@@ -28,10 +28,11 @@ export const hotelSettingsSchema = z.object({
 
 export async function updateHotelSettings(hotel: Hotel, input: z.infer<typeof hotelSettingsSchema>, actor: string) {
   const v = hotelSettingsSchema.parse(input);
+  // Titel und Einleitung nur ändern, wenn sie mitgeschickt werden (Betriebsdaten-Formular schickt sie nicht mehr).
   const content = {
     ...hotel.content,
-    de: { headline: v.headlineDe || undefined, intro: v.introDe || undefined },
-    en: { headline: v.headlineEn || undefined, intro: v.introEn || undefined },
+    de: { ...hotel.content?.de, ...(v.headlineDe !== undefined ? { headline: v.headlineDe || undefined } : {}), ...(v.introDe !== undefined ? { intro: v.introDe || undefined } : {}) },
+    en: { ...hotel.content?.en, ...(v.headlineEn !== undefined ? { headline: v.headlineEn || undefined } : {}), ...(v.introEn !== undefined ? { intro: v.introEn || undefined } : {}) },
   };
   await db().transaction(async (tx) => {
     await tx
@@ -45,6 +46,21 @@ export async function updateHotelSettings(hotel: Hotel, input: z.infer<typeof ho
     await audit(tx, { hotelId: hotel.id, actor, action: "hotel.update", entity: "hotel", entityId: hotel.id });
   });
 }
+
+/** Einfache Startseite (ohne Editor): Titel und Einleitung. Wird auf der Seite Website gepflegt. */
+export async function updateHotelIntro(hotel: Hotel, v: { headlineDe: string; introDe: string; headlineEn: string; introEn: string }, actor: string) {
+  const z = z_intro.parse(v);
+  const content = {
+    ...hotel.content,
+    de: { ...hotel.content?.de, headline: z.headlineDe || undefined, intro: z.introDe || undefined },
+    en: { ...hotel.content?.en, headline: z.headlineEn || undefined, intro: z.introEn || undefined },
+  };
+  await db().transaction(async (tx) => {
+    await tx.update(hotels).set({ content, updatedAt: new Date() }).where(eq(hotels.id, hotel.id));
+    await audit(tx, { hotelId: hotel.id, actor, action: "hotel.intro_update", entity: "hotel", entityId: hotel.id });
+  });
+}
+const z_intro = z.object({ headlineDe: z.string().max(200), introDe: z.string().max(2000), headlineEn: z.string().max(200), introEn: z.string().max(2000) });
 
 /** SPEC 5.2: Hotel bestätigt den Kurtaxe-Satz → eigene Zeile mit status 'verified', gültig ab heute */
 export async function confirmTouristTax(
