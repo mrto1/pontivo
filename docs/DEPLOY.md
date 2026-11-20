@@ -17,6 +17,8 @@ Diese Seite ist der Einstieg: zuerst «Was will ich tun?», darunter der Spickze
 
 Alles auf dem Server, nach `ssh ubuntu@IP-DES-VPS` und `sudo -i` (dann ist kein `sudo` mehr nötig).
 
+**Vom Windows-PC aus, ohne Terminal:** Doppelklick auf `scripts\pontivo-deploy.bat` (im Repo-Ordner auf dem PC). Es öffnet ein kleines Fenster mit zwei Knöpfen: «1. Auf INT ausrollen» und «2. INT auf PROD ausrollen» (mit Rückfrage). «Verbindung testen» prüft Zugang und Rechte, «Stand anzeigen» zeigt, was auf int und prod läuft. Das Fenster ist nur eine Oberfläche für den Befehl `ausrollen` (unten) und braucht dieselbe SSH-Anmeldung per Schlüssel wie `scripts\pull-backups.ps1`. Voraussetzung auf dem Server: einmal `ausrollen` einrichten (siehe unten).
+
 **Neue Version ausrollen: ein Befehl.**
 ```bash
 ausrollen
