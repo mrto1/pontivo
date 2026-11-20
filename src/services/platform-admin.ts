@@ -133,3 +133,38 @@ export async function resetUserSecurity(userId: string, actor: string): Promise<
     await record(c, actor, "user.security_reset", userId, { email: u.email });
   });
 }
+
+// ---------------------------------------------------------------- Plattform-Admins (mehrere Personen)
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Person als Plattform-Admin eintragen (legt das Konto an, falls es noch keines gibt). Sie meldet sich danach mit ihrer E-Mail an
+ * (Login-Link, Passkey oder Authenticator wie alle anderen).
+ */
+export async function addPlatformAdmin(email: string, name: string | null, actor: string): Promise<{ id: string; email: string; created: boolean }> {
+  const e = email.trim().toLowerCase();
+  if (!EMAIL_RE.test(e)) throw new Error("E-Mail-Adresse ungültig");
+  return inTx(async (c) => {
+    const ex = (await c.query(`SELECT id, is_platform_admin FROM users WHERE lower(email) = $1`, [e])).rows[0] as { id: string; is_platform_admin: boolean } | undefined;
+    if (ex?.is_platform_admin) throw new Error("Diese Person ist schon Plattform-Admin");
+    let id = ex?.id;
+    if (id) await c.query(`UPDATE users SET is_platform_admin = true WHERE id = $1`, [id]);
+    else id = (await c.query(`INSERT INTO users (email, name, is_platform_admin) VALUES ($1, $2, true) RETURNING id`, [e, (name ?? "").trim() || null])).rows[0].id as string;
+    await record(c, actor, "platform_admin.added", id, { email: e, newAccount: !ex });
+    return { id: id!, email: e, created: !ex };
+  });
+}
+
+/** Plattform-Admin-Recht entziehen. Nicht sich selbst und nie den letzten Admin; das Konto bleibt bestehen. */
+export async function removePlatformAdmin(userId: string, actorUserId: string, actor: string): Promise<void> {
+  if (userId === actorUserId) throw new Error("Du kannst dir das Recht nicht selbst entziehen");
+  await inTx(async (c) => {
+    const u = (await c.query(`SELECT email, is_platform_admin FROM users WHERE id = $1 FOR UPDATE`, [userId])).rows[0];
+    if (!u?.is_platform_admin) throw new Error("Diese Person ist kein Plattform-Admin");
+    const n = Number((await c.query(`SELECT count(*) FROM users WHERE is_platform_admin`)).rows[0].count);
+    if (n <= 1) throw new Error("Der letzte Plattform-Admin kann nicht entfernt werden");
+    await c.query(`UPDATE users SET is_platform_admin = false WHERE id = $1`, [userId]);
+    await record(c, actor, "platform_admin.removed", userId, { email: u.email });
+  });
+}

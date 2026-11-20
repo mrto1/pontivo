@@ -65,6 +65,7 @@ export function PontivoHome({ contact, site: siteIn, account, children }: { cont
               </>)}
               {contact.demoUrl && !st ? <a className={s.btnGhost} href={contact.demoUrl}>Demo-Hotel ansehen</a> : null}
             </div>
+            <p className={s.heroTrust}>{site.text("hero.trust")}</p>
           </div>
 
           <figure className={s.receipt} aria-label={`Beispiel: Buchung über CHF ${fmt(BOOKING)}`}>

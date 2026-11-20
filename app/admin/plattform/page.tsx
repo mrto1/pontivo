@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requirePlatformAdmin } from "@/src/auth/guard";
-import { deleteHotelCascade, deleteUserAccount, platformOverview, resetUserSecurity } from "@/src/services/platform-admin";
+import { addPlatformAdmin, deleteHotelCascade, deleteUserAccount, platformOverview, removePlatformAdmin, resetUserSecurity } from "@/src/services/platform-admin";
 import { getHotelById } from "@/src/services/hotels";
 import { addMember, removeMember, setHotelStatus } from "@/src/services/settings";
 import { requestLoginLink } from "@/src/auth/session";
@@ -35,6 +35,24 @@ async function saveVat(formData: FormData) {
     await savePlatformVat({ liableFrom: on ? String(formData.get("from") ?? "") : null, bps: Math.round(Number(String(formData.get("rate") ?? "8.1").replace(",", ".")) * 100), number: String(formData.get("number") ?? "") }, `user:${admin.id}`);
   } catch (e) { back((e as Error).message, "error"); }
   back(on ? "MWST-Pflicht gespeichert: gilt für Rechnungen ab dem eingetragenen Datum (Leistungsmonat)" : "MWST-Pflicht ausgeschaltet: neue Rechnungen ohne MWST");
+}
+
+async function adminAdd(formData: FormData) {
+  "use server";
+  const admin = await requirePlatformAdmin();
+  const email = String(formData.get("email") ?? "");
+  try {
+    const r = await addPlatformAdmin(email, String(formData.get("name") ?? ""), `user:${admin.id}`);
+    const sent = await requestLoginLink(r.email);
+    back(`${r.email} ist jetzt Plattform-Admin${sent ? " (Login-Link per E-Mail gesendet)" : " (Login unter /mypontivo/login)"}`);
+  } catch (e) { back((e as Error).message, "error"); }
+}
+
+async function adminRemove(formData: FormData) {
+  "use server";
+  const admin = await requirePlatformAdmin();
+  try { await removePlatformAdmin(String(formData.get("id")), admin.id, `user:${admin.id}`); } catch (e) { back((e as Error).message, "error"); }
+  back("Plattform-Admin-Recht entzogen (das Konto bleibt bestehen)");
 }
 
 async function retryInvoice(formData: FormData) {
@@ -100,7 +118,7 @@ async function removeUser(formData: FormData) {
 }
 
 export default async function Plattform({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  await requirePlatformAdmin();
+  const me = await requirePlatformAdmin();
   const sp = await searchParams;
   const { hotels, users } = await platformOverview();
   const vat = await getPlatformVat();
@@ -117,6 +135,24 @@ export default async function Plattform({ searchParams }: { searchParams: Promis
         {sp.error && sp.error !== "confirm" && sp.error !== "user" ? <p className="notice warn">{sp.error}</p> : null}
         {sp.error === "confirm" ? <p className="notice warn">Bestätigung stimmt nicht, nichts gelöscht.</p> : null}
         {sp.error === "user" ? <p className="notice warn">Dieser Benutzer kann nicht gelöscht werden (Plattform-Admin oder man selbst).</p> : null}
+
+        <section className="card stack" id="admins">
+          <h2 style={{ margin: 0 }}>Plattform-Admins ({users.filter((u) => u.isPlatformAdmin).length})</h2>
+          <p className="muted small" style={{ margin: 0 }}>Alle hier eingetragenen Personen sehen diese Verwaltung und alle Betriebe. Jede Person meldet sich mit ihrer eigenen E-Mail an (empfohlen: Passkey oder Authenticator unter Mein Konto). Jede Änderung steht im Protokoll.</p>
+          <ul className="plat-list">
+            {users.filter((u) => u.isPlatformAdmin).map((u) => (
+              <li key={u.id}>
+                <span>{u.email}{u.name ? <span className="muted small"> · {u.name}</span> : null}{u.id === me.id ? <> <span className="badge">du</span></> : null} <span className="muted small">· {u.passkeys || u.totp ? "zweiter Faktor eingerichtet" : "nur E-Mail-Link"}</span></span>
+                {u.id !== me.id ? <form action={adminRemove}><input type="hidden" name="id" value={u.id} /><button className="btn secondary small">Recht entziehen</button></form> : null}
+              </li>
+            ))}
+          </ul>
+          <form action={adminAdd} className="form-row">
+            <div><label>E-Mail</label><input name="email" type="email" placeholder="name@pontivo.ch" required /></div>
+            <div><label>Name (optional)</label><input name="name" /></div>
+            <div><button className="btn small">Als Plattform-Admin hinzufügen</button></div>
+          </form>
+        </section>
 
         <section className="card stack" id="mwst">
           <h2 style={{ margin: 0 }}>MWST der Plattform</h2>

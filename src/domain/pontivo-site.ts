@@ -37,6 +37,13 @@ export const SITE_FIELDS: SiteField[] = [
     "default": "Gespräch vereinbaren"
   },
   {
+    "key": "hero.trust",
+    "group": "Kopfbereich",
+    "label": "Vertrauenszeile unter den Knöpfen",
+    "multiline": false,
+    "default": "🇨🇭 Gehostet in der Schweiz: Server und Datenbank bei Infomaniak in Genf"
+  },
+  {
     "key": "bausteine.title",
     "group": "Angebot (drei Wege)",
     "label": "Baukasten: Überschrift",
@@ -419,7 +426,7 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "Fusszeile",
     "label": "Zeile",
     "multiline": false,
-    "default": "Direktbuchung für Hotels und Ferienwohnungen in der Schweiz"
+    "default": "Direktbuchung für Hotels und Ferienwohnungen in der Schweiz · Hosting in der Schweiz"
   }
 ];
 
@@ -454,7 +461,7 @@ export const DEFAULT_FAQ: FaqItem[] = [
   },
   {
     "q": "Wo sind die Daten meiner Gäste?",
-    "a": "Gastdaten bearbeiten wir in Ihrem Auftrag nach Schweizer Datenschutzgesetz. Kartendaten sehen weder wir noch Sie – die verarbeitet ausschliesslich der Zahlungsdienst Stripe."
+    "a": "Server und Datenbank von {name} stehen in der Schweiz (Infomaniak, Genf). Gastdaten bearbeiten wir in Ihrem Auftrag nach Schweizer Datenschutzgesetz. Kartendaten sehen weder wir noch Sie – die verarbeitet ausschliesslich der Zahlungsdienst Stripe. Für den E-Mail-Versand nutzen wir Postmark; die Dienstleister stehen in der Datenschutzerklärung."
   },
   {
     "q": "Wie kann ich kündigen?",
