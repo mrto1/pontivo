@@ -285,6 +285,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       const ex = await listExtras(hotel.id);
       body = (
         <div className="stack">
+          {!rooms.length ? <p className="notice small">Sie haben schon eine Website oder einen Prospekt? <a href={`/mypontivo/${hotel.id}/ki-einrichten`}>Mit KI einen Entwurf erstellen lassen</a> (nach Abschluss des Abos, Sie prüfen alles vor der Übernahme).</p> : null}
           {rooms.length ? (
             <table className="table">
               <thead><tr><th>{whole ? unit : "Zimmertyp"}</th><th>{whole ? "Personen" : "Anzahl · Personen"}</th><th>Tarif</th></tr></thead>

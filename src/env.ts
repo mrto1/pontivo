@@ -56,6 +56,10 @@ const schema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   TRANSLATE_MODEL: z.string().default("claude-sonnet-5-5"),
   TRANSLATIONS_PER_MONTH: z.coerce.number().int().min(0).default(50),
+  // KI-Einrichtung aus Website/PDF (SPEC 19.36): günstiges Modell, Läufe je Betrieb und Monat, Obergrenze aller Läufe je 24 Stunden
+  SETUP_MODEL: z.string().default("claude-haiku-5-5"),
+  SETUP_RUNS_PER_MONTH: z.coerce.number().int().min(0).default(3),
+  SETUP_RUNS_PER_DAY_TOTAL: z.coerce.number().int().min(0).default(100),
   // KI-Chat (SPEC 14b): Modell, technische Obergrenze Gespräche pro Hotel und Monat, Kosten pro Million Tokens (USD, für die Auswertung)
   CHAT_MODEL: z.string().default("claude-haiku-5-5"),
   // KI-Preisempfehlung (Modul ai_pricing): Modell und Obergrenze Berechnungen pro Hotel und Tag

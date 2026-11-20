@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   serverExternalPackages: ["pg", "pg-boss"],
+  // PDF-Upload der KI-Einrichtung (höchstens 4 MB) und Bankdateien
+  experimental: { serverActions: { bodySizeLimit: "6mb" } },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

@@ -230,3 +230,9 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 ## Feiertage und Schulferien (SPEC 19.33)
 - Schulferien-Daten müssen von den kantonalen Stellen beschafft und über die Plattform-Verwaltung eingespielt werden (jährlich). Es sind keine Daten im Code hinterlegt. Gewünscht: auch Ferien der Herkunftsmärkte (Deutschland, Niederlande, Frankreich)? Heute nur Kantone.
 - Feiertags-Zuordnung je Kanton ist vereinfacht (kommunale Abweichungen, Berchtoldstag, Bettag, Genfer Bettag usw. fehlen). Mit Kantonslisten abgleichen, wenn Betriebe Abweichungen melden.
+
+## KI-Einrichtung aus Website/PDF (SPEC 19.36)
+- Kosten je Lauf (geschätzt wenige Rappen mit Haiku, PDF teurer): `ai_usage`-artige Auswertung in Plattform-Verwaltung fehlt, die Token-Zähler stehen in `setup_imports`. Limits (3 je Monat, 100 je Tag gesamt) sind Annahmen.
+- Inhalte fremder Websites (Texte, Beschreibungen) können urheberrechtlich geschützt sein: der Betrieb übernimmt nur Texte seiner eigenen Website. Hinweis in den Bedingungen für Gastgeber ergänzen.
+- Websites, die erst im Browser aufgebaut werden (JavaScript), liefern zu wenig Text; dafür das PDF verwenden. Kein Browser-Rendering vorgesehen (Kosten, Sicherheit).
+- Noch nicht übernommen: Preise, Extras, Fotos, Tarife. Fotos von der alten Website zu übernehmen wäre ein eigener Schritt (Urheberrecht, Grösse).

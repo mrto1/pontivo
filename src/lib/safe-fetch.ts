@@ -46,12 +46,12 @@ const lookup: net.LookupFunction = (host, opts, cb) => {
   });
 };
 
-export async function safeFetchText(raw: string, opts: { maxBytes?: number; timeoutMs?: number; lookupFn?: net.LookupFunction } = {}): Promise<string> {
+export async function safeFetchText(raw: string, opts: { maxBytes?: number; timeoutMs?: number; lookupFn?: net.LookupFunction; userAgent?: string; accept?: string } = {}): Promise<string> {
   const maxBytes = opts.maxBytes ?? 2_000_000;
   let url = checkFeedUrl(raw);
   for (let hop = 0; hop <= 3; hop++) {
     const res = await new Promise<{ status: number; location?: string; body: string }>((resolve, reject) => {
-      const req = https.get(url, { lookup: opts.lookupFn ?? lookup, timeout: opts.timeoutMs ?? 10_000, headers: { "user-agent": "Pontivo-iCal/1.0", accept: "text/calendar, text/plain, */*" } }, (r) => {
+      const req = https.get(url, { lookup: opts.lookupFn ?? lookup, timeout: opts.timeoutMs ?? 10_000, headers: { "user-agent": opts.userAgent ?? "Pontivo-iCal/1.0", accept: opts.accept ?? "text/calendar, text/plain, */*" } }, (r) => {
         const status = r.statusCode ?? 0;
         if (status >= 300 && status < 400) {
           r.resume();

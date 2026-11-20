@@ -1627,3 +1627,20 @@ export const schoolHolidays = pgTable("school_holidays", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type SchoolHoliday = typeof schoolHolidays.$inferSelect;
+
+/** KI-Einrichtung (SPEC 19.36): Entwurf aus Website-Adresse oder PDF; Quelltexte werden nicht gespeichert */
+export const setupImports = pgTable("setup_imports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  kind: text("kind").$type<"url" | "pdf">().notNull(),
+  source: text("source").notNull().default(""),
+  status: text("status").$type<"running" | "draft" | "adopted" | "discarded" | "failed">().notNull().default("running"),
+  draft: jsonb("draft").$type<Record<string, unknown>>().notNull().default({}),
+  error: text("error"),
+  inputTokens: integer("input_tokens").notNull().default(0),
+  outputTokens: integer("output_tokens").notNull().default(0),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  adoptedAt: ts("adopted_at"),
+});
+export type SetupImport = typeof setupImports.$inferSelect;
