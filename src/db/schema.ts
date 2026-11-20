@@ -1616,3 +1616,14 @@ export const salesLeadEvents = pgTable("sales_lead_events", {
   actor: text("actor").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+/** Schulferien je Kanton (Referenzdaten der Plattform, kein hotel_id; SPEC 19.33) */
+export const schoolHolidays = pgTable("school_holidays", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  canton: char("canton", { length: 2 }).notNull(),
+  name: text("name").notNull(),
+  fromDay: date("from_day", { mode: "string" }).notNull(),
+  toDay: date("to_day", { mode: "string" }).notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type SchoolHoliday = typeof schoolHolidays.$inferSelect;

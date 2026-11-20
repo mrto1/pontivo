@@ -12,6 +12,7 @@ import { formatBps } from "@/src/domain/invoice";
 import { todayIn } from "@/src/domain/dates";
 import { healthByHotel } from "@/src/services/health";
 import { HEALTH_LABEL } from "@/src/domain/health";
+import { importSchoolHolidays, schoolHolidayStats } from "@/src/services/holidays";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,14 @@ async function saveVat(formData: FormData) {
     await savePlatformVat({ liableFrom: on ? String(formData.get("from") ?? "") : null, bps: Math.round(Number(String(formData.get("rate") ?? "8.1").replace(",", ".")) * 100), number: String(formData.get("number") ?? "") }, `user:${admin.id}`);
   } catch (e) { back((e as Error).message, "error"); }
   back(on ? "MWST-Pflicht gespeichert: gilt für Rechnungen ab dem eingetragenen Datum (Leistungsmonat)" : "MWST-Pflicht ausgeschaltet: neue Rechnungen ohne MWST");
+}
+
+async function importSchool(formData: FormData) {
+  "use server";
+  const admin = await requirePlatformAdmin();
+  const r = await importSchoolHolidays(String(formData.get("csv") ?? ""), `user:${admin.id}`);
+  if (!r.imported) back(r.errors.slice(0, 3).join(" · "), "error");
+  back(`${r.imported} Schulferien-Einträge importiert${r.errors.length ? `, ${r.errors.length} Zeilen übersprungen (${r.errors.slice(0, 2).join("; ")})` : ""}`);
 }
 
 async function adminAdd(formData: FormData) {
@@ -124,6 +133,7 @@ export default async function Plattform({ searchParams }: { searchParams: Promis
   const sp = await searchParams;
   const { hotels, users } = await platformOverview();
   const vat = await getPlatformVat();
+  const schoolStats = await schoolHolidayStats(todayIn("Europe/Zurich"));
   const invoices = await listPlatformInvoices();
   const health = await healthByHotel();
   const STATUS: Record<string, string> = { live: "online", draft: "Entwurf", paused: "pausiert" };
@@ -134,7 +144,7 @@ export default async function Plattform({ searchParams }: { searchParams: Promis
           <h1 style={{ margin: 0 }}>Plattform-Verwaltung</h1>
           <p className="muted small" style={{ margin: 0 }}>Nur für Pontivo-Admins. Löschen ist endgültig und nimmt alle Daten mit (Buchungen, Rechnungen, Gäste, Mails). Zur Bestätigung den Namen bzw. die E-Mail eintippen.</p>
         </header>
-        <p className="small" style={{ margin: 0 }}><a href="/admin/plattform/vertrieb">Vertriebs-Cockpit</a> · <a href="#admins">Plattform-Admins</a> · <a href="#mwst">MWST</a> · <a href="#rechnungen">Rechnungen</a> · <a href="#betriebe">Betriebe</a> · <a href="#benutzer">Benutzer</a></p>
+        <p className="small" style={{ margin: 0 }}><a href="/admin/plattform/vertrieb">Vertriebs-Cockpit</a> · <a href="#admins">Plattform-Admins</a> · <a href="#mwst">MWST</a> · <a href="#schulferien">Schulferien</a> · <a href="#rechnungen">Rechnungen</a> · <a href="#betriebe">Betriebe</a> · <a href="#benutzer">Benutzer</a></p>
         {sp.done ? <p className="notice">{sp.done}</p> : null}
         {sp.error && sp.error !== "confirm" && sp.error !== "user" ? <p className="notice warn">{sp.error}</p> : null}
         {sp.error === "confirm" ? <p className="notice warn">Bestätigung stimmt nicht, nichts gelöscht.</p> : null}
@@ -169,6 +179,16 @@ export default async function Plattform({ searchParams }: { searchParams: Promis
             <div><button className="btn">Speichern</button></div>
           </form>
           <p className="small">{vat.liableFrom ? <>Aktuell: <strong>MWST-pflichtig ab {vat.liableFrom}</strong>, Satz {formatBps(vat.bps)}.</> : <>Aktuell: <strong>nicht MWST-pflichtig</strong>, Rechnungen ohne MWST.</>}</p>
+        </section>
+
+        <section className="card stack" id="schulferien">
+          <h2 style={{ margin: 0 }}>Schulferien importieren</h2>
+          <p className="muted small" style={{ margin: 0 }}>Die Daten stammen von den kantonalen Erziehungsdirektionen und werden hier eingespielt, nicht im Code gepflegt. Je Zeile: <code>Kanton;Name;von;bis</code> (z. B. <code>ZH;Herbstferien;2027-10-02;2027-10-17</code>, Datum auch als TT.MM.JJJJ). Bestehende Einträge (gleicher Kanton, Name und Beginn) werden aktualisiert. Die Betriebe sehen die Ferien ihres Kantons als Vorschlag in der Preisempfehlung.</p>
+          <form action={importSchool} className="stack">
+            <textarea name="csv" rows={6} required placeholder="Kanton;Name;von;bis" />
+            <div><button className="btn">Importieren</button></div>
+          </form>
+          <p className="small">{schoolStats.length ? <>Eingespielt (noch nicht vorbei): {schoolStats.map((x) => `${x.canton} ${x.n}`).join(" · ")}</> : "Noch keine Schulferien eingespielt."}</p>
         </section>
 
         <section className="stack" id="rechnungen">

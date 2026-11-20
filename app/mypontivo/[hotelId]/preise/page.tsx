@@ -9,6 +9,7 @@ import { db } from "@/src/db/client";
 import { ratePlans } from "@/src/db/schema";
 import { todayIn } from "@/src/domain/dates";
 import { formatDay } from "@/src/i18n/dict";
+import { adoptSuggestions, holidaySuggestions } from "@/src/services/holidays";
 import {
   PricingError, addEvent, applyProposals, deleteEvent, dismissProposals, generateProposals, listEvents, listProposals, listRules, saveRule,
 } from "@/src/services/pricing-rules";
@@ -60,6 +61,19 @@ async function deleteEventAction(f: FormData) {
   await deleteEvent(c.hotel.id, s(f, "id"), c.actor);
   back(c.hotel.id, "Ereignis gelöscht.");
 }
+async function adoptAction(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  const keys = f.getAll("pick").map(String);
+  let msg = "Nichts ausgewählt.";
+  if (keys.length) {
+    try {
+      const n = await adoptSuggestions(c.hotel, todayIn(c.hotel.timezone), keys, { feiertag: num(f, "pctFeiertag"), schulferien: num(f, "pctSchule") }, c.actor);
+      msg = `${n} Ereignisse übernommen.`;
+    } catch (e) { if (!(e instanceof PricingError)) throw e; msg = `Nicht gespeichert: ${e.message}`; }
+  }
+  back(c.hotel.id, msg);
+}
 async function computeAction(f: FormData) {
   "use server";
   const c = await guard(f);
@@ -89,9 +103,9 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
   await requireModule(hotel.id, "pricing_rules");
   const today = todayIn(hotel.timezone);
   const manage = atLeast(role, "manager");
-  const [plans, rules, events, proposals] = await Promise.all([
+  const [plans, rules, events, proposals, suggested] = await Promise.all([
     db().select().from(ratePlans).where(and(eq(ratePlans.hotelId, hotel.id), eq(ratePlans.active, true))).orderBy(ratePlans.createdAt),
-    listRules(hotel.id), listEvents(hotel.id, today), listProposals(hotel.id, today),
+    listRules(hotel.id), listEvents(hotel.id, today), listProposals(hotel.id, today), holidaySuggestions(hotel, today),
   ]);
   const byPlan = new Map(rules.map((r) => [r.ratePlanId, r]));
   const ai = await aiPricingActive(hotel);
@@ -184,6 +198,31 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
             ))}
           </tbody></table>
         ) : <p className="muted">Keine Ereignisse eingetragen.</p>}
+      </section>
+
+      <section className="card stack" id="kalender">
+        <h2>Feiertage und Schulferien ({hotel.canton})</h2>
+        <p className="muted small" style={{ margin: 0 }}>Vorschläge für die nächsten 13 Monate. Die Feiertage sind berechnet und können je nach Gemeinde abweichen, bitte prüfen. Schulferien erscheinen, sobald die Plattform sie für Ihren Kanton eingespielt hat. Gewählte Einträge werden zu Ereignissen oben und fliessen in die Preisempfehlung ein (die Preise ändern sich nicht von selbst).</p>
+        {suggested.length === 0 ? <p className="muted">Keine neuen Vorschläge.</p> : manage ? (
+          <form action={adoptAction} className="stack">
+            <input type="hidden" name="hotelId" value={hotel.id} />
+            <div className="row">
+              <div><label>Zuschlag Feiertage %</label><input name="pctFeiertag" type="number" min={-100} max={100} placeholder="z. B. 10" /></div>
+              <div><label>Zuschlag Schulferien %</label><input name="pctSchule" type="number" min={-100} max={100} placeholder="z. B. 10" /></div>
+            </div>
+            <table className="table"><tbody>
+              {suggested.map((x) => (
+                <tr key={x.key}>
+                  <td><input type="checkbox" name="pick" value={x.key} aria-label={x.name} /></td>
+                  <td>{x.name}</td>
+                  <td>{x.fromDay === x.toDay ? formatDay(x.fromDay, "de") : `${formatDay(x.fromDay, "de")} bis ${formatDay(x.toDay, "de")}`}</td>
+                  <td className="muted">{x.kind === "feiertag" ? "Feiertag" : "Schulferien"}</td>
+                </tr>
+              ))}
+            </tbody></table>
+            <div><button className="btn">Gewählte übernehmen</button></div>
+          </form>
+        ) : <p className="muted">Nur Manager können Vorschläge übernehmen.</p>}
       </section>
     </div>
   );

@@ -226,3 +226,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 ## Wiederkehr-Mail und Monatsmail (SPEC 19.32)
 - Wiederkehr-Mail ist Werbung: rechtlich (UWG Art. 3 Abs. 1 lit. o, nDSG) nur mit Einwilligung des Gasts. Wir verlangen `marketing_consent` und bieten Abmelden; Standard ist aus. Einwilligungstext im Buchungsfenster vor Start mit Rechtsberatung prüfen.
 - Zeitpunkt (330 Tage) und «gleicher Wochentag ein Jahr später» (364 Tage) sind Annahmen.
+
+## Feiertage und Schulferien (SPEC 19.33)
+- Schulferien-Daten müssen von den kantonalen Stellen beschafft und über die Plattform-Verwaltung eingespielt werden (jährlich). Es sind keine Daten im Code hinterlegt. Gewünscht: auch Ferien der Herkunftsmärkte (Deutschland, Niederlande, Frankreich)? Heute nur Kantone.
+- Feiertags-Zuordnung je Kanton ist vereinfacht (kommunale Abweichungen, Berchtoldstag, Bettag, Genfer Bettag usw. fehlen). Mit Kantonslisten abgleichen, wenn Betriebe Abweichungen melden.
