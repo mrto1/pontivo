@@ -2,9 +2,9 @@ import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { saveMailTexts } from "@/src/services/mail-texts";
-import { isMailTemplate, LIMITS, MAIL_TEMPLATES, type MailText } from "@/src/domain/mail-texts";
+import { cleanMailText, isMailTemplate, LIMITS, MAIL_TEMPLATES, type MailText } from "@/src/domain/mail-texts";
 import { hotelLocales, LOCALE_NAMES, type Locale } from "@/src/i18n/dict";
-import { render } from "@/src/email/templates";
+import { defaultMailText, render } from "@/src/email/templates";
 import { env } from "@/src/env";
 import type { Booking, Hotel } from "@/src/db/schema";
 
@@ -19,7 +19,12 @@ async function save(f: FormData) {
   const template = s(f, "template");
   if (!isMailTemplate(template)) redirect(`/mypontivo/${c.hotel.id}/mail-texte`);
   const per: Record<string, MailText> = {};
-  for (const l of hotelLocales(c.hotel)) per[l] = { subject: s(f, `subject_${l}`), intro: s(f, `intro_${l}`), outro: s(f, `outro_${l}`) };
+  for (const l of hotelLocales(c.hotel)) {
+    const given = cleanMailText({ subject: s(f, `subject_${l}`), intro: s(f, `intro_${l}`), outro: s(f, `outro_${l}`) });
+    // Felder, die noch genau dem Standardtext entsprechen, werden nicht gespeichert: sie bleiben Standard und folgen künftigen Verbesserungen
+    const std = cleanMailText(defaultMailText(c.hotel, template, l, env().APP_BASE_URL));
+    per[l] = { subject: given.subject === std.subject ? "" : given.subject, intro: given.intro === std.intro ? "" : given.intro, outro: given.outro };
+  }
   await saveMailTexts(c.hotel, template, per, c.actor);
   redirect(`/mypontivo/${c.hotel.id}/mail-texte?t=${template}&saved=1`);
 }
@@ -46,10 +51,11 @@ export default async function MailTexte({ params, searchParams }: { params: Prom
   const template = isMailTemplate(sp.t ?? "") ? sp.t! : MAIL_TEMPLATES[0].key;
   const langs = hotelLocales(hotel);
   const mine = hotel.content.mailTexts?.[template] ?? {};
+  const std = Object.fromEntries(langs.map((l) => [l, defaultMailText(hotel, template, l, env().APP_BASE_URL)]));
   return (
     <div className="stack">
       <h1>Mail-Texte</h1>
-      <p className="muted small">Eigene Sätze in den Mails an Ihre Gäste. Beträge, Daten, Links und Bedingungen bleiben unverändert, Ihre Texte kommen dazu. Platzhalter: {"{name}"}, {"{hotel}"}, {"{reference}"}. Leer lassen = Standardtext.</p>
+      <p className="muted small">Eigene Sätze in den Mails an Ihre Gäste. Beträge, Daten, Links und Bedingungen bleiben unverändert, Ihre Texte kommen dazu. Die Felder zeigen den Standardtext. Ändern Sie ihn nach Wunsch; Felder, die Sie nicht ändern, bleiben Standard. Ein leeres Feld stellt den Standardtext wieder her. Platzhalter: {"{name}"}, {"{hotel}"}, {"{reference}"}, {"{betrag}"} (offener Betrag), {"{datum}"} (Zahlungsfrist), {"{nummer}"} (Rechnungsnummer).</p>
       <nav className="seg" aria-label="Mail">
         {MAIL_TEMPLATES.map((t) => <a key={t.key} href={`?t=${t.key}`} aria-current={t.key === template ? "true" : undefined}>{t.label}</a>)}
       </nav>
@@ -59,9 +65,9 @@ export default async function MailTexte({ params, searchParams }: { params: Prom
         {langs.map((l) => (
           <section key={l} className="card stack">
             <h2 style={{ margin: 0 }}>{LOCALE_NAMES[l] ?? l}</h2>
-            <div><label>Betreff (ersetzt den Standard)</label><input name={`subject_${l}`} maxLength={LIMITS.subject} defaultValue={mine[l]?.subject ?? ""} /></div>
-            <div><label>Einleitung (nach der Anrede)</label><textarea name={`intro_${l}`} rows={3} maxLength={LIMITS.intro} defaultValue={mine[l]?.intro ?? ""} /></div>
-            <div><label>Schluss (vor der Grussformel)</label><textarea name={`outro_${l}`} rows={3} maxLength={LIMITS.outro} defaultValue={mine[l]?.outro ?? ""} /></div>
+            <div><label>Betreff</label><input name={`subject_${l}`} maxLength={LIMITS.subject} defaultValue={mine[l]?.subject ?? std[l].subject} /></div>
+            <div><label>Einleitung (nach der Anrede)</label><textarea name={`intro_${l}`} rows={3} maxLength={LIMITS.intro} defaultValue={mine[l]?.intro ?? std[l].intro} /></div>
+            <div><label>Zusätzlicher Schluss (vor der Grussformel, leer = keiner)</label><textarea name={`outro_${l}`} rows={3} maxLength={LIMITS.outro} defaultValue={mine[l]?.outro ?? ""} /></div>
             <details><summary className="small">Vorschau (gespeicherter Stand, Beispieldaten)</summary><pre className="small" style={{ whiteSpace: "pre-wrap" }}>{preview(hotel, template, l)}</pre></details>
           </section>
         ))}

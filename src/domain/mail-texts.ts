@@ -28,9 +28,13 @@ export function cleanMailText(t: MailText): MailText {
   return out;
 }
 
-/** Platzhalter {name}, {hotel}, {reference}; Unbekanntes bleibt stehen */
-export function fillPlaceholders(s: string, v: { name?: string | null; hotel: string; reference?: string | null }): string {
-  return s.replace(/\{(name|hotel|reference)\}/g, (_, k: "name" | "hotel" | "reference") => (k === "name" ? v.name || "" : k === "hotel" ? v.hotel : v.reference || ""));
+export const PLACEHOLDERS = ["name", "hotel", "reference", "betrag", "datum", "nummer"] as const;
+type Placeholder = (typeof PLACEHOLDERS)[number];
+
+/** Platzhalter {name}, {hotel}, {reference}, {betrag} (offener Betrag), {datum} (Zahlungsfrist), {nummer} (Rechnungsnummer); Unbekanntes bleibt stehen */
+export function fillPlaceholders(s: string, v: { name?: string | null; hotel: string; reference?: string | null; betrag?: string | null; datum?: string | null; nummer?: string | null }): string {
+  const val: Record<Placeholder, string> = { name: v.name || "", hotel: v.hotel, reference: v.reference || "", betrag: v.betrag || "", datum: v.datum || "", nummer: v.nummer || "" };
+  return s.replace(/\{(name|hotel|reference|betrag|datum|nummer)\}/g, (_, k: Placeholder) => val[k]);
 }
 
 export function mailTextFor(texts: MailTexts | undefined, template: string, lang: string): MailText | null {

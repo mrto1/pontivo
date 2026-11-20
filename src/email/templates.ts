@@ -30,7 +30,7 @@ export type EmailContext = {
   extras?: { name: Partial<Record<Locale, string>>; quantity: number; amountRappen: number }[];
 };
 
-export type Rendered = { subject: string; text: string; html: string };
+export type Rendered = { subject: string; text: string; html: string; /** Absätze des Mailtexts (für Standardtexte im Editor) */ paras?: string[] };
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
@@ -156,13 +156,20 @@ function summary(c: EmailContext, l: Locale): string[] {
 /** eigene Texte der aktuell gerenderten Mail (SPEC 17.5); render() ist synchron, daher ist ein Modulwert sicher */
 let activeCustom: { intro?: string; outro?: string } | null = null;
 
+/** Werte für die Platzhalter der eigenen Mail-Texte */
+function placeholderValues(c: EmailContext, l: Locale) {
+  const b = c.booking;
+  return { name: c.guestName, hotel: c.hotel.name, reference: b?.reference, betrag: b ? formatChf(b.balanceRappen ?? 0) : "", datum: b?.balanceDueOn ? formatDay(b.balanceDueOn, l) : "", nummer: String(c.data?.number ?? "") };
+}
+
 function wrap(c: EmailContext, l: Locale, subject: string, paras: string[], lines: string[] = [], link?: { href: string; label: string }): Rendered {
   if (activeCustom) {
-    const fill = (s: string) => fillPlaceholders(s, { name: c.guestName, hotel: c.hotel.name, reference: c.booking?.reference });
+    const fill = (s: string) => fillPlaceholders(s, placeholderValues(c, l));
     const intro = activeCustom.intro ? fill(activeCustom.intro).split(/\n{1,}/).filter(Boolean) : [];
     const outro = activeCustom.outro ? fill(activeCustom.outro).split(/\n{1,}/).filter(Boolean) : [];
-    // Anrede bleibt vorn; Einleitung danach, Schlusstext nach den Absätzen
-    paras = paras.length && /,$/.test(paras[0]) ? [paras[0], ...intro, ...paras.slice(1), ...outro] : [...intro, ...paras, ...outro];
+    // Anrede bleibt vorn. Die eigene Einleitung ersetzt den Standardtext direkt nach der Anrede (der Editor zeigt ihn zum Bearbeiten);
+    // weitere Absätze (z. B. Ankunftsinfos), Beträge, Daten und Links bleiben. Der Schlusstext kommt nach den Absätzen dazu.
+    paras = paras.length && /,$/.test(paras[0]) ? [paras[0], ...(intro.length ? intro : paras.slice(1, 2)), ...paras.slice(2), ...outro] : [...intro, ...paras, ...outro];
   }
   const text = [...paras, "", ...lines, link ? `\n${link.label}: ${link.href}` : "", "", c.hotel.name, c.hotel.contactEmail].join("\n");
   const html = `<!doctype html><html lang="${l}"><body style="font-family:Arial,sans-serif;color:#1f2a2e;max-width:560px;margin:0 auto;padding:16px">
@@ -172,7 +179,7 @@ ${lines.length ? `<table style="border-collapse:collapse;width:100%">${lines.map
 ${link ? `<p style="margin-top:24px"><a href="${esc(link.href)}" style="background:#0b7285;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">${esc(link.label)}</a></p>` : ""}
 <p style="color:#5f6b70;font-size:13px;margin-top:32px">${esc(c.hotel.name)} · ${esc(c.hotel.contactEmail)}${c.hotel.contactPhone ? " · " + esc(c.hotel.contactPhone) : ""}</p>
 </body></html>`;
-  return { subject, text, html };
+  return { subject, text, html, paras };
 }
 
 /** Gutschein- und Anfrage-Mails an Gäste */
@@ -203,9 +210,29 @@ export function render(template: string, lang: string, c: EmailContext): Rendere
   activeCustom = custom;
   try {
     const r = renderDefault(template, lang, c);
-    return custom.subject ? { ...r, subject: fillPlaceholders(custom.subject, { name: c.guestName, hotel: c.hotel.name, reference: c.booking?.reference }) } : r;
+    return custom.subject ? { ...r, subject: fillPlaceholders(custom.subject, placeholderValues(c, gl)) } : r;
   } finally {
     activeCustom = null;
+  }
+}
+
+/**
+ * Standardtext einer Gäste-Mail (Betreff und Einleitung nach der Anrede) mit Platzhaltern statt konkreter Werte,
+ * damit der Editor ihn zum Bearbeiten anzeigen kann. Gleich wie die echte Mail, nur mit {hotel}, {reference}, {betrag}, {datum}, {nummer}.
+ */
+export function defaultMailText(hotel: EmailContext["hotel"], template: string, lang: string, baseUrl: string): { subject: string; intro: string } {
+  const gl: Locale = isLocale(lang) ? lang : "de";
+  const amount = 123456789, day = "2099-12-31";
+  const booking = {
+    id: "x", reference: "{reference}", publicToken: "demo", checkin: "2099-02-12", checkout: "2099-02-14", adults: 2, children: 0, totalRappen: 48000, depositRappen: 0, balanceRappen: amount, voucherRappen: 0,
+    status: "confirmed", source: "direct", language: gl, hotelId: hotel.id, balanceDueOn: day, balancePaidAt: null, balanceOnsiteAt: null,
+  } as unknown as NonNullable<EmailContext["booking"]>;
+  try {
+    const r = renderDefault(template, gl, { hotel: { ...hotel, name: "{hotel}" }, booking, guestName: "{name}", data: { number: "{nummer}", kind: "invoice", totalRappen: 48000, invoiceId: "x" }, baseUrl });
+    const back = (s: string) => s.split(formatChf(amount)).join("{betrag}").split(formatDay(day, gl)).join("{datum}");
+    return { subject: back(r.subject), intro: back(r.paras && /,$/.test(r.paras[0] ?? "") ? (r.paras[1] ?? "") : "") };
+  } catch {
+    return { subject: "", intro: "" };
   }
 }
 

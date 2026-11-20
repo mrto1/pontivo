@@ -33,7 +33,7 @@ Hotels bekommen eine Website mit Direktbuchung. Der Gast bucht, zahlt mit TWINT,
 - E-Mails an Gast und Hotel.
 - DE und EN.
 
-**Nicht in v1** (nicht bauen): eigene Hotelverwaltung ausser Modul „Gäste“ (Phase 2), Google-Hotel-Anbindung, WhatsApp, KI-Rezeption (der kostenpflichtige KI-Chat für Gäste ist davon ausgenommen, siehe 14b), Programm-Marktplatz, Gutscheine, Pakete, Restaurant-Kasse, Zahlung im Hotel, Kreditkarten-Garantie.
+**Nicht in v1** (nicht bauen): eigene Hotelverwaltung ausser Modul „Online-Check-in“ (Phase 2), Google-Hotel-Anbindung, WhatsApp, KI-Rezeption (der kostenpflichtige KI-Chat für Gäste ist davon ausgenommen, siehe 14b), Programm-Marktplatz, Gutscheine, Pakete, Restaurant-Kasse, Zahlung im Hotel, Kreditkarten-Garantie.
 
 ---
 
@@ -340,10 +340,10 @@ Ein Benutzer kann Mitglied mehrerer Betriebe sein (`hotel_members`). `/mypontivo
 | `booking_confirmed` | Gast | Bestätigung; enthält Referenz, Daten, Zimmer, Preis, Stornoregel, Link `/b/<token>` |
 | `hotel_new_booking` | Hotel | jede neue Buchung (auch OTA) |
 | `booking_cancelled` | Gast + Hotel | Storno, mit Rückerstattungsbetrag |
-| `pre_arrival` | Gast | 3 Tage vor Anreise, 10:00 Hotelzeit; später Link zum Online-Check-in (Modul Gäste) |
+| `pre_arrival` | Gast | 3 Tage vor Anreise, 10:00 Hotelzeit; später Link zum Online-Check-in (Seite «Online-Check-in», Modul `guests`) |
 | `post_stay` | Gast | 1 Tag nach Abreise, nur mit `marketing_consent`; Vorteil bei Direktbuchung |
 | `overbooking_alert` | Hotel + Plattform | 5.6 |
-| `checkin_link` | Gast | Modul Gäste, 7 Tage vor Anreise |
+| `checkin_link` | Gast | Modul Online-Check-in, 7 Tage vor Anreise |
 
 Versand über `email_outbox` und Job `emails` (Retry 3×). DE und EN.
 
@@ -399,7 +399,7 @@ Abnahme (Channex-Staging + gemockte Tests):
 - Feed-Revision `new` → Buchung angelegt, Nächte belegt, Ack gesendet; `modified` und `cancelled` korrekt; unbekanntes Mapping → kein Ack, Alarm.
 - Webhook mit falscher Signatur → 401.
 
-### M4 – Modul „Gäste“ (Phase 2, siehe Abschnitt 14)
+### M4 – Modul „Online-Check-in“ (Phase 2, siehe Abschnitt 14)
 
 ### 12.6 Seed-Daten
 Hotel „Demo Gasthof“, Kanton `GL`, Gemeinde `Glarus` (Kurtaxe aus `tourist_tax_rules`), 3 Zimmertypen (Einzel 4 Zimmer max 1; Doppel 8 Zimmer max 2; Familie 2 Zimmer max 4), je 2 Ratepläne (Flexibel: gratis bis 48 h; Nicht stornierbar: 10 % günstiger, `cancel_fee_bps = 10000`), Preise 12000/18000/26000 Rappen, Freitag/Samstag +2000, Mindestnächte 2 an Samstagen.
@@ -419,7 +419,7 @@ Hotel „Demo Gasthof“, Kanton `GL`, Gemeinde `Glarus` (Kurtaxe aus `tourist_t
 
 ---
 
-## 14. Modul „Gäste“ (Phase 2, zuschaltbar über `hotel_modules.module='guests'`)
+## 14. Modul „Online-Check-in“ (Phase 2, zuschaltbar über `hotel_modules.module='guests'`)
 
 Zweck: Gästeregister nach kantonalem Recht digital führen, Check-in vorbereiten, Kurtaxe-Liste.
 
@@ -993,3 +993,8 @@ Seite `/mypontivo/<hotel>/direktbuchung` (Reiter unter «Website und Buchung», 
 - Das Windows-Programm (`tools/PontivoDeploy`) erzeugt den Schlüssel auf dem PC der Person und zeigt den Befehl für den Server. Es folgt dem hellen/dunklen Modus von Windows.
 - ASSUMPTION: `ubuntu` darf `sudo -n` ohne Passwort. Schutz gegen Raten nur über 3 s Wartezeit und Protokoll (SSH-Zugang selbst bleibt nur mit Schlüssel möglich, ein Angreifer braucht also Schlüssel UND Passwort).
 - Abnahme: `tests/unit/deploy-gate.test.ts`.
+
+### 19.38 Plattform-Verwaltung: Menü und Seiten
+- Die Plattform-Verwaltung (`/admin/plattform`) ist nach Themen in Seiten und Unterseiten gegliedert, mit demselben Menü- und Reiter-Stil wie myPontivo (`src/admin/platform-nav.ts`, `AdminNav`, `SectionTabs`): **Übersicht** (Kennzahlen, «Braucht Aufmerksamkeit», Bereiche) · **Betriebe** (Betriebe | Benutzer) · **Vertrieb** · **Abrechnung** (Rechnungen | MWST) · **Plattform** (Plattform-Admins | Website-Texte | Schulferien). Am Handy untere Leiste mit den fünf Hauptpunkten.
+- Alle Aktionen liegen in `app/admin/plattform/actions.ts`; jede Seite sendet ihren Pfad in `to` mit und kehrt dorthin zurück (erlaubte Ziele sind festgelegt). Alte Anker wie `/admin/plattform#schulferien` gibt es nicht mehr.
+- Abnahme: `tests/unit/platform-nav.test.ts`.
