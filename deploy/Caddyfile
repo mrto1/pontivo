@@ -3,7 +3,7 @@
 	email {$ACME_EMAIL}
 	# Zertifikate für Hotel-Domains nur, wenn ein Hotel diese Domain eingetragen hat
 	on_demand_tls {
-		ask http://app:3000/api/tls-check
+		ask http://prod-app:3000/api/tls-check
 	}
 }
 
@@ -16,7 +16,7 @@ www.{$APP_DOMAIN} {
 	request_body {
 		max_size 50MB
 	}
-	reverse_proxy app:3000
+	reverse_proxy prod-app:3000
 }
 
 # Testumgebung int.<Domain>: Passwortschutz (Datei deploy/int/auth.caddy, erzeugt von deploy/int-password.sh), nie indexieren.
@@ -41,5 +41,5 @@ https:// {
 	request_body {
 		max_size 50MB
 	}
-	reverse_proxy app:3000
+	reverse_proxy prod-app:3000
 }

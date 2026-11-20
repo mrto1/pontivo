@@ -40,6 +40,10 @@ services:
   app:
     <<: *app
     volumes: [uploads:/app/data/uploads]
+    # Eindeutiger Name für Caddy: der Dienstname «app» gilt im gemeinsamen Netzwerk pontivo-int auch für die Testumgebung
+    # und würde Besucher von pontivo.ch zufällig auf int schicken.
+    networks:
+      default: { aliases: [prod-app] }
     depends_on:
       migrate: { condition: service_completed_successfully }
     healthcheck:

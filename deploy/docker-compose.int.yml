@@ -1,5 +1,5 @@
 # Testumgebung «int» auf demselben Server wie die Produktion (eigene Datenbank, eigene Container, kein eigenes HTTPS).
-# Caddy der Produktion leitet int.<APP_DOMAIN> an «int-app» weiter (Netzwerk pontivo-int). Anleitung: docs/DEPLOY.md, Abschnitt «Testumgebung».
+# Caddy der Produktion leitet int.<APP_DOMAIN> an «int-app» weiter (Netzwerk pontivo-int). Anleitung: docs/deploy/3-testumgebung.md.
 name: pontivo-int
 
 x-app: &app
