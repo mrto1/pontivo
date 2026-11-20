@@ -1,6 +1,6 @@
 # Testplan PMS Stufe A bis C (Klick-Test)
 
-Zum Abhaken. Vorher: `git pull && cd deploy && ./deploy.sh`, dann im Admin einloggen.
+Zum Abhaken. Vorher: `cd /opt/pontivo-int/deploy && ./deploy-int.sh` (bzw. für prod danach `./release.sh && ./deploy.sh`), dann im Admin einloggen.
 **Funktionen** (Menü «Konto → Funktionen») zuerst einschalten: Rezeption, Housekeeping, Gäste-Notizen, Gruppen, Buchhaltung-Export, Kartenterminal, Zutritt (Nuki). Rechnung & Kasse, Statistik und Mail-Texte sind schon an.
 Eine Test-Buchung mit Testkarte (Stripe-Sandbox) bereithalten; Anreise in 1–2 Tagen, damit «Heute» etwas zeigt.
 

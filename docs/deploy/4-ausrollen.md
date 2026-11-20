@@ -25,8 +25,7 @@ sudo docker compose --env-file .env.int -f docker-compose.int.yml exec app node 
 
 ```bash
 ssh ubuntu@IP-DES-VPS
-cd /opt/pontivo && sudo git pull       # damit die Skripte aktuell sind
-cd deploy
+cd /opt/pontivo/deploy                 # kein git pull nötig: release.sh und deploy.sh holen die Version selbst
 sudo ./release.sh                      # gibt die Version frei, die jetzt auf int läuft (Tag prod-JJJJMMTT-HHMM)
 sudo ./deploy.sh                       # rollt die neueste freigegebene Version aus
 ```

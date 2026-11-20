@@ -33,7 +33,7 @@ Ein eigener zweiter Server ist nicht nötig (zusätzliche Kosten, mehr Pflege). 
    Zufallswerte mit `openssl rand -hex 32` (`POSTGRES_PASSWORD`, `AUTH_SECRET`) und `openssl rand -base64 32` (`GUEST_DATA_KEY`). **Nie** die Werte aus `.env.production` kopieren. Stripe nur mit Testschlüsseln, `MAIL_REDIRECT_TO` auf eine eigene Adresse (z. B. test@pontivo.ch), Postmark-Token darf derselbe sein.
 3. **Passwortschutz** (im Ordner der Produktion, weil dort Caddy läuft):
    ```bash
-   cd /opt/pontivo && git pull && cd deploy
+   cd /opt/pontivo/deploy      # das Skript liegt in jeder freigegebenen Version; fehlt es, zuerst einmal den Weg int → release → prod gehen
    ./int-password.sh martin
    ```
    Mit diesem Benutzer und Passwort öffnet man int im Browser. Webhooks (Stripe, Postmark, Channex) sind davon ausgenommen.

@@ -6,7 +6,7 @@ Bei jedem Schritt steht **Erwartet**. Weicht es ab: Schritt-Nummer, was du siehs
 ## 0. Onboarding eines neuen Gastgebers (Start des ganzen Tests)
 Du bist ein fremder Gastgeber, der Pontivo zum ersten Mal sieht. Benutze dafür eine **neue E-Mail-Adresse** (z. B. eine Alias-Adresse) und das Inkognito-Fenster. Dieser Betrieb ist ab Phase 1 dein Testhotel.
 
-**Server vorher aktualisieren:** `ssh ubuntu@pontivo.ch`, `cd /opt/pontivo`, `git pull`, `cd deploy`, `./deploy.sh` (bei «permission denied» mit `sudo`).
+**Server vorher aktualisieren:** `ssh ubuntu@pontivo.ch`, `cd /opt/pontivo-int/deploy`, `./deploy-int.sh`, dann `cd /opt/pontivo/deploy`, `./release.sh`, `./deploy.sh` (bei «permission denied» mit `sudo`).
 
 ### 0.1 Registrieren
 1. `https://pontivo.ch` öffnen. **Erwartet:** Startseite mit Rechner und Preis (1.9 %, mindestens CHF 19 im Monat). Knopf «Registrieren» oben rechts.

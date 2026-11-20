@@ -19,11 +19,11 @@ Alles auf dem Server, nach `ssh ubuntu@IP-DES-VPS` und `sudo -i` (dann ist kein 
 
 **Neue Version ausrollen** (immer erst int, dann prod):
 ```bash
-cd /opt/pontivo && git pull          # Skripte aktualisieren
-cd deploy && ./deploy-int.sh         # 1. auf int ausrollen und auf https://int.pontivo.ch testen
-./release.sh                         # 2. die getestete Version freigeben
-./deploy.sh                          # 3. Produktion ausrollen
+cd /opt/pontivo-int/deploy && ./deploy-int.sh   # 1. neuesten Stand auf int ausrollen, auf https://int.pontivo.ch testen
+cd /opt/pontivo/deploy && ./release.sh          # 2. die getestete Version freigeben
+./deploy.sh                                     # 3. Produktion ausrollen
 ```
+Kein `git pull` in `/opt/pontivo`: Dort steht immer eine freigegebene Version (git meldet «You are not currently on a branch»). `deploy.sh` holt und wechselt die Version selbst.
 
 **Status und Logs** (prod; für int `.env.int` und `docker-compose.int.yml` verwenden):
 ```bash
