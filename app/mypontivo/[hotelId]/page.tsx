@@ -64,7 +64,7 @@ export default async function Overview({ params, searchParams }: { params: Promi
   return (
     <div className="stack">
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Übersicht</h1>
+        <h1 style={{ margin: 0 }}>Mein Betrieb</h1>
         <nav className="seg" aria-label="Zeitraum">
           {PERIODS.map((p) => (
             <a key={p} href={`?period=${p}`} aria-current={p === period ? "true" : undefined}>{PERIOD_LABEL[p]}</a>

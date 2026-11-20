@@ -4,7 +4,7 @@ import { closeDb, db } from "../../src/db/client";
 import { users } from "../../src/db/schema";
 import { roleIn } from "../../src/auth/session";
 import { areasOf, canAccess, isLimitedRole, landingFor, roleLabel } from "../../src/domain/roles";
-import { changeMemberRole, deleteRole, listRoles, saveRole, setMemberRole, TeamError } from "../../src/services/team";
+import { changeMemberRole, deleteRole, listRoles, listStandardRoles, resetStandardRole, saveRole, saveStandardRole, setMemberRole, TeamError } from "../../src/services/team";
 import { makeHotel } from "../helpers";
 
 afterAll(closeDb);
@@ -51,5 +51,42 @@ describe("Team: eigene Rollen", () => {
     await expect(saveRole(h.hotel.id, null, { name: "Rezeption", areas: ["bookings"] }, "t")).rejects.toThrow(/reserviert/);
     await saveRole(h.hotel.id, null, { name: "Spät", areas: ["bookings"] }, "t");
     await expect(saveRole(h.hotel.id, null, { name: "spät", areas: ["bookings"] }, "t")).rejects.toThrow(/schon/);
+  });
+});
+
+describe("Team: Standardrollen pro Betrieb anpassen", () => {
+  it("angepasste Rezeption gilt nur in diesem Betrieb, sofort, und lässt sich zurücksetzen", async () => {
+    const a = await makeHotel(), b = await makeHotel();
+    const email = `r-${crypto.randomUUID()}@example.com`;
+    await setMemberRole(a.hotel.id, email, "reception", "t");
+    await setMemberRole(b.hotel.id, email, "reception", "t");
+    const uid = await userId(email);
+    expect(canAccess((await roleIn(uid, a.hotel.id))!, "staff", "invoices")).toBe(true); // Vorgabe
+
+    await saveStandardRole(a.hotel.id, "reception", { name: "Empfang", areas: ["frontdesk", "guests"] }, "t");
+    const ra = (await roleIn(uid, a.hotel.id))!;
+    expect(roleLabel(ra)).toBe("Empfang");
+    expect(canAccess(ra, "staff", "frontdesk")).toBe(true);
+    expect(canAccess(ra, "staff", "invoices")).toBe(false);
+    expect(landingFor(ra as never)).toBe("frontdesk");
+    const rb = (await roleIn(uid, b.hotel.id))!; // anderer Betrieb unverändert
+    expect(rb).toBe("reception");
+    expect(canAccess(rb, "staff", "invoices")).toBe(true);
+    expect((await listStandardRoles(a.hotel.id)).find((r) => r.key === "reception")).toMatchObject({ name: "Empfang", custom: true });
+
+    await resetStandardRole(a.hotel.id, "reception", "t");
+    expect(await roleIn(uid, a.hotel.id)).toBe("reception");
+  });
+
+  it("Prüfungen: feste Rollen, leere Auswahl, doppelte Namen, unverändert = Vorgabe", async () => {
+    const h = await makeHotel();
+    await expect(saveStandardRole(h.hotel.id, "manager", { name: "Chef", areas: ["bookings"] }, "t")).rejects.toThrow(TeamError);
+    await expect(saveStandardRole(h.hotel.id, "reception", { name: "Empfang", areas: [] }, "t")).rejects.toThrow(TeamError);
+    await expect(saveStandardRole(h.hotel.id, "reception", { name: "Reinigung", areas: ["bookings"] }, "t")).rejects.toThrow(TeamError); // Name einer anderen Standardrolle
+    await saveStandardRole(h.hotel.id, "housekeeping", { name: "Zimmerservice", areas: ["housekeeping"] }, "t");
+    await expect(saveRole(h.hotel.id, null, { name: "Zimmerservice", areas: ["bookings"] }, "t")).rejects.toThrow(TeamError); // gilt als vergeben
+    const def = (await listStandardRoles(h.hotel.id)).find((r) => r.key === "accounting")!;
+    await saveStandardRole(h.hotel.id, "accounting", { name: def.name, areas: def.areas }, "t");
+    expect((await listStandardRoles(h.hotel.id)).find((r) => r.key === "accounting")!.custom).toBe(false);
   });
 });

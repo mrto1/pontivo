@@ -14,7 +14,7 @@ describe("Admin-Menü", () => {
     expect(new Set(keys).size).toBe(keys.length);
     for (const i of all) expect(i.href.startsWith("/mypontivo/h1")).toBe(true);
     expect(nav.primary.length).toBeLessThanOrEqual(4); // passt in die untere Leiste, kein «Mehr»
-    expect(nav.primary.map((i) => i.label)).toEqual(["Übersicht", "Kalender", "Buchungen", "Gäste"]);
+    expect(nav.primary.map((i) => i.label)).toEqual(["Mein Betrieb", "Kalender", "Buchungen", "Gäste"]);
     expect(keys).toEqual(expect.arrayContaining(["home", "calendar", "plan", "pricing", "channex", "ical", "bookings", "report", "guests", "inbox", "vouchers", "rooms", "site", "api", "team", "settings", "funktionen", "terminal", "access", "posbridge", "migration", "firstweek", "help"]));
     expect(keys).not.toContain("embed");
     expect(keys).not.toContain("inquiries");
@@ -30,14 +30,14 @@ describe("Admin-Menü", () => {
     expect(tabs("guests")[0].label).toBe("Check-in");
   });
 
-  it("Übersicht enthält «Mein Betrieb» als Reiter mit zweiter Reihe", () => {
+  it("«Mein Betrieb» enthält Reiter mit zweiter Reihe", () => {
     const nav = adminNav(hotel);
     const home = "/mypontivo/h1";
     const overview = nav.primary[0];
     expect(overview.tabs!.map((t) => t.label)).toEqual(["Übersicht", "Zimmer und Tarife", "Website und Buchung", "Team", "Einstellungen", "Statistik", "Buchhaltung", "Restaurant"]);
-    expect(sectionFor("/mypontivo/h1/rooms", nav, home)?.label).toBe("Übersicht");
-    expect(sectionFor("/mypontivo/h1/site/blocks", nav, home)?.label).toBe("Übersicht");
-    expect(sectionFor("/mypontivo/h1/zutritt", nav, home)?.label).toBe("Übersicht");
+    expect(sectionFor("/mypontivo/h1/rooms", nav, home)?.label).toBe("Mein Betrieb");
+    expect(sectionFor("/mypontivo/h1/site/blocks", nav, home)?.label).toBe("Mein Betrieb");
+    expect(sectionFor("/mypontivo/h1/zutritt", nav, home)?.label).toBe("Mein Betrieb");
     expect(sectionFor("/mypontivo/h1/channex/booking", nav, home)?.label).toBe("Kalender");
     expect(sectionFor("/mypontivo/h1/preise", nav, home)?.label).toBe("Kalender");
     expect(sectionFor("/mypontivo/h1/inbox", nav, home)?.label).toBe("Gäste");

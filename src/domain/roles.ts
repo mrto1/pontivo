@@ -20,6 +20,10 @@ export const ROLE_AREAS: Record<LimitedRole, readonly string[]> = {
   service: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "restaurant", "kasse"],
 };
 
+/** Standardrollen, die ein Betrieb in Name und Seiten anpassen kann (Inhaber, Manager und Mitarbeitende sind abgestuft und bleiben fest) */
+export const EDITABLE_STANDARD_ROLES: readonly LimitedRole[] = ["reception", "housekeeping", "accounting", "service"];
+export const isEditableStandardRole = (r: string): r is LimitedRole => (EDITABLE_STANDARD_ROLES as readonly string[]).includes(r);
+
 /** Immer dabei, damit eine eigene Rolle sich anmelden und ihr Konto sehen kann */
 export const BASE_AREAS = ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms"] as const;
 

@@ -12,12 +12,12 @@ export type Term = { term: string; meaning: string; inPontivo: string; area?: st
 const FRONT: GuideRole[] = ["owner", "reception"];
 
 export const WAYFINDING: Wayfinding[] = [
-  { area: "home", title: "Übersicht", what: "Direkt-Buchungen, gesparte Portal-Provision und die wichtigsten Zahlen. Darunter als Reiter alles zum Betrieb selbst: Zimmer und Tarife, Website und Buchung, Team, Einstellungen, Statistik, Buchhaltung, Restaurant." },
+  { area: "home", title: "Mein Betrieb", what: "Übersicht mit Direkt-Buchungen, gesparte Portal-Provision und die wichtigsten Zahlen. Darunter als Reiter alles zum Betrieb selbst: Zimmer und Tarife, Website und Buchung, Team, Einstellungen, Statistik, Buchhaltung, Restaurant." },
   { area: "calendar", title: "Kalender", what: "Das Zeitraster je Zimmertyp: wie viele Zimmer sind frei, was kostet die Nacht, wo gelten Regeln (Mindestaufenthalt, Stopp). Hier ändern Sie Preise, sperren Zimmer und gleichen sich mit Booking.com & Co. ab.", notThis: "Einzelne Gäste und Zahlungen sehen Sie hier nicht, das sind Vorgänge unter «Buchungen»." },
   { area: "plan", title: "Zimmerplan (beim Kalender)", what: "Welches Zimmer ist an welchem Tag mit welchem Gast belegt. Hier teilen Sie konkrete Zimmernummern zu und wechseln Zimmer." },
   { area: "bookings", title: "Buchungen", what: "Alle Vorgänge: Gast, Zeitraum, Zahlung, Storno, Rechnung. Neue Buchung von Hand (Telefon, Walk-in), No-Show, Rückerstattung. Dazu Heute, Reinigung, Gruppen, Rechnungen, Tagesabschluss, Debitoren und die Plattformgebühren.", notThis: "Preise und Verfügbarkeit ändern Sie im Kalender." },
   { area: "guests", title: "Gäste", what: "Check-in (Meldeschein, Kurtaxe), Kartei mit Notizen, gemeinsamer Posteingang, Newsletter, Gutscheine, Bewertungen. Dazu KI-Chat, Upselling und die Texte der Gäste-Mails." },
-  { area: "rooms", title: "Zimmer und Tarife (Übersicht → Zimmer und Tarife)", what: "Zimmertypen, Anzahl Zimmer, Fotos, Tarife (z. B. mit Frühstück, nicht stornierbar) und Zusatzleistungen. Ein Zimmertyp ohne Tarif ist nicht buchbar." },
+  { area: "rooms", title: "Zimmer und Tarife (Mein Betrieb → Zimmer und Tarife)", what: "Zimmertypen, Anzahl Zimmer, Fotos, Tarife (z. B. mit Frühstück, nicht stornierbar) und Zusatzleistungen. Ein Zimmertyp ohne Tarif ist nicht buchbar." },
   { area: "site", title: "Website und Buchung", what: "Wie Gäste Sie finden und buchen: eigene Pontivo-Website oder nur der Buchungsknopf auf Ihrer bisherigen Seite. Layout, Schrift, Logo, Sprachen." },
   { area: "team", title: "Team", what: "Wer Zugang hat und was jede Rolle sehen darf. Eigene Rollen mit Häkchen pro Seite." },
   { area: "settings", title: "Einstellungen", what: "Betriebsdaten, Anzahlung, Kurtaxe, Zahlungskonto (Stripe), online gehen. Reiter Funktionen schaltet Module ein und aus." },
@@ -80,7 +80,7 @@ export const FLOWS: Flow[] = [
   {
     key: "f_export", title: "Buchungsliste für den Treuhänder", roles: ["owner", "accounting"], area: "accountingexport",
     goal: "Rechnungen und Zahlungen eines Monats als Liste für die Buchhaltung.",
-    steps: ["Übersicht → Buchhaltung öffnen.", "Konten einmal zuordnen (Erlös, Kurtaxe, MWST, Zahlungsarten).", "Monat wählen und die CSV-Datei herunterladen."],
+    steps: ["Mein Betrieb → Buchhaltung öffnen.", "Konten einmal zuordnen (Erlös, Kurtaxe, MWST, Zahlungsarten).", "Monat wählen und die CSV-Datei herunterladen."],
   },
   {
     key: "f_inbox", title: "Anfragen und Portal-Nachrichten beantworten", roles: FRONT, area: "inbox",
@@ -90,7 +90,7 @@ export const FLOWS: Flow[] = [
   {
     key: "f_team", title: "Eine neue Person einrichten", roles: ["owner"], area: "team",
     goal: "Mitarbeitende bekommen Zugang mit genau den Seiten, die sie brauchen.",
-    steps: ["Übersicht → Team öffnen.", "E-Mail eintragen und eine Rolle wählen (z. B. Rezeption, Reinigung).", "Passt keine Standardrolle: unter «Rollen und Seiten» eine eigene Rolle anlegen und Seiten anhaken.", "Die Person meldet sich mit dem Link aus der Mail an und findet unter «Erste Woche» ihre Checkliste."],
+    steps: ["Mein Betrieb → Team öffnen.", "E-Mail eintragen und eine Rolle wählen (z. B. Rezeption, Reinigung).", "Passt keine Standardrolle: unter «Rollen und Seiten» eine eigene Rolle anlegen und Seiten anhaken.", "Die Person meldet sich mit dem Link aus der Mail an und findet unter «Erste Woche» ihre Checkliste."],
   },
 ];
 
@@ -111,7 +111,7 @@ export const TERMS: Term[] = [
   { group: "Buchung und Zahlung", term: "Anzahlung und Restzahlung", meaning: "Der Gast zahlt bei der Buchung einen Teil, den Rest später.", inPontivo: "Sie legen einen Prozentsatz und die Frist fest (Einstellungen → Betrieb). Bei kurzfristigen Buchungen oder kleinem Rest wird sofort voll bezahlt. Vor dem Fälligkeitstag schickt Pontivo dem Gast einen Zahlungslink, danach Erinnerungen. Wer vor Ort bezahlt, wird in der Buchung als «vor Ort erhalten» markiert.", area: "settings" },
   { group: "Buchung und Zahlung", term: "Stornoregel / Stornogebühr", meaning: "Bis wann ein Gast kostenlos absagen darf und was danach fällig wird.", inPontivo: "Im Tarif: «Kostenlos bis X Tage vor Anreise» und eine Gebühr in Prozent des Zimmerpreises. Pontivo rechnet die Rückerstattung selbst. Die Kurtaxe wird immer erstattet. Der Gast sieht die Regel schon vor der Buchung.", area: "rooms" },
   { group: "Buchung und Zahlung", term: "No-Show", meaning: "Der Gast erscheint nicht und sagt nicht ab.", inPontivo: "In der Buchung ab dem Tag nach der Anreise als «No-Show» markieren. Es gilt die Stornogebühr des Tarifs, die Nächte werden freigegeben.", area: "bookings" },
-  { group: "Buchung und Zahlung", term: "Direktbuchung", meaning: "Der Gast bucht bei Ihnen, nicht über Booking.com & Co.", inPontivo: "Auf Ihrer Website oder über den Buchungsknopf. Das Geld geht über Stripe direkt auf Ihr Konto; Pontivo behält nur die Plattformgebühr. Die Übersicht zeigt, wie viel Portal-Provision Sie dadurch sparen.", area: "home" },
+  { group: "Buchung und Zahlung", term: "Direktbuchung", meaning: "Der Gast bucht bei Ihnen, nicht über Booking.com & Co.", inPontivo: "Auf Ihrer Website oder über den Buchungsknopf. Das Geld geht über Stripe direkt auf Ihr Konto; Pontivo behält nur die Plattformgebühr. Die Übersicht unter «Mein Betrieb» zeigt, wie viel Portal-Provision Sie dadurch sparen.", area: "home" },
   { group: "Buchung und Zahlung", term: "Plattformgebühr", meaning: "Was Pontivo pro Direktbuchung berechnet.", inPontivo: "Prozentsatz auf den Zimmerpreis, automatisch bei der Zahlung abgezogen. Die Aufstellung pro Monat mit Export finden Sie unter Buchungen → Plattformgebühren.", area: "report" },
   { group: "Buchung und Zahlung", term: "Gutschein", meaning: "Ein Betrag, den Gäste kaufen oder verschenken und später einlösen.", inPontivo: "Gäste kaufen online, der Code wird per Mail verschickt. Sie lösen ihn bei einer Buchung ein; der Betrag wird abgezogen.", area: "vouchers" },
   // Gäste und Meldewesen

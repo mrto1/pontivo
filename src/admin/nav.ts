@@ -1,6 +1,6 @@
 /**
  * Menü des Admin-Bereichs an einer Stelle.
- * - `primary`: untere Leiste (Handy) bzw. Kopfzeile (Desktop). Es gibt kein «Mehr»: alles Weitere liegt als Reiter unter «Übersicht» («Mein Betrieb»).
+ * - `primary`: untere Leiste (Handy) bzw. Kopfzeile (Desktop). Es gibt kein «Mehr»: alles Weitere liegt als Reiter unter «Mein Betrieb».
  * - `tabs`: Unterseiten eines Menüpunkts. Sie erscheinen als Reiter über der Seite, im Menü steht nur der Sammelpunkt.
  *   Reiter können selbst Reiter haben (zweite Reihe).
  * - `account`: «Mein Konto» hinter dem Profilbild, mit eigenen Reitern.
@@ -40,9 +40,9 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
   const sep = (i: NavItem): NavItem => ({ ...i, sep: true });
   return {
     primary: [
-      // Übersicht = Mein Betrieb: Stand der Einrichtung und alles, was den Betrieb selbst betrifft
+      // Mein Betrieb (erster Reiter «Übersicht»): Stand der Einrichtung und alles, was den Betrieb selbst betrifft
       {
-        ...{ key: "home", label: "Übersicht", href: base },
+        ...{ key: "home", label: "Mein Betrieb", href: base },
         tabs: [
           { key: "home", label: "Übersicht", href: base },
           sep(link("rooms", "Zimmer und Tarife")),

@@ -1,8 +1,8 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client";
-import { hotelMembers, hotelRoles, users } from "../db/schema";
-import { CONFIGURABLE_AREAS, ROLE_AREAS, ROLE_LABEL, type FullRole, type LimitedRole } from "../domain/roles";
+import { hotelMembers, hotelRoleOverrides, hotelRoles, users } from "../db/schema";
+import { CONFIGURABLE_AREAS, EDITABLE_STANDARD_ROLES, ROLE_AREAS, ROLE_LABEL, type FullRole, type LimitedRole } from "../domain/roles";
 import { audit } from "./audit";
 
 /** Team eines Betriebs: Mitglieder und frei konfigurierbare Rollen (nur Inhaber). Jede Abfrage nach hotel_id. */
@@ -27,10 +27,51 @@ export async function listRoles(hotelId: string) {
   return db().select().from(hotelRoles).where(eq(hotelRoles.hotelId, hotelId)).orderBy(asc(hotelRoles.name));
 }
 
+/** Vorgabe einer Standardrolle: Name und Seiten (nur konfigurierbare Seiten) */
+const defaultsOf = (k: LimitedRole) => ({ name: ROLE_LABEL[k], areas: ROLE_AREAS[k].filter((a) => AREA_KEYS.has(a)) });
+
+/** Die vier anpassbaren Standardrollen eines Betriebs, so wie sie dort gelten (`custom` = vom Betrieb angepasst) */
+export async function listStandardRoles(hotelId: string) {
+  const rows = await db().select().from(hotelRoleOverrides).where(eq(hotelRoleOverrides.hotelId, hotelId));
+  return EDITABLE_STANDARD_ROLES.map((key) => {
+    const o = rows.find((r) => r.role === key);
+    const d = defaultsOf(key);
+    return { key, defaultName: d.name, name: o?.name ?? d.name, areas: o ? o.areas.filter((a) => AREA_KEYS.has(a)) : d.areas, custom: !!o };
+  });
+}
+
+/** Name und Seiten einer Standardrolle für diesen Betrieb ändern; wirkt sofort für alle Personen mit dieser Rolle */
+export async function saveStandardRole(hotelId: string, key: string, input: { name: string; areas: string[] }, actor: string) {
+  if (!(EDITABLE_STANDARD_ROLES as readonly string[]).includes(key)) throw new TeamError("Diese Rolle ist fest.");
+  const k = key as LimitedRole;
+  const v = roleSchema.parse(input);
+  if (!v.areas.length) throw new TeamError("Mindestens eine Seite auswählen.");
+  const lower = v.name.toLowerCase();
+  const taken = (await listStandardRoles(hotelId)).filter((r) => r.key !== k).map((r) => r.name.toLowerCase());
+  const fixed = (["owner", "manager", "staff"] as FullRole[]).map((r) => ROLE_LABEL[r].toLowerCase());
+  if (fixed.includes(lower) || taken.includes(lower) || (await listRoles(hotelId)).some((r) => r.name.toLowerCase() === lower)) throw new TeamError("Eine Rolle mit diesem Namen gibt es schon.");
+  const d = defaultsOf(k);
+  const same = v.areas.length === d.areas.length && v.areas.every((a) => d.areas.includes(a));
+  if (v.name === d.name && same) return resetStandardRole(hotelId, k, actor); // unverändert = Vorgabe
+  await db()
+    .insert(hotelRoleOverrides)
+    .values({ hotelId, role: k, name: v.name === d.name ? null : v.name, areas: v.areas })
+    .onConflictDoUpdate({ target: [hotelRoleOverrides.hotelId, hotelRoleOverrides.role], set: { name: v.name === d.name ? null : v.name, areas: v.areas, updatedAt: new Date() } });
+  await audit(db(), { hotelId, actor, action: "role.standard.update", entity: "role", entityId: k, details: v });
+}
+
+/** Zurück auf die Vorgabe (Name und Seiten) */
+export async function resetStandardRole(hotelId: string, key: string, actor: string) {
+  if (!(EDITABLE_STANDARD_ROLES as readonly string[]).includes(key)) throw new TeamError("Diese Rolle ist fest.");
+  await db().delete(hotelRoleOverrides).where(and(eq(hotelRoleOverrides.hotelId, hotelId), eq(hotelRoleOverrides.role, key)));
+  await audit(db(), { hotelId, actor, action: "role.standard.reset", entity: "role", entityId: key });
+}
+
 export async function saveRole(hotelId: string, roleId: string | null, input: { name: string; areas: string[] }, actor: string) {
   const v = roleSchema.parse(input);
   if (!v.areas.length) throw new TeamError("Mindestens eine Seite auswählen.");
-  if (STANDARD_ROLES.some((k) => ROLE_LABEL[k].toLowerCase() === v.name.toLowerCase())) throw new TeamError("Dieser Name ist für eine Standardrolle reserviert.");
+  const reserved = [...STANDARD_ROLES.map((k) => ROLE_LABEL[k]), ...(await listStandardRoles(hotelId)).map((r) => r.name)].map((n) => n.toLowerCase());
+  if (reserved.includes(v.name.toLowerCase())) throw new TeamError("Dieser Name ist für eine Standardrolle reserviert.");
   const clash = (await listRoles(hotelId)).find((r) => r.name.toLowerCase() === v.name.toLowerCase() && r.id !== roleId);
   if (clash) throw new TeamError("Eine Rolle mit diesem Namen gibt es schon.");
   if (roleId) {

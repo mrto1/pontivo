@@ -3,7 +3,7 @@ import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
 import { CONFIGURABLE_AREAS, ROLE_LABEL } from "@/src/domain/roles";
 import { listMembers, removeMember } from "@/src/services/settings";
-import { changeMemberRole, deleteRole, listRoles, ROLE_TEMPLATES, saveRole, setMemberRole, STANDARD_ROLES, TeamError } from "@/src/services/team";
+import { changeMemberRole, deleteRole, listRoles, listStandardRoles, resetStandardRole, ROLE_TEMPLATES, saveRole, saveStandardRole, setMemberRole, STANDARD_ROLES, TeamError } from "@/src/services/team";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +50,15 @@ async function roleDelete(f: FormData) {
   await run(f, "Rolle gelöscht", ({ hotel, actor }) => deleteRole(hotel.id, s(f, "roleId"), actor), "#rollen");
 }
 
+async function standardSave(f: FormData) {
+  "use server";
+  await run(f, "Standardrolle gespeichert", ({ hotel, actor }) => saveStandardRole(hotel.id, s(f, "role"), { name: s(f, "name"), areas: f.getAll("area").map(String) }, actor), "#rollen");
+}
+async function standardReset(f: FormData) {
+  "use server";
+  await run(f, "Auf die Vorgabe zurückgesetzt", ({ hotel, actor }) => resetStandardRole(hotel.id, s(f, "role"), actor), "#rollen");
+}
+
 const GROUPS = [...new Set(CONFIGURABLE_AREAS.map((a) => a.group))];
 
 function AreaChecks({ selected }: { selected: readonly string[] }) {
@@ -69,21 +78,20 @@ function AreaChecks({ selected }: { selected: readonly string[] }) {
   );
 }
 
-const labelOf = (a: string) => CONFIGURABLE_AREAS.find((x) => x.key === a)?.label ?? a;
 
 /** Team: Personen und Rollen mit frei wählbaren Seiten. Nur Inhaber. */
 export default async function Team({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
   const { hotel, user } = await requireHotel(hotelId, "owner");
-  const [members, roles] = await Promise.all([listMembers(hotel.id), listRoles(hotel.id)]);
+  const [members, roles, standard] = await Promise.all([listMembers(hotel.id), listRoles(hotel.id), listStandardRoles(hotel.id)]);
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
   const template = ROLE_TEMPLATES.find((t) => t.key === sp.vorlage);
-  const nameOf = (role: string) => (role.startsWith("custom:") ? roles.find((r) => `custom:${r.id}` === role)?.name ?? "Rolle gelöscht" : ROLE_LABEL[role as keyof typeof ROLE_LABEL] ?? role);
+  const nameOf = (role: string) => (role.startsWith("custom:") ? roles.find((r) => `custom:${r.id}` === role)?.name ?? "Rolle gelöscht" : standard.find((x) => x.key === role)?.name ?? ROLE_LABEL[role as keyof typeof ROLE_LABEL] ?? role);
   const roleOptions = (
     <>
       <optgroup label="Standardrollen">
-        {STANDARD_ROLES.map((k) => <option key={k} value={k}>{ROLE_LABEL[k]}</option>)}
+        {STANDARD_ROLES.map((k) => <option key={k} value={k}>{nameOf(k)}</option>)}
       </optgroup>
       {roles.length ? <optgroup label="Eigene Rollen">{roles.map((r) => <option key={r.id} value={`custom:${r.id}`}>{r.name}</option>)}</optgroup> : null}
     </>
@@ -129,17 +137,26 @@ export default async function Team({ params, searchParams }: { params: Promise<{
         <h2>Rollen und Seiten</h2>
         <p className="muted small" style={{ margin: 0 }}>
           <strong>Inhaber</strong>: alles. <strong>Manager</strong>: alles ausser Team und Zahlungskonto. <strong>Mitarbeitende</strong>: Kalender und Buchungen lesen, No-Show.
-          Die Standardrollen unten sind fest. Wenn eine Person andere Seiten braucht, legen Sie eine eigene Rolle an – am einfachsten aus einer Vorlage – und haken die Seiten an.
+          Die Standardrollen können Sie für Ihren Betrieb anpassen (Name und Seiten), eigene Rollen legen Sie dazu.
           Seiten zum Ändern von Preisen, Einstellungen und Team bleiben Inhaber und Manager vorbehalten.
         </p>
-        <table className="table">
-          <thead><tr><th>Standardrolle</th><th>Sieht</th></tr></thead>
-          <tbody>
-            {ROLE_TEMPLATES.map((t) => (
-              <tr key={t.key}><td>{t.label}</td><td className="small">{t.areas.map(labelOf).join(", ")}</td></tr>
-            ))}
-          </tbody>
-        </table>
+
+        {standard.map((t) => (
+          <details key={t.key} className="card">
+            <summary>
+              <strong>{t.name}</strong> <span className="muted small">· Standardrolle{t.custom ? ", angepasst" : ""} · {t.areas.length} Seiten · {members.filter((m) => m.role === t.key).length} Person(en)</span>
+            </summary>
+            <form action={standardSave} className="stack" style={{ marginTop: 12 }}>
+              {hidden}<input type="hidden" name="role" value={t.key} />
+              <div style={{ maxWidth: 320 }}><label>Name der Rolle</label><input name="name" defaultValue={t.name} required maxLength={40} /></div>
+              <AreaChecks selected={t.areas} />
+              <div className="inline-form"><button className="btn small">Speichern</button></div>
+            </form>
+            {t.custom ? (
+              <form action={standardReset} style={{ marginTop: 8 }}>{hidden}<input type="hidden" name="role" value={t.key} /><button className="btn secondary small">Auf Vorgabe zurücksetzen</button></form>
+            ) : null}
+          </details>
+        ))}
 
         {roles.map((r) => (
           <details key={r.id} className="card">

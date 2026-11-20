@@ -1519,3 +1519,16 @@ export const hotelRoles = pgTable("hotel_roles", {
   areas: text("areas").array().notNull().default([]),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+/** Angepasste Standardrollen eines Betriebs (Name und Seiten); ohne Zeile gelten die Vorgaben aus src/domain/roles.ts */
+export const hotelRoleOverrides = pgTable(
+  "hotel_role_overrides",
+  {
+    hotelId: uuid("hotel_id").notNull(),
+    role: text("role").notNull(),
+    name: text("name"),
+    areas: text("areas").array().notNull().default([]),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.hotelId, t.role] })],
+);

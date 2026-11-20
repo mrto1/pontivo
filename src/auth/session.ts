@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { db } from "../db/client";
-import { hotelMembers, hotelRoles, hotels, loginTokens, users } from "../db/schema";
-import { encodeCustomRole } from "../domain/roles";
+import { hotelMembers, hotelRoleOverrides, hotelRoles, hotels, loginTokens, users } from "../db/schema";
+import { encodeCustomRole, isEditableStandardRole, ROLE_LABEL } from "../domain/roles";
 import { sha256 } from "../domain/ids";
 import { requireEnv, env } from "../env";
 import { enqueueEmail } from "../email/enqueue";
@@ -128,6 +128,11 @@ export async function roleIn(userId: string, hotelId: string): Promise<Role | nu
 
 /** In der DB steht bei eigenen Rollen `custom:<id>`; hier wird daraus die Rolle mit Name und Seiten. Rolle gelöscht = kein Zugriff. */
 async function resolveRole(hotelId: string, stored: string): Promise<Role | null> {
+  if (isEditableStandardRole(stored)) {
+    // Standardrolle, die der Betrieb angepasst hat: gilt wie eine eigene Rolle mit dessen Namen und Seiten
+    const [o] = await db().select().from(hotelRoleOverrides).where(and(eq(hotelRoleOverrides.hotelId, hotelId), eq(hotelRoleOverrides.role, stored)));
+    return o ? encodeCustomRole(o.name ?? ROLE_LABEL[stored], o.areas) : stored;
+  }
   if (!stored.startsWith("custom:")) return stored as Role;
   const [r] = await db().select().from(hotelRoles).where(and(eq(hotelRoles.id, stored.slice(7)), eq(hotelRoles.hotelId, hotelId)));
   return r ? encodeCustomRole(r.name, r.areas) : null;
