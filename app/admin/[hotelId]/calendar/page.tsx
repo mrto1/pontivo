@@ -78,7 +78,7 @@ function Weekdays() {
       <label>Wochentage (leer = alle)</label>
       <div className="weekdays">
         {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-          <label key={d}><input type="checkbox" name="wd" value={d} />{WD[d]}</label>
+          <label key={d} className="chip"><input type="checkbox" name="wd" value={d} /><span>{WD[d]}</span></label>
         ))}
       </div>
     </div>
@@ -107,7 +107,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
         <a className="btn secondary small" href={`?from=${addDays(from, 30)}`}>30 Tage →</a>
       </div>
       {sp.msg ? <p className="notice">{sp.msg}</p> : null}
-      <p className="small muted" style={{ margin: 0 }}>Die grosse Zahl ist die Anzahl <strong>freier Zimmer</strong> je Tag. Darunter steht, was davon abgeht: <em>geb.</em> = gebucht, <em>gesp.</em> = von Ihnen gesperrt, <em>ext.</em> = über ein Portal belegt. Ohne Zusatz ist nichts belegt. Rot = ausgebucht.</p>
+      <p className="small muted" style={{ margin: 0 }}>Die Zahl ist die Anzahl <strong>freier Zimmer</strong> je Nacht. Rot = ausgebucht. Fahren Sie über eine Zahl, sehen Sie, wie viele gebucht, gesperrt oder über ein Portal belegt sind.</p>
       <div className="scroll-x">
         <table className="cal">
           <thead>
@@ -132,9 +132,6 @@ export default async function Calendar({ params, searchParams }: { params: Promi
                     return (
                       <td key={d} className={free <= 0 ? "full" : ""} title={`frei ${free}, gebucht ${i.booked}, gesperrt ${i.blocked}, extern belegt ${i.externalBlocked}`}>
                         <span className="cal-free">{free}</span>
-                        {i.booked ? <span className="cal-sub">{i.booked} geb.</span> : null}
-                        {i.blocked ? <span className="cal-sub blk">{i.blocked} gesp.</span> : null}
-                        {i.externalBlocked ? <span className="cal-sub blk">{i.externalBlocked} ext.</span> : null}
                       </td>
                     );
                   })}
