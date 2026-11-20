@@ -423,6 +423,7 @@ namespace PontivoDeploy
             else if (all.Contains("anderer Ausroll-Vorgang")) hint = "Es läuft gerade ein anderer Ausroll-Vorgang. Bitte kurz warten und noch einmal versuchen.";
             else if (all.Contains("Zugang nicht eingerichtet")) hint = "Der Zugang ist auf dem Server unvollständig eingerichtet. Bitte Martin melden.";
             else if (Regex.IsMatch(all, "a password is required|no tty present|sudo: ")) hint = "sudo verlangt ein Passwort: auf dem Server muss sudo für den Benutzer ohne Passwort erlaubt sein.";
+            else if (Regex.IsMatch(all, "client_loop|Connection reset|Broken pipe|Connection closed by|send disconnect")) hint = "Die Verbindung ist abgerissen. Der Vorgang läuft auf dem Server trotzdem weiter. In ein bis zwei Minuten «Stand anzeigen» drücken: unten steht, ob er fertig ist.";
             else if (Regex.IsMatch(all, "Could not resolve|timed out|Connection refused|No route")) hint = "Server nicht erreichbar (Adresse, Internet, Firewall prüfen).";
             else if (all.Contains("STOPP")) hint = "Gestoppt: die Meldung «STOPP» im Fenster sagt, was zu ändern ist.";
             SetStatus("✘ " + hint, "bad");

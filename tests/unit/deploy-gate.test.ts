@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -29,7 +29,7 @@ const shipCalls = () => (existsSync(join(dir, "ship.calls")) ? readFileSync(join
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "deploygate-"));
   const ship = join(dir, "ship.sh");
-  writeFileSync(ship, `#!/usr/bin/env bash\necho "$1" >> "${dir}/ship.calls"\necho "ship $1 ok"\n`);
+  writeFileSync(ship, `#!/usr/bin/env bash\necho "$1" >> "${dir}/ship.calls"\nsleep "\${PONTIVO_FAKE_SLEEP:-0}"\necho "ship $1 ok"\ntouch "${dir}/ship.done"\nexit "\${PONTIVO_FAKE_RC:-0}"\n`);
   chmodSync(ship, 0o755);
   env = {
     PONTIVO_DEPLOY_DB: join(dir, "users"),
@@ -38,6 +38,7 @@ beforeEach(() => {
     PONTIVO_SHIP: ship,
     PONTIVO_DEPLOY_LOCK: join(dir, "lock"),
     PONTIVO_FAIL_DELAY: "0",
+    PONTIVO_RUN_LOG: join(dir, "last.log"),
     PONTIVO_GATE: "/opt/pontivo-int/deploy/deploy-gate.sh",
   };
 });
@@ -154,4 +155,28 @@ describe("deploy-gate.sh", () => {
     expect(user(["passwd", "anna"], pw).status).toBe(0);
     expect(gate("anna", "test", pw + "\n").status).toBe(0);
   });
+
+  it("Fehlercode von ship.sh wird weitergegeben", () => {
+    process.env.PONTIVO_FAKE_RC = "7";
+    try {
+      expect(gate("anna", "int", "geheim-passwort-1\n").status).toBe(7);
+    } finally {
+      delete process.env.PONTIVO_FAKE_RC;
+    }
+    expect(readFileSync(env.PONTIVO_DEPLOY_LOG, "utf8")).toMatch(/anna\s+ENDE\s+int Code 7/);
+  });
+
+  it("Verbindungsabbruch bricht das Ausrollen nicht ab", async () => {
+    const child = spawn("bash", [GATE, "anna"], {
+      env: { ...process.env, ...env, SSH_ORIGINAL_COMMAND: "int", PONTIVO_FAKE_SLEEP: "2" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    child.stdin.write("geheim-passwort-1\n");
+    child.stdin.end();
+    await new Promise((r) => setTimeout(r, 700));
+    child.kill("SIGKILL"); // wie ein abgerissenes SSH
+    await new Promise((r) => setTimeout(r, 3500));
+    expect(existsSync(join(dir, "ship.done"))).toBe(true);
+    expect(readFileSync(env.PONTIVO_DEPLOY_LOG, "utf8")).toMatch(/anna\s+ENDE\s+int Code 0/);
+  }, 15000);
 });

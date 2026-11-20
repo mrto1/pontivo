@@ -62,3 +62,5 @@ cd /opt/pontivo-int/deploy
 ./deploy-user.sh log 50               # letzte 50 Zeilen des Protokolls
 ```
 Voraussetzung: der Benutzer `ubuntu` darf `sudo` ohne Passwort (wie bei Ubuntu-Cloud-Images üblich). Dein normaler Administrator-Zugang per SSH bleibt davon getrennt und unverändert. Wer einen Computer verliert: `remove NAME` und neu einrichten.
+
+**Verbindung abgerissen?** Ausrollen über `deploy-gate.sh` läuft auf dem Server von der Verbindung getrennt weiter. Der Stand steht in `/var/log/pontivo-deploy-last.log`; im Programm zeigt «Stand anzeigen» ihn am Ende an («beendet mit Code 0» = fertig).

@@ -11,6 +11,7 @@ DB="${PONTIVO_DEPLOY_DB:-/etc/pontivo-deploy/users}"
 LOG="${PONTIVO_DEPLOY_LOG:-/var/log/pontivo-deploy.log}"
 SHIP="${PONTIVO_SHIP:-/opt/pontivo-int/deploy/ship.sh}"
 LOCK="${PONTIVO_DEPLOY_LOCK:-/var/lock/pontivo-deploy.lock}"
+RUNLOG="${PONTIVO_RUN_LOG:-/var/log/pontivo-deploy-last.log}"
 FAIL_DELAY="${PONTIVO_FAIL_DELAY:-3}"
 
 log() { printf '%s %-12s %-8s %s\n' "$(date '+%F %T')" "${NAME:-?}" "$1" "${2:-}" >> "$LOG" 2>/dev/null || true; }
@@ -42,14 +43,36 @@ case "$ACTION" in
     echo "prod:  $(git -c safe.directory='*' -C /opt/pontivo describe --tags --always 2>/dev/null)  ->  $(git -c safe.directory='*' -C /opt/pontivo log -1 --format='%h  %s' 2>/dev/null)"
     echo "Gesundheit prod: $(curl -fsS --max-time 15 'https://pontivo.ch/api/health?deep=1' 2>&1 | head -c 200)"
     echo "Gesundheit int:  $(curl -fsS --max-time 15 'https://int.pontivo.ch/api/health' 2>&1 | head -c 100)"
+    if [ -s "$RUNLOG" ]; then
+      if [ -f "$RUNLOG.rc" ]; then echo "Letzter Vorgang: beendet mit Code $(cat "$RUNLOG.rc")"; else echo "Letzter Vorgang: LÄUFT NOCH"; fi
+      echo "--- Ende der letzten Ausgabe ---"; tail -n 12 "$RUNLOG"
+    fi
     ;;
   int|prod)
     exec 9>"$LOCK"
     flock -n 9 || { log "BESETZT" "$ACTION"; fail "Es läuft gerade ein anderer Ausroll-Vorgang. Bitte kurz warten." 4; }
     log "START" "$ACTION"
-    "$SHIP" "$ACTION"
-    rc=$?
-    log "ENDE" "$ACTION Code $rc"
+    : > "$RUNLOG"; rm -f "$RUNLOG.rc"
+    # Der Vorgang läuft vom SSH getrennt weiter (eigene Sitzung, hält die Sperre auf fd 9), auch wenn die Verbindung abbricht.
+    SHIP="$SHIP" ACTION="$ACTION" RUNLOG="$RUNLOG" LOGF="$LOG" NAME="$NAME" setsid bash -c '
+      trap "" HUP PIPE
+      "$SHIP" "$ACTION" >> "$RUNLOG" 2>&1 < /dev/null
+      rc=$?
+      echo "$rc" > "$RUNLOG.rc"
+      printf "%s %-12s %-8s %s\n" "$(date "+%F %T")" "$NAME" "ENDE" "$ACTION Code $rc" >> "$LOGF" 2>/dev/null
+    ' < /dev/null > /dev/null 2>&1 &
+    # Ausgabe live mitlesen, bis der Vorgang fertig ist. Bricht die Verbindung ab, läuft er trotzdem weiter.
+    pos=0
+    while :; do
+      done_flag=0; [ -f "$RUNLOG.rc" ] && done_flag=1
+      size=$(stat -c %s "$RUNLOG" 2>/dev/null || echo 0)
+      if [ "$size" -gt "$pos" ]; then
+        tail -c +$((pos + 1)) "$RUNLOG" | head -c $((size - pos)); pos=$size
+      fi
+      [ "$done_flag" = 1 ] && break
+      sleep 1
+    done
+    rc="$(cat "$RUNLOG.rc" 2>/dev/null || echo 1)"
     exit "$rc"
     ;;
 esac
