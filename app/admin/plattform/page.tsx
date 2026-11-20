@@ -10,6 +10,8 @@ import { listPlatformInvoices, retryCharge, processCharges } from "@/src/service
 import { formatChf } from "@/src/domain/money";
 import { formatBps } from "@/src/domain/invoice";
 import { todayIn } from "@/src/domain/dates";
+import { healthByHotel } from "@/src/services/health";
+import { HEALTH_LABEL } from "@/src/domain/health";
 
 export const dynamic = "force-dynamic";
 
@@ -123,6 +125,7 @@ export default async function Plattform({ searchParams }: { searchParams: Promis
   const { hotels, users } = await platformOverview();
   const vat = await getPlatformVat();
   const invoices = await listPlatformInvoices();
+  const health = await healthByHotel();
   const STATUS: Record<string, string> = { live: "online", draft: "Entwurf", paused: "pausiert" };
   return (
     <main className="wrap admin-main">
@@ -190,7 +193,8 @@ export default async function Plattform({ searchParams }: { searchParams: Promis
             <article key={h.id} className="card stack">
               <div className="plat-head">
                 <div>
-                  <h3 style={{ margin: 0 }}><a href={`/mypontivo/${h.id}`}>{h.name}</a> <span className={`badge${h.status === "live" ? "" : " warn"}`}>{STATUS[h.status] ?? h.status}</span></h3>
+                  <h3 style={{ margin: 0 }}><a href={`/mypontivo/${h.id}`}>{h.name}</a> <span className={`badge${h.status === "live" ? "" : " warn"}`}>{STATUS[h.status] ?? h.status}</span>{health.get(h.id) ? <> <span className={`ampel ampel-${health.get(h.id)!.level}`} title={HEALTH_LABEL[health.get(h.id)!.level]}>{HEALTH_LABEL[health.get(h.id)!.level]}</span></> : null}</h3>
+                  {health.get(h.id)?.reasons.length ? <ul className="ampel-reasons small">{health.get(h.id)!.reasons.map((r) => <li key={r.text} className={`ampel-${r.level}`}>{r.text}</li>)}</ul> : null}
                   <p className="muted small" style={{ margin: "4px 0 0" }}>{h.bookings} Buchungen · {h.invoices} Rechnungen · angelegt {fmt(h.createdAt)}</p>
                 </div>
                 {h.status === "live" || h.status === "paused" ? (

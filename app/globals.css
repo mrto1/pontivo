@@ -796,3 +796,13 @@ pre { overflow-x: auto; }
 
 /* Testumgebung (ENVIRONMENT_LABEL): kleiner Hinweis unten links */
 .env-badge { position: fixed; left: 8px; bottom: 8px; z-index: 9999; background: #b45309; color: #fff; font: 600 12px/1.3 system-ui, sans-serif; padding: 5px 10px; border-radius: 999px; box-shadow: 0 1px 6px rgba(0,0,0,.3); pointer-events: none; }
+
+/* Gesundheits-Ampel in der Plattform-Verwaltung */
+.ampel { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px 2px 22px; border-radius: 999px; position: relative; background: var(--card, #f5f5f5); border: 1px solid var(--line, #ddd); vertical-align: middle; }
+.ampel::before { content: ""; position: absolute; left: 8px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: #16a34a; }
+.ampel-yellow::before { background: #eab308; }
+.ampel-red::before { background: #dc2626; }
+.ampel-reasons { margin: 6px 0 0; padding-left: 18px; }
+.ampel-reasons li.ampel-red { color: #b91c1c; }
+.ampel-reasons li.ampel-yellow { color: #92400e; }
+.ampel-reasons li::before { content: none; }
