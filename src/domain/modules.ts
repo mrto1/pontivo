@@ -41,6 +41,14 @@ export const MODULES: ModuleDef[] = [
 ];
 
 export const MODULE_KEYS = MODULES.map((m) => m.key);
+
+/** Gruppierung der Seite «Funktionen» (jedes Modul genau in einer Gruppe, geprüft in tests/unit/modules.test.ts) */
+export const MODULE_GROUPS: { title: string; lead: string; keys: string[] }[] = [
+  { title: "Rezeption und Betrieb", lead: "Für Häuser mit Personal. Ferienwohnungen lassen das meiste aus.", keys: ["frontdesk", "housekeeping", "groups", "resources", "access", "owners"] },
+  { title: "Gäste und Kommunikation", lead: "Wie Sie mit Gästen in Kontakt bleiben.", keys: ["guestnotes", "inquiries", "inbox", "marketing", "feedback", "mailtexts"] },
+  { title: "Rechnung, Kasse und Zahlen", lead: "Rechnungen, Zahlungen vor Ort und Auswertungen.", keys: ["invoicing", "debtors", "accountingexport", "statistics", "terminal", "pos"] },
+  { title: "Verkauf und Schnittstellen", lead: "Preise, Gutscheine und Anbindung an Ihre Website und Kasse.", keys: ["pricing_rules", "vouchers", "api", "posbridge"] },
+];
 export const moduleDef = (key: string) => MODULES.find((m) => m.key === key);
 
 export type ModuleRow = { module: string; enabled: boolean };

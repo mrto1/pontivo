@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
-import { isOn, MODULES, moduleDef } from "@/src/domain/modules";
+import { isOn, MODULE_GROUPS, moduleDef } from "@/src/domain/modules";
 import { applyModules, ModuleError, moduleRows, setModule } from "@/src/services/modules";
 
 export const dynamic = "force-dynamic";
@@ -37,23 +37,32 @@ export default async function Funktionen({ params, searchParams }: { params: Pro
       <h1>Funktionen</h1>
       <p className="muted small">Schalten Sie aus, was Sie nicht brauchen. Es verschwindet dann aus dem Menü. Ihre Daten bleiben erhalten und sind wieder da, wenn Sie die Funktion einschalten. KI-Chat und Upselling schalten Sie auf ihren eigenen Seiten ein.</p>
       {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
-      <section className="card stack">
-        {MODULES.map((m) => {
-          const on = isOn(rows, m.key);
-          return (
-            <form key={m.key} action={toggle} className="inline-form" style={{ justifyContent: "space-between", alignItems: "center" }}>
-              <input type="hidden" name="hotelId" value={hotel.id} />
-              <input type="hidden" name="module" value={m.key} />
-              <input type="hidden" name="on" value={on ? "0" : "1"} />
-              <div style={{ flex: "1 1 320px" }}>
-                <strong>{m.label}</strong> {on ? <span className="badge">an</span> : <span className="badge warn">aus</span>}
-                <div className="small muted">{m.description}</div>
-              </div>
-              {canEdit ? <button className="btn secondary small">{on ? "Ausschalten" : "Einschalten"}</button> : null}
-            </form>
-          );
-        })}
-      </section>
+      {MODULE_GROUPS.map((g) => (
+        <section key={g.title} className="card stack">
+          <div>
+            <h2 style={{ margin: 0 }}>{g.title}</h2>
+            <p className="small muted" style={{ margin: "2px 0 0" }}>{g.lead}</p>
+          </div>
+          {g.keys.map((key) => {
+            const m = moduleDef(key)!;
+            const on = isOn(rows, m.key);
+            return (
+              <form key={m.key} action={toggle} className="module-row">
+                <input type="hidden" name="hotelId" value={hotel.id} />
+                <input type="hidden" name="module" value={m.key} />
+                <input type="hidden" name="on" value={on ? "0" : "1"} />
+                <div className="module-text">
+                  <strong id={`m-${m.key}`}>{m.label}</strong>
+                  <div className="small muted">{m.description}</div>
+                </div>
+                <button type="submit" className="switch" role="switch" aria-checked={on} aria-labelledby={`m-${m.key}`} disabled={!canEdit} title={on ? "Ausschalten" : "Einschalten"}>
+                  <span className="switch-state">{on ? "An" : "Aus"}</span>
+                </button>
+              </form>
+            );
+          })}
+        </section>
+      ))}
     </div>
   );
 }
