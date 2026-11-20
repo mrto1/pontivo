@@ -15,7 +15,7 @@ import { taxRuleFor } from "./hotels";
 import { registrationReporter } from "../integrations/registration/reporter";
 
 /**
- * Modul «Gäste» (SPEC 14): Online-Check-in mit Meldeschein, Tagesliste, Register-Export, Kurtaxe-Liste, Löschjob.
+ * Modul «Online-Check-in» (SPEC 14): Online-Check-in mit Meldeschein, Tagesliste, Register-Export, Kurtaxe-Liste, Löschjob.
  */
 
 // ---------------------------------------------------------------- Modul und Kantonsregel

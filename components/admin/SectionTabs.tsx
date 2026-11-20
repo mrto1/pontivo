@@ -1,5 +1,4 @@
 "use client";
-import { Fragment } from "react";
 import { usePathname } from "next/navigation";
 import { bestMatch, sectionFor, type Nav, type NavItem } from "@/src/admin/nav";
 
@@ -11,10 +10,7 @@ function Row({ tabs, pathname, home, label, sub }: { tabs: NavItem[]; pathname: 
   return (
     <nav className={`section-tabs${sub ? " sub" : ""}`} aria-label={label}>
       {tabs.map((t, i) => (
-        <Fragment key={t.key}>
-          {t.sep && i > 0 ? <span className="tab-sep" aria-hidden="true" /> : null}
-          <a href={t.href} className={i === activeIdx ? "active" : undefined} aria-current={i === activeIdx ? "page" : undefined}>{t.label}</a>
-        </Fragment>
+        <a key={t.key} href={t.href} className={i === activeIdx ? "active" : undefined} aria-current={i === activeIdx ? "page" : undefined}>{t.label}</a>
       ))}
     </nav>
   );

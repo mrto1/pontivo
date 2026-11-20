@@ -68,7 +68,7 @@ const schema = z.object({
   AI_CHAT_HARD_CAP: z.coerce.number().int().min(0).default(5000),
   CHAT_COST_IN_USD_PER_MTOK: z.coerce.number().min(0).default(0.1),
   CHAT_COST_OUT_USD_PER_MTOK: z.coerce.number().min(0).default(0.5),
-  // Modul Gäste: Schlüssel für Geburtsdatum/Ausweisnummer/Unterschrift (32 Byte base64: openssl rand -base64 32)
+  // Modul Online-Check-in: Schlüssel für Geburtsdatum/Ausweisnummer/Unterschrift (32 Byte base64: openssl rand -base64 32)
   GUEST_DATA_KEY: z.string().optional(),
   HOSTING_PROVIDER: z.string().optional(),
   // Fotos: Ordner auf dem Server (Docker: als Volume einbinden)

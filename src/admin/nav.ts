@@ -6,7 +6,7 @@
  * - `account`: «Mein Konto» hinter dem Profilbild, mit eigenen Reitern.
  * Umgruppieren = nur diese Datei ändern.
  */
-export type NavItem = { key: string; label: string; href: string; external?: boolean; tabs?: NavItem[]; /** Reiter: davor ein Trenner (neue Gruppe von Reitern) */ sep?: boolean };
+export type NavItem = { key: string; label: string; href: string; external?: boolean; tabs?: NavItem[]; };
 export type Nav = { primary: NavItem[]; account: NavItem };
 
 /** `hidden`: Menüpunkte ausgeschalteter Module (src/domain/modules.ts). Hat ein Sammelpunkt nur noch einen Reiter, bleibt er ein einfacher Punkt. */
@@ -16,15 +16,7 @@ export function adminNav(hotel: { id: string; slug: string; primaryDomain: strin
   const prune = (i: NavItem): NavItem | null => {
     if (hidden.has(i.key)) return null;
     if (!i.tabs) return i;
-    // Trenner wandert zum nächsten sichtbaren Reiter, wenn der Reiter mit Trenner ausgeblendet ist
-    let carry = false;
-    const tabs: NavItem[] = [];
-    for (const t of i.tabs) {
-      const p = prune(t);
-      if (!p) { carry = carry || !!t.sep; continue; }
-      tabs.push(carry && !p.sep ? { ...p, sep: true } : p);
-      carry = false;
-    }
+    const tabs: NavItem[] = i.tabs.flatMap((t) => prune(t) ?? []);
     if (!tabs.length) return null;
     if (tabs.length === 1) return { ...i, key: tabs[0].key, href: tabs[0].href, tabs: tabs[0].tabs };
     return { ...i, tabs };
@@ -36,8 +28,6 @@ export function adminNav(hotel: { id: string; slug: string; primaryDomain: strin
 function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null }): Nav {
   const base = `/mypontivo/${hotel.id}`;
   const link = (key: string, label: string, path = key): NavItem => ({ key, label, href: `${base}/${path}` });
-  /** Reiter mit Trenner davor */
-  const sep = (i: NavItem): NavItem => ({ ...i, sep: true });
   return {
     primary: [
       // Mein Betrieb (erster Reiter «Übersicht»): Stand der Einrichtung und alles, was den Betrieb selbst betrifft
@@ -45,20 +35,20 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
         ...{ key: "home", label: "Mein Betrieb", href: base },
         tabs: [
           { key: "home", label: "Übersicht", href: base },
-          sep(link("rooms", "Zimmer und Tarife")),
+          link("rooms", "Zimmer und Tarife"),
           { ...link("site", "Website und Buchung"), tabs: [link("site", "Website und Buchung"), link("direct", "Direktbuchung", "direktbuchung"), link("api", "Schnittstelle (API)")] },
-          sep(link("team", "Team")),
+          link("team", "Team"),
           { ...link("settings", "Einstellungen"), tabs: [link("settings", "Betrieb"), link("funktionen", "Funktionen"), link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt")] },
-          sep({ ...link("statistics", "Statistik"), tabs: [link("statistics", "Statistik"), link("hesta", "HESTA", "statistics/hesta")] }),
+          { ...link("statistics", "Statistik"), tabs: [link("statistics", "Statistik"), link("hesta", "HESTA", "statistics/hesta")] },
           link("accountingexport", "Buchhaltung", "buchhaltung"),
-          sep({ ...link("restaurant", "Restaurant"), tabs: [link("restaurant", "Tische"), link("kasse", "Kasse (offline-fähig)"), link("positems", "Artikel", "restaurant/artikel"), link("posclose", "Kassenabschluss", "restaurant/abschluss"), link("posbridge", "Kassen-Schnittstelle")] }),
+          { ...link("restaurant", "Restaurant"), tabs: [link("restaurant", "Tische"), link("kasse", "Kasse (offline-fähig)"), link("positems", "Artikel", "restaurant/artikel"), link("posclose", "Kassenabschluss", "restaurant/abschluss"), link("posbridge", "Kassen-Schnittstelle")] },
         ],
       },
       // Zeitraster je Zimmertyp: Preise, Verfügbarkeit, Sperren, Abgleich mit den Portalen
-      { ...link("calendar", "Kalender"), tabs: [link("calendar", "Preise & Verfügbarkeit"), link("plan", "Zimmerplan"), sep(link("pricing", "Preisempfehlung", "preise")), sep(link("channex", "Channel-Manager")), link("ical", "Kalender-Abgleich")] },
+      { ...link("calendar", "Kalender"), tabs: [link("calendar", "Preise & Verfügbarkeit"), link("plan", "Zimmerplan"), link("pricing", "Preisempfehlung", "preise"), link("channex", "Channel-Manager"), link("ical", "Kalender-Abgleich")] },
       // Vorgänge: Gast, Zahlung, Storno, Rechnung
-      { ...link("bookings", "Buchungen"), tabs: [link("bookings", "Buchungen"), link("frontdesk", "Heute"), link("housekeeping", "Reinigung"), link("groups", "Gruppen"), link("resources", "Angebote vor Ort"), sep(link("invoices", "Rechnungen")), link("dayclose", "Tagesabschluss", "invoices/tagesabschluss"), link("debtors", "Debitoren", "invoices/debitoren"), sep(link("report", "Plattformgebühren")), link("owners", "Eigentümer")] },
-      { ...link("guests", "Gäste"), tabs: [link("guests", "Check-in"), link("guestbook", "Kartei"), sep(link("inbox", "Posteingang")), link("marketing", "Newsletter"), link("vouchers", "Gutscheine"), link("feedback", "Bewertungen"), sep(link("ki-chat", "KI-Chat")), link("upsell", "Upselling"), link("mailtexts", "Mail-Texte", "mail-texte")] },
+      { ...link("bookings", "Buchungen"), tabs: [link("bookings", "Buchungen"), link("frontdesk", "Heute"), link("housekeeping", "Reinigung"), link("groups", "Gruppen"), link("resources", "Angebote vor Ort"), link("invoices", "Rechnungen"), link("dayclose", "Tagesabschluss", "invoices/tagesabschluss"), link("debtors", "Debitoren", "invoices/debitoren"), link("report", "Plattformgebühren"), link("owners", "Eigentümer")] },
+      { ...link("guests", "Gäste"), tabs: [link("guests", "Online-Check-in"), link("guestbook", "Kartei"), link("inbox", "Posteingang"), link("marketing", "Newsletter"), link("vouchers", "Gutscheine"), link("feedback", "Bewertungen"), link("ki-chat", "KI-Chat"), link("upsell", "Upselling"), link("mailtexts", "Mail-Texte", "mail-texte")] },
     ],
     // Profilbild oben rechts
     account: { ...link("mypontivo", "Mein Konto"), tabs: [link("mypontivo", "Profil & Sicherheit"), link("migration", "Datenübernahme"), link("firstweek", "Erste Woche", "erste-woche"), { ...link("help", "Hilfe", "hilfe"), tabs: [link("help", "Wegweiser", "hilfe"), link("helpflows", "Abläufe", "hilfe/ablaeufe"), link("helpterms", "Fachbegriffe", "hilfe/begriffe")] }] },

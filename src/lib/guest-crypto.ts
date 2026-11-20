@@ -19,7 +19,7 @@ function guestKey(): Buffer {
     key = Buffer.from(e.GUEST_DATA_KEY, "base64");
     if (key.length !== 32) throw new Error("GUEST_DATA_KEY muss 32 Byte (base64) lang sein");
   } else {
-    if (e.NODE_ENV === "production") throw new Error("GUEST_DATA_KEY fehlt (Modul Gäste)");
+    if (e.NODE_ENV === "production") throw new Error("GUEST_DATA_KEY fehlt (Modul Online-Check-in)");
     key = Buffer.from(crypto.hkdfSync("sha256", e.AUTH_SECRET ?? "pontivo-dev-only", "pontivo", "guest-data", 32));
   }
   cache = { src, key };

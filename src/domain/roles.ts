@@ -40,7 +40,7 @@ export const CONFIGURABLE_AREAS: { key: string; label: string; group: string }[]
   { group: "Buchungen", key: "dayclose", label: "Tagesabschluss" },
   { group: "Buchungen", key: "debtors", label: "Debitoren" },
   { group: "Buchungen", key: "owners", label: "Eigentümer" },
-  { group: "Gäste", key: "guests", label: "Check-in" },
+  { group: "Gäste", key: "guests", label: "Online-Check-in" },
   { group: "Gäste", key: "guestbook", label: "Kartei" },
   { group: "Gäste", key: "inbox", label: "Posteingang" },
   { group: "Gäste", key: "vouchers", label: "Gutscheine" },

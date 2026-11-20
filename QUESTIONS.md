@@ -23,10 +23,10 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Gutscheine: Gültigkeitsdauer und Bedingungen in den AGB rechtlich prüfen lassen (auch: gilt der Gutschein, wenn am Buchungstag gültig, der Aufenthalt aber danach liegt?).
 - [ ] Gutscheine: Mehrwertsteuer-Behandlung (Wertgutschein, MWST erst bei Einlösung) mit Treuhand klären.
 
-- [ ] Modul Gäste: Müssen Kinder ohne eigenen Ausweis einen Ausweistyp/-nummer angeben? Heute Pflicht ab 18, für Kinder freiwillig.
-- [ ] Modul Gäste: Genügt in GL die Unterschrift der Kontaktperson für alle Mitreisenden derselben Buchung, oder muss jede erwachsene Person unterschreiben?
-- [ ] Modul Gäste: Teilnehmerliste für Gruppen ist nur für SG belegt; gilt sie auch in TG/AR/GL? (`canton_rules.group_list_allowed`)
-- [ ] Modul Gäste: Kurtaxe-Liste – verlangen die Gemeinden ein bestimmtes Format (AVS, Excel-Vorlage)? Heute CSV und Druck.
+- [ ] Modul Online-Check-in: Müssen Kinder ohne eigenen Ausweis einen Ausweistyp/-nummer angeben? Heute Pflicht ab 18, für Kinder freiwillig.
+- [ ] Modul Online-Check-in: Genügt in GL die Unterschrift der Kontaktperson für alle Mitreisenden derselben Buchung, oder muss jede erwachsene Person unterschreiben?
+- [ ] Modul Online-Check-in: Teilnehmerliste für Gruppen ist nur für SG belegt; gilt sie auch in TG/AR/GL? (`canton_rules.group_list_allowed`)
+- [ ] Modul Online-Check-in: Kurtaxe-Liste – verlangen die Gemeinden ein bestimmtes Format (AVS, Excel-Vorlage)? Heute CSV und Druck.
 - [ ] Übersicht «Ihr Nutzen»: Provision der Portale je Hotel unterschiedlich (Standard 15 %, im Admin änderbar). Prüfen, ob die Darstellung als «gespart» rechtlich und gegenüber Hotels unbedenklich ist (Kartengebühren nicht abgezogen).
 - [ ] Zusatzleistungen: Obligatorische Gebühren (z. B. Endreinigung) werden nicht an Channex übertragen – Hotel muss sie im Portal selbst erfassen. Klären, ob Channex dafür ein Feld hat.
 - [ ] Bedingungen für Gastgeber (`src/legal/host-terms.ts`, Seite /gastgeber-bedingungen): Entwurf juristisch prüfen lassen, inkl. Auftragsbearbeitung; FR/IT-Fassung.

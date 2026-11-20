@@ -41,7 +41,7 @@ export default async function Guests({ params, searchParams }: { params: Promise
   return (
     <div className="stack">
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Gäste</h1>
+        <h1 style={{ margin: 0 }}>Online-Check-in</h1>
         {enabled ? (
           <nav className="seg" aria-label="Bereich">
             {(Object.keys(TABS) as Tab[]).filter((t) => t !== "tax" || isManager).map((t) => (
@@ -70,7 +70,7 @@ export default async function Guests({ params, searchParams }: { params: Promise
 
       {tab === "settings" ? (
         <section className="card stack">
-          <h2 style={{ fontSize: "1.15rem" }}>Modul Gäste {enabled ? <span className="badge">eingeschaltet</span> : <span className="badge warn">aus</span>}</h2>
+          <h2 style={{ fontSize: "1.15rem" }}>Modul Online-Check-in {enabled ? <span className="badge">eingeschaltet</span> : <span className="badge warn">aus</span>}</h2>
           <p>Mit dem Modul füllen Gäste den Meldeschein vor der Anreise online aus. Sie erhalten 7 Tage vor Anreise einen Link per E-Mail (bei späterer Buchung sofort), auch bei Buchungen über Portale, wenn die E-Mail-Adresse bekannt ist. Am Empfang bestätigen Sie nur noch, dass Sie den Ausweis gesehen haben.</p>
           <table className="rows small">
             <tbody>

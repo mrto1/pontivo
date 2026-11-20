@@ -9,7 +9,7 @@
  * - push:    Push-Mitteilungen an die Geräte der Mitarbeitenden senden (jede Minute)
  * - horizon: Verfügbarkeit/Preise auf 18 Monate auffüllen (täglich 03:15, SPEC 4)
  * - channex-feed:   Buchungen aus Channex holen (sofort per Webhook, zur Sicherheit alle 15 Minuten, SPEC 7.3)
- * - guests-checkin: Check-in-Links einreihen (Modul Gäste, alle 10 Minuten, SPEC 14.1)
+ * - guests-checkin: Check-in-Links einreihen (Modul Online-Check-in, alle 10 Minuten, SPEC 14.1)
  * - guests-purge:   abgelaufene Meldescheine löschen (täglich 02:30, SPEC 14.6)
  * - onboarding-reminders: Erinnerung an Gastgeber mit offener Einrichtung (täglich 09:20)
  * - billing-minimum: Mindestgebühr des Vormonats abrechnen und Fehlversuche wiederholen (täglich 07:10)

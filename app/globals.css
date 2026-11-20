@@ -153,7 +153,6 @@ details > summary::-webkit-details-marker { display: none; }
 .section-tabs:has(+ .section-tabs.sub) { margin-bottom: 0; }
 .section-tabs.sub { font-size: .92rem; background: var(--accent-soft); padding: 0 8px; border-radius: 0 0 8px 8px; }
 .section-tabs.sub a { padding: 8px 14px; }
-.section-tabs .tab-sep { flex: 0 0 auto; align-self: center; width: 1px; height: 18px; margin: 0 6px; background: var(--line); }
 .more-group h3 { font-family: var(--font); font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 4px; }
 .more-group a { display: block; padding: 10px 0; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
 .more-group a.active { font-weight: 600; color: var(--accent); }

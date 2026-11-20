@@ -35,7 +35,7 @@ async function hotelWithBooking(opts: { canton?: string; municipality?: string; 
   return { ...h, booking };
 }
 
-describe("M4 Modul Gäste", () => {
+describe("M4 Modul Online-Check-in", () => {
   it("Verschlüsselung: Rundweg, zufälliger IV, Manipulation wird erkannt", () => {
     const a = encryptField("1980-05-17");
     expect(a).not.toContain("1980");

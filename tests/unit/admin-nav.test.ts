@@ -20,14 +20,13 @@ describe("Admin-Menü", () => {
     expect(keys).not.toContain("inquiries");
   });
 
-  it("Kalender, Buchungen und Gäste haben Reiter, Trenner trennen Gruppen", () => {
+  it("Kalender, Buchungen und Gäste haben Reiter", () => {
     const nav = adminNav(hotel);
     const tabs = (k: string) => nav.primary.find((i) => i.key === k)!.tabs!;
     expect(tabs("calendar").map((t) => t.key)).toEqual(["calendar", "plan", "pricing", "channex", "ical"]);
     expect(tabs("bookings").map((t) => t.key)).not.toContain("plan");
     expect(tabs("guests").map((t) => t.key)).toEqual(["guests", "guestbook", "inbox", "marketing", "vouchers", "feedback", "ki-chat", "upsell", "mailtexts"]);
-    expect(tabs("guests").filter((t) => t.sep).map((t) => t.key)).toEqual(["inbox", "ki-chat"]);
-    expect(tabs("guests")[0].label).toBe("Check-in");
+    expect(tabs("guests")[0].label).toBe("Online-Check-in");
   });
 
   it("«Mein Betrieb» enthält Reiter mit zweiter Reihe", () => {
