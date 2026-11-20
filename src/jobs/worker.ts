@@ -3,6 +3,7 @@
  * - holds:   abgelaufene Holds freigeben (jede Minute, SPEC 5.5)
  * - waitlist: Warteliste prüfen und Gäste benachrichtigen (alle 5 Minuten, SPEC 19.29)
  * - booking-recovery: Erinnerung nach abgebrochener Buchung (alle 10 Minuten, SPEC 19.29)
+ * - monthly-mail: Monatsmail an die Inhaber (am 2. des Monats 07:30, SPEC 19.32)
  * - emails:  E-Mail-Outbox senden (jede Minute, SPEC 10)
  * - push:    Push-Mitteilungen an die Geräte der Mitarbeitenden senden (jede Minute)
  * - horizon: Verfügbarkeit/Preise auf 18 Monate auffüllen (täglich 03:15, SPEC 4)
@@ -34,6 +35,7 @@ import { monthlyAccountingJob } from "../services/accounting";
 import { aiPricingJob } from "../services/ai-pricing";
 import { deliverDue, webhookCleanup } from "../services/webhooks";
 import { recoveryJob, waitlistJob } from "../services/direct-tools";
+import { monthlyMailJob } from "../services/monthly-mail";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "webhooks", cron: "* * * * *", run: () => deliverDue() },
@@ -41,6 +43,7 @@ const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
   { name: "waitlist", cron: "*/5 * * * *", run: () => waitlistJob() },
   { name: "booking-recovery", cron: "*/10 * * * *", run: () => recoveryJob() },
+  { name: "monthly-mail", cron: "30 7 2 * *", run: () => monthlyMailJob() },
   { name: "emails", cron: "* * * * *", run: () => sendDueEmails() },
   { name: "push", cron: "* * * * *", run: () => sendDuePushes() },
   { name: "pricing", cron: "30 3 * * *", run: () => aiPricingJob() },

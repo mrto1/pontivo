@@ -11,6 +11,7 @@ import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { env } from "@/src/env";
 import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
 import { setEmbeddedCheckout } from "@/src/services/payment-settings";
+import { monthlyMailEnabled, setMonthlyMail } from "@/src/services/monthly-mail";
 
 export const dynamic = "force-dynamic";
 
@@ -102,6 +103,13 @@ async function stripeRefresh(f: FormData) {
     back(hotel.id, `Stripe: ${(e as Error).message}`);
   }
   back(hotel.id, "Stripe-Status aktualisiert");
+}
+
+async function saveMonthlyMail(f: FormData) {
+  "use server";
+  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "manager");
+  await setMonthlyMail(hotel, f.get("monthlyMail") === "on", actor);
+  back(hotel.id, "Gespeichert");
 }
 
 async function changeStatus(f: FormData) {
@@ -200,6 +208,16 @@ export default async function Settings({ params, searchParams }: { params: Promi
           ) : null}
         </section>
       )}
+
+      <section className="card stack">
+        <h2>Monatsmail</h2>
+        <p className="small">Am 2. jedes Monats schicken wir den Inhabern eine kurze Auswertung des Vormonats: Direktbuchungen, Umsatz, Gebühr, geschätzte Ersparnis gegenüber Portalprovision und Anreisen der nächsten 30 Tage.</p>
+        <form action={saveMonthlyMail} className="stack">
+          {hidden}
+          <label className="check"><input type="checkbox" name="monthlyMail" defaultChecked={monthlyMailEnabled(hotel)} /> Monatsmail senden</label>
+          <div><button className="btn secondary small">Speichern</button></div>
+        </form>
+      </section>
 
       <section className="card stack">
         <h2>Kurtaxe</h2>

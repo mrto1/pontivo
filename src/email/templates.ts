@@ -456,6 +456,17 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
     case "channex_alert":
       return wrap(c, l, `[Channex] ${String(c.data.subject)}${c.data.hotel ? ` – ${c.data.hotel}` : ""}`,
         [String(c.data.subject), String(c.data.details ?? "")]);
+    case "host_monthly": {
+      const d = c.data as { month: string; monthKey: string; name: string; bookings: number; nights: number; revenue: string; fee: string; prevBookings: number; change: number | null; saved: string; upcoming: number };
+      const trend = d.change === null ? "" : d.change >= 0 ? ` (${d.change > 0 ? "+" : ""}${d.change} % gegenüber dem Vormonat)` : ` (${d.change} % gegenüber dem Vormonat)`;
+      return wrap(c, "de", `${c.hotel.name}: Ihr Direktbuchungs-Monat ${d.month}`,
+        [d.name ? `Guten Tag ${d.name}` : "Guten Tag", `so lief ${d.month} bei ${c.hotel.name}:`,
+          ...(d.bookings > 0 ? [] : ["Im letzten Monat gab es keine neue Direktbuchung. Tipp: Link zur Buchung im Google-Unternehmensprofil, auf der Website und in der E-Mail-Signatur prüfen."]),
+          ...(d.saved ? [`Gegenüber einer üblichen Portalprovision von 15 % haben Sie grob ${d.saved} gespart (Schätzung nach Abzug der Plattformgebühr).`] : []),
+          ...(d.upcoming > 0 ? [`In den nächsten 30 Tagen reisen ${d.upcoming} Buchungen an.`] : [])],
+        [`Direktbuchungen: ${d.bookings}${trend}`, `Nächte: ${d.nights}`, `Umsatz Zimmer (ohne Kurtaxe, nach Rückerstattung): ${d.revenue}`, `Plattformgebühr: ${d.fee}`],
+        { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/report?month=${d.monthKey}`, label: "Monatsabrechnung ansehen" });
+    }
     case "sales_lead": {
       // Persönliche Nachricht aus dem Vertriebs-Cockpit: Text kommt fertig ausgefüllt in data
       const d = c.data as { subject?: string; body?: string };

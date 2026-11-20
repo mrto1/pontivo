@@ -28,6 +28,7 @@ export type TemplateName =
   | "channex_alert"
   | "platform_alert"
   | "sales_lead"
+  | "host_monthly"
   | "balance_due"
   | "balance_reminder"
   | "balance_paid"
