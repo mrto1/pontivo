@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-// Nur der übergeordnete Plattform-Admin (/admin/plattform) liegt noch unter /admin. Er ist nirgends verlinkt.
+// /admin ist die Plattform-Verwaltung (nur Plattform-Admins, Einstieg: /admin).
 // Die Hotel-Oberfläche heisst myPontivo und liegt unter /mypontivo.
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 

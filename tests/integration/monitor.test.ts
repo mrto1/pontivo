@@ -156,10 +156,10 @@ describe("Sicherheits-Kopfzeilen", () => {
 });
 
 describe("Adressen /mypontivo und /admin", () => {
-  it("alte /admin-Adressen führen nach /mypontivo, nur /admin/plattform bleibt", async () => {
+  it("alte Hotel-Adressen unter /admin führen nach /mypontivo; /admin selbst und /admin/plattform bleiben der Plattform-Verwaltung", async () => {
     const r = await nextConfig.redirects!();
-    expect(r).toContainEqual({ source: "/admin", destination: "/mypontivo", permanent: true });
-    const rx = new RegExp(`^${r[1].source.replace("/:path((?!plattform(?:/|$)).*)", "/((?!plattform(?:/|$)).*)")}$`);
+    expect(r.some((x) => x.source === "/admin")).toBe(false);
+    const rx = new RegExp(`^${r[0].source.replace("/:path((?!plattform(?:/|$)).*)", "/((?!plattform(?:/|$)).*)")}$`);
     expect(rx.test("/admin/abc/calendar")).toBe(true);
     expect(rx.test("/admin/login")).toBe(true);
     expect(rx.test("/admin/plattform")).toBe(false);

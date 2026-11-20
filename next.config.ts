@@ -30,10 +30,9 @@ const nextConfig: NextConfig = {
       { source: "/admin/:path*", headers: adminHeaders },
     ];
   },
-  // Alte Adressen (E-Mail-Links, Lesezeichen, Push) führen weiter. Nur /admin/plattform bleibt unter /admin.
+  // Alte Hotel-Adressen unter /admin/<hotel>/… (E-Mail-Links, Lesezeichen, Push) führen weiter nach /mypontivo. /admin selbst und /admin/plattform gehören der Plattform-Verwaltung.
   async redirects() {
     return [
-      { source: "/admin", destination: "/mypontivo", permanent: true },
       { source: "/admin/:path((?!plattform(?:/|$)).*)", destination: "/mypontivo/:path", permanent: true },
     ];
   },
