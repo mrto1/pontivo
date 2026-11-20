@@ -141,7 +141,7 @@ Die Seite verspricht nie mehr, als die Antwort hergibt.
 
 ### 4.3 Verlässlichkeit
 - **Notfall-Rezeption:** Täglich um 06:00 geht eine **Tagesliste (Anreisen, Abreisen, im Haus, Zimmer, Bemerkungen) per E-Mail als PDF** an den Betrieb. Zusätzlich liest die Admin-App die Tagesliste **auch ohne Internet** (Service Worker, nur lesen). Ohne Internet gibt es keine neuen Buchungen, aber die Rezeption steht nicht still.
-- **Backups:** Datenbank täglich, 30 Tage Aufbewahrung, **Wiederherstellungstest vierteljährlich dokumentiert**. Das ist offen (DEPLOY.md), vor dem Versprechen erledigen.
+- **Backups:** Datenbank täglich, 30 Tage Aufbewahrung, **Wiederherstellungstest vierteljährlich dokumentiert**. Das ist offen (docs/deploy/5-betrieb.md), vor dem Versprechen erledigen.
 - **Überwachung:** Statusseite (`system_status` existiert), Alarm bei Ausfall, Reaktionszeiten schriftlich.
 - **Support:** Zeiten und Reaktionszeit festlegen (z. B. Werktage, 4 Stunden), Kanal E-Mail, Notfall-Nummer nur für zahlende Betriebe. Entscheid beim Betreiber.
 

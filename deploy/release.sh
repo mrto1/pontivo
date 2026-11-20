@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 INT_DIR="${INT_DIR:-/opt/pontivo-int}"
-test -d "$INT_DIR/.git" || { echo "Testumgebung nicht gefunden: $INT_DIR (siehe docs/DEPLOY.md, Abschnitt Testumgebung)"; exit 1; }
+test -d "$INT_DIR/.git" || { echo "Testumgebung nicht gefunden: $INT_DIR (siehe docs/deploy/3-testumgebung.md)"; exit 1; }
 commit=$(git -C "$INT_DIR" rev-parse HEAD)
 git -C .. fetch --tags --prune --force
 git -C .. cat-file -e "$commit^{commit}" 2>/dev/null || { echo "Version $commit ist hier nicht bekannt. Zuerst auf int ausrollen (./deploy-int.sh)."; exit 1; }

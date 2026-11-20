@@ -13,4 +13,4 @@ ufw allow 443/udp
 ufw --force enable
 # Sicherheitsupdates automatisch einspielen
 dpkg-reconfigure -f noninteractive unattended-upgrades
-echo "Server bereit. Weiter mit Schritt 4 in docs/DEPLOY.md"
+echo "Server bereit. Weiter mit Schritt 4 in docs/deploy/1-erstinstallation.md"
