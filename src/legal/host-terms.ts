@@ -8,7 +8,7 @@ import { formatChf } from "../domain/money";
  * WICHTIG: Vor dem produktiven Einsatz juristisch prüfen lassen (QUESTIONS.md). Inklusive Auftragsbearbeitung (DSG).
  */
 // ASSUMPTION: Nur Deutsch; französische und italienische Fassung folgen nach der juristischen Prüfung.
-export const HOST_TERMS_VERSION = "2026-11-14";
+export const HOST_TERMS_VERSION = "2026-11-20";
 export const DEFAULT_MONTHLY_MINIMUM_RAPPEN = 1900;
 
 export function hostTerms(): LegalDoc {
@@ -36,7 +36,7 @@ export function hostTerms(): LegalDoc {
         `Scheitert eine Belastung, wird der Gastgeber per E-Mail informiert und kann die Karte im Admin erneuern. Bleibt eine Forderung länger als 30 Tage offen, darf ${p.name} die Online-Buchung erst pausieren, nachdem sie den Gastgeber per E-Mail gemahnt und ihm eine Nachfrist von mindestens 14 Tagen gesetzt hat. Die Pausierung endet, sobald die offene Forderung bezahlt ist. Bereits bestätigte Buchungen bleiben davon unberührt.`,
       ] },
       { h: "4. Daten", p: [
-        `${p.name} bearbeitet Personendaten der Gäste im Auftrag des Gastgebers (Auftragsbearbeitung nach Art. 9 DSG) und nur für die Erbringung der Leistungen. Daten werden in der Schweiz bzw. bei ${p.hosting} gespeichert. Unterauftragsbearbeiter: Stripe (Zahlungen), Postmark (E-Mail), Channex (bei Portal-Abgleich), Anthropic (USA; automatische Übersetzung von Hotel-Texten ohne Gastdaten und, nur bei eingeschaltetem Modul «KI-Chat», Verarbeitung der Chat-Nachrichten der Gäste ohne Speicherung; Übermittlung gestützt auf anerkannte Garantien, z. B. Swiss-US Data Privacy Framework oder Standardvertragsklauseln).`,
+        `${p.name} bearbeitet Personendaten der Gäste im Auftrag des Gastgebers (Auftragsbearbeitung nach Art. 9 DSG) und nur für die Erbringung der Leistungen. Daten werden in der Schweiz bzw. bei ${p.hosting} gespeichert. Unterauftragsbearbeiter: Stripe (Zahlungen), Postmark (E-Mail), Channex (bei Portal-Abgleich), Anthropic (USA; automatische Übersetzung von Hotel-Texten ohne Gastdaten, Entwurf bei «Einrichten mit KI» aus den vom Gastgeber angegebenen Quellen (Ziffer 9) und, nur bei eingeschaltetem Modul «KI-Chat», Verarbeitung der Chat-Nachrichten der Gäste ohne Speicherung; Übermittlung gestützt auf anerkannte Garantien, z. B. Swiss-US Data Privacy Framework oder Standardvertragsklauseln).`,
         "Der Gastgeber ist für die Rechtmässigkeit der Bearbeitung gegenüber seinen Gästen verantwortlich und informiert sie mit der bereitgestellten Datenschutzerklärung.",
       ] },
       { h: "5. Verfügbarkeit und Haftung", p: [
@@ -60,7 +60,13 @@ export function hostTerms(): LegalDoc {
         `${p.name} erhält für jeden bezahlten Verkauf eine Provision von 5 % des Verkaufsbetrags, die bei der Zahlung automatisch einbehalten wird. Es gibt keine Grundgebühr. Die Provision wird bei der Bestätigung des Gastgebers festgehalten; Änderungen kündigt ${p.name} wie nach Ziffer 2 mit mindestens 60 Tagen Frist an. Wird eine Zahlung vom Gastgeber oder von Stripe zurückerstattet, richtet sich die Rückerstattung der Provision nach den Regeln von Stripe.`,
         `Der Gastgeber ist für Inhalt, Preise, Verfügbarkeit und Erbringung seiner Angebote sowie für die rechtlich korrekte Preisangabe verantwortlich. Er kann das Modul jederzeit ausschalten; bereits bezahlte Bestellungen bleiben bestehen und sind zu erbringen.`,
       ] },
-      { h: "9. Schlussbestimmungen", p: [
+      { h: "9. «Einrichten mit KI»: Inhalte und Urheberrecht", p: [
+        `Mit «Einrichten mit KI» erstellt ${p.name} aus einer vom Gastgeber angegebenen Website-Adresse oder einem hochgeladenen PDF mit Hilfe künstlicher Intelligenz einen Entwurf (Einleitung, Zimmertypen, häufige Fragen). Der Text der Quelle wird dazu an Anthropic (USA, Ziffer 4) übermittelt und nach der Übernahme oder dem Verwerfen des Entwurfs bei ${p.name} gelöscht. Der Entwurf wird erst nach Prüfung und Bestätigung durch den Gastgeber übernommen.`,
+        `Der Gastgeber gibt nur Quellen an, an denen er die nötigen Rechte hat, in der Regel die eigene Website oder eigene Unterlagen. Texte, Bilder und andere Inhalte fremder Websites, Portale oder Verzeichnisse können urheberrechtlich oder anderweitig geschützt sein; sie dürfen nicht ohne Erlaubnis der Rechteinhaber übernommen werden. Das gilt auch für Texte, die ein Dritter (z. B. Agentur, Fotograf, Texter oder frühere Betreiber) für den Gastgeber erstellt hat, sofern dem Gastgeber die Rechte nicht eingeräumt wurden.`,
+        `Der Entwurf kann Fehler und Auslassungen enthalten und ist keine Rechtsberatung. Der Gastgeber prüft und korrigiert ihn vor der Übernahme und bleibt für alle veröffentlichten Inhalte verantwortlich (Ziffer 1). ${p.name} übernimmt keine Fotos und keine Preise aus der Quelle und prüft nicht, ob der Gastgeber die Rechte an der Quelle besitzt.`,
+        `Macht ein Dritter geltend, Inhalte des Gastgebers verletzten seine Rechte, darf ${p.name} diese Inhalte nach Anhörung des Gastgebers vorläufig offline nehmen. Der Gastgeber stellt ${p.name} von Ansprüchen Dritter frei, die auf Inhalten beruhen, die er ohne die nötigen Rechte angegeben oder übernommen hat, soweit ihn ein Verschulden trifft.`,
+      ] },
+      { h: "10. Schlussbestimmungen", p: [
         `Änderungen dieser Bedingungen werden mindestens 30 Tage im Voraus per E-Mail mitgeteilt. Es gilt Schweizer Recht. Gerichtsstand ist der Sitz von ${p.name}.`,
       ] },
     ],

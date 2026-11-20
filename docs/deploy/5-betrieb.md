@@ -52,3 +52,17 @@ sudo docker compose --env-file .env.production -f docker-compose.prod.yml exec a
 sudo docker compose --env-file .env.production -f docker-compose.prod.yml exec app node --import tsx scripts/delete-test-account.ts test@example.ch --yes
 ```
 Hinweis: Stripe-Konto und Channex-Property des Testbetriebs werden dabei nicht mitgelöscht, sie gehören bei Stripe/Channex separat entfernt.
+
+## Umgebungsdatei prüfen und aufräumen
+
+Mit der Zeit sammeln sich in `.env.production` (und `.env.int`) Einträge an, die niemand mehr braucht, und manchmal stehen gefährliche Werte drin (Testschlüssel in der Produktion, `PAYMENT_PROVIDER=fake`, eine Mail-Umleitung). Das Skript prüft die Datei gegen den Code und zeigt **nie Werte**, nur Namen:
+
+```bash
+cd /opt/pontivo/deploy
+python3 env-check.py .env.production                # prüfen (Produktion)
+python3 env-check.py .env.int --env int             # Testumgebung
+python3 env-check.py .env.production --write        # dazu eine aufgeräumte Kopie .env.production.neu schreiben
+```
+
+Es meldet **Fehler** (beheben), **Fehlendes**, **Hinweise** (z. B. Dateirechte, zusammengehörige Schlüssel, Beispieladresse) und **Überflüssiges** (nicht mehr gelesene Namen, Einträge, die Docker selbst setzt, Leerwerte, Doppelte). Das Original bleibt unverändert. Nach `diff .env.production .env.production.neu` und Kontrolle: `mv .env.production.neu .env.production`, dann `./deploy.sh`. Auf dem Server vorher ein Backup der Datei ablegen.
+

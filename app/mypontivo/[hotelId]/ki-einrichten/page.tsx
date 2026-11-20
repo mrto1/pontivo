@@ -63,6 +63,7 @@ export default async function KiEinrichten({ params, searchParams }: { params: P
       {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
       <p className="muted">Die KI liest Ihre bestehende Website (oder ein PDF, z. B. Hausprospekt) und macht daraus einen <strong>Entwurf</strong>: Zimmer, eine kurze Einleitung und häufige Fragen. Nichts wird ohne Ihre Prüfung übernommen. Preise, Telefonnummern, Links und Codes liest die KI bewusst nicht aus: die tragen Sie selbst ein.</p>
 
+      <p className="notice small">Bitte nur Quellen angeben, an denen Sie die Rechte haben (Ihre eigene Website oder eigene Unterlagen). Texte fremder Websites, Portale oder Agenturen können urheberrechtlich geschützt sein, siehe <a href="/gastgeber-bedingungen" target="_blank">Bedingungen für Gastgeber, Ziffer 9</a>.</p>
       {!gate.ok ? <p className="notice warn">{gate.reason}</p> : (
         <>
           <p className="small muted">Noch {left} von {env().SETUP_RUNS_PER_MONTH} Läufen in diesem Monat. Gelesen werden höchstens {LIMITS.maxPages} Seiten Ihrer Website bzw. ein PDF bis {LIMITS.pdfBytes / 1_000_000} MB und {LIMITS.pdfPages} Seiten. Der gelesene Text wird nicht gespeichert, nur der Entwurf.</p>

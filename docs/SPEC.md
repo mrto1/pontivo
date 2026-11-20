@@ -886,7 +886,8 @@ Ziel: Der Gast bleibt auf der Website des Hotels (oder der Agentur) und sieht di
 - **Website:** `POST /api/bookings` liefert bei eingeschalteter Einstellung `client_secret`, `stripe_account`, `publishable_key`, `token` statt `checkout_url`. Das Formular zeigt dann den Stripe-Rahmen (`components/public/EmbeddedCheckout.tsx`, Stripe.js von `js.stripe.com`) und einen Link «Zahlung abbrechen» (`/b/<token>?cancelled_payment=1`, Reservierung läuft sonst nach 32 Minuten ab). Nach der Zahlung führt Stripe auf `/b/<token>?paid=1`.
 - **API v1:** `embedded: true` bei `POST /bookings` liefert `checkout_url: null` und `client_secret`, `stripe_account`, `publishable_key`; die Agentur bindet Stripe.js mit dem Konto des Hotels ein. `return_url` der Agentur gilt als Rückkehr-Adresse.
 - ASSUMPTION: Stripe.js wird mit `{ stripeAccount }` initialisiert (Direct Charges). Die abgerufene Doku nennt das nicht ausdrücklich; vor dem Einschalten bei einem Hotel mit einer Testbuchung im Stripe-Testmodus prüfen. Das Skript `https://js.stripe.com/endive/stripe.js` ist das in der Doku genannte. Gestaltung (Farben, Schrift, Dunkelmodus) stellt der Betreiber in den Branding-Einstellungen von Stripe ein, nicht in Pontivo.
-- Abnahme: `tests/integration/embedded-checkout.test.ts`.
+- Alle Zahlungs-Sessions setzen `adaptive_pricing: { enabled: false }` (CHF bleibt CHF, keine Umrechnung nach Gast-IP). Der Rahmen füllt die Breite der Karte (`.stripe-embed`); Aufbau/Abbau laufen nacheinander (Stripe erlaubt nur ein eingebettetes Objekt).
+- Abnahme: `tests/integration/embedded-checkout.test.ts`; Testlauf gegen Stripe-Testmodus siehe QUESTIONS.md.
 
 ### 19.26 Gestaltung: neuer Standard der Hotel-Websites, Tag- und Nachtmodus
 Ziel: Hotel-Websites wirken nicht wie ein Baukasten-Standard (grünes Creme, Rahmen um alles, gleichförmige Karten) und folgen der Einstellung des Geräts (hell oder dunkel).
@@ -1006,3 +1007,8 @@ Seite `/mypontivo/<hotel>/direktbuchung` (Reiter unter «Website und Buchung», 
 - Kurzinfos: Elemente mit `data-tip`/`data-tip-title` zeigen eine einheitliche Kurzinfo (`TooltipHost`, Maus, Antippen, Tastatur) statt des Browser-Tooltips; verwendet im Kalender (frei/gebucht/gesperrt/extern) und im Zimmerplan.
 - Aktive Umschalter (`.seg`, Sprach-Reiter) sind dezent (leichte Tönung statt voller Akzentfläche). Der Passkey-Hinweis-Banner entfällt (Passkey bleibt freiwillig unter «Mein Konto»).
 - Abnahme: `tests/integration/rooms.test.ts` (Reihenfolge), `tests/e2e/onboarding.spec.ts` (Drag & Drop).
+
+### 19.40 Umgebungsdatei prüfen
+- `deploy/env-check.py <datei> [--env int] [--write]`: liest die Datei auf dem Server, vergleicht mit den im Code und in den Docker-Dateien gelesenen Namen und meldet Fehler (Testschlüssel in Produktion, `PAYMENT_PROVIDER=fake`, `MAIL_REDIRECT_TO`/`ENVIRONMENT_LABEL` in Produktion, Live-Schlüssel in der Testumgebung, nicht-https `APP_BASE_URL`), fehlende Pflichteinträge, Hinweise und Überflüssiges. Gibt nie Werte aus; `--write` schreibt nur eine Kopie `<datei>.neu`.
+- Abnahme: `tests/unit/env-check.test.ts`.
+

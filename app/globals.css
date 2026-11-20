@@ -839,15 +839,18 @@ pre { overflow-x: auto; }
 .ampel-reasons li::before { content: none; }
 
 /* Kurzinfo (TooltipHost): ersetzt den Browser-Tooltip, funktioniert per Maus, Antippen und Tastatur */
-.tip { position: fixed; z-index: 1000; min-width: 170px; max-width: min(280px, calc(100vw - 16px)); padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,.22); font-size: .85rem; line-height: 1.35; pointer-events: none; }
-.tip::after { content: ""; position: absolute; left: var(--arrow-x, 50%); width: 10px; height: 10px; margin-left: -5px; background: var(--surface); border: 1px solid var(--line); border-top: 0; border-left: 0; transform: rotate(45deg); bottom: -6px; }
-.tip[data-below="1"]::after { bottom: auto; top: -6px; transform: rotate(225deg); }
-.tip-title { font-weight: 600; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
-.tip-row { display: flex; justify-content: space-between; gap: 18px; padding: 1px 0; }
-.tip-row span { color: var(--muted); }
-.tip-row strong { font-variant-numeric: tabular-nums; }
-.tip-main strong { font-size: 1rem; }
-.tip-full .tip-main strong { color: var(--danger); }
-.tip-text { color: var(--muted); }
+.tt { position: fixed; z-index: 1000; min-width: 170px; max-width: min(280px, calc(100vw - 16px)); padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,.22); font-size: .85rem; line-height: 1.35; pointer-events: none; }
+.tt::after { content: ""; position: absolute; left: var(--arrow-x, 50%); width: 10px; height: 10px; margin-left: -5px; background: var(--surface); border: 1px solid var(--line); border-top: 0; border-left: 0; transform: rotate(45deg); bottom: -6px; }
+.tt[data-below="1"]::after { bottom: auto; top: -6px; transform: rotate(225deg); }
+.tt-title { font-weight: 600; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.tt-row { display: flex; justify-content: space-between; gap: 18px; padding: 1px 0; }
+.tt-row span { color: var(--muted); }
+.tt-row strong { font-variant-numeric: tabular-nums; }
+.tt-main strong { font-size: 1rem; }
+.tt-full .tt-main strong { color: var(--danger); }
+.tt-text { color: var(--muted); }
 .cal td[data-tip]:focus-visible, .plan-bar:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .cal td[data-tip] { cursor: default; }
+
+/* Eingebetteter Stripe-Rahmen: immer volle Breite der Karte (Stripe misst beim Aufbau; ohne das bleibt er je nach Zeitpunkt schmal) */
+.stripe-embed, .stripe-embed > *, .stripe-embed iframe { display: block; width: 100% !important; min-width: 0; max-width: 100%; }

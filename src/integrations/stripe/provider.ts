@@ -23,6 +23,8 @@ export class StripePaymentProvider implements PaymentProvider {
     const session = await stripe().checkout.sessions.create(
       {
         mode: "payment",
+        // Preise, Rechnung und Rückerstattung laufen in CHF: keine automatische Umrechnung in die Währung des Gasts (Stripe «Adaptive Pricing», sonst je nach IP z. B. USD)
+        adaptive_pricing: { enabled: false },
         currency: "chf",
         line_items: [
           {
@@ -67,6 +69,8 @@ export class StripePaymentProvider implements PaymentProvider {
     const session = await stripe().checkout.sessions.create(
       {
         mode: "payment",
+        // Preise, Rechnung und Rückerstattung laufen in CHF: keine automatische Umrechnung in die Währung des Gasts (Stripe «Adaptive Pricing», sonst je nach IP z. B. USD)
+        adaptive_pricing: { enabled: false },
         currency: "chf",
         line_items: [{ quantity: 1, price_data: { currency: "chf", unit_amount: a.amountRappen, product_data: { name: a.description } } }],
         payment_intent_data: { application_fee_amount: a.feeRappen, metadata },

@@ -196,7 +196,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Webhooks für Portal-Buchungen (Channex) nicht enthalten.
 
 ## Stripe Checkout eingebettet (SPEC 19.25)
-- Vor dem Einschalten beim ersten Hotel: Testbuchung im Stripe-Testmodus (Karte 4242 und TWINT), prüfen ob `Stripe(pk, { stripeAccount })` mit Direct Charges den Rahmen lädt (in der Doku nicht ausdrücklich genannt).
+- [x] Testlauf im Stripe-Testmodus (20.11.2026, Karte 4242, Direct Charge auf Test-Konto, Webhook über smee): `Stripe(pk, { stripeAccount })` lädt den Rahmen, Zahlung bestätigt die Buchung (Webhook 200, Gebühr 1,9 %). Gefunden und behoben: Rahmen blieb je nach Zeitpunkt schmal (jetzt volle Breite per CSS); doppeltes Mounten im Entwicklungsmodus warf «multiple Embedded Checkout objects» (Aufbau jetzt nacheinander); Stripe bot per IP Zahlung in USD an (`adaptive_pricing: { enabled: false }` bei allen Zahlungs-Sessions). Noch offen: TWINT im Rahmen (Konto ohne TWINT getestet) und Apple Pay/Google Pay: Stripe verlangt dafür die Registrierung der Domain beim Hotel-Konto (Warnung «domain not registered»); ohne sie fehlen nur diese Express-Knöpfe, Karte funktioniert.
 - Branding des Stripe-Rahmens (Farbe, Schrift, Dunkelmodus) wird im Stripe-Dashboard des Hotels eingestellt; für Pontivo-eigene Hotels vorschlagen oder über Connect-Branding setzen?
 - [ ] Impressum: Betreiber ist die Lynxora GmbH, Konradstrasse 1, 8400 Winterthur (Standardwert im Code, überschreibbar mit `PLATFORM_OPERATOR`/`PLATFORM_ADDRESS`). UID (`PLATFORM_UID`) und MWST-Pflicht eintragen bzw. bestätigen; Hinweis auf Handelsregister/MWST steht bewusst nicht im Impressum, bis die Angaben vorliegen. Auf dem Server prüfen, dass `PLATFORM_OPERATOR`/`PLATFORM_ADDRESS` nicht mehr den alten Namen enthalten.
 
@@ -233,7 +233,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 
 ## KI-Einrichtung aus Website/PDF (SPEC 19.36)
 - Kosten je Lauf (geschätzt wenige Rappen mit Haiku, PDF teurer): `ai_usage`-artige Auswertung in Plattform-Verwaltung fehlt, die Token-Zähler stehen in `setup_imports`. Limits (3 je Monat, 100 je Tag gesamt) sind Annahmen.
-- Inhalte fremder Websites (Texte, Beschreibungen) können urheberrechtlich geschützt sein: der Betrieb übernimmt nur Texte seiner eigenen Website. Hinweis in den Bedingungen für Gastgeber ergänzen.
+- Inhalte fremder Websites (Texte, Beschreibungen) können urheberrechtlich geschützt sein: der Betrieb übernimmt nur Texte seiner eigenen Website. Hinweis in den Bedingungen für Gastgeber: ergänzt am 20.11.2026 (Ziffer 9, Version 2026-11-20); juristisch prüfen lassen, insbesondere die Freistellung und das vorläufige Offline-Nehmen.
 - Websites, die erst im Browser aufgebaut werden (JavaScript), liefern zu wenig Text; dafür das PDF verwenden. Kein Browser-Rendering vorgesehen (Kosten, Sicherheit).
 - Noch nicht übernommen: Preise, Extras, Fotos, Tarife. Fotos von der alten Website zu übernehmen wäre ein eigener Schritt (Urheberrecht, Grösse).
 

@@ -64,6 +64,7 @@ describe("Stripe Checkout eingebettet (SPEC 19.25)", () => {
     expect(j.checkout_url).toBeUndefined();
     const p = created[0].params as Record<string, unknown>;
     expect(p.ui_mode).toBe("embedded_page");
+    expect((p as { adaptive_pricing?: { enabled?: boolean } }).adaptive_pricing).toEqual({ enabled: false }); // keine Umrechnung in Gast-Währung
     expect(String(p.return_url)).toContain("/b/");
     expect(p.success_url).toBeUndefined();
     expect(p.cancel_url).toBeUndefined();

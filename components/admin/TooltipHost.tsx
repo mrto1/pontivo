@@ -71,11 +71,11 @@ export function TooltipHost() {
 
   if (!tip) return null;
   return (
-    <div ref={box} className={`tip${tip.tone ? ` tip-${tip.tone}` : ""}`} role="tooltip" style={{ visibility: "hidden", left: 0, top: 0 }}>
-      {tip.title ? <div className="tip-title">{tip.title}</div> : null}
+    <div ref={box} className={`tt${tip.tone ? ` tt-${tip.tone}` : ""}`} role="tooltip" style={{ visibility: "hidden", left: 0, top: 0 }}>
+      {tip.title ? <div className="tt-title">{tip.title}</div> : null}
       {tip.rows.map((r, i) => r.value
-        ? <div key={i} className={`tip-row${i === 0 ? " tip-main" : ""}`}><span>{r.label}</span><strong>{r.value}</strong></div>
-        : <div key={i} className="tip-text">{r.label}</div>)}
+        ? <div key={i} className={`tt-row${i === 0 ? " tt-main" : ""}`}><span>{r.label}</span><strong>{r.value}</strong></div>
+        : <div key={i} className="tt-text">{r.label}</div>)}
     </div>
   );
 }
