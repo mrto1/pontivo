@@ -37,13 +37,6 @@ export const SITE_FIELDS: SiteField[] = [
     "default": "Gespräch vereinbaren"
   },
   {
-    "key": "hero.trust",
-    "group": "Kopfbereich",
-    "label": "Vertrauenszeile unter den Knöpfen",
-    "multiline": false,
-    "default": "🇨🇭 Gehostet in der Schweiz: Server und Datenbank bei Infomaniak in Genf"
-  },
-  {
     "key": "bausteine.title",
     "group": "Angebot (drei Wege)",
     "label": "Baukasten: Überschrift",
@@ -426,7 +419,7 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "Fusszeile",
     "label": "Zeile",
     "multiline": false,
-    "default": "Direktbuchung für Hotels und Ferienwohnungen in der Schweiz · Hosting in der Schweiz"
+    "default": "Direktbuchung für Hotels und Ferienwohnungen in der Schweiz · Server und Datenbank bei Infomaniak in Genf"
   }
 ];
 

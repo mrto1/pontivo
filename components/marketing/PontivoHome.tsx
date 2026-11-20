@@ -2,7 +2,7 @@ import s from "./marketing.module.css";
 import { DEFAULT_PLATFORM_FEE_BPS } from "@/src/domain/fee";
 import { SavingsCalculator } from "./SavingsCalculator";
 import { BridgeBand, Bausteine } from "./Modules";
-import { display, body, Logo } from "./Chrome";
+import { display, body, Logo, SwissFlag } from "./Chrome";
 import { ScrollEffects } from "./ScrollEffects";
 import { resolveSite, type ResolvedSite } from "@/src/domain/pontivo-site";
 
@@ -65,7 +65,6 @@ export function PontivoHome({ contact, site: siteIn, account, children }: { cont
               </>)}
               {contact.demoUrl && !st ? <a className={s.btnGhost} href={contact.demoUrl}>Demo-Hotel ansehen</a> : null}
             </div>
-            <p className={s.heroTrust}>{site.text("hero.trust")}</p>
           </div>
 
           <figure className={s.receipt} aria-label={`Beispiel: Buchung über CHF ${fmt(BOOKING)}`}>
@@ -167,7 +166,7 @@ export function PontivoHome({ contact, site: siteIn, account, children }: { cont
 
         <footer className={s.foot}>
           <span>© {new Date().getFullYear()} {contact.name}</span>
-          <span>{site.text("foot.tagline")}</span>
+          <span className={s.hosting}><SwissFlag /> {site.text("foot.tagline")}</span>
           <nav className={s.footLinks} aria-label="Rechtliches">
             {st ? null : <a href="/mypontivo/login">{account ? "myPontivo" : "Anmelden"}</a>}
             <a href={pageHref("/impressum", st)}>Impressum</a>

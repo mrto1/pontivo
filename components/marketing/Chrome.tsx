@@ -16,6 +16,16 @@ export function Logo() {
   );
 }
 
+/** Schweizer Flagge als Grafik: Flaggen-Emoji erscheinen unter Windows nur als Buchstaben «CH» */
+export function SwissFlag() {
+  return (
+    <svg className={s.flag} viewBox="0 0 32 32" role="img" aria-label="Schweiz">
+      <rect width="32" height="32" rx="4" fill="#d52b1e" />
+      <path d="M13 6h6v7h7v6h-7v7h-6v-7H6v-6h7z" fill="#fff" />
+    </svg>
+  );
+}
+
 /** Rahmen der Plattform-Unterseiten (Registrieren, Eignung, Rechtliches): gleiche Kopfzeile, Farben und Schrift wie die Startseite */
 export async function PlatformFrame({ children, hideSignup, narrow }: { children: React.ReactNode; hideSignup?: boolean; narrow?: boolean }) {
   const st = process.env.STATIC_SITE === "1";
@@ -37,6 +47,7 @@ export async function PlatformFrame({ children, hideSignup, narrow }: { children
         {children}
         <footer className={s.foot}>
           <span>© {new Date().getFullYear()} {name}</span>
+          <span className={s.hosting}><SwissFlag /> Gehostet in der Schweiz</span>
           <nav className={s.footLinks} aria-label="Rechtliches">
             <a href={st ? "impressum.html" : "/impressum"}>Impressum</a>
             <a href={st ? "datenschutz.html" : "/datenschutz"}>Datenschutz</a>

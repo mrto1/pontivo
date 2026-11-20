@@ -53,7 +53,6 @@
 /* ---------- Hero ---------- */
 .hero { display: grid; grid-template-columns: 1fr minmax(380px, 460px); gap: 56px; align-items: center; padding: 48px 0 72px; }
 .heroTitle { font-family: var(--pv-display), sans-serif; font-weight: 800; font-size: clamp(2.4rem, 5.2vw, 4.1rem); line-height: 1.02; letter-spacing: -0.035em; margin: 0 0 22px; font-variation-settings: "wdth" 85; }
-.heroTrust { margin: 18px 0 0; font-size: .95rem; color: var(--pv-quiet); }
 .heroLead { font-size: 1.2rem; color: var(--pv-quiet); max-width: 42ch; margin: 0 0 30px; }
 .heroActions { display: flex; gap: 14px; flex-wrap: wrap; }
 
@@ -157,6 +156,8 @@
   .calc, .contact { padding: 26px; }
   .section { padding: 56px 0; }
 }
+.hosting { display: inline-flex; align-items: center; gap: 8px; }
+.flag { width: 18px; height: 18px; flex: none; }
 .footLinks { display: flex; gap: 16px; flex-wrap: wrap; }
 .footLinks a { color: inherit; }
 
