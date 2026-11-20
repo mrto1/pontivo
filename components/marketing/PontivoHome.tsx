@@ -3,6 +3,7 @@ import { DEFAULT_PLATFORM_FEE_BPS } from "@/src/domain/fee";
 import { SavingsCalculator } from "./SavingsCalculator";
 import { BridgeBand, Bausteine } from "./Modules";
 import { display, body, Logo } from "./Chrome";
+import { ScrollEffects } from "./ScrollEffects";
 import { resolveSite, type ResolvedSite } from "@/src/domain/pontivo-site";
 
 /** Gebühr pro Direktbuchung in Prozent (Standard für neue Hotels, siehe hotels.platform_fee_bps) */
@@ -34,7 +35,8 @@ export function PontivoHome({ contact, site: siteIn, account, children }: { cont
   const signup = st ? mail : "/registrieren";
 
   return (
-    <div className={`${s.page} ${display.variable} ${body.variable}`}>
+    <div className={`${s.page} ${display.variable} ${body.variable}`} data-pv-page>
+      <ScrollEffects />
       <div className={s.heroImg} aria-hidden="true" />
       <div className={s.wrap}>
         <header className={s.head}>

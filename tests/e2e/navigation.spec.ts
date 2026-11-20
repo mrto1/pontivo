@@ -18,7 +18,7 @@ test("Startseite: Anmelden, angemeldet «Zu <Betrieb>», im Admin myPontivo und 
   await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
 
   await page.goto("/");
-  const to = page.getByRole("link", { name: `Zu ${h.hotel.name}` });
+  const to = page.getByRole("link", { name: "myPontivo", exact: true }).first();
   await expect(to).toBeVisible();
   await to.click();
   await expect(page).toHaveURL(new RegExp(`/admin/${h.hotel.id}`));
