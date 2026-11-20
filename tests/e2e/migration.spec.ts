@@ -20,7 +20,7 @@ test("Datenübernahme: prüfen, importieren, rückgängig", async ({ page, conte
   const csv = (...l: string[]) => Buffer.from([head, ...l].join("\n"));
   const row = (ref: string, type = "Doppelzimmer") => `${ref};${d(20)};${d(22)};${type};;2;0;Anna;Muster;;;de;300.00;0;bestaetigt;`;
 
-  await page.goto(`/admin/${h.hotel.id}/migration`);
+  await page.goto(`/mypontivo/${h.hotel.id}/migration`);
   await expect(page.getByRole("heading", { name: "Datenübernahme" })).toBeVisible();
 
   // fehlerhafte Datei: Zimmertyp unbekannt → kein Import-Knopf
@@ -43,12 +43,12 @@ test("Datenübernahme: prüfen, importieren, rückgängig", async ({ page, conte
   await expect(page.getByRole("heading", { name: "Umschalt-Checkliste" })).toBeVisible();
   await expect(page.locator("ol > li")).toHaveCount(7);
   await expect(page.getByRole("button", { name: /Umschalten: Parallelbetrieb beenden/ })).toBeDisabled();
-  await page.goto(`/admin/${h.hotel.id}/migration?job=${new URL(page.url()).searchParams.get("job") ?? ""}`);
+  await page.goto(`/mypontivo/${h.hotel.id}/migration?job=${new URL(page.url()).searchParams.get("job") ?? ""}`);
   await page.getByRole("link", { name: /alt\.csv/ }).first().click();
   await page.getByRole("button", { name: "Import rückgängig machen" }).click();
   await expect(page.locator("#bericht")).toContainText("2 Buchungen entfernt");
 
-  const zip = await page.request.get(`/admin/${h.hotel.id}/migration/export`);
+  const zip = await page.request.get(`/mypontivo/${h.hotel.id}/migration/export`);
   expect(zip.status()).toBe(200);
   expect(zip.headers()["content-type"]).toBe("application/zip");
 });

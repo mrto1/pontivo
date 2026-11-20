@@ -78,7 +78,7 @@ export function InvoiceSheet({ hotel, v }: { hotel: Hotel; v: InvoiceView }) {
           <table style={{ width: "auto" }}><tbody>{v.payments.map((p, i) => <tr key={i}><td>{formatDay(p.date, "de")}</td><td>{p.label}</td><td className="n">{formatChf(p.amountRappen)}</td></tr>)}</tbody></table>
         </>
       ) : null}
-      {!credit ? <p style={{ marginTop: 8 }}><strong>{v.openRappen > 0 ? `Offener Betrag CHF ${formatChf(v.openRappen)}` : "Der Betrag ist vollständig bezahlt. Vielen Dank."}</strong></p> : null}
+      {!credit ? <p style={{ marginTop: 8 }}><strong>{v.openRappen > 0 ? `Offener Betrag ${formatChf(v.openRappen)}` : "Der Betrag ist vollständig bezahlt. Vielen Dank."}</strong></p> : null}
       {inv.note ? <p>{inv.note}</p> : null}
       {set.footer ? <p className="muted">{set.footer}</p> : null}
 
@@ -90,13 +90,13 @@ export function InvoiceSheet({ hotel, v }: { hotel: Hotel; v: InvoiceView }) {
             <p>{account.replace(/(.{4})/g, "$1 ").trim()}<br />{hotel.name}<br />{hotel.addressLine}<br />{hotel.postalCode} {hotel.city}</p>
             {qrRef ? <><div className="lbl">Referenz</div><p>{qrRef}</p></> : null}
             {r.name || r.company ? <><div className="lbl">Zahlbar durch</div><p>{r.company || r.name}<br />{r.street}<br />{r.zip} {r.city}</p></> : null}
-            <div className="lbl">Währung / Betrag</div><p>CHF {formatChf(v.openRappen)}</p>
+            <div className="lbl">Währung / Betrag</div><p>{formatChf(v.openRappen)}</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "51mm 1fr", gap: "5mm" }}>
             <div>
               <h4>Zahlteil</h4>
               <div className="qr" dangerouslySetInnerHTML={{ __html: v.qrSvg }} />
-              <div className="lbl">Währung / Betrag</div><p>CHF {formatChf(v.openRappen)}</p>
+              <div className="lbl">Währung / Betrag</div><p>{formatChf(v.openRappen)}</p>
             </div>
             <div>
               <div className="lbl" style={{ marginTop: 8 }}>Konto / Zahlbar an</div>

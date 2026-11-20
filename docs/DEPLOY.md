@@ -87,7 +87,7 @@ docker compose --env-file .env.production -f docker-compose.prod.yml logs -f app
 docker compose --env-file .env.production -f docker-compose.prod.yml exec app node --import tsx scripts/create-admin.ts du@pontivo.ch "Vorname Name"
 ```
 
-Dann auf https://pontivo.ch/admin/login anmelden (Login-Link per E-Mail, dafür braucht es Postmark).
+Dann auf https://pontivo.ch/mypontivo/login anmelden (Login-Link per E-Mail, dafür braucht es Postmark).
 
 ## 6b. Bot-Schutz (Cloudflare Turnstile)
 1. Kostenloses Konto auf https://dash.cloudflare.com anlegen (die Domain muss nicht bei Cloudflare liegen), links «Turnstile», «Add widget».

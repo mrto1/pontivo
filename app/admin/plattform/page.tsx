@@ -82,7 +82,7 @@ export default async function Plattform({ searchParams }: { searchParams: Promis
   const { hotels, users } = await platformOverview();
   return (
     <main className="wrap admin-main">
-      <p><a href="/admin">← Übersicht</a></p>
+      <p><a href="/mypontivo">← Übersicht</a></p>
       <h1>Plattform-Verwaltung</h1>
       <p><a className="btn secondary small" href="/admin/plattform/website">Texte der Pontivo-Website bearbeiten</a></p>
       <p className="muted">Nur für Pontivo-Admins. Löschen ist endgültig und nimmt alle Daten mit (Buchungen, Rechnungen, Gäste, Mails). Zur Bestätigung den Namen bzw. die E-Mail eintippen.</p>
@@ -97,7 +97,7 @@ export default async function Plattform({ searchParams }: { searchParams: Promis
         <tbody>
           {hotels.map((h) => (
             <tr key={h.id}>
-              <td><a href={`/admin/${h.id}`}>{h.name}</a></td>
+              <td><a href={`/mypontivo/${h.id}`}>{h.name}</a></td>
               <td>
                 {h.status}
                 {h.status === "live" || h.status === "paused" ? (

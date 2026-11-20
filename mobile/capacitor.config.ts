@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
   appName: "myPontivo",
   webDir: "www",
   server: {
-    url: "https://pontivo.ch/admin",
+    url: "https://pontivo.ch/mypontivo",
     cleartext: false,
     // Nur die eigene Domain im App-Fenster; alles andere öffnet im Browser
     allowNavigation: ["pontivo.ch", "*.pontivo.ch"],

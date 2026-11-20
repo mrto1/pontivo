@@ -60,7 +60,7 @@ async function register(f: FormData) {
 export default async function Register({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   if (await getHotelByHost((await headers()).get("host"))) redirect("/");
   // Wer angemeldet ist, registriert sich nicht neu: weiterer Betrieb im selben Konto
-  if (await currentUserId()) redirect("/admin/neu");
+  if (await currentUserId()) redirect("/mypontivo/neu");
   const sp = await searchParams;
   return (
     <PlatformFrame hideSignup>
@@ -109,7 +109,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
           {turnstileEnabled() ? <Turnstile siteKey={env().TURNSTILE_SITE_KEY!} /> : null}
           <label className="check"><input type="checkbox" name="terms" required /><span>Ich akzeptiere die <a href="/gastgeber-bedingungen" target="_blank">Bedingungen für Gastgeber</a> ({feePercentText()} %, mindestens CHF 19 pro Monat).</span></label>
           <button className="btn">Registrieren und Login-Link erhalten</button>
-          <p className="small muted">Schon registriert? <a href="/admin/login">Anmelden</a></p>
+          <p className="small muted">Schon registriert? <a href="/mypontivo/login">Anmelden</a></p>
         </form>
       </div>
     </main>

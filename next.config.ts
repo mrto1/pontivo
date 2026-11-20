@@ -24,7 +24,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      { source: "/mypontivo/:path*", headers: adminHeaders },
       { source: "/admin/:path*", headers: adminHeaders },
+    ];
+  },
+  // Alte Adressen (E-Mail-Links, Lesezeichen, Push) führen weiter. Nur /admin/plattform bleibt unter /admin.
+  async redirects() {
+    return [
+      { source: "/admin", destination: "/mypontivo", permanent: true },
+      { source: "/admin/:path((?!plattform(?:/|$)).*)", destination: "/mypontivo/:path", permanent: true },
     ];
   },
 };

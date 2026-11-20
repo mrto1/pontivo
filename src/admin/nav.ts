@@ -26,7 +26,7 @@ export function adminNav(hotel: { id: string; slug: string; primaryDomain: strin
 }
 
 function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null }): Nav {
-  const base = `/admin/${hotel.id}`;
+  const base = `/mypontivo/${hotel.id}`;
   const link = (key: string, label: string, path = key): NavItem => ({ key, label, href: `${base}/${path}` });
   return {
     primary: [

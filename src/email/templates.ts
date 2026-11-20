@@ -359,7 +359,7 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
     case "offer_accepted":
       return wrap(c, l, de ? `Angebot ${c.data.seq} angenommen: ${c.data.title}` : `Offer ${c.data.seq} accepted: ${c.data.title}`,
         [de ? `${c.data.name} (${c.data.email}) hat das Angebot angenommen. ${c.data.reservations} Raumreservation(en) wurden angelegt (Angebote vor Ort).` : `${c.data.name} (${c.data.email}) accepted the offer. ${c.data.reservations} room reservation(s) were created.`, String(c.data.note ?? "")],
-        [], { href: `${env().APP_BASE_URL}/admin/${c.hotel.id}/inquiries`, label: de ? "Zu den Anfragen" : "Open requests" });
+        [], { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/inquiries`, label: de ? "Zu den Anfragen" : "Open requests" });
     case "offer_declined":
       return wrap(c, l, de ? `Angebot ${c.data.seq} abgelehnt: ${c.data.title}` : `Offer ${c.data.seq} declined: ${c.data.title}`,
         [de ? `${c.data.name} hat das Angebot abgelehnt.` : `${c.data.name} declined the offer.`, String(c.data.note ?? "")]);
@@ -374,23 +374,23 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
     case "host_welcome": {
       const admin = env().APP_BASE_URL;
       return wrap(c, l, de ? `Willkommen bei ${env().PLATFORM_NAME} – so geht es weiter` : `Welcome to ${env().PLATFORM_NAME} – next steps`,
-        de ? [`Guten Tag ${c.data.contactName ?? ""}`.trim() + ",", `schön, dass ${c.hotel.name} dabei ist. Der Einrichtungs-Assistent führt Sie in etwa 20 Minuten durch alles: Angaben, Kurtaxe, ${c.hotel.propertyType === "hotel" || c.hotel.propertyType === "bnb" ? "Zimmer" : "Unterkunft"}, Preise, Fotos und Zahlungen. Sie können jederzeit unterbrechen und später weitermachen.${c.data.mode === "booking_only" ? " Ihre eigene Website bleibt bestehen – am Schluss zeigen wir Ihnen, wie Sie den Link zur Buchung einbauen." : ""}`, "Der Knopf unten meldet Sie direkt an (der Link ist einmalig und 15 Minuten gültig). Später fordern Sie unter /admin/login jederzeit einen neuen an."]
+        de ? [`Guten Tag ${c.data.contactName ?? ""}`.trim() + ",", `schön, dass ${c.hotel.name} dabei ist. Der Einrichtungs-Assistent führt Sie in etwa 20 Minuten durch alles: Angaben, Kurtaxe, ${c.hotel.propertyType === "hotel" || c.hotel.propertyType === "bnb" ? "Zimmer" : "Unterkunft"}, Preise, Fotos und Zahlungen. Sie können jederzeit unterbrechen und später weitermachen.${c.data.mode === "booking_only" ? " Ihre eigene Website bleibt bestehen – am Schluss zeigen wir Ihnen, wie Sie den Link zur Buchung einbauen." : ""}`, "Der Knopf unten meldet Sie direkt an (der Link ist einmalig und 15 Minuten gültig). Später fordern Sie unter /mypontivo/login jederzeit einen neuen an."]
           : [`Hello ${c.data.contactName ?? ""}`.trim() + ",", `great to have ${c.hotel.name} on board. The setup assistant guides you through everything in about 20 minutes. You can stop at any time and continue later.`],
-        [], { href: (c.data.link as string | undefined) ?? `${admin}/admin/${c.hotel.id}/einrichten`, label: de ? "Anmelden und einrichten" : "Sign in and set up" });
+        [], { href: (c.data.link as string | undefined) ?? `${admin}/mypontivo/${c.hotel.id}/einrichten`, label: de ? "Anmelden und einrichten" : "Sign in and set up" });
     }
     case "host_onboarding_reminder": {
       const open = (c.data.openSteps as string[] | undefined) ?? [];
       return wrap(c, l, de ? `${c.hotel.name}: Ihre Einrichtung ist fast fertig` : `${c.hotel.name}: your setup is almost done`,
         de ? ["Guten Tag,", `Ihre Einrichtung bei ${env().PLATFORM_NAME} ist noch nicht abgeschlossen. Es fehlen noch: ${open.join(", ") || "nur noch das Live-Schalten"}.`, "Bei Fragen antworten Sie einfach auf diese E-Mail."]
           : ["Hello,", `your setup is not finished yet. Still open: ${open.join(", ") || "going live"}.`, "Just reply to this email if you have questions."],
-        [], { href: `${env().APP_BASE_URL}/admin/${c.hotel.id}/einrichten`, label: de ? "Einrichtung fortsetzen" : "Continue setup" });
+        [], { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/einrichten`, label: de ? "Einrichtung fortsetzen" : "Continue setup" });
     }
     case "host_live":
       if (c.hotel.content.brand?.mode === "booking_only") {
         return wrap(c, l, de ? `Die Buchung für ${c.hotel.name} ist online` : `Booking for ${c.hotel.name} is live`,
           de ? ["Gratulation!", "Gäste können jetzt direkt bei Ihnen buchen und mit TWINT oder Karte bezahlen.", "Letzter Schritt: auf Ihrer Website einen Link oder Knopf «Buchen» einbauen. Im Assistenten finden Sie den Link und den Code zum Kopieren – oder schicken Sie ihn an Ihre Webagentur."]
             : ["Congratulations!", "Guests can now book directly with you. Last step: add a booking link or button to your website."],
-          [], { href: `${env().APP_BASE_URL}/admin/${c.hotel.id}/einrichten?step=einbinden`, label: de ? "Link und Code ansehen" : "Get link and code" });
+          [], { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/einrichten?step=einbinden`, label: de ? "Link und Code ansehen" : "Get link and code" });
       }
       return wrap(c, l, de ? `${c.hotel.name} ist online` : `${c.hotel.name} is online`,
         de ? ["Gratulation!", "Ihre Website mit Online-Buchung ist jetzt erreichbar. Gäste können direkt buchen und mit TWINT oder Karte bezahlen.", "Tipps für die ersten Buchungen: Link auf Ihrer bisherigen Website, im Google-Unternehmensprofil und in Ihrer E-Mail-Signatur einfügen. Stammgäste persönlich auf die Direktbuchung hinweisen."]
@@ -419,13 +419,13 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
       return wrap(c, l, de ? `${env().PLATFORM_NAME}: Zahlung fehlgeschlagen` : `${env().PLATFORM_NAME}: payment failed`,
         de ? ["Guten Tag,", `die Abrechnung für ${d.month} (${d.amount}) konnte nicht von Ihrer Karte abgebucht werden. ${d.last ? "Das war der letzte automatische Versuch." : "Wir versuchen es in drei Tagen erneut."} Bitte hinterlegen Sie im Admin eine gültige Karte.`]
           : ["Hello,", `the statement for ${d.month} (${d.amount}) could not be charged to your card. Please add a valid card in the admin.`],
-        [], { href: `${env().APP_BASE_URL}/admin/${c.hotel.id}/settings#karte`, label: de ? "Karte erneuern" : "Update card" });
+        [], { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/settings#karte`, label: de ? "Karte erneuern" : "Update card" });
     }
     case "platform_onboarding_alert": {
       const d = c.data as Record<string, unknown>;
       return wrap(c, "de", `[Pontivo] Nachfassen: ${d.hotel}`,
         [`${d.hotel} (${d.propertyType}, ${d.email}) braucht Unterstützung${Number(d.days) ? ` – Einrichtung seit ${d.days} Tagen offen` : ""}.`, `Offen: ${((d.openSteps as string[]) ?? []).join(", ")}`],
-        [], { href: `${env().APP_BASE_URL}/admin/${c.hotel.id}/einrichten`, label: "Im Admin ansehen" });
+        [], { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/einrichten`, label: "Im Admin ansehen" });
     }
     case "channex_alert":
       return wrap(c, l, `[Channex] ${String(c.data.subject)}${c.data.hotel ? ` – ${c.data.hotel}` : ""}`,

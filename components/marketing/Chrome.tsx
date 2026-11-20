@@ -29,7 +29,7 @@ export async function PlatformFrame({ children, hideSignup, narrow }: { children
           <a className={s.logo} href={home}><Logo />{name}</a>
           {st ? null : (
             <nav className={s.headLinks} aria-label="Hauptnavigation">
-              <a className={s.loginLink} href="/admin/login">{a ? a.label : "Anmelden"}</a>
+              <a className={s.loginLink} href="/mypontivo/login">{a ? a.label : "Anmelden"}</a>
               {a || hideSignup ? null : <a className={s.btn} href="/registrieren">Registrieren</a>}
             </nav>
           )}

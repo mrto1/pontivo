@@ -74,8 +74,8 @@ describe("Airbnb verbinden (Channex OAuth-Link)", () => {
     expect(link).toMatchObject({
       group_id: GROUP,
       properties: [PROPERTY],
-      redirect_uri: `http://localhost:3000/admin/${hotel.id}/channex/airbnb/return`,
-      failure_redirect_uri: `http://localhost:3000/admin/${hotel.id}/channex/airbnb/return`,
+      redirect_uri: `http://localhost:3000/mypontivo/${hotel.id}/channex/airbnb/return`,
+      failure_redirect_uri: `http://localhost:3000/mypontivo/${hotel.id}/channex/airbnb/return`,
       settings: { min_stay_type: "Arrival" },
     });
     expect(link.channel_id).toBeUndefined();

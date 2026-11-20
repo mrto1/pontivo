@@ -36,7 +36,7 @@ const realSender: PushSender = async (target, payload) => {
 
 /** Mitteilung einreihen (in der Transaktion des Ereignisses). Pro Hotel und Ereignis nur einmal. */
 export async function enqueuePush(ex: Executor, hotelId: string, dedupeKey: string, p: Omit<PushPayload, "tag">) {
-  if (!p.url.startsWith("/admin/")) throw new Error("Push-Link muss auf /admin/ zeigen");
+  if (!p.url.startsWith("/mypontivo/")) throw new Error("Push-Link muss auf /mypontivo/ zeigen");
   await ex.insert(pushOutbox).values({ hotelId, dedupeKey, title: p.title, body: p.body.slice(0, 200), url: p.url }).onConflictDoNothing();
 }
 
@@ -52,7 +52,7 @@ export async function pushForBooking(ex: Executor, hotelId: string, bookingId: s
     cancelled: { title: "Buchung storniert", body: what },
     overbooking: { title: "Überbuchung – bitte sofort prüfen", body: what },
   }[kind];
-  await enqueuePush(ex, hotelId, `booking_${kind}:${bookingId}`, { ...text, url: `/admin/${hotelId}/bookings/${bookingId}` });
+  await enqueuePush(ex, hotelId, `booking_${kind}:${bookingId}`, { ...text, url: `/mypontivo/${hotelId}/bookings/${bookingId}` });
 }
 
 // ---------------------------------------------------------------- Geräte

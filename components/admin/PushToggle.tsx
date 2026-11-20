@@ -17,7 +17,7 @@ export function PushToggle({ hotelId }: { hotelId: string }) {
   const api = `/api/admin/hotels/${hotelId}/push`;
 
   async function registration() {
-    return (await navigator.serviceWorker.getRegistration("/admin/")) ?? navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/", updateViaCache: "none" });
+    return (await navigator.serviceWorker.getRegistration("/mypontivo/")) ?? navigator.serviceWorker.register("/mypontivo/sw.js", { scope: "/mypontivo/", updateViaCache: "none" });
   }
 
   useEffect(() => {

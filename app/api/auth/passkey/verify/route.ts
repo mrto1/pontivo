@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   // Aktive Authenticator-App gilt für jeden Anmeldeweg: erst der Code, dann die Sitzung
   const mfa = await hasTotp(userId);
   const res = NextResponse.json({ ok: true, mfa });
-  if (mfa) res.cookies.set(MFA_COOKIE, signShort({ u: userId }, 300), { httpOnly: true, sameSite: "lax", secure: env().APP_BASE_URL.startsWith("https://"), path: "/admin/login", maxAge: 300 });
+  if (mfa) res.cookies.set(MFA_COOKIE, signShort({ u: userId }, 300), { httpOnly: true, sameSite: "lax", secure: env().APP_BASE_URL.startsWith("https://"), path: "/mypontivo/login", maxAge: 300 });
   else res.cookies.set(SESSION_COOKIE, createSessionValue(userId), sessionCookieOptions());
   res.cookies.delete({ name: WEBAUTHN_COOKIE, path: "/api" });
   return res;

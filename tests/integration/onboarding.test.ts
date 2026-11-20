@@ -94,7 +94,7 @@ describe("Selbst-Registrierung und Einrichtung", () => {
 
     // Foto und Karte (Fake: Setup-Session sofort abgeschlossen)
     await db().update(hotels).set({ content: { ...h.content, photos: [{ url: `/media/${h.id}/abcdefghijklmnop.jpg` }] } }).where(eq(hotels.id, h.id));
-    const url = await startCardSetup(await fresh(h.id), `/admin/${h.id}/einrichten?step=karte`);
+    const url = await startCardSetup(await fresh(h.id), `/mypontivo/${h.id}/einrichten?step=karte`);
     const sessionId = new URL(url).searchParams.get("session_id")!;
     await expect(finishCardSetup(await fresh(h.id), "fake_setup_other", "t")).rejects.toThrow();
     expect((await finishCardSetup(await fresh(h.id), sessionId, "t")).label).toContain("4242");

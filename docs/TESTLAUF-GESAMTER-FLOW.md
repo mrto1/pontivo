@@ -13,7 +13,7 @@ Du bist ein fremder Gastgeber, der Pontivo zum ersten Mal sieht. Benutze dafür 
 2. Registrieren: **Was vermieten Sie?** (z. B. Hotel), **Brauchen Sie eine Website?** «Ja, Website mit Buchung», Name des Betriebs, Kanton, Gemeinde, dein Name, E-Mail, Haken bei den Bedingungen. **Erwartet:** Danke-Seite.
 3. Mail abwarten. **Erwartet:** Willkommensmail mit Login-Link (Absender buchung@… oder info@pontivo.ch); in Spam prüfen. Link öffnen. **Erwartet:** du landest direkt im Admin, im Assistenten «Einrichten».
 4. Nach 1–2 Tagen (optional): Erinnerungsmail, wenn du nicht weitergemacht hast.
-5. **Schon angemeldet?** `/registrieren` öffnen, während du im Admin eingeloggt bist. **Erwartet:** Weiterleitung auf «Weiteren Betrieb anlegen» (`/admin/neu`), kein neues Konto.
+5. **Schon angemeldet?** `/registrieren` öffnen, während du im Admin eingeloggt bist. **Erwartet:** Weiterleitung auf «Weiteren Betrieb anlegen» (`/mypontivo/neu`), kein neues Konto.
 6. **Bekannte E-Mail:** abgemeldet mit derselben E-Mail nochmals registrieren. **Erwartet:** dieselbe Danke-Seite, du bekommst nur einen Login-Link; es entsteht kein zweiter Betrieb und kein zweites Konto.
 7. Absichtlich falsch: Registrierung ohne Haken bei den Bedingungen oder mit leerer E-Mail. **Erwartet:** verständliche Fehlermeldung, nichts angelegt.
 

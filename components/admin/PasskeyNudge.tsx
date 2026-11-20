@@ -10,7 +10,7 @@ export function PasskeyNudge() {
   if (!show) return null;
   return (
     <p className="notice small" data-testid="passkey-nudge">
-      Schneller und sicherer anmelden: <a href="/admin/konto">Passkey einrichten</a> (Fingerabdruck oder Gesicht statt E-Mail-Link).{" "}
+      Schneller und sicherer anmelden: <a href="/mypontivo/konto">Passkey einrichten</a> (Fingerabdruck oder Gesicht statt E-Mail-Link).{" "}
       <button type="button" className="linklike" onClick={() => { try { localStorage.setItem("pk-nudge", "off"); } catch { /* egal */ } setShow(false); }}>Nicht mehr anzeigen</button>
     </p>
   );

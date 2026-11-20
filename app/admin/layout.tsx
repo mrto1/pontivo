@@ -1,28 +1,9 @@
-import type { Metadata, Viewport } from "next";
-import { PwaRegister } from "@/components/admin/PwaRegister";
+import type { Metadata } from "next";
 
-// Admin als installierbare Web-App (PWA). Manifest, Icon und Service Worker gelten nur unter /admin,
-// die Hotel-Websites sind davon nicht betroffen.
-export const metadata: Metadata = {
-  applicationName: "myPontivo",
-  manifest: "/admin/manifest.webmanifest",
-  icons: { icon: "/admin/pwa-icon/192", apple: "/admin/pwa-icon/180" },
-  appleWebApp: { capable: true, title: "myPontivo", statusBarStyle: "default" },
-};
+// Nur der übergeordnete Plattform-Admin (/admin/plattform) liegt noch unter /admin. Er ist nirgends verlinkt.
+// Die Hotel-Oberfläche heisst myPontivo und liegt unter /mypontivo.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#131c2e" },
-  ],
-  viewportFit: "cover",
-};
-
-export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="pv-admin">
-      {children}
-      <PwaRegister />
-    </div>
-  );
+export default function PlatformAdminLayout({ children }: { children: React.ReactNode }) {
+  return <div className="pv-admin">{children}</div>;
 }

@@ -10,7 +10,7 @@ export function assetLinks(pkg?: string, sha256?: string) {
 
 export function appleSiteAssociation(team?: string, bundle?: string) {
   if (!team || !bundle) return { applinks: { details: [] } };
-  return { applinks: { details: [{ appIDs: [`${team}.${bundle}`], components: [{ "/": "/admin/*" }] }] } };
+  return { applinks: { details: [{ appIDs: [`${team}.${bundle}`], components: [{ "/": "/mypontivo/*" }] }] } };
 }
 
 /** Kennzeichnung der App-Hülle im User-Agent (in mobile/capacitor.config.ts gesetzt) */

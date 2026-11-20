@@ -168,7 +168,7 @@ export async function markUpsellPaid(orderId: string, p: { sessionId: string | n
     // Bestätigung an den Gast ist eine Transaktions-Mail (Bestellung), keine Werbung
     if (g?.email) await enqueueEmail(tx, { hotelId: h.id, bookingId: b.id, template: "upsell_paid", to: g.email, language: b.language, data });
     await enqueueEmail(tx, { hotelId: h.id, bookingId: b.id, template: "hotel_upsell_sold", to: h.contactEmail, language: h.defaultLanguage, data });
-    await enqueuePush(tx, h.id, `upsell:${o.id}`, { title: "Extras verkauft", body: `${formatChf(o.amountRappen)} – ${b.reference}`, url: `/admin/${h.id}/upsell` });
+    await enqueuePush(tx, h.id, `upsell:${o.id}`, { title: "Extras verkauft", body: `${formatChf(o.amountRappen)} – ${b.reference}`, url: `/mypontivo/${h.id}/upsell` });
     await audit(tx, { hotelId: h.id, actor: "payment", action: "upsell.paid", entity: "upsell_order", entityId: o.id, details: { amount: o.amountRappen, fee: o.feeRappen, bookingId: b.id } });
   });
 }

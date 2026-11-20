@@ -150,7 +150,19 @@ describe("Sicherheits-Kopfzeilen", () => {
     expect(securityHeaders.some((h) => h.key === "X-Frame-Options")).toBe(false);
     expect(adminHeaders).toContainEqual({ key: "X-Frame-Options", value: "DENY" });
     const rules = await nextConfig.headers!();
-    expect(rules.map((r) => r.source)).toEqual(["/:path*", "/admin/:path*"]);
+    expect(rules.map((r) => r.source)).toEqual(["/:path*", "/mypontivo/:path*", "/admin/:path*"]);
     expect(nextConfig.poweredByHeader).toBe(false);
+  });
+});
+
+describe("Adressen /mypontivo und /admin", () => {
+  it("alte /admin-Adressen führen nach /mypontivo, nur /admin/plattform bleibt", async () => {
+    const r = await nextConfig.redirects!();
+    expect(r).toContainEqual({ source: "/admin", destination: "/mypontivo", permanent: true });
+    const rx = new RegExp(`^${r[1].source.replace("/:path((?!plattform(?:/|$)).*)", "/((?!plattform(?:/|$)).*)")}$`);
+    expect(rx.test("/admin/abc/calendar")).toBe(true);
+    expect(rx.test("/admin/login")).toBe(true);
+    expect(rx.test("/admin/plattform")).toBe(false);
+    expect(rx.test("/admin/plattform/website")).toBe(false);
   });
 });

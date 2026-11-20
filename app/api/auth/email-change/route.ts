@@ -9,5 +9,5 @@ export async function GET(req: Request) {
   const token = new URL(req.url).searchParams.get("token") ?? "";
   const done = token ? await confirmEmailChange(token) : null;
   const base = env().APP_BASE_URL;
-  return NextResponse.redirect(done ? `${base}/admin/login?emailchanged=1` : `${base}/admin/login?error=link`);
+  return NextResponse.redirect(done ? `${base}/mypontivo/login?emailchanged=1` : `${base}/mypontivo/login?error=link`);
 }

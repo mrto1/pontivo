@@ -59,7 +59,7 @@ Hotels bekommen eine Website mit Direktbuchung. Der Gast bucht, zahlt mit TWINT,
 ```
 /app                     Next.js (öffentliche Seiten, Buchung, Admin)
   /(public)/[locale]/    Website, Suche, Buchung, Buchungsansicht per Token
-  /admin/                Admin-Bereich (geschützt)
+  /mypontivo/                Admin-Bereich (geschützt)
   /api/                  Route Handlers (Webhooks, öffentliche API)
 /src/domain/             reine Logik ohne I/O: pricing, availability, cancellation, state machine
 /src/db/                 Drizzle-Schema, Queries, Transaktionen
@@ -76,7 +76,7 @@ schema.sql, SPEC.md, QUESTIONS.md
 ## 3. Mandanten und Routing
 
 - Öffentliche Seiten: Hotel über den `Host`-Header (`hotels.primary_domain`) bestimmen. Fallback für Entwicklung und Vorschau: `/h/<slug>/...`.
-- Admin unter `/admin`, Hotelwahl über Mitgliedschaft (`hotel_members`). Rollen: `owner` (alles), `manager` (alles ausser Mitglieder und Stripe), `staff` (Kalender lesen, Buchungen lesen, Check-in).
+- Admin unter `/mypontivo`, Hotelwahl über Mitgliedschaft (`hotel_members`). Rollen: `owner` (alles), `manager` (alles ausser Mitglieder und Stripe), `staff` (Kalender lesen, Buchungen lesen, Check-in).
 - Plattform-Admins (`users.is_platform_admin`) sehen alle Hotels und können Hotels anlegen.
 
 ---
@@ -331,7 +331,7 @@ Rate-Limit für öffentliche POST-Routen (z. B. 10 pro Minute und IP). Alle Eing
 ---
 
 ### 9b. Mehrere Betriebe pro Konto
-Ein Benutzer kann Mitglied mehrerer Betriebe sein (`hotel_members`). `/admin` zeigt ab zwei Betrieben (und für Plattform-Admins) eine Übersicht mit Anreisen/Abreisen heute, Gästen im Haus, neuen Anfragen, Buchungen und Umsatz des Monats; im Betrieb gibt es «Betrieb wechseln». `/admin/neu` legt für Inhaber einen weiteren Betrieb im selben Konto an (eigene Bedingungen, Mindestgebühr, Stripe, Abrechnung je Betrieb, ohne neuen Login-Link). Alle Zahlen werden je `hotel_id` aus den zugänglichen Betrieben gebildet. Abnahme: `tests/integration/portfolio.test.ts`.
+Ein Benutzer kann Mitglied mehrerer Betriebe sein (`hotel_members`). `/mypontivo` zeigt ab zwei Betrieben (und für Plattform-Admins) eine Übersicht mit Anreisen/Abreisen heute, Gästen im Haus, neuen Anfragen, Buchungen und Umsatz des Monats; im Betrieb gibt es «Betrieb wechseln». `/mypontivo/neu` legt für Inhaber einen weiteren Betrieb im selben Konto an (eigene Bedingungen, Mindestgebühr, Stripe, Abrechnung je Betrieb, ohne neuen Login-Link). Alle Zahlen werden je `hotel_id` aus den zugänglichen Betrieben gebildet. Abnahme: `tests/integration/portfolio.test.ts`.
 
 ## 10. E-Mails
 
@@ -531,7 +531,7 @@ Das Hotel erfasst Zusatzangebote (`upsell_items`: Name/Beschreibung DE/EN, Preis
 Alles wird aus den vorhandenen Hotel-Daten erzeugt, pro Hotel automatisch, ohne Hotel-spezifischen Code:
 
 - **`/sitemap.xml`**: alle veröffentlichten Seiten in allen Sprachen mit `hreflang` und `x-default`, `lastmod` aus der Seite.
-- **`/robots.txt`**: Suchmaschinen und KI-Crawler dürfen alles Öffentliche lesen; gesperrt sind `/admin`, `/api/`, `/b/` (persönliche Buchungslinks), `/v/`, `/vorschau`. Verweis auf die Sitemap (nur bei Hotel-Domain).
+- **`/robots.txt`**: Suchmaschinen und KI-Crawler dürfen alles Öffentliche lesen; gesperrt sind `/mypontivo`, `/api/`, `/b/` (persönliche Buchungslinks), `/v/`, `/vorschau`. Verweis auf die Sitemap (nur bei Hotel-Domain).
 - **`/llms.txt`** (llmstxt.org): Zusammenfassung in der Hauptsprache des Hotels: Fakten (Adresse, Kontakt, Check-in/-out, Sprachen, Zahlarten, Fakten-Bausteine), Zimmer mit Belegung und «ab»-Preis der nächsten 12 Monate, Direktbuchungs-Link, FAQ, Textbausteine, Seiten, weitere Sprachen. Nur veröffentlichte Inhalte.
 - **Strukturdaten** (schema.org JSON-LD): zusätzlich zu Hotel, FAQ, Restaurant jetzt `containsPlace` (HotelRoom mit Belegung, Beschreibung, Bild) und `potentialAction` (ReserveAction mit Buchungs-URL).
 - **`canonical`** pro Seite (Vorschau-Adresse `/h/<slug>` verweist auf die Hotel-Domain).
@@ -573,7 +573,7 @@ Freigegeben am 14.11.2026. Alles modular (16.1), additiv zum bestehenden Bestand
 - **Unveränderlich:** Entwurf ist änderbar (Empfänger, Zeilen), «Ausstellen» vergibt die Nummer und sperrt. Korrektur nur per **Gutschrift** (eigene Nummer, negative Beträge).
 - MWST: Preise sind Bruttopreise; MWST = Betrag × Satz / (10000 + Satz), pro Satz gerundet und ausgewiesen.
 - **QR-Rechnung** (Swiss Payment Standards) für offene Beträge: Zahlteil mit QR-Code, Konto = IBAN des Betriebs, Referenztyp `NON`, Rechnungsnummer unter «Zusätzliche Informationen». Nur wenn IBAN gesetzt und Betrag offen.
-- **Druckansicht** `/admin/<hotel>/invoices/<id>/print` (A4, Browser «Als PDF speichern»); Versand per Mail optional: Knopf auf der Rechnung oder automatisch beim Ausstellen; die Mail enthält den Link `/b/<token>/rechnung/<id>` (kein PDF-Anhang).
+- **Druckansicht** `/mypontivo/<hotel>/invoices/<id>/print` (A4, Browser «Als PDF speichern»); Versand per Mail optional: Knopf auf der Rechnung oder automatisch beim Ausstellen; die Mail enthält den Link `/b/<token>/rechnung/<id>` (kein PDF-Anhang).
 - **Zahlung vor Ort:** Eintrag in `onsite_payments`; schliesst eine offene Restzahlung (`balance_onsite_at` wie bisher) und die Rechnung. Rückbuchungen nur per Gutschrift/Erfassung eines negativen Betrags mit Notiz.
 - Admin: Reiter «Rechnungen» (Liste, Entwurf aus Buchung, Posten erfassen, Ausstellen, Gutschrift, Zahlung erfassen).
 - Nicht in Stufe A: Sammelrechnungen für Gruppen, Buchungen auf Firmenkonto, Mahnwesen, CAMT-Abgleich.
@@ -585,16 +585,16 @@ Reihenfolge: 17.1 Housekeeping, 17.2 Gäste-Notizen und Tags, 17.3 Berichte, 17.
 ### 17.1 Housekeeping (Modul `housekeeping`, braucht `frontdesk`, Standard aus)
 - `rooms.clean_status` (`dirty`/`clean`/`inspected`, Standard `clean`) mit Zeitpunkt und Bearbeiter; `housekeeping_tasks` (Zimmer, Tag, Art `checkout`/`stay`/`other`, offen/erledigt; eindeutig pro Zimmer/Tag/Art); `room_issues` (Mängelmeldungen, offen/erledigt).
 - Aufträge werden beim Öffnen der Seite für den Tag erzeugt (idempotent): Abreise heute → `checkout` und ein sauberes Zimmer wird «schmutzig»; optional Zwischenreinigung alle N Nächte (`hotels.content.housekeeping.stayEvery`, Standard 0 = aus).
-- Handy-Liste `/admin/<hotel>/housekeeping`: grosse Karten je Zimmer (schmutzig zuerst, dann Anreisen), Abreise/Anreise/belegt-Hinweis, Statuswechsel mit einem Tipp, Mangel melden, Extra-Auftrag. Status «sauber»/«geprüft» schliesst offene Aufträge. Keine Preise, keine Gästedaten ausser dem Namen.
+- Handy-Liste `/mypontivo/<hotel>/housekeeping`: grosse Karten je Zimmer (schmutzig zuerst, dann Anreisen), Abreise/Anreise/belegt-Hinweis, Statuswechsel mit einem Tipp, Mangel melden, Extra-Auftrag. Status «sauber»/«geprüft» schliesst offene Aufträge. Keine Preise, keine Gästedaten ausser dem Namen.
 - Jede Änderung im `audit_log`; jede Abfrage nach `hotel_id`.
 
 ### 17.2 Gäste-Notizen und Tags (Modul `guestnotes`, Standard aus)
 - `guest_profiles(hotel_id, email, note, tags[])`, eindeutig pro Betrieb und E-Mail (kleingeschrieben). Notiz höchstens 1000 Zeichen, höchstens 8 Tags zu je 24 Zeichen, Duplikate ohne Beachtung der Gross-/Kleinschreibung entfernt. Leere Notiz und keine Tags löscht den Eintrag.
-- Karte «Notiz zum Gast» auf der Buchung (Rolle staff). Seite «Kartei» (`/admin/<hotel>/guestbook`): Gäste mit Anzahl bestätigter Aufenthalte, letzter Anreise, Tags, Notiz; Suche über Name, E-Mail, Tag, Notiz; Filter nach Tag.
+- Karte «Notiz zum Gast» auf der Buchung (Rolle staff). Seite «Kartei» (`/mypontivo/<hotel>/guestbook`): Gäste mit Anzahl bestätigter Aufenthalte, letzter Anreise, Tags, Notiz; Suche über Name, E-Mail, Tag, Notiz; Filter nach Tag.
 - Im `audit_log` steht nur «geändert» mit Anzahl Tags, nie der Inhalt. Formular weist darauf hin, keine heiklen Daten zu notieren.
 
 ### 17.3 Statistik (Modul `statistics`, Standard an)
-- Seite `/admin/<hotel>/statistics` mit Zeitraum «Dieser Monat / Letzter Monat / Dieses Jahr / Letzte 12 Monate» (wie Übersicht). Kennzahlen: Belegung (verkaufte / verfügbare Zimmernächte), ADR (Zimmerumsatz / verkaufte Nächte), RevPAR (Zimmerumsatz / verfügbare Nächte), Zimmerumsatz; Tabellen nach Monat, Herkunft (Kanal) und Zimmertyp.
+- Seite `/mypontivo/<hotel>/statistics` mit Zeitraum «Dieser Monat / Letzter Monat / Dieses Jahr / Letzte 12 Monate» (wie Übersicht). Kennzahlen: Belegung (verkaufte / verfügbare Zimmernächte), ADR (Zimmerumsatz / verkaufte Nächte), RevPAR (Zimmerumsatz / verfügbare Nächte), Zimmerumsatz; Tabellen nach Monat, Herkunft (Kanal) und Zimmertyp.
 - Reine Logik `src/domain/stats.ts` (`computeStats`), Daten aus `booking_rooms.nightly_prices` bestätigter Buchungen (`src/services/statistics.ts`), jede Abfrage nach `hotel_id`.
 
 ### 17.4 Rollen pro Modul
@@ -606,7 +606,7 @@ Reihenfolge: 17.1 Housekeeping, 17.2 Gäste-Notizen und Tags, 17.3 Berichte, 17.
 ### 17.5 Mail-Vorlagen (Modul `mailtexts`, Standard an)
 - `hotels.content.mailTexts[mail][sprache] = { subject?, intro?, outro? }` für `booking_confirmed`, `pre_arrival`, `post_stay`, `balance_due`, `invoice_sent`. Betreff höchstens 120, Einleitung und Schluss je 600 Zeichen, reiner Text (beim Versand maskiert). Platzhalter `{name}`, `{hotel}`, `{reference}`.
 - `render()` fügt die Einleitung nach der Anrede und den Schluss nach den Absätzen ein; der Betreff ersetzt den Standardbetreff. Alles andere (Beträge, Daten, Links, Bedingungen) bleibt unverändert. Ohne eigene Texte unverändertes Verhalten.
-- Seite `/admin/<hotel>/mail-texte` (Manager): Reiter je Mail, Felder je Sprache des Betriebs, Vorschau mit Beispieldaten. Änderungen im `audit_log` (`mail.texts`).
+- Seite `/mypontivo/<hotel>/mail-texte` (Manager): Reiter je Mail, Felder je Sprache des Betriebs, Vorschau mit Beispieldaten. Änderungen im `audit_log` (`mail.texts`).
 
 ## 18. PMS Stufe C: Schweiz und Vernetzung
 
@@ -618,7 +618,7 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 - **Teilnehmer (Rooming-Liste):** Buchung über `createAdminBooking(..., { groupId })`; in derselben Transaktion wird pro Nacht ein Blockzimmer entnommen und danach normal reserviert, der Bestand bleibt gleich. Zeitraum innerhalb der Gruppenzeit. Rooming-Liste als CSV.
 - **Freigabe:** manuell oder täglich 04:05 für Blöcke mit Freigabefrist ≤ heute (`releaseDueGroups`); alle freien Blockzimmer gehen zurück in den Verkauf, Status `released`.
 - **Rechnung:** Entwürfe von Teilnehmer-Buchungen gehen an die Firma/Kontaktperson der Gruppe. Eine Sammelrechnung ist nicht Teil von 18.1.
-- Seiten `/admin/<hotel>/groups` (Liste, Neu) und `.../groups/<id>` (Block, Teilnehmer, Freigabe); Rolle Rezeption hat Zugang (Bereich `groups`).
+- Seiten `/mypontivo/<hotel>/groups` (Liste, Neu) und `.../groups/<id>` (Block, Teilnehmer, Freigabe); Rolle Rezeption hat Zugang (Bereich `groups`).
 
 ### 18.2 Kurtaxe-Quartalsabrechnung
 - Kurtaxe-Liste (14.5) zusätzlich pro Quartal (`YYYY-Qn`): `touristTaxQuarter` fasst die drei Monatslisten zusammen (Buchung über Monatsgrenzen einmal, Nächte summiert), Monatssummen darunter. Ansicht, CSV und Druck (mit Zeile für Ort/Datum/Unterschrift) unter Gäste → Kurtaxe-Liste, Umschalter Monat/Quartal; nur Manager; Export im `audit_log`.
@@ -626,7 +626,7 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 ### 18.3 Buchhaltung-Export (Modul `accountingexport`, braucht `invoicing`, Standard aus)
 - Allgemeines Buchungsjournal als CSV (Semikolon, UTF-8 mit BOM): Datum, Beleg, Text, Soll, Haben, Betrag, MWST-Satz, Referenz (`src/domain/accounting-export.ts`). Kein Format eines bestimmten Programms (bexio/Abacus-Format nicht belegt, siehe `QUESTIONS.md`).
 - Inhalt: ausgestellte Rechnungen und Gutschriften (Ausstelldatum; Ertrag netto je Konto und MWST-Satz, MWST getrennt, Kurtaxe auf eigenes Konto, Debitoren Soll), Zahlungen (Zahldatum): Stripe (netto nach Rückerstattung) und Zahlungen vor Ort je Zahlart. Negative Beträge: positiv mit vertauschten Konten.
-- Kontenzuordnung je Betrieb (`hotels.content.accounting.accounts`), Vorschlag nach Kontenrahmen KMU. Zeitraum Monat, Quartal oder Jahr. Seite `/admin/<hotel>/buchhaltung` (Vorschau, Konten, CSV); Export im `audit_log`; Rolle Buchhaltung hat Zugang (Bereich `accountingexport`).
+- Kontenzuordnung je Betrieb (`hotels.content.accounting.accounts`), Vorschlag nach Kontenrahmen KMU. Zeitraum Monat, Quartal oder Jahr. Seite `/mypontivo/<hotel>/buchhaltung` (Vorschau, Konten, CSV); Export im `audit_log`; Rolle Buchhaltung hat Zugang (Bereich `accountingexport`).
 
 ### 18.3a Abacus-Export (Teil von `accountingexport`)
 - Auf der Seite Buchhaltung zweiter Knopf «Für Abacus (FIBU ASCII Buchungen)»: gleiche Buchungen wie das allgemeine Journal (SPEC 18.3), ausgegeben nach der Abacus-Schnittstellenbeschreibung «FIBU – ASCII Buchungen», Version 2012.00, Mapping AbaDefault (`src/domain/abacus-export.ts`, 64 Felder in dokumentierter Reihenfolge). Je Zeile eine Einzelbuchung: Account = Soll, Account2 = Haben, DebitCredit `D`, ISO/ISO2 `CHF`, Belegnummer auf 10 Zeichen gekürzt, Text auf 80. MWST steht wie im Journal als eigene Buchung auf dem MWST-Konto (Steuermethode 0, keine Steuerfelder).
@@ -643,13 +643,13 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 ### 18.5 Zutritt mit Nuki (Modul `access`, braucht `frontdesk`, Standard aus)
 - Nuki Web API (Swagger 4.26.0), Token je Betrieb (verschlüsselt, `hotels.content.nuki`). Schlösser werden von Nuki geladen (`door_locks`) und einer Eingangstür (alle Gäste) oder einem Zimmer zugeordnet.
 - Je bestätigte Buchung ein Keypad-Code (Typ 13) pro Eingangstür und pro zugewiesenem Zimmer (`door_codes`, Code verschlüsselt), gültig von Check-in-Zeit bis Check-out-Zeit des Betriebs. Stündlicher Job: Codes 3 Tage vor Anreise erstellen; bei Storno zurückziehen; nach Abreise löschen. Fehler bleiben sichtbar (Status `error`) und lassen sich per Knopf wiederholen.
-- Seite `/admin/<hotel>/zutritt` (Inhaber/Manager: Token, Schlösser, Zuordnung); Karte «Zutritt» auf der Buchung (Code, Status, Gültigkeit, erstellen, zurückziehen). Codes erscheinen nicht in Gäste-Mails und nicht im KI-Prompt.
+- Seite `/mypontivo/<hotel>/zutritt` (Inhaber/Manager: Token, Schlösser, Zuordnung); Karte «Zutritt» auf der Buchung (Code, Status, Gültigkeit, erstellen, zurückziehen). Codes erscheinen nicht in Gäste-Mails und nicht im KI-Prompt.
 
 ### 18.6 Anmeldung: Passkey und Authenticator-App
-- **Passkey (WebAuthn, `@simplewebauthn`):** Anmeldung ohne E-Mail-Eingabe über «Mit Passkey anmelden» (auffindbare Anmeldedaten, Gerätesperre Pflicht). Verwaltung auf `/admin/konto` («Sicherheit»): hinzufügen, benennen, entfernen. Tabelle `user_passkeys`. Relying Party = Host von `APP_BASE_URL` (Passkeys gelten nur für diese Domain).
+- **Passkey (WebAuthn, `@simplewebauthn`):** Anmeldung ohne E-Mail-Eingabe über «Mit Passkey anmelden» (auffindbare Anmeldedaten, Gerätesperre Pflicht). Verwaltung auf `/mypontivo/konto` («Sicherheit»): hinzufügen, benennen, entfernen. Tabelle `user_passkeys`. Relying Party = Host von `APP_BASE_URL` (Passkeys gelten nur für diese Domain).
 - **Authenticator-App (TOTP, RFC 6238, optional, je Benutzer):** Einrichtung mit QR-Code und Bestätigungscode, danach 10 Wiederherstellungscodes (einmalig angezeigt, nur als Hash gespeichert). Geheimnis verschlüsselt (AES-256-GCM, wie 14.7). Ein Code gilt nur einmal (`last_step`), ±1 Schritt Toleranz.
 - **Anmeldewege:** Passkey und E-Mail-Link sind gleichwertig und beide standardmässig erlaubt. Die Login-Seite zeigt beide (Passkey auch als Autofill-Vorschlag im E-Mail-Feld), im Admin erinnert ein ausblendbarer Hinweis Konten ohne Passkey.
-- **2FA-Ablauf:** 2FA gilt als zusätzliche Stufe für jeden Anmeldeweg. E-Mail-Link oder Passkey mit aktiver 2FA → zweite Seite `/admin/login/2fa` (Code oder Wiederherstellungscode), erst danach Sitzung (Zwischenzustand: signiertes Cookie, 5 Minuten, höchstens 5 Versuche je Benutzer). Ausschalten, neue Wiederherstellungscodes nur mit gültigem Code.
+- **2FA-Ablauf:** 2FA gilt als zusätzliche Stufe für jeden Anmeldeweg. E-Mail-Link oder Passkey mit aktiver 2FA → zweite Seite `/mypontivo/login/2fa` (Code oder Wiederherstellungscode), erst danach Sitzung (Zwischenzustand: signiertes Cookie, 5 Minuten, höchstens 5 Versuche je Benutzer). Ausschalten, neue Wiederherstellungscodes nur mit gültigem Code.
 - **«Nur Passkey» (freiwillig, `users.email_login_disabled`):** schaltet die E-Mail-Link-Anmeldung für das Konto ab (kein Link, bereits ausgestellte Links ungültig). Nur mit mindestens 2 Passkeys einschaltbar; solange aktiv, darf die Zahl der Passkeys nicht unter 2 sinken.
 - Kein Zwang zu 2FA oder «Nur Passkey» in dieser Version (siehe QUESTIONS).
 
@@ -660,7 +660,7 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 - Nicht enthalten: Löschen oder Kündigen bei Stripe und Channex (separat).
 
 ### 18.8 Missbrauchsschutz für Registrierung und Login
-- **Cloudflare Turnstile** (Siteverify auf dem Server, Token einmalig, Hostname geprüft) auf `/registrieren` und `/admin/login`. Ohne `TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY` aus. Ist Cloudflare nicht erreichbar, wird nicht durchgelassen (fail-closed). Nicht auf Formularen hinter dem Login und nicht auf Gäste-Formularen auf fremden Domains: die kostenlose Turnstile-Stufe erlaubt höchstens 10 Hostnamen je Widget, Hotel-Domains lassen sich so nicht abdecken.
+- **Cloudflare Turnstile** (Siteverify auf dem Server, Token einmalig, Hostname geprüft) auf `/registrieren` und `/mypontivo/login`. Ohne `TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY` aus. Ist Cloudflare nicht erreichbar, wird nicht durchgelassen (fail-closed). Nicht auf Formularen hinter dem Login und nicht auf Gäste-Formularen auf fremden Domains: die kostenlose Turnstile-Stufe erlaubt höchstens 10 Hostnamen je Widget, Hotel-Domains lassen sich so nicht abdecken.
 - **Honeypot und Mindestzeit** (ohne Drittanbieter, `src/lib/form-guard.ts`, Komponente `FormGuard`): verstecktes Feld und signierter Zeitstempel (Registrierung 3 s, Login 1 s, Ablauf nach 2 Stunden). Honeypot: stille «Danke»-Antwort; zu schnell: Meldung «bitte nochmals absenden».
 - **Begrenzung in der Datenbank** (`rate_limits`, atomar, `src/lib/rate-limit-db.ts`): Registrierung je IP 5 pro 10 Minuten und je E-Mail 3 pro Stunde, Login-Link je IP 10 pro 10 Minuten und je Adresse 5 pro Stunde, 2FA-Versuche je Benutzer 5 pro 5 Minuten. E-Mail-Adressen stehen nur als Hash in der Tabelle. In Entwicklung und Tests ist die IP-Grenze 20-fach. Beim Login-Link bleibt die Antwort bei Überschreitung gleich («Link ist unterwegs»).
 - **E-Mail-Bestätigung:** `users.email_verified_at` wird beim Einlösen eines Anmelde-Links gesetzt. Ein Betrieb darf erst live gehen (`goLiveProblems`), wenn mindestens ein Inhaber bestätigt ist.
@@ -670,7 +670,7 @@ Reihenfolge: 18.1 Gruppen, 18.2 Kurtaxe-Quartalsabrechnung, 18.3 bexio/Abacus-Ex
 Die Texte der Pontivo-Startseite stehen als Standard im Code (`src/domain/pontivo-site.ts`). Der Plattform-Admin überschreibt sie unter `/admin/plattform/website`; Überschreibungen liegen in `platform_settings` (Schlüssel `site_texts`). Platzhalter: `{name}`, `{fee}`, `{emailTo}`. «Zurücksetzen» stellt den Standard wieder her.
 
 ### 18.10 Mein Konto (eigene Seite je Benutzer; «myPontivo» heisst der ganze Admin-Bereich)
-Namen: Die Kopfzeile des Admin zeigt «myPontivo · <Betrieb>», die App auf dem Startbildschirm heisst «myPontivo», der Link zur persönlichen Seite «Mein Konto». Seite `/admin/<hotelId>/mypontivo` ersetzt das frühere App-/Sicherheitsfeld im «Mehr»-Menü. Oben: eigene E-Mail-Adresse und Rolle. Bereiche: Webseite-Vorschau, Pontivo-App (Installation, Mitteilungen mit Erklärung), Sicherheit (Passkeys, Authenticator-App, «Nur Passkey»), Weiteres (Abmelden).
+Namen: Die Kopfzeile des Admin zeigt «myPontivo · <Betrieb>», die App auf dem Startbildschirm heisst «myPontivo», der Link zur persönlichen Seite «Mein Konto». Seite `/mypontivo/<hotelId>/mypontivo` ersetzt das frühere App-/Sicherheitsfeld im «Mehr»-Menü. Oben: eigene E-Mail-Adresse und Rolle. Bereiche: Webseite-Vorschau, Pontivo-App (Installation, Mitteilungen mit Erklärung), Sicherheit (Passkeys, Authenticator-App, «Nur Passkey»), Weiteres (Abmelden).
 E-Mail-Adresse ändern: Link (60 Minuten, einmalig) an die NEUE Adresse, Hinweis an die ALTE; mit aktiver Authenticator-App zusätzlich Code nötig; höchstens 3 Anträge pro Stunde; Wegwerf-Adressen gesperrt; ob die neue Adresse schon vergeben ist, wird nicht verraten. Nach Bestätigung gilt die neue Adresse als verifiziert, offene Login-Links sind ungültig. Tabelle `email_changes`.
 
 ### 18.11 Schutz der Gäste-Formulare auf Hotel-Websites
@@ -691,7 +691,7 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - Summen: Zahlungen vor Ort je Zahlungsart (Rückzahlungen negativ), Online-Zahlungen (Stripe, nach Rückerstattung, Tag in der Zeitzone des Betriebs), ausgestellte Rechnungen und Gutschriften mit Brutto und MWST je Satz.
 - Kassenzählung ist optional; Differenz = gezählt minus erwartet (nur Barzahlungen vor Ort).
 - **Sperre:** Auf einen abgeschlossenen Tag lassen sich keine Zahlungen vor Ort buchen und keine Rechnungen oder Gutschriften ausstellen (Datum = Tag des Abschlusses). Korrekturen auf den heutigen Tag (Gegenbuchung, Gutschrift). Frühere offene Tage bleiben buchbar. Zukünftige Tage lassen sich nicht abschliessen.
-- Seite `/admin/<hotel>/invoices/tagesabschluss` (Reiter «Tagesabschluss», Menüschlüssel `dayclose`, Rollen `staff` und eingeschränkt `reception`, `accounting`), Druckansicht über den Browser.
+- Seite `/mypontivo/<hotel>/invoices/tagesabschluss` (Reiter «Tagesabschluss», Menüschlüssel `dayclose`, Rollen `staff` und eingeschränkt `reception`, `accounting`), Druckansicht über den Browser.
 - ASSUMPTION: Pro Tag genau ein Abschluss; kein Zwang, frühere Tage zuerst abzuschliessen.
 
 ### 19.2 Bewertungen einholen (Modul `feedback`, Standard aus)
@@ -706,7 +706,7 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 - Preis = Basispreis × (1 + Summe der Zu-/Abschläge), auf ganze Franken gerundet, auf Minimum/Maximum begrenzt. Immer ab Basispreis, daher wiederholbar. Auslastung = gebucht / (Zimmer − gesperrt − extern gesperrt) des Zimmertyps der Nacht (`src/domain/pricing-rules.ts`).
 - Täglich (Job `pricing`, 03:30) und auf Knopfdruck werden Vorschläge für die nächsten 90 Nächte berechnet (`pricing_proposals`, Status offen/übernommen/verworfen) mit einem Satz Begründung. Nächte ohne Preis oder mit Verkaufsstopp werden übersprungen. Verworfene Vorschläge kommen mit gleichem Preis nicht wieder.
 - Übernehmen läuft über `updateRatesBatch` (Preis im Kalender, `channex_outbox` und `audit_log` in einer Transaktion). Nichts ändert sich ohne Bestätigung, ausser die Regel hat «automatisch übernehmen»; dann nur innerhalb Minimum/Maximum (wird beim Übernehmen nochmals geprüft).
-- Seite `/admin/<hotel>/preise` (Reiter «Preisempfehlung» beim Kalender, Menüschlüssel `pricing`), Änderungen Rolle `manager`.
+- Seite `/mypontivo/<hotel>/preise` (Reiter «Preisempfehlung» beim Kalender, Menüschlüssel `pricing`), Änderungen Rolle `manager`.
 - Die KI-Preisempfehlung bleibt ein eigenes, kostenpflichtiges Zusatzmodul (`ai_pricing`, später).
 - ASSUMPTION: Preise je Tarif und Nacht, keine Berücksichtigung von Personenpreisen oder Mindestaufenthalt; Konkurrenzpreise folgen nicht.
 
@@ -734,40 +734,40 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 
 ### 19.7 Debitoren (Modul `debtors`, Standard aus, braucht `invoicing`)
 - **Firmenkunden** (`companies`: Name, Adresse, MWST-Nr., E-Mail für Rechnungen, eigene Zahlungsfrist, aktiv). Eine Buchung wird in der Buchung einer Firma zugeordnet (`bookings.company_id`), solange keine gültige Rechnung ausgestellt ist. Die Rechnung (`invoices.company_id`) geht dann an die Firma; Fälligkeit = Ausstellung + Firmenfrist, sonst Standardfrist der Rechnungseinstellungen.
-- **Offene Rechnungen:** ausgestellte, nicht gutgeschriebene Rechnungen mit Restbetrag > 0 (Rechnungstotal minus Online- und Vor-Ort-Zahlungen der Buchung, wie in der Rechnungsansicht). Alterung: nicht fällig, 1–30, 31–60, über 60 Tage. Seite `/admin/<hotel>/invoices/debitoren` (Reiter «Debitoren», Menüschlüssel `debtors`, Rolle `staff` und eingeschränkt `accounting`).
+- **Offene Rechnungen:** ausgestellte, nicht gutgeschriebene Rechnungen mit Restbetrag > 0 (Rechnungstotal minus Online- und Vor-Ort-Zahlungen der Buchung, wie in der Rechnungsansicht). Alterung: nicht fällig, 1–30, 31–60, über 60 Tage. Seite `/mypontivo/<hotel>/invoices/debitoren` (Reiter «Debitoren», Menüschlüssel `debtors`, Rolle `staff` und eingeschränkt `accounting`).
 - **Zahlungseingang:** Teil- oder Ganzzahlung zur Rechnung wird als Zahlung vor Ort mit Art «Überweisung» auf die Buchung gebucht (gleiche Regeln: Tagesabschluss-Sperre; liegt das Valuta in einem abgeschlossenen Tag, gilt heute und das Valuta steht in der Notiz).
 - **Bankdatei camt.054** (ISO 20022): Gutschriften (CRDT) mit Betrag, Buchungsdatum und QR-Referenz (`CdtrRefInf/Ref`) werden über die Referenz der Rechnungsnummer (`qrReference`) zugeordnet und verbucht. Jeder Eintrag nur einmal (`bank_entries`, eindeutig je Bankreferenz). Nicht zuordenbare Einträge werden gemeldet und nicht gespeichert (ein späterer Import versucht es erneut).
 - **Mahnwesen:** Stufen Zahlungserinnerung (ab 5 Tagen nach Fälligkeit), 1. Mahnung (ab 20), 2. Mahnung (ab 35). Nur der Reihe nach, nur auf Knopfdruck, nur wenn offen. Mail `dunning` in fünf Sprachen mit Link zur Rechnung an die Adresse der Rechnung (sonst des Gastes); je Stufe ein Eintrag in `invoice_dunnings`, Audit `invoice.dunning`.
 - ASSUMPTION: Keine Mahngebühren und keine automatische Mahnung (Haus entscheidet je Fall). Fristen der Stufen fest. camt.054-Felder nach ISO-20022-Standard (nicht gegen eine Bankdatei geprüft; mit der ersten echten Datei testen). Keine Mehrfachzahlung über mehrere Rechnungen; keine Sammelrechnung mehrerer Buchungen (QUESTIONS.md).
 
 ### 19.8 HESTA-Auswertung (Teil von Modul `statistics`)
-- Seite `/admin/<hotel>/statistics/hesta` (Reiter «HESTA» bei der Statistik, Menüschlüssel `hesta`, Rolle `staff` und `accounting`) mit Monatsauswahl (Standard: Vormonat) und CSV (`.../hesta/csv?month=JJJJ-MM`, Audit `hesta.export`).
+- Seite `/mypontivo/<hotel>/statistics/hesta` (Reiter «HESTA» bei der Statistik, Menüschlüssel `hesta`, Rolle `staff` und `accounting`) mit Monatsauswahl (Standard: Vormonat) und CSV (`.../hesta/csv?month=JJJJ-MM`, Audit `hesta.export`).
 - Inhalt: Zimmer, Betten (Summe der Höchstbelegung je Zimmertyp), verfügbare und belegte Zimmernächte, Zimmerauslastung; Ankünfte (Anreise im Monat) und Logiernächte (Nächte im Monat, auch über den Monatswechsel) je Herkunftsland (`src/domain/hesta.ts`, `src/services/hesta.ts`).
 - Herkunftsland = Nationalität aus der Gästemeldung (`guest_registrations`); Personen ohne Meldung (Erwachsene + Kinder der Buchung minus gemeldete) stehen unter «Land unbekannt». Nur bestätigte Buchungen.
 - Keine Übermittlung an das BFS: Die Zahlen werden im BFS-Portal (eHESTA) erfasst. Eine technische Schnittstelle ist nicht öffentlich dokumentiert; es wurde nichts erfunden (QUESTIONS.md).
 - ASSUMPTION: Betten = Höchstbelegung der Zimmertypen (Zusatzbetten, gesperrte Zimmer und Saisonbetrieb nicht berücksichtigt); die genauen Variablen und Gliederung (z. B. Herkunft nach BFS-Ländergruppen) liefert das BFS in der Wegleitung.
 
 ### 19.9 Posteingang (Modul `inbox`, Standard aus, braucht `channex`)
-- Gästenachrichten von Booking.com, Airbnb und Expedia über die Channex-App «Messages» (Doku: docs.channex.io, Messages Collection; die App muss an der Property installiert sein und kostet bei Channex extra). Seite `/admin/<hotel>/inbox` (Reiter «Posteingang» unter Gäste, Menüschlüssel `inbox`, Rolle `staff` und `reception`).
+- Gästenachrichten von Booking.com, Airbnb und Expedia über die Channex-App «Messages» (Doku: docs.channex.io, Messages Collection; die App muss an der Property installiert sein und kostet bei Channex extra). Seite `/mypontivo/<hotel>/inbox` (Reiter «Posteingang» unter Gäste, Menüschlüssel `inbox`, Rolle `staff` und `reception`).
 - **Eingang:** Webhook `/api/webhooks/channex/messages` (Ereignisse `message`, `message_thread_booking_assigned`, signiert wie SPEC 7.3, `send_data=true`; `scripts/channex-webhook.ts` legt ihn an). Betrieb über `property_id` ↔ `hotels.channex_property_id`; unbekannte Betriebe werden ignoriert. Speicherung idempotent je (Thread, Nachrichten-Id). Buchungszuordnung über `bookings.channex_booking_id`.
 - **Mitteilung** (Push) bei jeder Gästenachricht ohne Namen und Text (nur Portal). Ungelesen-Zähler je Unterhaltung; Öffnen setzt auf gelesen.
 - **Antworten und Abschliessen** über die Channex-API (`POST /message_threads/{id}/messages`, `/close`); Fehler werden angezeigt, nichts wird lokal als gesendet gespeichert. Audit `inbox.reply`, `inbox.close`. Eine neue Gästenachricht öffnet eine abgeschlossene Unterhaltung wieder.
 - ASSUMPTION: Webhook-Feldnamen (`payload.message_thread_id`, `payload.id`, `payload.message`, `payload.sender`) nach Channex-Doku, nicht gegen Staging geprüft; Absender «guest» = Gast, alles andere = Hotel. Anhänge werden nur gezählt, nicht angezeigt. Kein Nachladen des Verlaufs vor der Aktivierung, keine Übersetzung, keine Vorlagen.
 
 ### 19.10 Eigentümerabrechnung (Modul `owners`, Standard aus, braucht `invoicing`)
-- Für Verwalter von Ferienwohnungen. **Eigentümer** (`owners`: Name, E-Mail, Kommission des Hauses in Prozent, Objekte = Zimmertypen, aktiv). Ein Objekt gehört höchstens einem aktiven Eigentümer. Seite `/admin/<hotel>/owners` (Reiter «Eigentümer» bei den Rechnungen, Menüschlüssel `owners`, Rolle `staff` zum Ansehen, `manager` zum Ändern, eingeschränkt `accounting`).
+- Für Verwalter von Ferienwohnungen. **Eigentümer** (`owners`: Name, E-Mail, Kommission des Hauses in Prozent, Objekte = Zimmertypen, aktiv). Ein Objekt gehört höchstens einem aktiven Eigentümer. Seite `/mypontivo/<hotel>/owners` (Reiter «Eigentümer» bei den Rechnungen, Menüschlüssel `owners`, Rolle `staff` zum Ansehen, `manager` zum Ändern, eingeschränkt `accounting`).
 - **Abrechnung je Monat** (`src/domain/owners.ts`, `src/services/owners.ts`): Umsatz = Übernachtungspreise (`booking_rooms.nightly_prices`) bestätigter Buchungen für die Objekte des Eigentümers, Nächte im Monat. Kommission = Umsatz × Satz (gerundet auf Rappen). Kosten = manuell erfasste Posten (`owner_costs`, Beschreibung, Betrag). Auszahlung = Umsatz − Kommission − Kosten (kann negativ sein).
-- **Ausgabe:** Druckansicht `/admin/<hotel>/owners/<eigentümer>/<JJJJ-MM>` (Browser «Drucken» → PDF) und Mail `owner_statement` an die Adresse des Eigentümers, je Monat einmal; der versendete Stand wird gespeichert (`owner_statements`). Audit `owner.*`.
+- **Ausgabe:** Druckansicht `/mypontivo/<hotel>/owners/<eigentümer>/<JJJJ-MM>` (Browser «Drucken» → PDF) und Mail `owner_statement` an die Adresse des Eigentümers, je Monat einmal; der versendete Stand wird gespeichert (`owner_statements`). Audit `owner.*`.
 - ASSUMPTION: Umsatz ohne Kurtaxe, Zusatzleistungen und MWST-Ausweis; Stornierte Buchungen zählen nicht; kein Eigentümer-Login (Lesezugang für Eigentümer) und kein automatischer Monatsversand in V1, kein PDF-Anhang (QUESTIONS.md).
 
 ### 19.11 Angebote vor Ort (Modul `resources`, Standard aus, braucht `invoicing`)
-- Buchbare Ressourcen wie Wellness, Sauna, Seminarraum, Tennisplatz. **Angebot** (`resources`: Name, Art, Plätze je Zeitfenster, Länge des Zeitfensters 15 bis 480 Minuten, Öffnungszeit, Preis je Zeitfenster, Preis pro Person ja/nein, MWST-Art, aktiv). Seite `/admin/<hotel>/resources` (Reiter «Angebote vor Ort» bei den Buchungen, Menüschlüssel `resources`, Rolle `reception` zum Buchen, `manager` zum Einrichten).
+- Buchbare Ressourcen wie Wellness, Sauna, Seminarraum, Tennisplatz. **Angebot** (`resources`: Name, Art, Plätze je Zeitfenster, Länge des Zeitfensters 15 bis 480 Minuten, Öffnungszeit, Preis je Zeitfenster, Preis pro Person ja/nein, MWST-Art, aktiv). Seite `/mypontivo/<hotel>/resources` (Reiter «Angebote vor Ort» bei den Buchungen, Menüschlüssel `resources`, Rolle `reception` zum Buchen, `manager` zum Einrichten).
 - **Buchung** (`resource_bookings`): Tag, Von/Bis im Raster der Zeitfenster innerhalb der Öffnungszeit, Personen. Freie Plätze = Plätze minus höchste gleichzeitige Belegung; die Ressource wird in der Transaktion gesperrt, damit nichts überbucht wird. Seminarräume (`kind = seminar`) sind exklusiv: eine Buchung belegt den ganzen Raum.
 - **Posten aufs Zimmer:** Mit der Buchungsnummer eines bestätigten Hausgasts wird der Preis als Posten (`folio_items`) gebucht und erscheint auf der Rechnung. Stornieren löscht den Posten, solange er nicht auf einer Rechnung steht (sonst Gutschrift). Ohne Buchungsnummer (Tagesgast) wird nur die Reservation gespeichert; die Zahlung läuft über die Kasse.
 - ASSUMPTION: Nur Rezeption und Admin buchen (keine Online-Buchung durch Gäste, kein Wartelisten- oder Wiederholungs-Mechanismus; Seminarangebot als PDF: siehe 19.21); Preis je Zeitfenster gilt für alle Tage gleich (QUESTIONS.md).
 
 ### 19.12 Newsletter (Modul `marketing`, Standard aus)
-- Mail an Gäste, die bei der Buchung dem Newsletter zugestimmt haben (`guests.marketing_consent`). Seite `/admin/<hotel>/marketing` (Reiter «Newsletter» bei den Gästen, Menüschlüssel `marketing`, Rolle `manager`).
+- Mail an Gäste, die bei der Buchung dem Newsletter zugestimmt haben (`guests.marketing_consent`). Seite `/mypontivo/<hotel>/marketing` (Reiter «Newsletter» bei den Gästen, Menüschlüssel `marketing`, Rolle `manager`).
 - **Auswahl** (`src/domain/newsletter.ts`): Sprache, Stichwort aus der Gästekartei, Aufenthalt (Abreise ab Datum), Mindestzahl Aufenthalte; alle Bedingungen gelten gemeinsam. Eine Adresse zählt einmal je Betrieb (Gross-/Kleinschreibung egal).
 - **Entwurf → Testmail → Versand** (`newsletters`, Status `draft|sent`). Der Versand läuft über die E-Mail-Outbox (`newsletter`), Empfänger zum Zeitpunkt des Versands, nur einmal (Statuswechsel atomar). Audit `newsletter.*`.
 - **Abmeldung** (DSG/UWG): jede Mail hat einen Abmeldelink `/abmelden?h&e&t` mit HMAC über Betrieb und E-Mail (`AUTH_SECRET`). Der Link zeigt nur einen Knopf, erst der Klick widerruft die Einwilligung für alle Gästeeinträge dieser E-Mail im Betrieb.
@@ -785,7 +785,7 @@ Freigegeben am 15.11.2026. Reihenfolge laut Entscheid: zuerst die fehlenden Funk
 
 ### 19.15 Kassen-Schnittstelle PosBridge (Modul `posbridge`, Standard aus, braucht `invoicing`)
 - Wer seine Restaurantkasse behält, bucht Posten aufs Zimmer: `POST /api/v1/folio-items` (JSON) mit Header `Authorization: Bearer pnt_…`. Felder: `room_number` **oder** `booking_reference`, `description`, `quantity` (Standard 1, nicht 0), `unit_price_rappen` (ganze Rappen, negativ = Gutschrift), `vat` (`standard`|`stay`|`none`, Standard `standard`), `external_id` (Beleg-ID der Kasse). Der Posten erscheint als `folio_items` in der Hotelrechnung (SPEC 16.3).
-- **Schlüssel** je Betrieb (`api_keys`), Seite `/admin/<hotel>/posbridge` (Reiter «Kassen-Schnittstelle» unter «Verbinden», Rolle `owner`). Klartext nur einmal bei der Erstellung sichtbar, gespeichert wird nur der SHA-256-Hash; widerrufbar; «zuletzt benutzt». Das Hotel kommt immer aus dem Schlüssel, nie aus der Anfrage. Höchstens 120 Anfragen pro Minute und Schlüssel (429).
+- **Schlüssel** je Betrieb (`api_keys`), Seite `/mypontivo/<hotel>/posbridge` (Reiter «Kassen-Schnittstelle» unter «Verbinden», Rolle `owner`). Klartext nur einmal bei der Erstellung sichtbar, gespeichert wird nur der SHA-256-Hash; widerrufbar; «zuletzt benutzt». Das Hotel kommt immer aus dem Schlüssel, nie aus der Anfrage. Höchstens 120 Anfragen pro Minute und Schlüssel (429).
 - **Zimmernummer:** Gast im Haus (Anreise bis vor Abreise, berücksichtigt Zimmerwechsel über `room_stays`); gibt es keinen, der am Abreisetag. Mehrere Treffer → 409 `ambiguous` (dann `booking_reference` senden), keiner → 404. Nur bestätigte Buchungen.
 - **Idempotent** über `external_id` (eindeutig je Betrieb): gleiche Anfrage → 200 mit `duplicate: true`, nichts doppelt; gleiche ID mit anderem Inhalt oder anderer Buchung → 409 `conflict`. Neu → 201. Audit `folio.add` mit Akteur `api:<Schlüssel>`.
 - ASSUMPTION: Posten auf einer schon ausgestellten Rechnung erscheinen erst in einer neuen Rechnung bzw. nach Gutschrift und Neuausstellung (wie von Hand erfasste Posten); keine Webhooks zurück an die Kasse, kein Abruf des Zimmerstands und keine Stornierung über die API (Gutschrift = negativer Posten mit neuer `external_id`). Welche Kassen zuerst angebunden werden, ist offen (QUESTIONS.md).
@@ -800,18 +800,18 @@ Grundlage: `docs/PMS-ERSATZ.md` 5.3 (Treuhänder-/Kassenvorgaben). Diese Stufe: 
 - **Tagesabschluss:** `closeDay` mit gezähltem Bargeld; Z-Bericht (Summen je Zahlart und MWST-Satz, erwartetes Bargeld, Differenz) unveränderbar; ein Tag nur einmal. Bons mit geschlossenem Geschäftstag zählen am nächsten offenen Tag (`late`). Gerätezeit nur, wenn plausibel (höchstens 60 s in der Zukunft, jünger als 7 Tage). Export CSV je Zeitraum.
 - ASSUMPTION: Karte/TWINT ist in V1 vom Personal bestätigt (keine Terminal-Anbindung); Barverkäufe sind nicht Teil von `onsite_payments`. Offene Punkte für den Treuhänder: Nummernkreis je Gerät, MWST-Sätze je Posten, Art. 70 MWSTG, kantonale Vorgaben.
 
-- **Oberfläche (Stufe C):** Menüpunkt «Restaurant» (Reiter Tische, Artikel, Kassenabschluss) unter «Mein Betrieb». Tische mit offenen Bestellungen, Bestellung (Artikel, Menge, im Haus/Take-away), Bezahlen mit Mengenwahl je Zeile (Getrennt-Zahlen), Zahlart, Trinkgeld, Buchungsnummer für «aufs Zimmer». Rabatt, Storno, Gegenbon, Artikelstamm, Tische, Geräte, Kassenabschluss und CSV-Export nur Rolle `manager` oder höher; Seiten `/admin/<hotel>/restaurant/...`. Die Weboberfläche bucht über das Gerät `W1`.
+- **Oberfläche (Stufe C):** Menüpunkt «Restaurant» (Reiter Tische, Artikel, Kassenabschluss) unter «Mein Betrieb». Tische mit offenen Bestellungen, Bestellung (Artikel, Menge, im Haus/Take-away), Bezahlen mit Mengenwahl je Zeile (Getrennt-Zahlen), Zahlart, Trinkgeld, Buchungsnummer für «aufs Zimmer». Rabatt, Storno, Gegenbon, Artikelstamm, Tische, Geräte, Kassenabschluss und CSV-Export nur Rolle `manager` oder höher; Seiten `/mypontivo/<hotel>/restaurant/...`. Die Weboberfläche bucht über das Gerät `W1`.
 - **Rolle `service`** (Migration 0054): sieht nur den Bereich `restaurant` (bestellen und kassieren), landet dort nach der Anmeldung; in den Einstellungen wählbar.
 
-- **Offline-Betrieb (Stufe D):** Seite `/admin/<hotel>/kasse` (Reiter «Kasse (offline-fähig)», Rollen `staff`/`service`). Lokal zuerst: Bestellungen, Zeilen und Bons werden im Browser (IndexedDB) festgehalten und danach über `POST /api/pos/sync` übertragen; Artikel, Tische, Gäste im Haus und offene Bestellungen holt `POST /api/pos/bootstrap` (Sitzung per Cookie, nur `application/json`, Antworten 401/403/404/409 statt Weiterleitung). Der Service Worker (`/admin/sw.js`) hält die Kassenseite und die Programmdateien vor, damit sie ohne Verbindung startet (nur im Produktivbetrieb); Daten liegen nie im Service-Worker-Speicher.
+- **Offline-Betrieb (Stufe D):** Seite `/mypontivo/<hotel>/kasse` (Reiter «Kasse (offline-fähig)», Rollen `staff`/`service`). Lokal zuerst: Bestellungen, Zeilen und Bons werden im Browser (IndexedDB) festgehalten und danach über `POST /api/pos/sync` übertragen; Artikel, Tische, Gäste im Haus und offene Bestellungen holt `POST /api/pos/bootstrap` (Sitzung per Cookie, nur `application/json`, Antworten 401/403/404/409 statt Weiterleitung). Der Service Worker (`/mypontivo/sw.js`) hält die Kassenseite und die Programmdateien vor, damit sie ohne Verbindung startet (nur im Produktivbetrieb); Daten liegen nie im Service-Worker-Speicher.
 - **Nummernkreis je Gerät:** Ein Gerätecode gehört genau einem Browser (`claimed_key`); ein zweiter Browser bekommt 409, ein Manager kann das Gerät freigeben. Das Gerät vergibt Bon-Nummern selbst (zuerst gespeichert, dann gebucht) und führt sie nach dem Stand des Servers weiter. Alle Ids (Bestellung, Zeile, Bon) vergibt das Gerät als UUID: eine Wiederholung nach abgebrochener Verbindung bucht nichts doppelt.
 - **Preise wie dem Gast gezeigt:** Offline-Zeilen übernehmen Text, Preis und MWST-Satz vom Gerät (`snapshot`), der Artikel muss im Betrieb existieren. **Aufs Zimmer** offline: Auswahl aus der zwischengespeicherten Gästeliste; der Server prüft die Buchung beim Übertragen. Ist sie nicht mehr zu finden, bleibt der Bon bestehen (der Gast hat bezahlt), ohne Zuordnung, und erscheint im Kassenabschluss als Warnung (von Hand in der Hotelrechnung erfassen).
 - **Abgelehnte Vorgänge** (z. B. Zeile von einem anderen Gerät schon bezahlt) werden einzeln abgelehnt und halten die übrigen nicht auf. Eine abgelehnte Zahlung hinterlässt eine Lücke in den Bon-Nummern; der Grund steht im Protokoll (`pos.sync_rejected`) und im Kassenabschluss. Der Kassenabschluss warnt ausserdem bei Geräten mit nicht übertragenen Vorgängen.
 - ASSUMPTION: Karte/TWINT offline sind vom Personal bestätigt (keine Terminal-Anbindung). Rabatt, Storno und Gegenbon gehen nur online (Manager-Seiten). Eine Bestellung hat keinen festen Besitzer: zwei Geräte können dieselbe bezahlen, das zweite wird abgelehnt.
 
 ### 19.17 Einarbeitung (PMS-ERSATZ 4.2)
-- **Erste Woche** (`/admin/<hotel>/erste-woche`, Menü «Konto», alle Rollen): Checkliste je Rolle (Inhaber/Manager/Mitarbeitende 8, Rezeption 7, Reinigung 4, Buchhaltung 6, Service 5 Aufgaben) mit Link zur Seite. Aufgaben ausgeschalteter Funktionen entfallen. Erledigt-Stand je Person und Betrieb in `onboarding_tasks` (Migration 0056); abhaken nur für Aufgaben der eigenen Liste. Inhalt in `src/domain/guide.ts`.
-- **Hilfe** (`/admin/<hotel>/hilfe`): je eingeschaltete Funktion Beschreibung (aus dem Modul-Register), ein Satz «So fangen Sie an» und Link zur Seite. Kein Bild (offen, siehe `QUESTIONS.md`).
+- **Erste Woche** (`/mypontivo/<hotel>/erste-woche`, Menü «Konto», alle Rollen): Checkliste je Rolle (Inhaber/Manager/Mitarbeitende 8, Rezeption 7, Reinigung 4, Buchhaltung 6, Service 5 Aufgaben) mit Link zur Seite. Aufgaben ausgeschalteter Funktionen entfallen. Erledigt-Stand je Person und Betrieb in `onboarding_tasks` (Migration 0056); abhaken nur für Aufgaben der eigenen Liste. Inhalt in `src/domain/guide.ts`.
+- **Hilfe** (`/mypontivo/<hotel>/hilfe`): je eingeschaltete Funktion Beschreibung (aus dem Modul-Register), ein Satz «So fangen Sie an» und Link zur Seite. Kein Bild (offen, siehe `QUESTIONS.md`).
 - **Einrichtungshilfe:** nur ein Hinweis auf der Hilfeseite (freiwillig, nach Aufwand, Preis vorab). ASSUMPTION: Kontakt ist die Absenderadresse der Mails (`EMAIL_FROM`), bis der Betreiber eine Support-Adresse und Preise festlegt.
 
 ## 15. Offene Fragen (nicht raten, in `QUESTIONS.md` führen)
@@ -866,7 +866,7 @@ Kette: Anfrage (SPEC 19.x Website-Baustein) → Angebot → Annahme per Link →
 
 ### 19.22 Website-Schnittstelle (Modul `api`, Standard aus; Schlüssel mit Zweck `website`)
 Für Hotels mit eigener Website (nicht Pontivo-Website): Verfügbarkeit, Preise und Buchung über eine kleine API, Bezahlung auf der sicheren Zahlungsseite. Migration 0062 (`api_keys.scope`: `pos` | `website`), `src/lib/api-auth.ts`, `app/api/v1/*`.
-- **Schlüssel:** `Authorization: Bearer pnt_…`, je Betrieb, Seite `/admin/<hotel>/api` (Inhaber; Klartext nur einmal; widerrufbar; «zuletzt benutzt»). Der Betrieb kommt immer aus dem Schlüssel. Ein Kassen-Schlüssel (`pos`) funktioniert hier nicht und umgekehrt (403 `wrong_scope`). Grenze 60 Anfragen pro Minute und Schlüssel (Buchungen 30); Buchungen zusätzlich je Schlüssel und Gast-E-Mail (10 pro Stunde).
+- **Schlüssel:** `Authorization: Bearer pnt_…`, je Betrieb, Seite `/mypontivo/<hotel>/api` (Inhaber; Klartext nur einmal; widerrufbar; «zuletzt benutzt»). Der Betrieb kommt immer aus dem Schlüssel. Ein Kassen-Schlüssel (`pos`) funktioniert hier nicht und umgekehrt (403 `wrong_scope`). Grenze 60 Anfragen pro Minute und Schlüssel (Buchungen 30); Buchungen zusätzlich je Schlüssel und Gast-E-Mail (10 pro Stunde).
 - **Aufrufe:** `GET /api/v1/hotel` (Betrieb, Sprachen, Zeiten, Zimmertypen, Tarife), `GET /api/v1/availability?checkin&checkout&adults&children&rooms&ages&lang` (Angebote wie auf der Buchungsseite, Rappen), `POST /api/v1/bookings` (gleiche Felder und Prüfungen wie `/api/bookings`, `terms_accepted: true` Pflicht; Antwort 201 mit `reference` und `checkout_url`; 409 ausgebucht), `GET /api/v1/bookings/<reference>` (Status).
 - **Gebühr:** Buchungen über die API sind `source = direct`, es gilt dieselbe Plattformgebühr (1,9 %); die Schnittstelle kostet nichts extra. Bestätigung erst nach der Zahlung (Webhook), danach die Mails an den Gast wie bei jeder Direktbuchung.
 - **Ausbau (Migration 0063):**
@@ -912,12 +912,15 @@ Ziel: Ein Anbieter (Website-Agentur) bindet die Buchung vollständig in die Webs
 ### 19.23 App myPontivo (Android und iOS), Vorbereitung
 Ziel: die Admin-Oberfläche (myPontivo) als App im Play Store und App Store. Weg: Hülle mit Capacitor im Ordner `mobile/`, die die gehostete Oberfläche lädt (keine zweite Codebasis). Anleitung: `mobile/README.md`. Migration 0064.
 - **Im Server vorbereitet:** Erkennung der Hülle am User-Agent `MyPontivoApp` (`src/domain/app-links.ts`; «Als App installieren» entfällt); `POST/DELETE /api/admin/hotels/<id>/push/native` (Rolle ab Mitarbeitende) speichert Gerätekennungen (`native_push_tokens`, je Betrieb und Konto); Komponente «Mitteilungen in der App einschalten» auf «Mein Konto» (nur in der Hülle); `/.well-known/assetlinks.json` und `/.well-known/apple-app-site-association` aus `ANDROID_APP_PACKAGE`, `ANDROID_CERT_SHA256`, `APPLE_TEAM_ID`, `IOS_BUNDLE_ID` (leer = keine Einträge).
-- App-Kennung `ch.pontivo.mypontivo` (vom Betreiber bestätigt, ebenso Name und Adresse). ASSUMPTION: Adresse `https://pontivo.ch/admin`, Name «myPontivo»; Mitteilungen laufen in der App über Firebase (Android) und Apple (iOS), nicht über Web-Push. Der Versand ist noch **nicht** gebaut (braucht Firebase-Projekt, APNs-Schlüssel, Dienstkonto; vorher die aktuelle FCM-Dokumentation lesen). Bildmaterial, Store-Texte, Datenschutz-Angaben für die Stores, Entwicklerkonten und der Mac für iOS stellt der Betreiber. Risiko: Apple kann reine Web-Hüllen ablehnen (Mindestfunktionalität), Gegenmittel siehe README.
+- App-Kennung `ch.pontivo.mypontivo` (vom Betreiber bestätigt, ebenso Name und Adresse). ASSUMPTION: Adresse `https://pontivo.ch/mypontivo`, Name «myPontivo»; Mitteilungen laufen in der App über Firebase (Android) und Apple (iOS), nicht über Web-Push. Der Versand ist noch **nicht** gebaut (braucht Firebase-Projekt, APNs-Schlüssel, Dienstkonto; vorher die aktuelle FCM-Dokumentation lesen). Bildmaterial, Store-Texte, Datenschutz-Angaben für die Stores, Entwicklerkonten und der Mac für iOS stellt der Betreiber. Risiko: Apple kann reine Web-Hüllen ablehnen (Mindestfunktionalität), Gegenmittel siehe README.
 - Abnahme: `tests/unit/app-links.test.ts`.
 
 ### 19.27 Kalender: Bedienung und Export
 - Ansicht standardmässig 2 Wochen; Umschalter 2 Wochen / 1 Monat / 3 Monate (`?days=14|31|90`), Vor/Zurück um die gewählte Spanne, «Heute» und Datumsfeld zum direkten Springen (`?from=JJJJ-MM-TT`). Zelle zeigt nur freie Zimmer (Rot = ausgebucht); gebucht/gesperrt/extern im Tooltip.
 - Formular «Preise und Regeln setzen»: Zeilen werden nur im Browser hinzugefügt und entfernt (`RateRows`), keine leeren Zeilen nach Reload.
-- **Export** (`/admin/<hotel>/calendar/csv?from=&to=`, Rolle wie Kalender, höchstens 366 Tage): CSV mit Semikolon, UTF-8 mit BOM, eine Zeile je Tag und Rateplan (Zimmer gesamt, gebucht, gesperrt, extern, frei, Preis mit Punkt, Mindestnächte, Anreise/Abreise gesperrt, Verkaufsstopp); `audit_log` Aktion `calendar.export`. Knopf «Excel-Export» exportiert den angezeigten Zeitraum. Abnahme: `tests/unit/calendar-export.test.ts`.
+- **Export** (`/mypontivo/<hotel>/calendar/csv?from=&to=`, Rolle wie Kalender, höchstens 366 Tage): CSV mit Semikolon, UTF-8 mit BOM, eine Zeile je Tag und Rateplan (Zimmer gesamt, gebucht, gesperrt, extern, frei, Preis mit Punkt, Mindestnächte, Anreise/Abreise gesperrt, Verkaufsstopp); `audit_log` Aktion `calendar.export`. Knopf «Excel-Export» exportiert den angezeigten Zeitraum. Abnahme: `tests/unit/calendar-export.test.ts`.
 - **Schutz vor Dauer-Abrufen:** alle CSV-Exporte (Kalender, Bericht, Buchhaltung, Gästeregister, Kurtaxe, HESTA, Kasse, Rooming, Migrationsvorlage) höchstens 20 je Person und Betrieb in 10 Minuten (`src/lib/export-limit.ts`, DB-Rate-Limit), danach Antwort 429 mit `Retry-After: 600`. Kalender-Export mit Von/Bis-Feld im Kalender («Excel-Export»).
 - **Formulare:** Checkboxen und Radiobuttons einheitlich gestaltet (global in `app/globals.css`), Datumssymbol im Dunkelmodus sichtbar (`color-scheme`), «Zimmer sperren» in voller Breite.
+- **Adressen:** Die Hotel-Oberfläche heisst myPontivo und liegt unter `/mypontivo` (Login, Konto, Betriebe, PWA-Manifest, Service Worker). Nur der übergeordnete Plattform-Admin bleibt unter `/admin/plattform`; er ist nirgends verlinkt. Alte `/admin/...`-Adressen (E-Mails, Lesezeichen, Push) leiten dauerhaft nach `/mypontivo/...` um (`next.config.ts`). Die Schnittstellen unter `/api/admin/...` bleiben unverändert. Hinweis zur Einrichtung steht immer über dem Passkey-Hinweis.
+- **Zeitnavigation einheitlich:** `PeriodNav` (‹ Heute › plus Sprungfeld) für Kalender, Heute, Zimmerplan, Reinigung, Tagesabschluss, Monatsabrechnung, HESTA und Kurtaxe-Liste; ein einziger Stil für `.seg`.
+- **Reiter über der Seite:** nur der genaueste Reiter ist aktiv, keine Scrollleiste. Eingabefelder mit sichtbarem Rahmen (`--field-line`) und mehr Innenabstand; Dateiauswahl und Buttons mit Hover. KI-Chat lässt sich ohne API-Schlüssel nicht einschalten. Betragsanzeige `CHF` nie doppelt (`tests/unit/no-double-chf.test.ts`).

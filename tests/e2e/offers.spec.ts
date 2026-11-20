@@ -16,7 +16,7 @@ test("Angebot: erstellen, senden, per Link annehmen", async ({ page, context, ba
   await addMember(h.hotel.id, email, "owner", "e2e");
   const [u] = await db().select().from(users).where(eq(users.email, email));
   await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
-  await page.goto(`/admin/${h.hotel.id}/inquiries`);
+  await page.goto(`/mypontivo/${h.hotel.id}/inquiries`);
   await page.getByRole("button", { name: "Angebot erstellen" }).click();
   await expect(page.getByRole("heading", { name: "Angebot erstellen" })).toBeVisible();
   await page.getByLabel("Beschreibung").first().fill("Tagungspauschale");

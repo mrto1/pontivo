@@ -15,8 +15,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ hotelId: strin
   const fromWizard = new URL(req.url).searchParams.get("from") === "wizard";
   const back = (msg: string, anchor = "") =>
     Response.redirect(fromWizard
-      ? `${env().APP_BASE_URL}/admin/${hotelId}/einrichten?step=fotos&msg=${encodeURIComponent(msg)}`
-      : `${env().APP_BASE_URL}/admin/${hotelId}/rooms?msg=${encodeURIComponent(msg)}${anchor}`, 303);
+      ? `${env().APP_BASE_URL}/mypontivo/${hotelId}/einrichten?step=fotos&msg=${encodeURIComponent(msg)}`
+      : `${env().APP_BASE_URL}/mypontivo/${hotelId}/rooms?msg=${encodeURIComponent(msg)}${anchor}`, 303);
 
   const len = Number(req.headers.get("content-length") ?? 0);
   if (len > MAX_UPLOAD_BYTES * 3 + 100_000) return back("Zu grosse Datei(en)");
@@ -24,7 +24,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ hotelId: strin
   const roomTypeId = String(form.get("roomTypeId") ?? "") || null;
   if (form.get("target") === "logo") {
     const f = form.get("file");
-    const toEmbed = (msg: string) => Response.redirect(`${env().APP_BASE_URL}/admin/${hotelId}/embed?msg=${encodeURIComponent(msg)}`, 303);
+    const toEmbed = (msg: string) => Response.redirect(`${env().APP_BASE_URL}/mypontivo/${hotelId}/embed?msg=${encodeURIComponent(msg)}`, 303);
     if (!(f instanceof File) || f.size === 0) return toEmbed("Keine Datei ausgewählt");
     try {
       const url = await saveImage(hotelId, new Uint8Array(await f.arrayBuffer()));

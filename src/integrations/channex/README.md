@@ -24,7 +24,7 @@ Channex-CRS-API → Webhook → Feed → Import und Ack innerhalb weniger Sekund
 
 ## Booking.com im Admin verbinden (Channel API)
 
-Seite `/admin/<id>/channex/booking`, Logik in `channels.ts` (Ablauf) und `booking-mapping.ts` (Zuordnung, ohne I/O).
+Seite `/mypontivo/<id>/channex/booking`, Logik in `channels.ts` (Ablauf) und `booking-mapping.ts` (Zuordnung, ohne I/O).
 Ablauf nach dem Channex-Leitfaden «Booking.com»: `test_connection` → `mapping_details` + `connection_details` (Entwurf in `channex_channels`)
 → Zuordnung → `POST /channels` (inaktiv; `group_id` aus `GET /properties/{id}`, in `hotels.channex_group_id` gespeichert)
 → `check_readiness` → `activate` → `execute/load_future_reservations`. Ändern der Zuordnung: `PUT /channels/{id}` mit allen `rate_plans`.
@@ -32,14 +32,14 @@ Aktivieren nur bei eingeschaltetem Abgleich. Staging-Testhotels: 5868189 (OBP), 
 
 ## Airbnb im Admin verbinden
 
-Seite `/admin/<id>/channex/airbnb`, Logik in `airbnb.ts`. `POST /meta/airbnb/connection_link` (group_id, properties, redirect_uri,
+Seite `/mypontivo/<id>/channex/airbnb`, Logik in `airbnb.ts`. `POST /meta/airbnb/connection_link` (group_id, properties, redirect_uri,
 failure_redirect_uri, token, settings.min_stay_type) → Gastgeber gibt auf Airbnb frei → Rücksprung auf `/channex/airbnb/return`
 mit `success`, `channel_id`, `token` (Token in `channex_channels.auth_token`, 2 h gültig, einmalig) → `GET /channels/{id}/action/listings`
 → je Inserat `POST /channels/{id}/mappings` (`settings.listing_id`, dauert bei Airbnb ca. 30 s) → `check_readiness` → `activate`
 → `execute/load_future_reservations` mit `listing_id` je Inserat. Neu verbinden: Link mit `channel_id`.
 
 ## Expedia im Admin verbinden
-Gleicher Ablauf wie Booking.com (`channels.ts`, Kanal als Parameter, Seite `app/admin/[hotelId]/channex/_meta`). Channex-Adapter `Expedia` (`GET /channels/adapter?code=Expedia`): Einstellungen `hotel_id`, `min_stay_type` (Arrival/Through), `booking_amount_settings` (Collect Amount / Total Amount / Total Amount Excluding Tax), Aktion `load_future_reservations`, Zuordnung `room_rate_multioccupancy`. Auf Staging geprüft: Adapter-Beschreibung, test_connection mit Dummy-ID (authentication_failed). Nicht geprüft (kein Expedia-Testhotel): mapping_details, Anlegen, Aktivieren. Weitere Kanäle dieser Familie (z. B. Agoda): Eintrag in `META_CHANNELS` und Migration für die CHECK-Bedingung.
+Gleicher Ablauf wie Booking.com (`channels.ts`, Kanal als Parameter, Seite `app/mypontivo/[hotelId]/channex/_meta`). Channex-Adapter `Expedia` (`GET /channels/adapter?code=Expedia`): Einstellungen `hotel_id`, `min_stay_type` (Arrival/Through), `booking_amount_settings` (Collect Amount / Total Amount / Total Amount Excluding Tax), Aktion `load_future_reservations`, Zuordnung `room_rate_multioccupancy`. Auf Staging geprüft: Adapter-Beschreibung, test_connection mit Dummy-ID (authentication_failed). Nicht geprüft (kein Expedia-Testhotel): mapping_details, Anlegen, Aktivieren. Weitere Kanäle dieser Familie (z. B. Agoda): Eintrag in `META_CHANNELS` und Migration für die CHECK-Bedingung.
 
 Leitfaden Expedia (gelesen 12.11.2026): Das Hotel wählt im Expedia-Extranet («Rooms and Rates» → «Connectivity Settings», Zwei-Faktor) Channex für Verbindung und Buchungen; Hotel-ID = Expedia Property ID; `min_stay_type` meist «Arrival»; Betragsart «Payout Amount» (API: «Collect Amount»), «Total Amount», «Total Amount Excluding Taxes»; nach Aktivierung Vollabgleich; künftige Buchungen lassen sich laden. Der Leitfaden nennt die Antwortform von `mapping_details` nicht.
 

@@ -4,5 +4,5 @@ import { accountLink } from "@/src/services/account-link";
 export async function AccountLink() {
   if (process.env.STATIC_SITE === "1") return null;
   const a = await accountLink();
-  return <a href={a ? "/admin" : "/admin/login"} className="small" style={{ float: "right", fontWeight: 600 }}>{a ? a.label : "Anmelden"}</a>;
+  return <a href={a ? "/mypontivo" : "/mypontivo/login"} className="small" style={{ float: "right", fontWeight: 600 }}>{a ? a.label : "Anmelden"}</a>;
 }

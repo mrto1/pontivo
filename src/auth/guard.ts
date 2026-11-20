@@ -11,7 +11,7 @@ export async function currentUserId(): Promise<string | null> {
 export async function requireUser() {
   const id = await currentUserId();
   const user = id ? await getUser(id) : null;
-  if (!user) redirect("/admin/login");
+  if (!user) redirect("/mypontivo/login");
   return user;
 }
 

@@ -114,7 +114,7 @@ export async function startCardSetup(hotel: Hotel, returnPath: string): Promise<
   const provider = await getPaymentProvider();
   const r = await provider.createCardSetup({
     hotel, email: hotel.contactEmail,
-    successUrl: `${base}/admin/${hotel.id}/karte?session_id={CHECKOUT_SESSION_ID}&back=${encodeURIComponent(returnPath)}`,
+    successUrl: `${base}/mypontivo/${hotel.id}/karte?session_id={CHECKOUT_SESSION_ID}&back=${encodeURIComponent(returnPath)}`,
     cancelUrl: `${base}${returnPath}`,
   });
   return r.url;

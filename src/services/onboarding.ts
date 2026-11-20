@@ -72,7 +72,7 @@ async function uniqueHotelSlug(name: string): Promise<string> {
  * Neuer Gastgeber: Betrieb (Entwurf), Benutzer (Inhaber), Annahme der Bedingungen, Mindestgebühr,
  * Willkommensmail und Login-Link. Gibt den Login-Link zurück (für die Entwicklung ohne Mailversand).
  */
-/** Die E-Mail-Adresse hat schon ein Konto: kein zweites Konto und kein zweiter Entwurf (weitere Betriebe: angemeldet über /admin/neu) */
+/** Die E-Mail-Adresse hat schon ein Konto: kein zweites Konto und kein zweiter Entwurf (weitere Betriebe: angemeldet über /mypontivo/neu) */
 export class DisposableEmailError extends Error {
   constructor() { super("Wegwerf-E-Mail-Adresse"); }
 }
