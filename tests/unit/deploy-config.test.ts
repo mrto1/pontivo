@@ -12,9 +12,9 @@ describe("Deploy-Konfiguration: Prod und int dürfen sich nie vermischen", () =>
     expect(read("docker-compose.prod.yml")).toMatch(/aliases: \[prod-app\]/);
     expect(read("docker-compose.int.yml")).toMatch(/aliases: \[int-app\]/);
   });
-  it("deploy.sh lädt Caddy neu und verweigert Test-Einstellungen in der Produktion", () => {
+  it("deploy.sh erzeugt Caddy neu (die Datei Caddyfile wird von git ersetzt) und verweigert Test-Einstellungen in der Produktion", () => {
     const d = read("deploy.sh");
-    expect(d).toContain("caddy reload");
+    expect(d).toContain("up -d --force-recreate caddy");
     expect(d).toContain("ENVIRONMENT_LABEL|MAIL_REDIRECT_TO");
   });
 });

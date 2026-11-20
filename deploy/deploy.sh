@@ -26,8 +26,9 @@ dc() { docker compose --env-file .env.production -f docker-compose.prod.yml "$@"
 dc exec -T backup sh /backup.sh 2>/dev/null || echo "(keine Sicherung vor dem Ausrollen: Container backup läuft noch nicht)"
 dc build
 dc up -d
-# Caddyfile kann sich geändert haben (Bind-Mount): neu laden, ohne Unterbruch
-dc exec -T caddy caddy reload --config /etc/caddy/Caddyfile 2>/dev/null || dc restart caddy
+# Caddy neu erzeugen: git ersetzt die Datei Caddyfile (neue Inode), der Container sähe sonst weiter die alte Datei (ein «reload» genügt nicht).
+# Dauert wenige Sekunden, die Zertifikate bleiben im Volume erhalten.
+dc up -d --force-recreate caddy
 dc ps
 echo "Fertig. Zurück zur vorherigen Version: ./deploy.sh <Tag>   (Tags: git tag -l 'prod-*')"
 echo "Hinweis: Wurden Datenbank-Migrationen ausgeführt, ist ein Zurückgehen des Codes nur sicher, wenn die alte Version die neue Datenbank versteht. Im Zweifel Sicherung einspielen (docs/deploy/5-betrieb.md, Abschnitt Sicherung)."
