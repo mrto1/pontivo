@@ -6,6 +6,11 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 test -f .env.production || { echo "deploy/.env.production fehlt (Vorlage: .env.production.example)"; exit 1; }
+# Schutz: Einstellungen der Testumgebung gehören nie in die Produktion (sonst Hinweis «Testumgebung» und Mails an die Testadresse)
+if grep -Eq '^(ENVIRONMENT_LABEL|MAIL_REDIRECT_TO)=.+' .env.production; then
+  echo "STOPP: In .env.production stehen ENVIRONMENT_LABEL oder MAIL_REDIRECT_TO. Das sind Einstellungen der Testumgebung (.env.int)."
+  echo "Diese Zeilen aus .env.production löschen (nano .env.production) und ./deploy.sh erneut ausführen."; exit 1
+fi
 git -C .. fetch --tags --prune --force
 REF="${1:-$(git -C .. tag -l 'prod-*' --sort=-creatordate | head -n1)}"
 if [ -z "$REF" ]; then
