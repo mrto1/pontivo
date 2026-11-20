@@ -1,3 +1,4 @@
+import { env } from "../env";
 import { headers } from "next/headers";
 import { getHotelByHost, getHotelBySlug } from "../services/hotels";
 import { llmsTxt, robotsTxt, sitemapXml } from "../services/geo";
@@ -20,6 +21,7 @@ export async function llmsForHost() {
   return h ? text(await llmsTxt(h), "text/plain") : new Response("Not found", { status: 404 });
 }
 export async function robotsForHost() {
+  if (env().ENVIRONMENT_LABEL) return text("User-agent: *\nDisallow: /\n", "text/plain"); // Testumgebung: nie indexieren
   const h = await hotelOfHost();
   return text(robotsTxt(h), "text/plain");
 }

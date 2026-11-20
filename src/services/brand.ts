@@ -40,7 +40,7 @@ export async function setLogo(hotelId: string, logoUrl: string | null, actor: st
 /** Öffentliche Basis-URL der Hotel-Seiten: eigene Domain (Produktion) oder Vorschau /h/<slug> */
 export function publicBase(hotel: Pick<Hotel, "slug" | "primaryDomain">): string {
   const e = env();
-  if (hotel.primaryDomain && e.NODE_ENV === "production") return `https://${hotel.primaryDomain}`;
+  if (hotel.primaryDomain && e.NODE_ENV === "production" && !e.ENVIRONMENT_LABEL) return `https://${hotel.primaryDomain}`;
   return `${e.APP_BASE_URL}/h/${hotel.slug}`;
 }
 

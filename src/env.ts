@@ -5,6 +5,10 @@ const schema = z.object({
   DATABASE_URL: z.string().min(1),
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
   PAYMENT_PROVIDER: z.enum(["fake", "stripe"]).default("fake"),
+  /** Testumgebung (z. B. "int"): sichtbarer Hinweis, nicht indexierbar, Links immer auf APP_BASE_URL. Leer = echte Produktion. */
+  ENVIRONMENT_LABEL: z.string().max(20).optional(),
+  /** Testumgebung: alle ausgehenden E-Mails gehen an diese Adresse (Original im Betreff), nie an Gäste */
+  MAIL_REDIRECT_TO: z.string().email().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET_CONNECT: z.string().optional(),
   // Öffentlicher Schlüssel (pk_…) für eingebettete Stripe-Komponenten (Konto eröffnen im Assistenten). Ohne: gehostetes Onboarding.

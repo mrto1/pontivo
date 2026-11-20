@@ -135,10 +135,13 @@ Wiederherstellen (Beispiel):
 docker compose --env-file .env.production -f docker-compose.prod.yml exec -T db pg_restore -U pontivo -d pontivo --clean < db-2026-11-10.dump
 ```
 
-## Neue Version ausrollen
+## Neue Version ausrollen (Kurzfassung, Details im Abschnitt «Testumgebung und Ausrollen»)
 
 ```bash
-cd /opt/pontivo/deploy && ./deploy.sh
+cd /opt/pontivo && git pull          # Skripte aktualisieren
+cd deploy && ./deploy-int.sh         # 1. auf int ausrollen und dort testen
+./release.sh                         # 2. getestete Version freigeben
+./deploy.sh                          # 3. Produktion ausrollen
 ```
 
 ## Checkliste vor dem ersten echten Hotel
@@ -213,3 +216,94 @@ sudo docker compose --env-file .env.production -f docker-compose.prod.yml exec a
 sudo docker compose --env-file .env.production -f docker-compose.prod.yml exec app node --import tsx scripts/delete-test-account.ts test@example.ch --yes
 ```
 Hinweis: Stripe-Konto und Channex-Property des Testbetriebs werden dabei nicht mitgelöscht, sie gehören bei Stripe/Channex separat entfernt.
+
+
+# Testumgebung und Ausrollen
+
+## Das Prinzip
+
+| | **int** (Test) | **prod** (echt) |
+|---|---|---|
+| Adresse | https://int.pontivo.ch (Passwortschutz) | https://pontivo.ch |
+| Server | derselbe VPS, eigene Container und eigene Datenbank | |
+| Ordner | `/opt/pontivo-int` | `/opt/pontivo` |
+| Zahlung | Stripe **Testmodus** (Karte 4242 4242 4242 4242, TWINT-Test) | Stripe live |
+| E-Mails | gehen **alle** an `MAIL_REDIRECT_TO` (nie an echte Gäste), Original im Betreff | normal |
+| Daten | Testdaten, dürfen jederzeit gelöscht werden | echte Daten, tägliche Sicherung |
+| Suchmaschinen | gesperrt, orangefarbener Hinweis «Testumgebung» unten links | offen |
+| Code | neuester Stand (`main`) oder ein Branch | nur **freigegebene** Versionen (Tag `prod-…`) |
+
+Der Weg einer Änderung: **Entwicklung → int ausrollen → testen → freigeben → prod ausrollen.** Auf prod kommt nie etwas, das nicht vorher auf int lief, weil `./deploy.sh` nur Versionen ausrollt, die mit `./release.sh` freigegeben wurden.
+
+Ein eigener zweiter Server ist nicht nötig (zusätzliche Kosten, mehr Pflege). Wenn die Last auf dem VPS spürbar wird, kann int später auf einen eigenen kleinen VPS umziehen, die Skripte bleiben gleich.
+
+## Einmalig einrichten
+
+1. **DNS** (Infomaniak, Zone pontivo.ch): A-Eintrag `int` → IP des VPS.
+2. **Code holen** (auf dem Server, als root bzw. mit `sudo -i`):
+   ```bash
+   git clone https://github.com/mrto1/pontivo.git /opt/pontivo-int
+   cd /opt/pontivo-int/deploy
+   cp .env.int.example .env.int
+   nano .env.int
+   ```
+   Zufallswerte mit `openssl rand -hex 32` (`POSTGRES_PASSWORD`, `AUTH_SECRET`) und `openssl rand -base64 32` (`GUEST_DATA_KEY`). **Nie** die Werte aus `.env.production` kopieren. Stripe nur mit Testschlüsseln, `MAIL_REDIRECT_TO` auf eine eigene Adresse (z. B. test@pontivo.ch), Postmark-Token darf derselbe sein.
+3. **Passwortschutz** (im Ordner der Produktion, weil dort Caddy läuft):
+   ```bash
+   cd /opt/pontivo && git pull && cd deploy
+   ./int-password.sh martin
+   ```
+   Mit diesem Benutzer und Passwort öffnet man int im Browser. Webhooks (Stripe, Postmark, Channex) sind davon ausgenommen.
+4. **Erstmals ausrollen**: `cd /opt/pontivo-int/deploy && ./deploy-int.sh`. Danach einmalig den Demo-Betrieb anlegen:
+   `docker compose --env-file .env.int -f docker-compose.int.yml exec app node --import tsx scripts/seed.ts`
+   und sich als Plattform-Admin anlegen wie in Schritt 6 oben, aber mit `--env-file .env.int -f docker-compose.int.yml`.
+5. **Stripe-Testmodus**: im Stripe-Dashboard (Testmodus) einen Webhook für Connected accounts auf `https://int.pontivo.ch/api/webhooks/stripe` anlegen (gleiche Ereignisse wie in Schritt 8), das Secret in `.env.int` als `STRIPE_WEBHOOK_SECRET_CONNECT`, danach `./deploy-int.sh`.
+6. **Erste Freigabe für prod**: Solange es noch keine freigegebene Version gibt, verweigert `./deploy.sh` den Start. Ablauf siehe unten («Prod ausrollen»).
+
+## Auf int ausrollen (so oft man will)
+
+```bash
+ssh ubuntu@IP-DES-VPS
+cd /opt/pontivo-int/deploy
+sudo ./deploy-int.sh                 # neuester Stand von main
+sudo ./deploy-int.sh mein-branch     # oder ein bestimmter Branch/Commit
+```
+Das holt den Code, baut, führt die Datenbank-Migrationen aus und startet neu (1–3 Minuten). Danach auf https://int.pontivo.ch testen.
+
+Int zurücksetzen (alles leer, frisch mit Demo-Betrieb):
+```bash
+cd /opt/pontivo-int/deploy
+sudo docker compose --env-file .env.int -f docker-compose.int.yml down -v
+sudo ./deploy-int.sh
+sudo docker compose --env-file .env.int -f docker-compose.int.yml exec app node --import tsx scripts/seed.ts
+```
+(`-v` löscht die Testdatenbank, das ist nur auf int erlaubt.)
+
+## Auf prod ausrollen
+
+```bash
+ssh ubuntu@IP-DES-VPS
+cd /opt/pontivo && sudo git pull       # damit die Skripte aktuell sind
+cd deploy
+sudo ./release.sh                      # gibt die Version frei, die jetzt auf int läuft (Tag prod-JJJJMMTT-HHMM)
+sudo ./deploy.sh                       # rollt die neueste freigegebene Version aus
+```
+`deploy.sh` sichert vorher die Datenbank, baut, führt die Migrationen aus und startet neu. Danach kurz prüfen: https://pontivo.ch/api/health?deep=1 (Antwort 200), eine Testseite öffnen, im Admin anmelden.
+
+**Wichtig:** `release.sh` gibt exakt die Version frei, die auf int läuft. Also vor dem Freigeben prüfen, dass int den gewünschten Stand zeigt (`cd /opt/pontivo-int && git log -1`).
+
+## Zurück zur vorherigen Version (Notfall)
+
+```bash
+cd /opt/pontivo/deploy
+git tag -l 'prod-*' --sort=-creatordate   # Liste der Freigaben, die neueste oben
+sudo ./deploy.sh prod-20261118-1030        # eine ältere Freigabe ausrollen
+```
+Datenbank-Migrationen werden nie automatisch zurückgenommen. Neue Migrationen fügen nur Tabellen/Spalten hinzu, eine ältere Version läuft in der Regel damit weiter. Bei Datenproblemen die Sicherung vor dem Ausrollen einspielen (Abschnitt 10, Dateien in `/opt/pontivo/backups`).
+
+## Was nur auf int getestet werden kann und was nicht
+
+- Gut: Buchungsstrecke mit Stripe-Testkarten, E-Mail-Texte (alles landet in einem Postfach), Rollen und Menüs, Migrationen mit Demo-Daten, Worker-Jobs (Warteliste, Abbruch-Mail, Erinnerungen).
+- Mit Vorsicht: Channex nur gegen Staging, nie echte Hotels anbinden. KI-Funktionen kosten echtes Geld; Schlüssel mit Ausgabenlimit nur gezielt eintragen.
+- Nicht testbar: echte Karten und TWINT, Zustellbarkeit der Mails an Gäste (erst auf prod prüfen).
+- Eigene Domains der Hotels laufen nur auf prod (Zertifikate für fremde Domains gibt Caddy nur dort aus); auf int heisst der Betrieb `https://int.pontivo.ch/h/<slug>`.

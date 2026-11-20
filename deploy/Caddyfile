@@ -19,6 +19,19 @@ www.{$APP_DOMAIN} {
 	reverse_proxy app:3000
 }
 
+# Testumgebung int.<Domain>: Passwortschutz (Datei deploy/int/auth.caddy, erzeugt von deploy/int-password.sh), nie indexieren.
+# Webhooks (Stripe, Postmark, Channex) bleiben offen, sie sind durch ihre eigenen Signaturen geschützt.
+int.{$APP_DOMAIN} {
+	encode zstd gzip
+	header X-Robots-Tag "noindex, nofollow"
+	request_body {
+		max_size 50MB
+	}
+	@geschuetzt not path /api/webhooks/* /api/health
+	import /etc/caddy/int/*.caddy
+	reverse_proxy int-app:3000
+}
+
 # Eigene Domains der Hotels, z. B. www.hotel-beispiel.ch (DNS zeigt auf diesen Server)
 https:// {
 	tls {

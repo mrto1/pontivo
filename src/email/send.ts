@@ -4,6 +4,7 @@ import { roomsLabel } from "../services/bookings";
 import { bookingRooms, bookings, emailOutbox, emailSuppressions, guests, hotels, ratePlans, roomTypes, type Hotel, bookingExtras } from "../db/schema";
 import { env } from "../env";
 import { render, type Rendered } from "./templates";
+import { applyMailGuard } from "../lib/environment";
 
 export type Mailer = (msg: { from: string; to: string; subject: string; html: string; text: string }) => Promise<void>;
 
@@ -13,7 +14,8 @@ export function setMailer(m: Mailer | null) {
 }
 
 /** Postmark, wenn POSTMARK_SERVER_TOKEN gesetzt ist; sonst Ausgabe in der Konsole (Entwicklung). */
-async function defaultMailer(msg: Parameters<Mailer>[0]) {
+async function defaultMailer(original: Parameters<Mailer>[0]) {
+  const msg = applyMailGuard(original, env().MAIL_REDIRECT_TO);
   const token = env().POSTMARK_SERVER_TOKEN;
   if (!token) {
     console.log(`[mail] an ${msg.to}: ${msg.subject}\n${msg.text}\n`);
@@ -49,7 +51,7 @@ async function renderRow(row: typeof emailOutbox.$inferSelect): Promise<Rendered
     plan,
     guestName: guest ? `${guest.firstName} ${guest.lastName}` : null,
     data: row.data,
-    baseUrl: hotel?.primaryDomain && env().NODE_ENV === "production" ? `https://${hotel.primaryDomain}` : env().APP_BASE_URL,
+    baseUrl: hotel?.primaryDomain && env().NODE_ENV === "production" && !env().ENVIRONMENT_LABEL ? `https://${hotel.primaryDomain}` : env().APP_BASE_URL,
   });
 }
 

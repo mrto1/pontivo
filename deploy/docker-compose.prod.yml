@@ -66,11 +66,15 @@ services:
     image: caddy:2
     restart: unless-stopped
     ports: ["80:80", "443:443", "443:443/udp"]
+    networks:
+      - default
+      - int
     environment:
       APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN fehlt}
       ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL fehlt}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./int:/etc/caddy/int:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on: [app]
@@ -95,3 +99,9 @@ volumes:
   uploads:
   caddy_data:
   caddy_config:
+
+# Gemeinsames Netzwerk mit der Testumgebung (wird von deploy.sh bzw. deploy-int.sh angelegt)
+networks:
+  int:
+    name: pontivo-int
+    external: true

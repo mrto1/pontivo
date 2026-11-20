@@ -15,3 +15,7 @@ deploy/.env.production
 # Sicherungen (Personendaten)
 backups/
 buchhaltung/
+
+# Testumgebung int: Geheimnisse und Passwortschutz
+deploy/.env.int
+deploy/int/*.caddy
