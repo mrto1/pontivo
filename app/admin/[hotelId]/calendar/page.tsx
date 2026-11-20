@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import RateRows from "@/components/admin/RateRows";
 import CalendarJump from "@/components/admin/CalendarJump";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
@@ -98,7 +99,6 @@ export default async function Calendar({ params, searchParams }: { params: Promi
   const invKey = new Map(cal.inventory.map((r) => [`${r.roomTypeId}|${r.night}`, r]));
   const rateKey = new Map(cal.rates.map((r) => [`${r.ratePlanId}|${r.night}`, r]));
   const canEdit = atLeast(role, "manager");
-  const rowCount = Math.min(MAX_ROWS, Math.max(1, Number(sp.rows) || 3));
 
   return (
     <div className="stack">
@@ -180,42 +180,14 @@ export default async function Calendar({ params, searchParams }: { params: Promi
             <input type="hidden" name="hotelId" value={hotel.id} />
             <input type="hidden" name="viewFrom" value={from} />
             <input type="hidden" name="viewDays" value={span} />
-            <input type="hidden" name="rows" value={rowCount} />
-            <div className="scroll-x">
-              <table className="rate-rows">
-                <thead>
-                  <tr>
-                    <th>Rateplan</th><th>Von</th><th>Bis (inkl.)</th><th>Preis {hotel.currency}</th><th>Min. Nächte</th><th>Max. Nächte</th>
-                    <th>Anreise gesperrt</th><th>Abreise gesperrt</th><th>Verkaufsstopp</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from({ length: rowCount }, (_, i) => (
-                    <tr key={i}>
-                      <td>
-                        <select name={`ratePlanId${i}`} defaultValue={i === 0 ? cal.ratePlans[0]?.id : ""} aria-label={`Rateplan Zeile ${i + 1}`}>
-                          <option value="">–</option>
-                          {cal.ratePlans.map((p) => (
-                            <option key={p.id} value={p.id}>{cal.roomTypes.find((r) => r.id === p.roomTypeId)?.name} · {p.name}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td><input type="date" name={`from${i}`} defaultValue={i === 0 ? from : undefined} aria-label="Von" /></td>
-                      <td><input type="date" name={`to${i}`} defaultValue={i === 0 ? addDays(from, 6) : undefined} aria-label="Bis" /></td>
-                      <td><input name={`price${i}`} inputMode="decimal" placeholder="–" size={7} aria-label="Preis" /></td>
-                      <td><input name={`minStay${i}`} type="number" min={1} placeholder="–" style={{ width: 70 }} aria-label="Mindestnächte" /></td>
-                      <td><input name={`maxStay${i}`} type="number" min={0} placeholder="–" title="0 = keine Begrenzung" style={{ width: 70 }} aria-label="Höchstnächte" /></td>
-                      {["cta", "ctd", "stopSell"].map((n) => (
-                        <td key={n}>
-                          <select name={`${n}${i}`} defaultValue="" aria-label={n}><option value="">–</option><option value="yes">ja</option><option value="no">nein</option></select>
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {rowCount < MAX_ROWS ? <a className="small" href={`?from=${from}&days=${span}&rows=${rowCount + 2}`}>+ weitere Zeilen</a> : null}
+            <RateRows
+              plans={cal.ratePlans.map((p) => ({ id: p.id, label: `${cal.roomTypes.find((r) => r.id === p.roomTypeId)?.name} · ${p.name}` }))}
+              defaultPlan={cal.ratePlans[0]?.id}
+              from={from}
+              to={addDays(from, 6)}
+              currency={hotel.currency}
+              max={MAX_ROWS}
+            />
             <Weekdays />
             <button className="btn">Alle speichern</button>
           </form>

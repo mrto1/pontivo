@@ -696,3 +696,7 @@ table.plan tr.plan-off { opacity: .55; }
 .seg a:hover { background: var(--accent-soft); }
 .seg a.on { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .cal-date { padding: 7px 12px; border-radius: 999px; font-size: .88rem; width: auto; }
+.row-x { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 50%; width: 28px; height: 28px; line-height: 1; font-size: 1.1rem; cursor: pointer; padding: 0; }
+.row-x:hover { color: var(--danger); border-color: var(--danger); }
+.link-btn { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; font-size: .9rem; cursor: pointer; text-align: left; justify-self: start; }
+.link-btn:hover { text-decoration: underline; }
