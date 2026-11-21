@@ -76,7 +76,7 @@ export default async function PosBridgePage({ params, searchParams }: { params: 
       ) : null}
       <section className="card stack">
         <h2>Verpachtetes Restaurant mit Pontivo</h2>
-        <p className="small">Führt Ihr Pächter seine Kasse ebenfalls mit Pontivo, geben Sie ihm einen Schlüssel. Er trägt ihn unter «Geräte & Kasse → Hotel verbinden» ein. Seine Kasse zeigt dann Ihre Gäste im Haus (Zimmer, Nachname und Initiale) und bucht «aufs Zimmer» direkt auf Ihre Hotelrechnung. Widerrufen Sie den Schlüssel, endet die Verbindung sofort.</p>
+        <p className="small">Führt Ihr Pächter seine Kasse ebenfalls mit Pontivo, geben Sie ihm einen Schlüssel. Er trägt ihn unter «Gastronomie → Kasse → Kassen-Geräte → Hotel verbinden» ein. Seine Kasse zeigt dann Ihre Gäste im Haus (Zimmer, Nachname und Initiale) und bucht «aufs Zimmer» direkt auf Ihre Hotelrechnung. Widerrufen Sie den Schlüssel, endet die Verbindung sofort.</p>
       </section>
       <section className="card stack">
         <h2>Für den Kassenanbieter</h2>

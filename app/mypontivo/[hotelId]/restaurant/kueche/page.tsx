@@ -58,7 +58,7 @@ export default async function KitchenPage({ params, searchParams }: { params: Pr
           })}
         </div>
       ) : <p className="muted">Nichts offen.</p>}
-      <p className="small muted">Antippen einer Zeile meldet sie als fertig. Die Seite aktualisiert sich alle 10 Sekunden. Welche Station ein Artikel hat, stellen Sie unter Einstellungen → Verkauf → Restaurant ein.</p>
+      <p className="small muted">Antippen einer Zeile meldet sie als fertig. Die Seite aktualisiert sich alle 10 Sekunden. Welche Station ein Artikel hat, stellen Sie unter Einstellungen → Gastronomie → Speisekarte ein.</p>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 /**
  * Menü des Admin-Bereichs an einer Stelle.
  * - `primary`: die vier Hauptpunkte (Heute, Kalender, Buchungen, Finanzen) nach Häufigkeit: untere Leiste (Handy) bzw. Kopfzeile (Desktop). Es gibt kein «Mehr».
- * - `settings`: Zahnrad oben rechts (nur Inhaber und Manager) mit den Punkten zum Betrieb in drei Gruppen (`group`), eigene Seite /einstellungen.
+ * - `settings`: Zahnrad oben rechts (nur Inhaber und Manager) mit den Punkten zum Betrieb in Gruppen (`group`), eigene Seite /einstellungen.
  * - `tabs`: Unterseiten eines Menüpunkts. Sie erscheinen als Reiter über der Seite, im Menü steht nur der Sammelpunkt.
  *   Reiter können selbst Reiter haben (zweite Reihe).
  * - `account`: «Mein Konto» hinter dem Profilbild, mit eigenen Reitern.
@@ -32,6 +32,7 @@ export const LODGING_ONLY = ["rooms", "extras", "channex", "ical", "gaesteportal
 export const SETTINGS_GROUPS: { title: string; lead: string }[] = [
   { title: "Betrieb", lead: "Wer Sie sind, was Sie anbieten und wer im Team mitarbeitet." },
   { title: "Verkauf", lead: "Wie Gäste Sie finden und buchen, auf Ihrer Website, über Portale und per Mail." },
+  { title: "Gastronomie", lead: "Speisekarte, Tische und Reservierung, Online-Bestellung und Kasse." },
   { title: "Technik", lead: "Funktionen ein- und ausschalten, Geräte anschliessen, Daten übernehmen, Abo." },
 ];
 
@@ -96,7 +97,7 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
         ],
       },
     ],
-    // Zahnrad oben rechts: Übersichtsseite mit drei Gruppen, am Desktop zugleich Seitenleiste
+    // Zahnrad oben rechts: Übersichtsseite mit Gruppen, am Desktop zugleich Seitenleiste
     settings: {
       key: "einstellungen", label: "Einstellungen", href: `${base}/einstellungen`,
       tabs: [
@@ -110,12 +111,13 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
         set("Verkauf", link("mailtexts", "Gäste-Mails", "mail-texte"), "Eigene Sätze in Bestätigung, Vor-der-Anreise- und Nachher-Mail."),
         set("Verkauf", link("gaesteportal", "Gästeportal"), "Wünsche, Tipps, Türcode und Check-out auf der Buchungsseite des Gastes."),
         set("Verkauf", link("upsell", "Upselling"), "Extras wie Frühstück, die Gäste online dazubuchen."),
-        set("Verkauf", link("positems", "Speisekarte", "restaurant/artikel"), "Artikel mit Preisen, Optionen und Menüs, KI-Speisekarte und Import per CSV."),
-        set("Verkauf", link("ressettings", "Tischplan & Reservierung online", "restaurant/einstellungen"), "Tische und Plätze, Tischplan, Zeiten und Regeln für die Online-Reservierung."),
-        set("Verkauf", link("ordersettings", "Online-Bestellung & Lieferung", "restaurant/bestellung-einstellungen"), "Abholung und Lieferung, Zeiten, Liefergebiete, Barzahlung, Probebestellung und Live-Schaltung."),
         set("Verkauf", link("ki-chat", "KI-Chat"), "Der digitale Assistent auf Website und Buchungsseite."),
+        set("Gastronomie", link("positems", "Speisekarte", "restaurant/artikel"), "Artikel mit Preisen, Optionen und Menüs, KI-Speisekarte und Import per CSV."),
+        set("Gastronomie", link("ressettings", "Tischplan & Reservierung online", "restaurant/einstellungen"), "Tische und Plätze, Tischplan, Zeiten und Regeln für die Online-Reservierung."),
+        set("Gastronomie", link("ordersettings", "Online-Bestellung & Lieferung", "restaurant/bestellung-einstellungen"), "Abholung und Lieferung, Zeiten, Liefergebiete, Barzahlung, Probebestellung und Live-Schaltung."),
+        set("Gastronomie", { ...link("g-pos", "Kasse", "restaurant/geraete"), tabs: [link("posdevices", "Kassen-Geräte", "restaurant/geraete"), link("posbridge", "Kassen-Schnittstelle")] }, "Kassen-Geräte, Verbindung zum Hotel und Schnittstelle zu Ihrer bisherigen Kasse."),
         set("Technik", link("funktionen", "Funktionen"), "Nur was Sie brauchen, bleibt im Menü."),
-        set("Technik", { ...link("g-devices", "Geräte & Kasse", "terminal"), tabs: [link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt"), link("posdevices", "Kassen-Geräte", "restaurant/geraete"), link("posbridge", "Kassen-Schnittstelle")] }, "Kartenleser, Türschlösser, Kassen-Geräte und Schnittstelle zu Ihrer Kasse."),
+        set("Technik", { ...link("g-devices", "Geräte", "terminal"), tabs: [link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt")] }, "Kartenleser und Türschlösser."),
         set("Technik", link("migration", "Datenübernahme"), "Buchungen und Gäste aus Ihrer bisherigen Software übernehmen."),
         set("Technik", link("report", "Abo & Gebühren", "report", { match: [`${base}/plattform-rechnung`] }), "Monatsabrechnung, Plattformgebühren und Rechnungen von Pontivo (nur Inhaber)."),
       ],

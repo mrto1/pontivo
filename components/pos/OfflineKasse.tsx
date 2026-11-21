@@ -186,7 +186,7 @@ export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiabl
   if (phase === "pick") return (
     <div className="card stack">
       <h2>Dieses Gerät wählen</h2>
-      <p className="small muted">Jedes Gerät hat einen eigenen Nummernkreis für die Bons. Ein Manager legt Geräte unter Einstellungen → Technik → Geräte & Kasse → Kassen-Geräte an.</p>
+      <p className="small muted">Jedes Gerät hat einen eigenen Nummernkreis für die Bons. Ein Manager legt Geräte unter Einstellungen → Gastronomie → Kasse → Kassen-Geräte an.</p>
       {msg ? <p className="notice warn">{msg}</p> : null}
       {devices.length ? devices.filter((d) => d.free || d.mine).map((d) => <button key={d.code} className="btn secondary" onClick={() => pick(d.code)}>{d.code} {d.label}</button>) : <p className="muted">Noch kein Gerät angelegt.</p>}
     </div>

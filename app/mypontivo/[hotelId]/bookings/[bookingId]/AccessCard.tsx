@@ -6,7 +6,7 @@ const ST: Record<string, string> = { pending: "wird angelegt", active: "aktiv", 
 
 /** Zutrittscodes der Buchung (Modul «Zutritt (Nuki)») */
 export async function AccessCard({ hotel, bookingId, status }: { hotel: Hotel; bookingId: string; status: string }) {
-  if (!nukiConfigured(hotel)) return <div className="card" id="zutritt"><h3>Zutritt</h3><p className="muted small">Nuki ist noch nicht eingerichtet (Einstellungen → Geräte & Kasse → Zutritt).</p></div>;
+  if (!nukiConfigured(hotel)) return <div className="card" id="zutritt"><h3>Zutritt</h3><p className="muted small">Nuki ist noch nicht eingerichtet (Einstellungen → Technik → Geräte → Zutritt).</p></div>;
   const codes = await codesOfBooking(hotel.id, bookingId);
   const hid = (<><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="bookingId" value={bookingId} /></>);
   return (

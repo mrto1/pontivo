@@ -37,7 +37,7 @@ async function link(f: FormData) {
   catch (e) { if (!(e instanceof RoomLinkError)) throw e; here(c.hotel.id, `Nicht verbunden: ${e.message}`); }
 }
 
-/** Kassen-Geräte (Einstellungen → Technik → Geräte & Kasse): jedes Gerät hat einen eigenen, lückenlosen Bon-Nummernkreis */
+/** Kassen-Geräte (Einstellungen → Gastronomie → Kasse): jedes Gerät hat einen eigenen, lückenlosen Bon-Nummernkreis */
 export default async function PosDevicesPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;

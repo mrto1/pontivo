@@ -63,7 +63,7 @@ async function settings(f: FormData) {
   here(c.hotel.id, "Einstellungen gespeichert.");
 }
 
-/** Tischplan & Reservierung online (SPEC 20.1, Zahnrad → Verkauf): Tische, Plätze, Plan, Einstellungen der Online-Reservierung */
+/** Tischplan & Reservierung online (SPEC 20.1, Zahnrad → Gastronomie): Tische, Plätze, Plan, Einstellungen der Online-Reservierung */
 export default async function RestaurantSettingsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;

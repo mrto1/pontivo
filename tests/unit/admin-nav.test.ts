@@ -47,18 +47,20 @@ describe("Admin-Menü", () => {
     expect(group("Finanzen").tabs![4].tabs!.map((t) => t.key)).toEqual(["statistics", "hesta"]);
   });
 
-  it("Zahnrad: drei Gruppen mit je einem Satz Erklärung", () => {
+  it("Zahnrad: Gruppen mit je einem Satz Erklärung", () => {
     const groups = settingsGroups(nav);
-    expect(groups.map((g) => g.title)).toEqual(["Betrieb", "Verkauf", "Technik"]);
+    expect(groups.map((g) => g.title)).toEqual(["Betrieb", "Verkauf", "Gastronomie", "Technik"]);
     expect(groups.map((g) => g.items.map((i) => i.label))).toEqual([
       ["Grunddaten", "Zahlungsmethoden", "Zimmer & Tarife", "Zusatzleistungen", "Team & Rollen"],
-      ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "Speisekarte", "Tischplan & Reservierung online", "Online-Bestellung & Lieferung", "KI-Chat"],
-      ["Funktionen", "Geräte & Kasse", "Datenübernahme", "Abo & Gebühren"],
+      ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "KI-Chat"],
+      ["Speisekarte", "Tischplan & Reservierung online", "Online-Bestellung & Lieferung", "Kasse"],
+      ["Funktionen", "Geräte", "Datenübernahme", "Abo & Gebühren"],
     ]);
     for (const g of groups) { expect(g.lead.length).toBeGreaterThan(10); for (const i of g.items) expect(i.lead, i.label).toBeTruthy(); }
     expect(nav.settings.tabs!.find((i) => i.label === "Website & Buchung")!.tabs!.map((t) => t.key)).toEqual(["site", "direct", "api"]);
     expect(nav.settings.tabs!.find((i) => i.label === "Kanäle")!.tabs!.map((t) => t.key)).toEqual(["channex", "ical"]);
-    expect(nav.settings.tabs!.find((i) => i.label === "Geräte & Kasse")!.tabs!.map((t) => t.key)).toEqual(["terminal", "access", "posdevices", "posbridge"]);
+    expect(nav.settings.tabs!.find((i) => i.label === "Geräte")!.tabs!.map((t) => t.key)).toEqual(["terminal", "access"]);
+    expect(nav.settings.tabs!.find((i) => i.label === "Kasse")!.tabs!.map((t) => t.key)).toEqual(["posdevices", "posbridge"]);
   });
 
   it("Kalender startet mit dem Zimmerplan, wenn die Rezeption an ist, sonst mit Preise & Verfügbarkeit", () => {
@@ -133,7 +135,7 @@ describe("Admin-Menü", () => {
     expect(sectionFor(`${home}/rooms`, nav, home)).toBeNull(); // Zahnrad-Punkt ohne Unterreiter
     expect(sectionFor(`${home}/site/blocks`, nav, home)?.label).toBe("Website & Buchung");
     expect(sectionFor(`${home}/channex/booking`, nav, home)?.label).toBe("Kanäle");
-    expect(sectionFor(`${home}/zutritt`, nav, home)?.label).toBe("Geräte & Kasse");
+    expect(sectionFor(`${home}/zutritt`, nav, home)?.label).toBe("Geräte");
     expect(sectionFor(`${home}/preise`, nav, home)?.label).toBe("Kalender");
     expect(sectionFor(`${home}/inbox`, nav, home)?.label).toBe("Heute");
     expect(sectionFor(`${home}/guestbook`, nav, home)?.label).toBe("Buchungen");
