@@ -9,7 +9,6 @@ import { AreaProvider } from "@/components/admin/AreaContext";
 import { AreaSwitch } from "@/components/admin/AreaSwitch";
 import { cookies } from "next/headers";
 import { DINING_LABEL, LODGING_LABEL, type Area } from "@/src/admin/nav";
-import { onlineReservationsToday } from "@/src/services/reservations";
 import { SectionTabs } from "@/components/admin/SectionTabs";
 import { BrandMark } from "@/components/admin/BrandMark";
 import { SettingsFrame } from "@/components/admin/SettingsFrame";
@@ -28,7 +27,6 @@ export default async function HotelAdminLayout({ children, params }: { children:
   const vn = visibleNav(hotel, role, hiddenNavKeys(await moduleRows(hotel.id)), saved === "dining" ? "dining" : "lodging");
   const { nav, showSettings } = vn;
   const initialArea: Area = vn.navs.dining && nav === vn.navs.dining ? "dining" : "lodging";
-  const diningBadge = vn.showSwitch ? await onlineReservationsToday(hotel) : 0;
   const home = `/mypontivo/${hotel.id}`;
   // Stand der Einrichtung: Chip in der Kopfzeile und Hinweise auf jeder Seite (nur Inhaber und Geschäftsführung)
   const manages = !isLimitedRole(role) && atLeast(role, "manager");
@@ -51,7 +49,7 @@ export default async function HotelAdminLayout({ children, params }: { children:
               </ul>
             </details>
           ) : null}
-          {vn.showSwitch ? <AreaSwitch lodgingLabel={LODGING_LABEL[hotel.propertyType] ?? "Hotel"} diningLabel={DINING_LABEL[hotel.diningLabel]?.de ?? "Restaurant"} diningBadge={diningBadge} /> : null}
+          {vn.showSwitch ? <AreaSwitch lodgingLabel={LODGING_LABEL[hotel.propertyType] ?? "Hotel"} diningLabel={DINING_LABEL[hotel.diningLabel]?.de ?? "Restaurant"} /> : null}
           {steps ? <a href={`${home}/einrichten`} className="setup-chip" title="Einrichtung fortsetzen">Einrichtung {doneCount} von {steps.length}</a> : null}
           <AdminNav nav={nav} home={home} userLabel={`${user.email} · ${roleLabel(role)}`} initials={initials(user.name, user.email)} showSettings={showSettings} />
         </div>
