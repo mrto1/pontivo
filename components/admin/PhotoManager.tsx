@@ -14,7 +14,7 @@ export function PhotoManager({ hotelId, roomTypeId, photos, canEdit, page, alt }
       {canEdit && photos.length < MAX_PHOTOS ? (
         <form action={`/api/admin/hotels/${hotelId}/photos?from=${page}`} method="post" encType="multipart/form-data" className="inline-form">
           <input type="hidden" name="roomTypeId" value={roomTypeId ?? ""} />
-          <div style={{ flex: "1 1 220px" }}>
+          <div className="dropzone" style={{ flex: "1 1 100%" }}>
             <label>Fotos hochladen (JPG, PNG, WebP, max. 8 MB, bis 3 aufs Mal)</label>
             <input type="file" name="file" accept="image/jpeg,image/png,image/webp" multiple required />
           </div>

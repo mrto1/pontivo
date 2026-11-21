@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
@@ -13,7 +14,7 @@ import type { RatePlan, RoomType } from "@/src/db/schema";
 import { boardLabel } from "@/src/domain/board";
 import { hotelLocales, LOCALE_NAMES, type Locale } from "@/src/i18n/dict";
 import { PhotoManager } from "@/components/admin/PhotoManager";
-import { OpenOnHash } from "@/components/admin/OpenOnHash";
+import { DrawerKeys } from "@/components/admin/DrawerKeys";
 import { translateRooms, translationEnabled, translationsLeft, TranslateError } from "@/src/services/translate";
 
 /** Sprachen ausser Deutsch (Deutsch steht im Hauptfeld) */
@@ -66,16 +67,18 @@ function planInput(f: FormData): RatePlanInput {
 }
 
 /** Hilfsfunktion für die Server Actions unten: Rechte prüfen, ausführen, Meldung anzeigen */
-async function act(f: FormData, fn: (ctx: Awaited<ReturnType<typeof requireHotel>>) => Promise<string>, anchor = "") {
+async function act(f: FormData, fn: (ctx: Awaited<ReturnType<typeof requireHotel>>) => Promise<string | { msg: string; q: string }>, q = "") {
   const ctx = await requireHotel(s(f, "hotelId"), "manager");
   let msg: string;
   try {
-    msg = await fn(ctx);
+    const r = await fn(ctx);
+    if (typeof r === "string") msg = r; else { msg = r.msg; q = r.q; }
   } catch (e) {
     msg = `Nicht gespeichert: ${errorText(e)}`;
   }
   revalidatePath(`/mypontivo/${ctx.hotel.id}/rooms`);
-  redirect(`/mypontivo/${ctx.hotel.id}/rooms?msg=${encodeURIComponent(msg)}${anchor}`);
+  // q = Adressteil der Seitenleiste (z. B. «rt=…&tab=tarife»), damit sie nach dem Speichern offen bleibt
+  redirect(`/mypontivo/${ctx.hotel.id}/rooms?${q ? `${q}&` : ""}msg=${encodeURIComponent(msg)}`);
 }
 
 async function translateAll(f: FormData) {
@@ -97,7 +100,7 @@ async function saveRoom(f: FormData) {
   await act(f, async ({ hotel, actor }) => {
     if (id) {
       await updateRoomType(hotel.id, id, roomInput(f), actor);
-      return "Zimmertyp gespeichert";
+      return { msg: "Zimmertyp gespeichert", q: `rt=${id}&tab=grunddaten` };
     }
     const input = roomInput(f);
     const rt = await createRoomType(hotel.id, input, actor);
@@ -107,10 +110,10 @@ async function saveRoom(f: FormData) {
         name: "Standard", board: "none", mealRappen: 0, freeCancelHours: 48, cancelFeeBps: 10000, // ASSUMPTION: kostenlos stornierbar bis 2 Tage vorher, danach 100 %
         baseOccupancy: Math.min(2, input.maxOccupancy), extraAdultRappen: 0, singleDiscountRappen: 0, minNights: 1, arrivalWeekdays: [], active: true,
       }, chf(f, "startPrice"), actor);
-      return "Zimmertyp mit Tarif «Standard» angelegt. Preise pro Tag passen Sie im Kalender an.";
+      return { msg: "Zimmertyp mit Tarif «Standard» angelegt. Preise pro Tag passen Sie im Kalender an.", q: `rt=${rt.id}&tab=tarife` };
     }
-    return "Zimmertyp angelegt. Jetzt einen Tarif hinzufügen.";
-  }, id ? `#rt-${id}` : "");
+    return { msg: "Zimmertyp angelegt. Jetzt einen Tarif hinzufügen.", q: `rt=${rt.id}&tab=tarife&plan=neu` };
+  }, id ? `rt=${id}&tab=grunddaten` : "neu=1");
 }
 
 async function savePlan(f: FormData) {
@@ -119,14 +122,14 @@ async function savePlan(f: FormData) {
   await act(f, async ({ hotel, actor }) => {
     if (id) {
       await updateRatePlan(hotel.id, id, planInput(f), actor);
-      return "Tarif gespeichert";
+      return { msg: "Tarif gespeichert", q: `rt=${s(f, "roomTypeId")}&tab=tarife` };
     }
     await createRatePlan(hotel.id, s(f, "roomTypeId"), planInput(f), chf(f, "price"), actor);
-    return "Tarif angelegt. Preise pro Tag passt du im Kalender an.";
-  }, `#rt-${s(f, "roomTypeId")}`);
+    return { msg: "Tarif angelegt. Preise pro Tag passen Sie im Kalender an.", q: `rt=${s(f, "roomTypeId")}&tab=tarife` };
+  }, `rt=${s(f, "roomTypeId")}&tab=tarife&plan=${id || "neu"}`);
 }
 
-function RoomForm({ hotelId, rt, canEdit, nextOrder = 0, langs }: { hotelId: string; rt?: RoomType; canEdit: boolean; nextOrder?: number; langs: Locale[] }) {
+function RoomForm({ hotelId, rt, canEdit, nextOrder = 0, langs, cancelHref }: { hotelId: string; rt?: RoomType; canEdit: boolean; nextOrder?: number; langs: Locale[]; cancelHref: string }) {
   return (
     <form action={saveRoom} className="stack">
       <input type="hidden" name="hotelId" value={hotelId} />
@@ -158,12 +161,12 @@ function RoomForm({ hotelId, rt, canEdit, nextOrder = 0, langs }: { hotelId: str
         </div>
       ) : null}
       <label className="check"><input type="checkbox" name="active" defaultChecked={rt?.active ?? true} disabled={!canEdit} />Buchbar (auf der Website und bei Portalen)</label>
-      {canEdit ? <button className="btn">{rt ? "Zimmertyp speichern" : "Zimmertyp anlegen"}</button> : null}
+      {canEdit ? <div className="drawer-actions"><button className="btn">{rt ? "Speichern" : "Zimmertyp anlegen"}</button><Link className="btn secondary" href={cancelHref} scroll={false}>Abbrechen</Link></div> : null}
     </form>
   );
 }
 
-function PlanForm({ hotelId, roomTypeId, p, canEdit, langs }: { hotelId: string; roomTypeId: string; p?: RatePlan; canEdit: boolean; langs: Locale[] }) {
+function PlanForm({ hotelId, roomTypeId, p, canEdit, langs, cancelHref }: { hotelId: string; roomTypeId: string; p?: RatePlan; canEdit: boolean; langs: Locale[]; cancelHref: string }) {
   const free = p ? p.freeCancelHours !== null : true;
   return (
     <form action={savePlan} className="stack">
@@ -210,10 +213,13 @@ function PlanForm({ hotelId, roomTypeId, p, canEdit, langs }: { hotelId: string;
       <p className="muted small">Bei Halb-/Vollpension weist die Rechnung die Verpflegung zum Normalsatz aus (Beherbergung zum Sondersatz).</p>
       <label className="check"><input type="checkbox" name="active" defaultChecked={p?.active ?? true} disabled={!canEdit} />Buchbar</label>
       {p ? <p className="muted small">Gast sieht: {cancellationPolicyText(p, "de")}</p> : <p className="muted small">Der Startpreis gilt für alle Tage der nächsten 18 Monate. Wochenend- oder Saisonpreise setzt du danach im Kalender.</p>}
-      {canEdit ? <button className="btn small">{p ? "Tarif speichern" : "Tarif anlegen"}</button> : null}
+      {canEdit ? <div className="drawer-actions"><button className="btn">{p ? "Speichern" : "Tarif anlegen"}</button><Link className="btn secondary" href={cancelHref} scroll={false}>Abbrechen</Link></div> : null}
     </form>
   );
 }
+
+type Tab = "grunddaten" | "fotos" | "tarife";
+const TABS: { key: Tab; label: string }[] = [{ key: "grunddaten", label: "Grunddaten" }, { key: "fotos", label: "Fotos" }, { key: "tarife", label: "Tarife" }];
 
 export default async function Rooms({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
@@ -223,14 +229,24 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
   const list = await listRooms(hotel.id);
   const langs = hotelLocales(hotel);
   const left = translationsLeft(hotel);
+  const base = `/mypontivo/${hotel.id}/rooms`;
+
+  // Seitenleiste: ?rt=<id>&tab=grunddaten|fotos|tarife[&plan=<id>|neu], neuer Zimmertyp: ?neu=1
+  const open = list.find((x) => x.roomType.id === sp.rt);
+  const creating = canEdit && sp.neu === "1" && !open;
+  const tab: Tab = TABS.some((t) => t.key === sp.tab) ? (sp.tab as Tab) : "grunddaten";
+  const msgClass = sp.msg ? `notice ${sp.msg.startsWith("Nicht") || sp.msg.includes(":") ? "warn" : ""}` : "";
+  const drawerOpen = !!open || creating;
+  const at = (t: Tab, plan?: string) => `${base}?rt=${open?.roomType.id}&tab=${t}${plan ? `&plan=${plan}` : ""}`;
+  const plan = open && tab === "tarife" && sp.plan ? (sp.plan === "neu" ? "neu" : open.plans.find((p) => p.id === sp.plan) ?? null) : null;
 
   return (
     <div className="stack">
-      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
         <h1 style={{ margin: 0 }}>Zimmer & Tarife</h1>
-        <a className="btn secondary small" href={`/mypontivo/${hotel.id}/rooms/extras`}>Zusatzleistungen (Hund, Parkplatz, Endreinigung …)</a>
+        {canEdit ? <Link className="btn" href={`${base}?neu=1`} scroll={false}>+ Zimmertyp hinzufügen</Link> : null}
       </div>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") || sp.msg.includes(":") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg && !drawerOpen ? <p className={msgClass}>{sp.msg}</p> : null}
       {hotel.channexEnabled ? <p className="notice warn small">Neue Zimmertypen oder Tarife zusätzlich auf der Seite «Channex» anlegen bzw. zuordnen, damit sie auch bei Booking.com erscheinen.</p> : null}
 
       {langs.length > 1 && canEdit && translationEnabled() ? (
@@ -241,57 +257,71 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
         </form>
       ) : null}
 
-      <OpenOnHash />
-      {list.map(({ roomType: rt, plans }) => (
-        <details key={rt.id} className="card rt" id={`rt-${rt.id}`}>
-          <summary className="rt-sum">
-            {rt.photos[0] ? <img className="rt-thumb" src={rt.photos[0].url} alt="" loading="lazy" /> : <span className="rt-thumb rt-thumb-empty" aria-hidden="true" />}
-            <span className="rt-title">
-              <strong>{rt.name}</strong>
-              <span className="muted small">
-                {rt.roomCount} Zimmer · {plans.length === 0 ? "kein Tarif" : `${plans.length} Tarif${plans.length === 1 ? "" : "e"}`}{rt.active ? "" : " · nicht buchbar"}
+      {list.length === 0 ? <p className="muted">Noch kein Zimmertyp.{canEdit ? " Legen Sie oben den ersten an." : ""}</p> : null}
+      <ul className="rt-list">
+        {list.map(({ roomType: rt, plans }) => (
+          <li key={rt.id}>
+            <Link className="card rt-card" href={`${base}?rt=${rt.id}&tab=grunddaten`} scroll={false} aria-label={`${rt.name} ${canEdit ? "bearbeiten" : "ansehen"}`}>
+              {rt.photos[0] ? <img className="rt-thumb" src={rt.photos[0].url} alt="" loading="lazy" /> : <span className="rt-thumb rt-thumb-empty" aria-hidden="true" />}
+              <span className="rt-title">
+                <strong>{rt.name}</strong>
+                <span className="muted small">{rt.roomCount} Zimmer · bis {rt.maxOccupancy} Personen</span>
+                <span className="rt-chips">
+                  {plans.map((p) => <span key={p.id} className={`chip${p.active ? "" : " off"}`}>{p.name}</span>)}
+                </span>
               </span>
-            </span>
-            {plans.length === 0 || !rt.active ? <span className="rt-flag warn small">{!rt.active ? "nicht buchbar" : "ohne Tarif"}</span> : null}
-            <span className="rt-chevron" aria-hidden="true" />
-          </summary>
-          <div className="rt-body stack">
-            {canEdit ? (
-              <details className="rt-edit">
-                <summary className="icon-btn" title="Zimmertyp bearbeiten" aria-label="Zimmertyp bearbeiten">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-                  <span>Bearbeiten</span>
-                </summary>
-                <div style={{ marginTop: 12 }}><RoomForm hotelId={hotel.id} rt={rt} canEdit={canEdit} langs={langs} /></div>
-              </details>
-            ) : null}
-            <h3>Fotos</h3>
-            <PhotoManager hotelId={hotel.id} roomTypeId={rt.id} photos={rt.photos} canEdit={canEdit} page="rooms" alt="z. B. Doppelzimmer mit Seesicht" />
-            <h3>Tarife</h3>
-            {plans.length === 0 ? <p className="notice warn small">Noch kein Tarif – ohne Tarif ist das Zimmer nicht buchbar.</p> : null}
-            {plans.map((p) => (
-              <details key={p.id} className="card">
-                <summary>
-                  <strong>{p.name}</strong> <span className="muted small">· {boardLabel(p.board)} · {p.freeCancelHours !== null ? `kostenlos stornierbar bis ${p.freeCancelHours / 24} Tag(e) vorher` : "nicht kostenlos stornierbar"}{p.active ? "" : " · nicht buchbar"}</span>
-                </summary>
-                <div style={{ marginTop: 12 }}><PlanForm hotelId={hotel.id} roomTypeId={rt.id} p={p} canEdit={canEdit} langs={langs} /></div>
-              </details>
-            ))}
-            {canEdit ? (
-              <details>
-                <summary className="btn secondary small">+ Tarif hinzufügen</summary>
-                <div style={{ marginTop: 12 }}><PlanForm hotelId={hotel.id} roomTypeId={rt.id} canEdit={canEdit} langs={langs} /></div>
-              </details>
-            ) : null}
-          </div>
-        </details>
-      ))}
+              {!rt.active ? <span className="rt-flag warn small">nicht buchbar</span> : plans.length === 0 ? <span className="rt-flag warn small">ohne Tarif</span> : null}
+              <span className="rt-go" aria-hidden="true">{canEdit ? "Bearbeiten" : "Ansehen"} <span className="rt-arrow">›</span></span>
+            </Link>
+          </li>
+        ))}
+      </ul>
 
-      {canEdit ? (
-        <section className="card stack">
-          <h2>Neuer Zimmertyp</h2>
-          <RoomForm hotelId={hotel.id} canEdit={canEdit} langs={langs} nextOrder={list.reduce((m, x) => Math.max(m, x.roomType.sortOrder + 1), 0)} />
-        </section>
+      {drawerOpen ? (
+        <div className="drawer-wrap">
+          <Link className="drawer-backdrop" href={base} scroll={false} aria-label="Schliessen" tabIndex={-1} />
+          <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" tabIndex={-1}>
+            <header className="drawer-head">
+              <h2 id="drawer-title">{open ? open.roomType.name : "Neuer Zimmertyp"}</h2>
+              <Link className="drawer-close" href={base} scroll={false} aria-label="Schliessen">✕</Link>
+            </header>
+            {open ? (
+              <nav className="drawer-tabs" aria-label="Bereiche des Zimmertyps">
+                {TABS.map((t) => <Link key={t.key} href={at(t.key)} scroll={false} className={t.key === tab ? "on" : undefined} aria-current={t.key === tab ? "page" : undefined}>{t.label}{t.key === "tarife" ? ` (${open.plans.length})` : ""}</Link>)}
+              </nav>
+            ) : null}
+            <div className="drawer-body stack">
+              {sp.msg ? <p className={msgClass}>{sp.msg}</p> : null}
+              {creating ? <RoomForm hotelId={hotel.id} canEdit={canEdit} langs={langs} cancelHref={base} nextOrder={list.reduce((m, x) => Math.max(m, x.roomType.sortOrder + 1), 0)} /> : null}
+              {open && tab === "grunddaten" ? <RoomForm hotelId={hotel.id} rt={open.roomType} canEdit={canEdit} langs={langs} cancelHref={base} /> : null}
+              {open && tab === "fotos" ? <PhotoManager hotelId={hotel.id} roomTypeId={open.roomType.id} photos={open.roomType.photos} canEdit={canEdit} page="rooms" alt="z. B. Doppelzimmer mit Seesicht" /> : null}
+              {open && tab === "tarife" && !plan ? (
+                <>
+                  {open.plans.length === 0 ? <p className="notice warn small">Noch kein Tarif: ohne Tarif ist das Zimmer nicht buchbar.</p> : null}
+                  <ul className="plan-list">
+                    {open.plans.map((p) => (
+                      <li key={p.id}>
+                        <Link href={at("tarife", p.id)} scroll={false} className="plan-row" aria-label={`Tarif ${p.name} ${canEdit ? "bearbeiten" : "ansehen"}`}>
+                          <span><strong>{p.name}</strong><br /><span className="muted small">{boardLabel(p.board)} · {p.freeCancelHours !== null ? `kostenlos stornierbar bis ${p.freeCancelHours / 24} Tag(e) vorher` : "nicht kostenlos stornierbar"}{p.active ? "" : " · nicht buchbar"}</span></span>
+                          <span className="rt-arrow" aria-hidden="true">›</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  {canEdit ? <div><Link className="btn secondary" href={at("tarife", "neu")} scroll={false}>+ Tarif hinzufügen</Link></div> : null}
+                </>
+              ) : null}
+              {open && tab === "tarife" && plan ? (
+                <>
+                  <p className="small"><Link href={at("tarife")} scroll={false}>‹ Alle Tarife</Link></p>
+                  <h3 style={{ margin: 0 }}>{plan === "neu" ? "Neuer Tarif" : plan.name}</h3>
+                  <PlanForm hotelId={hotel.id} roomTypeId={open.roomType.id} p={plan === "neu" ? undefined : plan} canEdit={canEdit} langs={langs} cancelHref={at("tarife")} />
+                </>
+              ) : null}
+            </div>
+          </aside>
+          <DrawerKeys closeHref={base} />
+        </div>
       ) : null}
     </div>
   );

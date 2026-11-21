@@ -910,3 +910,34 @@ pre { overflow-x: auto; }
 .login-divider { display: flex; align-items: center; gap: 12px; font-size: .85rem; opacity: .7; }
 .login-divider::before, .login-divider::after { content: ""; flex: 1; height: 1px; background: currentColor; opacity: .25; }
 .login-alt { margin: 0; text-align: center; }
+
+/* Zimmer & Tarife (SPEC 19.44): Liste aus anklickbaren Karten, Bearbeiten in der Seitenleiste */
+.rt-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.rt-card { display: flex; align-items: center; gap: 14px; color: inherit; text-decoration: none; transition: border-color .12s, background .12s; }
+.rt-card:hover { border-color: var(--accent); background: var(--accent-soft); }
+.rt-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rt-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.chip { font-size: .75rem; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); border: 1px solid var(--line); }
+.chip.off { opacity: .55; text-decoration: line-through; }
+.rt-go { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; font-weight: 600; color: var(--accent); }
+.rt-arrow { font-size: 1.4rem; line-height: 1; }
+@media (max-width: 520px) { .rt-go { font-size: 0; } .rt-go .rt-arrow { font-size: 1.6rem; } }
+.drawer-wrap, .stack > .drawer-wrap { position: fixed; inset: 0; margin: 0; z-index: 60; display: flex; justify-content: flex-end; }
+.drawer-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
+.drawer { position: relative; width: min(620px, 100%); height: 100%; background: var(--surface); box-shadow: -12px 0 40px rgba(0,0,0,.25); display: flex; flex-direction: column; outline: none; animation: drawer-in .18s ease-out; }
+@keyframes drawer-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .drawer { animation: none; } }
+.drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px 8px; }
+.drawer-head h2 { margin: 0; font-size: 1.25rem; }
+.drawer-close { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; color: var(--muted); text-decoration: none; font-size: 1.1rem; }
+.drawer-close:hover { background: var(--accent-soft); color: var(--ink); }
+.drawer-tabs { display: flex; gap: 4px; padding: 0 20px; border-bottom: 1px solid var(--line); }
+.drawer-tabs a { padding: 10px 12px; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.drawer-tabs a.on { color: var(--ink); font-weight: 600; border-bottom-color: var(--accent); }
+.drawer-body { flex: 1; overflow-y: auto; padding: 20px; align-content: start; }
+.drawer-actions { position: sticky; bottom: -20px; display: flex; gap: 8px; padding: 14px 0; margin-top: 8px; background: var(--surface); border-top: 1px solid var(--line); }
+.plan-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.plan-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; color: inherit; text-decoration: none; }
+.plan-row:hover { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone input[type=file] { width: 100%; padding: 18px; border: 2px dashed var(--field-line); border-radius: 12px; background: transparent; }
+@media (max-width: 640px) { .drawer { width: 100%; } }

@@ -1042,3 +1042,10 @@ Normaler Weg ist **E-Mail und Passwort** (optional mit 2FA), gleichwertig **Pass
 - **Login-Seite:** Karte mit Logo, grosse **Passkey-Kachel** (Fingerabdruck-Symbol, «Fingerabdruck, Gesicht oder Gerätecode. Kein Passwort nötig.»), darunter «oder mit Passwort». Auf Geräten, auf denen schon ein Passkey benutzt oder angelegt wurde (Merker `localStorage` `pontivo.passkey`, nur ein Hinweis), startet der Passkey beim Öffnen von selbst; nicht nach einer Fehlermeldung. Sonst Passkey-Vorschlag im E-Mail-Feld (Conditional UI). Ohne WebAuthn-Unterstützung fehlt die Kachel.
 - **Bestehende Konten (Test):** `scripts/set-password.ts <E-Mail> "<Passwort>"` für ein Konto; `--alle-test "<Passwort>"` setzt es für alle Konten ohne Passwort, nur mit `ENVIRONMENT_LABEL=int` oder `dev` (nie auf der Produktion).
 - Abnahme: `tests/unit/password.test.ts`, `tests/integration/password.test.ts`, `tests/e2e/password-login.spec.ts`, `tests/e2e/mfa.spec.ts`.
+
+### 19.44 Zimmer & Tarife: Karten und Seitenleiste
+- **Liste:** jeder Zimmertyp ist eine ganze Karte (Foto, Name, «N Zimmer · bis M Personen», Tarife als Chips, am Rand «Bearbeiten ›»; mit Leserecht «Ansehen ›»). Ein Klick irgendwo auf die Karte öffnet die Seitenleiste. «+ Zimmertyp hinzufügen» steht oben rechts.
+- **Seitenleiste** (rechts, Hintergrund abgedunkelt, auf dem Handy volle Breite) mit Reitern **Grunddaten · Fotos · Tarife (n)**; Zustand nur in der URL (`?rt=<id>&tab=grunddaten|fotos|tarife`, `&plan=<id>|neu`, `?neu=1` für einen neuen Zimmertyp). Speichern lässt die Leiste offen; Abbrechen, Klick auf den Hintergrund, ✕ und Esc schliessen sie (`components/admin/DrawerKeys.tsx`). Fotos-Aktionen und «Tarif anlegen» im Kalender führen in die jeweilige Leiste zurück.
+- **Zusatzleistungen** sind ein eigener Punkt unter Zahnrad → Betrieb (unterhalb von «Zimmer & Tarife», `rooms/extras`), nicht mehr ein Knopf auf der Zimmerseite.
+- Nicht enthalten: Warnung bei ungespeicherten Änderungen.
+- Abnahme: `tests/e2e/rooms-drawer.spec.ts`, `tests/unit/admin-nav.test.ts`.

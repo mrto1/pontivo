@@ -162,7 +162,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
                   <tr className="rp-row">
                     <td className="sticky"><span className="rp-name muted">Kein Tarif</span></td>
                     <td colSpan={days.length} className="cal-notarif">
-                      Ohne Tarif ist «{rt.name}» nicht buchbar und hier ohne Preise. {canEdit ? <a href={`/mypontivo/${hotel.id}/rooms#rt-${rt.id}`}>Tarif anlegen</a> : "Bitte den Inhaber oder Manager einen Tarif anlegen lassen."}
+                      Ohne Tarif ist «{rt.name}» nicht buchbar und hier ohne Preise. {canEdit ? <a href={`/mypontivo/${hotel.id}/rooms?rt=${rt.id}&tab=tarife&plan=neu`}>Tarif anlegen</a> : "Bitte den Inhaber oder Manager einen Tarif anlegen lassen."}
                     </td>
                   </tr>
                 ) : null}

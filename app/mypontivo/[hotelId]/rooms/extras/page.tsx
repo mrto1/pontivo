@@ -104,8 +104,7 @@ export default async function Extras({ params, searchParams }: { params: Promise
 
   return (
     <div className="stack">
-      <p className="small"><a href={`/mypontivo/${hotel.id}/rooms`}>← Zimmer & Tarife</a></p>
-      <h1>Zusatzleistungen</h1>
+            <h1>Zusatzleistungen</h1>
       {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
       <p className="muted">Gäste wählen Zusatzleistungen bei der Online-Buchung dazu, der Betrag wird gleich mitbezahlt. Obligatorische Leistungen sind im angezeigten Gesamtpreis bereits enthalten (Preisbekanntgabe). Bei einer Stornierung werden Zusatzleistungen immer zurückerstattet; die Stornogebühr gilt nur für den Zimmerpreis.</p>
       {hotel.channexEnabled ? <p className="notice warn small">Buchungen über Booking.com &amp; Co. enthalten diese Zusatzleistungen nicht. Obligatorische Gebühren wie eine Endreinigung bitte zusätzlich im Extranet des Portals eintragen.</p> : null}

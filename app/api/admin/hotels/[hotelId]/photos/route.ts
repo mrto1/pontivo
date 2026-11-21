@@ -14,12 +14,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ hotelId: strin
   if (!userId || !atLeast(await roleIn(userId, hotelId), "manager")) return new Response("Not found", { status: 404 });
   const from = new URL(req.url).searchParams.get("from");
   const base = `${env().APP_BASE_URL}/mypontivo/${hotelId}`;
-  const back = (msg: string, anchor = "") => {
+  const back = (msg: string, roomTypeId: string | null = null, anchor = "") => {
     const m = encodeURIComponent(msg);
     // Zurück auf die Seite, von der das Formular kam (Assistent, Website-Seite, sonst Zimmer-Seite)
     if (from === "wizard" || from === "einrichten") return Response.redirect(`${base}/einrichten?step=fotos&msg=${m}`, 303);
     if (from === "site") return Response.redirect(`${base}/site?msg=${m}#hotel-photos`, 303);
-    return Response.redirect(`${base}/rooms?msg=${m}${anchor}`, 303);
+    // Zimmertyp: zurück in die Seitenleiste (Reiter Fotos)
+    return Response.redirect(`${base}/rooms?${roomTypeId ? `rt=${roomTypeId}&tab=fotos&` : ""}msg=${m}${anchor}`, 303);
   };
 
   const len = Number(req.headers.get("content-length") ?? 0);
@@ -42,7 +43,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ hotelId: strin
   }
   const alt = String(form.get("alt") ?? "").trim().slice(0, 200) || undefined;
   const files = form.getAll("file").filter((f): f is File => f instanceof File && f.size > 0).slice(0, 3);
-  if (!files.length) return back("Keine Datei ausgewählt");
+  if (!files.length) return back("Keine Datei ausgewählt", roomTypeId);
   let added = 0;
   for (const f of files) {
     let url: string | null = null;
@@ -52,9 +53,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ hotelId: strin
       added++;
     } catch (e) {
       if (url) await deleteImage(url);
-      if (e instanceof UploadError || e instanceof RoomError) return back(`${f.name}: ${e.message}`);
+      if (e instanceof UploadError || e instanceof RoomError) return back(`${f.name}: ${e.message}`, roomTypeId);
       throw e;
     }
   }
-  return back(`${added} Foto(s) hochgeladen`, roomTypeId ? `#rt-${roomTypeId}` : "#hotel-photos");
+  return back(`${added} Foto(s) hochgeladen`, roomTypeId, roomTypeId ? "" : "#hotel-photos");
 }

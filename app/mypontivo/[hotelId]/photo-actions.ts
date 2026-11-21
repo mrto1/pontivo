@@ -32,5 +32,7 @@ export async function photoAction(f: FormData) {
     msg = `Nicht gespeichert: ${e instanceof RoomError ? e.message : "Fehler"}`;
   }
   revalidatePath(`/mypontivo/${c.hotel.id}/${page === "einrichten" ? "einrichten" : page}`);
-  redirect(`${PAGE[page](c.hotel.id)}msg=${encodeURIComponent(msg)}${page === "einrichten" ? "" : roomTypeId ? `#rt-${roomTypeId}` : "#hotel-photos"}`);
+  // Zimmer-Seite: zurück in die Seitenleiste des Zimmertyps (Reiter Fotos)
+  const drawer = page === "rooms" && roomTypeId ? `rt=${roomTypeId}&tab=fotos&` : "";
+  redirect(`${PAGE[page](c.hotel.id)}${drawer}msg=${encodeURIComponent(msg)}${page === "einrichten" || page === "rooms" ? "" : "#hotel-photos"}`);
 }
