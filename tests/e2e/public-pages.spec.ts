@@ -38,6 +38,10 @@ test("Startseite, Unterkünfte und Restaurant-Seite mit Freischaltung", async ({
     await expect(page.locator("#preise")).toContainText("1.9 % pro Bestellung");
     await expect(page.getByTestId("order-offer")).toContainText("Sonderangebot: 3 Monate Online-Bestellung pauschal");
     await expect(page.getByTestId("order-offer")).toContainText("CHF 59 pro Monat");
+    await page.getByTestId("order-offer").getByRole("link", { name: "Pilotbedingungen Online-Bestellung" }).click();
+    await expect(page.getByRole("heading", { name: /Pilotbedingungen Online-Bestellung/, level: 1 })).toBeVisible();
+    await expect(page.getByText(/höchstens CHF 149.00 pro Kalendermonat/)).toBeVisible();
+    await page.goBack();
     await page.getByRole("link", { name: "Jetzt selbst einrichten" }).click();
     await expect(page).toHaveURL(/\/registrieren\?art=restaurant$/);
     await expect(page.getByRole("heading", { name: /Ihr Restaurant online/ })).toBeVisible();

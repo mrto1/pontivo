@@ -1,5 +1,6 @@
 import s from "./marketing.module.css";
 import { ContactBlock, Faq, MarketingShell, mailHref, type ShellContact } from "./Shell";
+import { pageHref } from "./PontivoHome";
 
 // Rechenbeispiel (Texte-Dokument Abschnitt 3): 400 Bestellungen à CHF 35 = CHF 14'000 Bestellumsatz
 const ORDERS = 400;
@@ -127,6 +128,7 @@ export function RestaurantHome({ contact, account, draft, fee, feeBps, minimum, 
             {pilot ? (
               <p data-testid="order-pilot"><strong>Für die ersten {pilot.slots} Restaurants: Pilotbetrieb.</strong> Sie zahlen {pilot.months} Monate lang ab dem Start nie mehr als {cap} pro Monat für die Online-Bestellung, auch wenn Ihre {fee} % mehr ergäben. Dafür hören wir Ihnen zu: Ihre Rückmeldungen fliessen direkt in neue Funktionen. <strong>Noch {pilot.left} von {pilot.slots} Plätzen frei.</strong></p>
             ) : null}
+            <p className={s.fieldHint}>Alle Einzelheiten: <a href={pageHref("/pilot-bedingungen", st)}>Pilotbedingungen Online-Bestellung</a>. Preise ohne MWST, sofern geschuldet.</p>
           </div>
         </div>
       </section>

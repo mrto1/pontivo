@@ -45,7 +45,7 @@ export default async function Zahlungsverbindung({ searchParams }: { searchParam
       </section>
       <section className="card stack" data-testid="order-pilots">
         <h2>Pilotbetriebe Online-Bestellung</h2>
-        <p className="small muted">Die ersten {PILOT_SLOTS} Betriebe, die die Online-Bestellung einschalten, werden automatisch Pilotbetrieb: 12 Monate ab Start höchstens {formatChf(PILOT_CAP_RAPPEN)} Gebühren pro Monat (wirkt erst mit 1,9 % pro Bestellung). Vergeben: {used} von {PILOT_SLOTS}. Entziehen gibt den Platz frei.</p>
+        <p className="small muted">Die ersten {PILOT_SLOTS} Betriebe, die die Online-Bestellung einschalten, werden automatisch Pilotbetrieb: 12 Monate ab Start höchstens {formatChf(PILOT_CAP_RAPPEN)} Gebühren pro Monat (wirkt erst mit 1,9 % pro Bestellung). Vergeben: {used} von {PILOT_SLOTS}. Entziehen gibt den Platz frei (Gründe: <a href="/pilot-bedingungen" target="_blank">Pilotbedingungen</a> Ziffer 3). Vor Ende des Sonderangebots geht 30 Tage vorher automatisch ein Hinweis an den Betrieb, wenn das Modell auf 1,9 % steht. Die Umstellung des Modells mindestens 60 Tage vorher ankündigen (Ziffer 2).</p>
         {pilots.length ? (
           <table className="table">
             <thead><tr><th>Betrieb</th><th>Start</th><th>Sonderangebot bis</th><th>Pilot bis</th><th /></tr></thead>

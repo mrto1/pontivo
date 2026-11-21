@@ -549,6 +549,15 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
         [`${de ? "Rechnung" : "Invoice"}: ${d.invoiceNo}`, `${de ? "Netto" : "Net"}: ${d.net}`, ...(d.vat ? [`${de ? "MWST" : "VAT"}: ${d.vat}`] : []), `${de ? "Zu bezahlen" : "Amount due"}: ${d.amount}`, `${de ? "Fällig" : "Due"}: ${d.due}`],
         { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/plattform-rechnung/${d.invoiceId}`, label: de ? "QR-Rechnung öffnen" : "Open QR bill" });
     }
+    case "host_order_intro_ending": {
+      const d = c.data as Record<string, string>;
+      const dmy = (x: string) => x.split("-").reverse().join(".");
+      return wrap(c, l, de ? `${env().PLATFORM_NAME}: Sonderangebot Online-Bestellung endet am ${dmy(d.last)}` : `${env().PLATFORM_NAME}: online ordering introductory offer ends on ${dmy(d.last)}`,
+        de ? ["Guten Tag,", `das Sonderangebot Ihrer Online-Bestellung (pauschal pro Monat) endet am ${dmy(d.last)}. Ab ${dmy(d.from)} gilt nach den Pilotbedingungen der Normalpreis von ${d.fee} % pro Bestellung.${d.pilotUntil ? ` Als Pilotbetrieb zahlen Sie bis ${dmy(d.pilotUntil)} höchstens ${d.cap} pro Monat.` : ""} Sie müssen nichts tun. Die Online-Bestellung können Sie jederzeit ausschalten.`]
+          : ["Hello,", `the introductory offer for your online ordering (flat monthly fee) ends on ${dmy(d.last)}. From ${dmy(d.from)} the regular price of ${d.fee} % per order applies.${d.pilotUntil ? ` As a pilot business you pay at most ${d.cap} per month until ${dmy(d.pilotUntil)}.` : ""}`],
+        [`${de ? "Normalpreis ab" : "Regular price from"}: ${dmy(d.from)}`, `${de ? "Gebühr" : "Fee"}: ${d.fee} %`, ...(d.pilotUntil ? [`${de ? "Kostendach" : "Cap"}: ${d.cap} ${de ? "pro Monat" : "per month"}`] : [])],
+        { href: `${env().APP_BASE_URL}/pilot-bedingungen`, label: de ? "Pilotbedingungen ansehen" : "View pilot terms" });
+    }
     case "host_invoice_reminder": {
       const d = c.data as Record<string, string>;
       return wrap(c, l, de ? `${env().PLATFORM_NAME}: ${d.level} zu Rechnung ${d.invoiceNo}` : `${env().PLATFORM_NAME}: reminder for invoice ${d.invoiceNo}`,

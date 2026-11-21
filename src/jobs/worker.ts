@@ -41,7 +41,7 @@ import { deliverDue, webhookCleanup } from "../services/webhooks";
 import { recoveryJob, waitlistJob, winbackJob } from "../services/direct-tools";
 import { monthlyMailJob } from "../services/monthly-mail";
 import { tableJob } from "../services/reservations";
-import { onlineOrdersJob } from "../services/online-orders";
+import { introNoticeJob, onlineOrdersJob } from "../services/online-orders";
 import { sendDueSms } from "../services/sms";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
@@ -66,6 +66,7 @@ const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "onboarding-reminders", cron: "20 9 * * *", run: () => onboardingReminders() },
   { name: "billing-minimum", cron: "10 7 * * *", run: () => runMonthlyMinimum() },
   { name: "billing-dunning", cron: "25 8 * * *", run: () => dunningJob() },
+  { name: "order-intro-notice", cron: "35 8 * * *", run: () => introNoticeJob() },
   { name: "ical-sync", cron: "*/15 * * * *", run: () => syncDueFeeds() },
   { name: "accounting-export", cron: "40 8 5 * *", run: () => monthlyAccountingJob() },
   { name: "access", cron: "10 * * * *", run: () => accessJob() },

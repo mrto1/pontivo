@@ -12,7 +12,7 @@ import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:3000";
 const out = process.argv[3] ?? "out/static-site";
-const pages = [["/", "index.html"], ["/unterkunft", "unterkunft.html"], ["/restaurant", "restaurant.html"], ["/impressum", "impressum.html"], ["/datenschutz", "datenschutz.html"], ["/gastgeber-bedingungen", "gastgeber-bedingungen.html"]];
+const pages = [["/", "index.html"], ["/unterkunft", "unterkunft.html"], ["/restaurant", "restaurant.html"], ["/impressum", "impressum.html"], ["/datenschutz", "datenschutz.html"], ["/gastgeber-bedingungen", "gastgeber-bedingungen.html"], ["/pilot-bedingungen", "pilot-bedingungen.html"]];
 
 const CALC = `<script>
 (function () {

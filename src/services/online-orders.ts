@@ -1,13 +1,16 @@
 import { randomBytes } from "node:crypto";
-import { and, asc, desc, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { formatInTimeZone } from "date-fns-tz";
 import { db, rows } from "../db/client";
 import {
-  deliveryFlags, deliveryZones, onlineOrderSettings, onlineOrders, orderScreens, posDevices, posItems, posOrderLines, posOrders,
+  deliveryFlags, deliveryZones, hotels, onlineOrderSettings, onlineOrders, orderScreens, posDevices, posItems, posOrderLines, posOrders,
   type DeliveryZone, type Hotel, type OnlineOrder, type OnlineOrderItem, type OnlineOrderSettings,
 } from "../db/schema";
 import { addDays, todayIn, zonedToUtc } from "../domain/dates";
-import { PILOT_SLOTS, flatForMonth, orderFee, pilotUntilFor, type OrderFeeState } from "../domain/order-fee";
+import { PILOT_CAP_RAPPEN, PILOT_SLOTS, flatForMonth, introUntil, orderFee, pilotUntilFor, type OrderFeeState } from "../domain/order-fee";
+import { INTRO_NOTICE_DAYS, PILOT_TERMS_VERSION } from "../legal/pilot-terms";
+import { feePercentText } from "../domain/fee";
+import { formatChf } from "../domain/money";
 import { checkChoice, composeLine, NOTE_MAX } from "../domain/pos-options";
 import { acceptsOrders, addressKey, cleanAllergens, deliveryFee, goLiveProblems, openNow, orderNumber, orderSlots, zoneFor, type OrderSlot } from "../domain/online-order";
 import { enqueueEmail } from "../email/enqueue";
@@ -35,7 +38,7 @@ export const HEARTBEAT_STALE_MIN = 3;
 
 export const DEFAULT_ORDER_SETTINGS: Omit<OnlineOrderSettings, "hotelId" | "updatedAt"> = {
   enabled: false, pickup: true, delivery: false, slotMinutes: 15, maxPerSlot: 5, deliveryPerSlot: 3, leadMin: 20, cutoffMin: 15,
-  cashPickup: false, cashDelivery: false, cashMaxRappen: null, guestSms: false, pausedUntil: null, autoPaused: false, testPassedAt: null, startedOn: null, pilotUntil: null,
+  cashPickup: false, cashDelivery: false, cashMaxRappen: null, guestSms: false, pausedUntil: null, autoPaused: false, testPassedAt: null, startedOn: null, pilotUntil: null, termsVersion: null, termsAcceptedAt: null, introNoticeAt: null,
 };
 
 export async function orderSettings(hotelId: string): Promise<OnlineOrderSettings> {
@@ -73,10 +76,12 @@ export async function orderReadiness(hotel: Hotel) {
 }
 
 /** Online-Bestellung ein- oder ausschalten; einschalten nur, wenn alles bereit ist (SPEC 20.4) */
-export async function setOrdersEnabled(hotel: Hotel, on: boolean, actor: string) {
+export async function setOrdersEnabled(hotel: Hotel, on: boolean, actor: string, opts: { acceptTerms?: boolean } = {}) {
   if (on) {
     const p = await orderReadiness(hotel);
     if (p.length) throw new PosError(`Noch nicht möglich: ${p.map((x) => x.text).join(" ")}`);
+    // Erstes Einschalten: Pilotbedingungen (Preis, Sonderangebot, Pilotbetrieb) bestätigen
+    if (!(await orderSettings(hotel.id)).startedOn && !opts.acceptTerms) throw new PosError("Bitte die Pilotbedingungen der Online-Bestellung bestätigen.");
   }
   await upsertSettings(hotel.id, { enabled: on, ...(on ? { pausedUntil: null, autoPaused: false } : {}) });
   await audit(db(), { hotelId: hotel.id, actor, action: on ? "orders.enable" : "orders.disable", entity: "online_order_settings", entityId: hotel.id });
@@ -95,9 +100,34 @@ async function markOrderStart(hotel: Hotel, actor: string) {
     const day = todayIn(hotel.timezone);
     const [{ n }] = rows<{ n: number }>(await tx.execute(sql`SELECT count(*)::int AS n FROM online_order_settings WHERE pilot_until IS NOT NULL`));
     const pilotUntil = n < PILOT_SLOTS ? pilotUntilFor(day) : null;
-    await tx.update(onlineOrderSettings).set({ startedOn: day, pilotUntil }).where(eq(onlineOrderSettings.hotelId, hotel.id));
-    await audit(tx, { hotelId: hotel.id, actor, action: "orders.start", entity: "online_order_settings", entityId: hotel.id, details: { startedOn: day, pilotUntil } });
+    await tx.update(onlineOrderSettings).set({ startedOn: day, pilotUntil, termsVersion: PILOT_TERMS_VERSION, termsAcceptedAt: new Date() }).where(eq(onlineOrderSettings.hotelId, hotel.id));
+    await audit(tx, { hotelId: hotel.id, actor, action: "orders.start", entity: "online_order_settings", entityId: hotel.id, details: { startedOn: day, pilotUntil, terms: PILOT_TERMS_VERSION } });
   });
+}
+
+/**
+ * Hinweis vor Ende des Sonderangebots (Pilotbedingungen Ziffer 2): einmal, ab 30 Tage vor Ende, nur wenn danach wirklich der Normalpreis gilt
+ * (Modell «percent»; im Modell «fixed» läuft die Pauschale weiter, die Umstellung wird separat angekündigt).
+ */
+export async function introNoticeJob(now = new Date()): Promise<number> {
+  if ((await orderFeeModel()) !== "percent") return 0;
+  const list = await db().select({ s: onlineOrderSettings, h: hotels }).from(onlineOrderSettings).innerJoin(hotels, eq(hotels.id, onlineOrderSettings.hotelId))
+    .where(and(isNotNull(onlineOrderSettings.startedOn), isNull(onlineOrderSettings.introNoticeAt)));
+  let sent = 0;
+  for (const { s, h } of list) {
+    const today = todayIn(h.timezone, now);
+    const end = introUntil(s.startedOn!);
+    if (today >= end || today < addDays(end, -INTRO_NOTICE_DAYS)) continue;
+    await db().transaction(async (tx) => {
+      const r = await tx.update(onlineOrderSettings).set({ introNoticeAt: now }).where(and(eq(onlineOrderSettings.hotelId, h.id), isNull(onlineOrderSettings.introNoticeAt))).returning({ id: onlineOrderSettings.hotelId });
+      if (!r.length) return;
+      const pilot = s.pilotUntil && end < s.pilotUntil ? addDays(s.pilotUntil, -1) : "";
+      await enqueueEmail(tx, { hotelId: h.id, template: "host_order_intro_ending", to: h.contactEmail, language: "de",
+        data: { last: addDays(end, -1), from: end, fee: feePercentText(h.platformFeeBps), cap: formatChf(PILOT_CAP_RAPPEN), pilotUntil: pilot } });
+      sent++;
+    });
+  }
+  return sent;
 }
 
 export const pilotSlotsLeft = async (): Promise<number> => {

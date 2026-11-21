@@ -1,5 +1,5 @@
 import { afterAll, afterEach, describe, expect, it } from "vitest";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { closeDb, db } from "../../src/db/client";
 import { deliveryFlags, emailOutbox, hotelModules, hotels, onlineOrders, posReceipts, smsOutbox } from "../../src/db/schema";
 import { todayIn, zonedToUtc } from "../../src/domain/dates";
@@ -48,7 +48,8 @@ describe("Online-Bestellung (SPEC 20.4)", () => {
     await readyOrder(h, t.id, "t");
     expect((await orderSettings(h.id)).testPassedAt).toBeTruthy();
     expect(await db().select().from(posReceipts).where(eq(posReceipts.hotelId, h.id))).toHaveLength(0);
-    await setOrdersEnabled(h, true, "t");
+    await expect(setOrdersEnabled(h, true, "t")).rejects.toThrow(/Pilotbedingungen/);
+    await setOrdersEnabled(h, true, "t", { acceptTerms: true });
     expect((await orderSettings(h.id)).enabled).toBe(true);
   });
 
@@ -202,15 +203,17 @@ describe("Ohne Modul Kasse (SPEC 20.8)", () => {
     const S = await import("../../src/db/schema");
     const { orderModuleFee, pilotSlotsLeft, setOrderPilot } = await import("../../src/services/online-orders");
     const { introUntil, pilotUntilFor, PILOT_SLOTS } = await import("../../src/domain/order-fee");
+    const { PILOT_TERMS_VERSION } = await import("../../src/legal/pilot-terms");
     await db().update(S.onlineOrderSettings).set({ pilotUntil: null }); // Plätze frei (Tests laufen nacheinander)
     const { h, pizza, big, noon } = await setup();
     await saveZone(h.id, null, { name: "Stadt", postalCodes: ["9000"], minOrderRappen: 0, feeRappen: 0, freeFromRappen: null, extraMinutes: 0 }, "t");
     await db().insert(S.onlineOrderSettings).values({ hotelId: h.id }).onConflictDoNothing();
     await db().update(S.onlineOrderSettings).set({ testPassedAt: new Date() }).where(eq(S.onlineOrderSettings.hotelId, h.id));
-    await setOrdersEnabled(h, true, "t");
+    await setOrdersEnabled(h, true, "t", { acceptTerms: true });
     const today = todayIn(h.timezone);
     const cfg = await orderSettings(h.id);
-    expect(cfg).toMatchObject({ startedOn: today, pilotUntil: pilotUntilFor(today) });
+    expect(cfg).toMatchObject({ startedOn: today, pilotUntil: pilotUntilFor(today), termsVersion: PILOT_TERMS_VERSION });
+    expect(cfg.termsAcceptedAt).toBeTruthy();
     expect(await pilotSlotsLeft()).toBe(PILOT_SLOTS - 1);
     // Aus- und wieder einschalten ändert den Start nicht
     await setOrdersEnabled(h, false, "t");
@@ -246,12 +249,28 @@ describe("Ohne Modul Kasse (SPEC 20.8)", () => {
     await db().insert(S.onlineOrderSettings).values({ hotelId: h2.id }).onConflictDoNothing();
     await db().update(S.onlineOrderSettings).set({ testPassedAt: new Date() }).where(eq(S.onlineOrderSettings.hotelId, h2.id));
     await saveZone(h2.id, null, { name: "Stadt", postalCodes: ["9000"], minOrderRappen: 0, feeRappen: 0, freeFromRappen: null, extraMinutes: 0 }, "t");
-    await setOrdersEnabled(h2, true, "t");
+    await setOrdersEnabled(h2, true, "t", { acceptTerms: true });
     expect(await orderSettings(h2.id)).toMatchObject({ startedOn: todayIn(h2.timezone), pilotUntil: null });
     await expect(setOrderPilot(h2.id, true, "t")).rejects.toThrow(/Pilotplätze/);
     await setOrderPilot(h.id, false, "t");
     await setOrderPilot(h2.id, true, "t");
     expect((await orderSettings(h2.id)).pilotUntil).toBe(pilotUntilFor(todayIn(h2.timezone)));
     await db().update(S.onlineOrderSettings).set({ pilotUntil: null });
+  });
+
+  it("Hinweis 30 Tage vor Ende des Sonderangebots: nur im Modell 1,9 %, einmal", async () => {
+    const S = await import("../../src/db/schema");
+    const { introNoticeJob } = await import("../../src/services/online-orders");
+    const { h } = await setup();
+    // Start 01.02.2027 → Sonderangebot bis 30.04.2027; am 10.04. liegt das Ende weniger als 30 Tage entfernt
+    const now = new Date("2027-04-10T08:00:00Z");
+    await db().insert(S.onlineOrderSettings).values({ hotelId: h.id, startedOn: "2027-02-01", pilotUntil: "2028-02-01", enabled: true }).onConflictDoUpdate({ target: S.onlineOrderSettings.hotelId, set: { startedOn: "2027-02-01", pilotUntil: "2028-02-01" } });
+    await db().update(S.onlineOrderSettings).set({ introNoticeAt: now }).where(and(sql`started_on IS NOT NULL`, sql`hotel_id <> ${h.id}`)); // andere Betriebe aus früheren Tests nicht anschreiben
+    expect(await introNoticeJob(now)).toBe(0); // Modell «fixed»: Pauschale läuft weiter
+    await setOrderFeeModel("percent", "t");
+    expect(await introNoticeJob(now)).toBe(1);
+    expect(await introNoticeJob(now)).toBe(0);
+    const [m] = await db().select().from(emailOutbox).where(and(eq(emailOutbox.hotelId, h.id), eq(emailOutbox.template, "host_order_intro_ending")));
+    expect(m.data).toMatchObject({ last: "2027-04-30", from: "2027-05-01", pilotUntil: "2028-01-31" });
   });
 });

@@ -59,7 +59,7 @@ async function test(f: FormData) {
 }
 async function toggle(f: FormData) {
   "use server";
-  await run(f, async (c) => { await setOrdersEnabled(c.hotel, s(f, "on") === "1", c.actor); return s(f, "on") === "1" ? "Die Online-Bestellung ist live." : "Die Online-Bestellung ist ausgeschaltet."; });
+  await run(f, async (c) => { await setOrdersEnabled(c.hotel, s(f, "on") === "1", c.actor, { acceptTerms: s(f, "accept") === "on" }); return s(f, "on") === "1" ? "Die Online-Bestellung ist live." : "Die Online-Bestellung ist ausgeschaltet."; });
 }
 
 /** Online-Bestellung & Lieferung (SPEC 20.4/20.5): Live-Prüfung, Einstellungen, Liefergebiete, Probebestellung */
@@ -77,7 +77,7 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
   return (
     <div className="stack">
       <h1>Online-Bestellung & Lieferung</h1>
-      <p className="small muted" data-testid="order-price">Preis: {orderPriceText({ model, startedOn: cfg.startedOn, pilotUntil: cfg.pilotUntil }, todayIn(hotel.timezone), feePercentText(hotel.platformFeeBps), ORDER_MODULE_RAPPEN, slotsLeft)}</p>
+      <p className="small muted" data-testid="order-price">Preis: {orderPriceText({ model, startedOn: cfg.startedOn, pilotUntil: cfg.pilotUntil }, todayIn(hotel.timezone), feePercentText(hotel.platformFeeBps), ORDER_MODULE_RAPPEN, slotsLeft)} <a href="/pilot-bedingungen" target="_blank">Pilotbedingungen</a>{cfg.termsVersion ? ` (bestätigt, Fassung ${cfg.termsVersion})` : ""}</p>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <section className="card stack" data-testid="orders-live">
         <h2>Status</h2>
@@ -94,7 +94,9 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
             <ul className="list">{problems.map((p) => <li key={p.key}><a href={fix[p.key]}>{p.text}</a></li>)}</ul>
             <p className="small muted">Reservierung und Website laufen schon; die Online-Bestellung kommt dazu, sobald alles bereit ist.</p>
           </>
-        ) : <form action={toggle}>{H}<input type="hidden" name="on" value="1" /><button className="btn">Online-Bestellung live schalten</button></form>}
+        ) : <form action={toggle} className="stack">{H}<input type="hidden" name="on" value="1" />
+          {cfg.startedOn ? null : <label className="check"><input type="checkbox" name="accept" required /> Ich habe Preis und die <a href="/pilot-bedingungen" target="_blank">Pilotbedingungen der Online-Bestellung</a> gelesen und bestätige sie (Sonderangebot ab heute, danach {feePercentText(hotel.platformFeeBps)} % pro Bestellung).</label>}
+          <div><button className="btn">Online-Bestellung live schalten</button></div></form>}
       </section>
 
       <section className="card stack" id="probe">
