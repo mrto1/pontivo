@@ -1,9 +1,10 @@
 import { settleTerminalPayment } from "../../services/terminal";
 import { cancelPendingVoucher, markVoucherPaid } from "../../services/vouchers";
 import { cancelPendingUpsell, markUpsellPaid } from "../../services/upsell";
+import { cancelUnpaid, markReservationPaid } from "../../services/reservations";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import { bookings, guests, hotels, inboundEvents, payments, upsellOrders, vouchers } from "../../db/schema";
+import { bookings, guests, hotels, inboundEvents, payments, posReservations, upsellOrders, vouchers } from "../../db/schema";
 import { env, requireEnv } from "../../env";
 import { confirmBooking, releaseHold } from "../../services/bookings";
 import { markBalancePaid } from "../../services/balance";
@@ -99,7 +100,24 @@ async function upsellForSession(session: Stripe.Checkout.Session, account: strin
   return o;
 }
 
+/** Tischreservierung zur Session (Anzahlung): nur, wenn das Ereignis vom Konto des Hotels kommt */
+async function reservationForSession(session: Stripe.Checkout.Session, account: string | undefined) {
+  const id = session.metadata?.reservation_id;
+  if (!id) return null;
+  const [r] = await db().select().from(posReservations).where(eq(posReservations.id, id));
+  if (!r) return null;
+  const [h] = await db().select().from(hotels).where(eq(hotels.id, r.hotelId));
+  if (!h || !account || h.stripeAccountId !== account) throw new Error(`Ereignis von Konto ${account} passt nicht zum Hotel der Reservierung ${id}`);
+  return r;
+}
+
 async function onPaid(session: Stripe.Checkout.Session, account: string) {
+  const resv = await reservationForSession(session, account);
+  if (resv) {
+    const pi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+    await markReservationPaid(resv.id, { sessionId: session.id, paymentIntentId: pi });
+    return;
+  }
   const upsell = await upsellForSession(session, account);
   if (upsell) {
     const pi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
@@ -169,6 +187,8 @@ async function processEvent(event: Stripe.Event) {
       return;
     }
     case "checkout.session.async_payment_failed": {
+      const rf = await reservationForSession(event.data.object as Stripe.Checkout.Session, account);
+      if (rf) return cancelUnpaid(rf.id);
       const uf = await upsellForSession(event.data.object as Stripe.Checkout.Session, account);
       if (uf) return cancelPendingUpsell(uf.id);
       const vf = await voucherForSession(event.data.object as Stripe.Checkout.Session, account);
@@ -180,6 +200,8 @@ async function processEvent(event: Stripe.Event) {
       return;
     }
     case "checkout.session.expired": {
+      const re = await reservationForSession(event.data.object as Stripe.Checkout.Session, account);
+      if (re) return cancelUnpaid(re.id);
       const ue = await upsellForSession(event.data.object as Stripe.Checkout.Session, account);
       if (ue) return cancelPendingUpsell(ue.id);
       const v = await voucherForSession(event.data.object as Stripe.Checkout.Session, account);

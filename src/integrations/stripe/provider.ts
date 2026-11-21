@@ -73,7 +73,7 @@ export class StripePaymentProvider implements PaymentProvider {
         adaptive_pricing: { enabled: false },
         currency: "chf",
         line_items: [{ quantity: 1, price_data: { currency: "chf", unit_amount: a.amountRappen, product_data: { name: a.description } } }],
-        payment_intent_data: { application_fee_amount: a.feeRappen, metadata },
+        payment_intent_data: { ...(a.feeRappen > 0 ? { application_fee_amount: a.feeRappen } : {}), metadata },
         metadata,
         client_reference_id: a.reference,
         customer_email: a.email,

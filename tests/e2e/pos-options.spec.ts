@@ -85,7 +85,7 @@ test("Reservierung: online buchen, Liste, Storno per Link; Plan zeigt Tisch", as
   // Gast: Online aus → Hinweis; dann an
   await page.goto(`/h/${h.hotel.slug}/de/tisch`);
   await expect(page.getByText("Online-Reservierung ist hier nicht möglich")).toBeVisible();
-  await saveSettings(h.hotel.id, { onlineEnabled: true, windows: [{ from: "18:00", to: "20:00" }], durationMin: 90, maxParty: 6, capacity: 20, leadHours: 0, horizonDays: 30 }, "e2e");
+  await saveSettings(h.hotel.id, { onlineEnabled: true, windows: [{ from: "18:00", to: "20:00" }], durationMin: 90, maxParty: 6, capacity: 20, leadHours: 0, horizonDays: 30, depositPerPersonRappen: 0, depositFromParty: 1, cancelHours: 24, reminderHours: 24, autoAssign: true }, "e2e");
   await page.goto(`/h/${h.hotel.slug}/de/tisch?date=${day}&party=2`);
   const form = page.getByTestId("reserve-form");
   await form.getByLabel("Name").fill("Frau Muster");

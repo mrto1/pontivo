@@ -4,7 +4,10 @@ import { RES } from "@/src/i18n/reservation";
 import { addDays, todayIn } from "@/src/domain/dates";
 import { getSettings, reservationByToken, slotsFor } from "@/src/services/reservations";
 import { Shell } from "./Shell";
-import { cancelReservationAction, reserveAction } from "./table-actions";
+import { AutoRefresh } from "./AutoRefresh";
+import { depositFor } from "@/src/domain/reservations";
+import { formatChf } from "@/src/domain/money";
+import { cancelReservationAction, reserveAction, waitlistAction } from "./table-actions";
 
 /** Öffentliche Tischreservierung (SPEC 19.49 Etappe C): Datum und Personen wählen, freie Zeiten, Daten, Bestätigung */
 export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; locale: Locale; base: string; sp: Record<string, string | string[] | undefined> }) {
@@ -44,9 +47,25 @@ export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; loc
                   <div><label htmlFor="phone">{r.phone}</label><input id="phone" name="phone" type="tel" maxLength={40} autoComplete="tel" /></div>
                   <p className="small muted">{r.contact}</p>
                   <div><label htmlFor="note">{r.note}</label><input id="note" name="note" maxLength={300} /></div>
+                  {depositFor(settings, party) ? <p className="notice small">{r.deposit(formatChf(depositFor(settings, party)))}</p> : null}
                   <div><button className="btn">{r.book}</button></div>
                 </form>
-              ) : <p className="notice warn">{r.none}</p>
+              ) : (
+                <div className="stack">
+                  <p className="notice warn">{r.none}</p>
+                  {one("wait") ? <p className="notice">{r.waitDone}</p> : (
+                    <form action={waitlistAction} className="card stack" data-testid="waitlist-form">
+                      <h2>{r.wait}</h2>
+                      <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="locale" value={locale} /><input type="hidden" name="base" value={base} />
+                      <input type="hidden" name="day" value={day} /><input type="hidden" name="party" value={party} />
+                      <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px" }} />
+                      <div><label htmlFor="wname">{r.name}</label><input id="wname" name="name" required maxLength={80} autoComplete="name" /></div>
+                      <div><label htmlFor="wemail">{r.email}</label><input id="wemail" name="email" type="email" required maxLength={200} autoComplete="email" /></div>
+                      <div><button className="btn secondary">{r.waitSend}</button></div>
+                    </form>
+                  )}
+                </div>
+              )
             ) : null}
           </>
         )}
@@ -65,9 +84,13 @@ export async function TableTokenPage({ hotel, locale, base, token, sp }: { hotel
       <section style={{ padding: "32px 0", maxWidth: 560 }} className="stack">
         {!mine ? <><h1>{r.title}</h1><p className="notice warn">{r.cancelled}</p></> : (
           <>
-            <h1>{sp.cancelled ? r.cancelDone : mine.status === "cancelled" ? r.cancelled : sp.new ? r.booked : r.title}</h1>
+            {mine.status === "pending" ? <AutoRefresh seconds={5} /> : null}
+            <h1>{sp.cancelled ? r.cancelDone : mine.status === "cancelled" ? r.cancelled : mine.status === "pending" ? r.title : sp.new ? r.booked : r.title}</h1>
+            {mine.status === "pending" ? <p className="notice">{r.pending}</p> : null}
             <p><strong>{r.when}:</strong> {formatDay(mine.day, locale)}, {mine.time} · {mine.party} {r.guests}</p>
             <p>{mine.name}</p>
+            {mine.status === "cancelled" && mine.depositStatus === "refunded" ? <p className="notice">{r.refunded}</p> : null}
+            {mine.status === "cancelled" && mine.depositStatus === "paid" ? <p className="notice warn">{r.kept}</p> : null}
             {mine.status === "confirmed" ? (
               <form action={cancelReservationAction}><input type="hidden" name="token" value={token} /><input type="hidden" name="locale" value={locale} /><input type="hidden" name="base" value={base} /><button className="btn secondary">{r.cancel}</button></form>
             ) : null}

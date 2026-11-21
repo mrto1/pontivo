@@ -1738,6 +1738,12 @@ export const restaurantSettings = pgTable("restaurant_settings", {
   capacity: integer("capacity").notNull().default(40),
   leadHours: integer("lead_hours").notNull().default(2),
   horizonDays: integer("horizon_days").notNull().default(60),
+  /** Anzahlung je Person als Garantie (0 = aus), ab dieser Gruppengrösse; kostenlos stornierbar bis cancelHours vorher */
+  depositPerPersonRappen: integer("deposit_per_person_rappen").notNull().default(0),
+  depositFromParty: integer("deposit_from_party").notNull().default(1),
+  cancelHours: integer("cancel_hours").notNull().default(24),
+  reminderHours: integer("reminder_hours").notNull().default(24),
+  autoAssign: boolean("auto_assign").notNull().default(true),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 export type RestaurantSettings = typeof restaurantSettings.$inferSelect;
@@ -1753,10 +1759,28 @@ export const posReservations = pgTable("pos_reservations", {
   email: text("email").notNull().default(""),
   note: text("note").notNull().default(""),
   tableId: uuid("table_id"),
-  status: text("status").$type<"confirmed" | "seated" | "cancelled" | "noshow">().notNull().default("confirmed"),
+  status: text("status").$type<"pending" | "confirmed" | "seated" | "cancelled" | "noshow">().notNull().default("confirmed"),
   source: text("source").$type<"admin" | "online">().notNull().default("admin"),
   language: text("language").notNull().default("de"),
   publicToken: text("public_token").notNull().unique(),
   createdAt: ts("created_at").notNull().defaultNow(),
+  depositRappen: integer("deposit_rappen").notNull().default(0),
+  depositStatus: text("deposit_status").$type<"none" | "pending" | "paid" | "refunded">().notNull().default("none"),
+  stripeSessionId: text("stripe_session_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  reminderSentAt: ts("reminder_sent_at"),
 });
 export type PosReservation = typeof posReservations.$inferSelect;
+
+export const posWaitlist = pgTable("pos_waitlist", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  day: date("day", { mode: "string" }).notNull(),
+  party: integer("party").notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  language: text("language").notNull().default("de"),
+  notifiedAt: ts("notified_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type PosWaitlistEntry = typeof posWaitlist.$inferSelect;

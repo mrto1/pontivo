@@ -47,7 +47,9 @@ export type TemplateName =
   | "offer_declined"
   | "booking_recovery"
   | "waitlist_available"
-  | "table_reserved";
+  | "table_reserved"
+  | "table_reminder"
+  | "table_waitlist";
 
 /** SPEC 10: E-Mails nur über die Outbox. Gleiche Kombination booking/template/to wird nur einmal eingereiht. */
 export async function enqueueEmail(

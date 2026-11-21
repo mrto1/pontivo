@@ -5,16 +5,17 @@ import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { PosError, listTables } from "@/src/services/pos";
-import { assignTable, createReservation, getSettings, reservationsOfDay, saveSettings, setReservationStatus } from "@/src/services/reservations";
+import { assignTable, autoAssignDay, createReservation, getSettings, reservationsOfDay, saveSettings, setReservationStatus, waitlistOfDay } from "@/src/services/reservations";
 import { addDays, isDay, todayIn } from "@/src/domain/dates";
 import { coversAt } from "@/src/domain/reservations";
 import { formatDay } from "@/src/i18n/dict";
+import { formatChf } from "@/src/domain/money";
 import { atLeast } from "@/src/domain/roles";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const here = (h: string, day: string, msg: string) => redirect(`/mypontivo/${h}/restaurant/reservierungen?day=${day}&msg=${encodeURIComponent(msg)}`);
-const STATUS = { confirmed: "bestätigt", seated: "am Tisch", cancelled: "storniert", noshow: "nicht erschienen" } as const;
+const STATUS = { pending: "Zahlung offen", confirmed: "bestätigt", seated: "am Tisch", cancelled: "storniert", noshow: "nicht erschienen" } as const;
 
 async function guard(f: FormData, manager = false) {
   const c = manager ? await requireHotel(s(f, "hotelId"), "manager") : await requireHotel(s(f, "hotelId"), "staff", "reservations");
@@ -32,8 +33,8 @@ async function create(f: FormData) {
 async function status(f: FormData) {
   "use server";
   const c = await guard(f);
-  const st = s(f, "status") as keyof typeof STATUS;
-  if (!(st in STATUS)) return here(c.hotel.id, s(f, "day"), "Status ungültig.");
+  const st = s(f, "status") as "confirmed" | "seated" | "cancelled" | "noshow";
+  if (!["confirmed", "seated", "cancelled", "noshow"].includes(st)) return here(c.hotel.id, s(f, "day"), "Status ungültig.");
   try { await setReservationStatus(c.hotel.id, s(f, "id"), st, c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, s(f, "day"), e.message); }
   here(c.hotel.id, s(f, "day"), "Gespeichert.");
 }
@@ -43,12 +44,18 @@ async function table(f: FormData) {
   try { await assignTable(c.hotel.id, s(f, "id"), s(f, "tableId") || null, c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, s(f, "day"), `Nicht zugewiesen: ${e.message}`); }
   here(c.hotel.id, s(f, "day"), "Tisch zugewiesen.");
 }
+async function autoAssign(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  const n = await autoAssignDay(c.hotel.id, s(f, "day"), c.actor);
+  here(c.hotel.id, s(f, "day"), n ? `${n} Reservierungen einem Tisch zugeteilt.` : "Nichts zuzuteilen: alle haben einen Tisch oder es passt keiner.");
+}
 async function settings(f: FormData) {
   "use server";
   const c = await guard(f, true);
   const windows = [1, 2].flatMap((n) => (s(f, `from${n}`) && s(f, `to${n}`) ? [{ from: s(f, `from${n}`), to: s(f, `to${n}`) }] : []));
   try {
-    await saveSettings(c.hotel.id, { onlineEnabled: f.get("onlineEnabled") === "on", windows, durationMin: Number(s(f, "durationMin")), maxParty: Number(s(f, "maxParty")), capacity: Number(s(f, "capacity")), leadHours: Number(s(f, "leadHours")), horizonDays: Number(s(f, "horizonDays")) }, c.actor);
+    await saveSettings(c.hotel.id, { onlineEnabled: f.get("onlineEnabled") === "on", windows, durationMin: Number(s(f, "durationMin")), depositPerPersonRappen: Math.round(Number((s(f, "deposit") || "0").replace(",", ".")) * 100), depositFromParty: Number(s(f, "depositFromParty") || 1), cancelHours: Number(s(f, "cancelHours") || 0), reminderHours: Number(s(f, "reminderHours") || 0), autoAssign: f.get("autoAssign") === "on", maxParty: Number(s(f, "maxParty")), capacity: Number(s(f, "capacity")), leadHours: Number(s(f, "leadHours")), horizonDays: Number(s(f, "horizonDays")) }, c.actor);
   } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, s(f, "day"), `Einstellungen nicht gespeichert: ${e.message}`); }
   here(c.hotel.id, s(f, "day"), "Einstellungen gespeichert.");
 }
@@ -61,7 +68,7 @@ export default async function ReservationsPage({ params, searchParams }: { param
   await requireModule(hotel.id, "pos");
   const today = todayIn(hotel.timezone);
   const day = sp.day && isDay(sp.day) ? sp.day : today;
-  const [list, tables, cfg] = await Promise.all([reservationsOfDay(hotel.id, day), listTables(hotel.id), getSettings(hotel.id)]);
+  const [list, tables, cfg, wait] = await Promise.all([reservationsOfDay(hotel.id, day), listTables(hotel.id), getSettings(hotel.id), waitlistOfDay(hotel.id, day)]);
   const tname = new Map(tables.map((t) => [t.id, t.name]));
   const live = list.filter((r) => r.status === "confirmed" || r.status === "seated");
   const guests = live.reduce((a, r) => a + r.party, 0);
@@ -87,8 +94,8 @@ export default async function ReservationsPage({ params, searchParams }: { param
                 <td><form action={table} className="inline-form">{H}{D}<input type="hidden" name="id" value={r.id} />
                   <select name="tableId" defaultValue={r.tableId ?? ""} aria-label={`Tisch ${r.name}`}><option value="">–</option>{tables.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.seats})</option>)}</select> <button className="btn secondary small">Setzen</button></form>
                   {r.tableId ? <span className="small muted">{tname.get(r.tableId)}</span> : null}</td>
-                <td>{STATUS[r.status]}</td>
-                <td>{(["seated", "noshow", "cancelled"] as const).filter((x) => x !== r.status).map((x) => (
+                <td>{STATUS[r.status]}{r.depositStatus !== "none" ? <div className="small muted">Anzahlung {formatChf(r.depositRappen)}: {r.depositStatus === "paid" ? "bezahlt (bei der Rechnung abziehen)" : r.depositStatus === "refunded" ? "zurückerstattet" : "offen"}</div> : null}</td>
+                <td>{r.status === "pending" ? null : (["seated", "noshow", "cancelled"] as const).filter((x) => x !== r.status).map((x) => (
                   <form key={x} action={status} style={{ display: "inline" }}>{H}{D}<input type="hidden" name="id" value={r.id} /><input type="hidden" name="status" value={x} /><button className="btn secondary small">{x === "seated" ? "Am Tisch" : x === "noshow" ? "Nicht erschienen" : "Stornieren"}</button></form>
                 ))}</td>
               </tr>
@@ -96,6 +103,15 @@ export default async function ReservationsPage({ params, searchParams }: { param
           </tbody></table>
         ) : <p className="muted">Keine Reservierungen an diesem Tag.</p>}
       </section>
+      {live.some((r) => !r.tableId) && tables.length ? (
+        <form action={autoAssign}>{H}{D}<button className="btn secondary">Offene automatisch einem Tisch zuteilen</button></form>
+      ) : null}
+      {wait.length ? (
+        <section className="card" data-testid="waitlist">
+          <h2>Warteliste</h2>
+          <ul>{wait.map((w) => <li key={w.id}>{w.name} · {w.party} Pers. · {w.email}{w.notifiedAt ? " (benachrichtigt)" : ""}</li>)}</ul>
+        </section>
+      ) : null}
       <form action={create} className="card stack">
         {H}{D}
         <h2>Neue Reservierung</h2>
@@ -130,6 +146,14 @@ export default async function ReservationsPage({ params, searchParams }: { param
             <div><label htmlFor="leadHours">Vorlauf (Std.)</label><input id="leadHours" name="leadHours" type="number" min={0} max={168} defaultValue={cfg.leadHours} style={{ width: 90 }} /></div>
             <div><label htmlFor="horizonDays">Vorschau (Tage)</label><input id="horizonDays" name="horizonDays" type="number" min={1} max={365} defaultValue={cfg.horizonDays} style={{ width: 90 }} /></div>
           </div>
+          <FormSwitch name="autoAssign" defaultOn={cfg.autoAssign} label="Tisch automatisch zuteilen" hint="Der kleinste freie Tisch mit genug Plätzen. Kein Zusammenstellen mehrerer Tische." />
+          <div className="inline-form">
+            <div><label htmlFor="deposit">Anzahlung je Person CHF (0 = keine)</label><input id="deposit" name="deposit" inputMode="decimal" defaultValue={(cfg.depositPerPersonRappen / 100).toString()} style={{ width: 90 }} /></div>
+            <div><label htmlFor="depositFromParty">ab Personen</label><input id="depositFromParty" name="depositFromParty" type="number" min={1} max={50} defaultValue={cfg.depositFromParty} style={{ width: 90 }} /></div>
+            <div><label htmlFor="cancelHours">Gratis stornieren bis (Std. vorher)</label><input id="cancelHours" name="cancelHours" type="number" min={0} max={168} defaultValue={cfg.cancelHours} style={{ width: 90 }} /></div>
+            <div><label htmlFor="reminderHours">Erinnerung (Std. vorher, 0 = aus)</label><input id="reminderHours" name="reminderHours" type="number" min={0} max={72} defaultValue={cfg.reminderHours} style={{ width: 90 }} /></div>
+          </div>
+          <p className="small muted">Die Anzahlung wird online über Stripe bezahlt (Ihr verbundenes Konto, keine Plattformgebühr) und bei rechtzeitiger Stornierung zurückerstattet. Storniert der Betrieb, kommt sie immer zurück; bei «nicht erschienen» bleibt sie. Den bezahlten Betrag ziehen Sie bei der Rechnung ab.</p>
           <div><button className="btn">Speichern</button></div>
         </form>
       ) : null}

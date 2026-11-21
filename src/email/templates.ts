@@ -200,13 +200,20 @@ const X: Record<Locale, {
     iSubject: (h) => `Uw aanvraag – ${h}`, iText: "hartelijk dank voor uw aanvraag. We hebben hem ontvangen en nemen zo snel mogelijk contact op.", tSubject: (h) => `Uw tafelreservering – ${h}`, tText: "hartelijk dank voor uw reserveringsaanvraag. Die is geldig zodra wij hem hebben bevestigd – we nemen zo snel mogelijk contact op.", tDate: "Datum", tTime: "Tijd", tPersons: "Personen" },
 };
 
-/** Bestätigung einer Tischreservierung (SPEC 19.49 Etappe C) */
-const TR: Record<Locale, { subject: (h: string) => string; text: string; day: string; time: string; persons: string; cancel: string; button: string }> = {
-  de: { subject: (h) => `Ihre Tischreservierung – ${h}`, text: "vielen Dank, Ihr Tisch ist reserviert. Wir freuen uns auf Sie.", day: "Datum", time: "Zeit", persons: "Personen", cancel: "Falls Sie nicht kommen können, stornieren Sie bitte über diesen Link", button: "Reservierung ansehen oder stornieren" },
-  en: { subject: (h) => `Your table reservation – ${h}`, text: "thank you, your table is reserved. We look forward to seeing you.", day: "Date", time: "Time", persons: "Guests", cancel: "If you cannot come, please cancel with this link", button: "View or cancel reservation" },
-  fr: { subject: (h) => `Votre réservation de table – ${h}`, text: "merci, votre table est réservée. Nous nous réjouissons de vous accueillir.", day: "Date", time: "Heure", persons: "Personnes", cancel: "Si vous ne pouvez pas venir, annulez s'il vous plaît via ce lien", button: "Voir ou annuler la réservation" },
-  it: { subject: (h) => `La vostra prenotazione del tavolo – ${h}`, text: "grazie, il vostro tavolo è prenotato. Vi aspettiamo con piacere.", day: "Data", time: "Ora", persons: "Persone", cancel: "Se non potete venire, annullate con questo link", button: "Vedi o annulla la prenotazione" },
-  nl: { subject: (h) => `Uw tafelreservering – ${h}`, text: "hartelijk dank, uw tafel is gereserveerd. We kijken uit naar uw komst.", day: "Datum", time: "Tijd", persons: "Personen", cancel: "Kunt u niet komen, annuleer dan via deze link", button: "Reservering bekijken of annuleren" },
+/** Tischreservierung: Bestätigung, Erinnerung, Warteliste (SPEC 19.49 Etappe C) */
+type TRText = { subject: (h: string) => string; text: string; day: string; time: string; persons: string; cancel: string; button: string; deposit: string; depositKept: string;
+  remSubject: (h: string) => string; remText: string; waitSubject: (h: string) => string; waitText: string; waitButton: string };
+const TR: Record<Locale, TRText> = {
+  de: { subject: (h) => `Ihre Tischreservierung – ${h}`, text: "vielen Dank, Ihr Tisch ist reserviert. Wir freuen uns auf Sie.", day: "Datum", time: "Zeit", persons: "Personen", cancel: "Falls Sie nicht kommen können, stornieren Sie bitte über diesen Link", button: "Reservierung ansehen oder stornieren", deposit: "Anzahlung (bezahlt)", depositKept: "Die Anzahlung wird bei rechtzeitiger Stornierung zurückerstattet.",
+    remSubject: (h) => `Erinnerung an Ihren Tisch – ${h}`, remText: "wir erinnern Sie an Ihre Tischreservierung. Wir freuen uns auf Sie. Falls sich etwas ändert, stornieren Sie bitte über den Link.", waitSubject: (h) => `Ein Tisch ist frei geworden – ${h}`, waitText: "für Ihren Wunschtag ist ein Tisch frei geworden. Wer zuerst reserviert, bekommt ihn.", waitButton: "Jetzt reservieren" },
+  en: { subject: (h) => `Your table reservation – ${h}`, text: "thank you, your table is reserved. We look forward to seeing you.", day: "Date", time: "Time", persons: "Guests", cancel: "If you cannot come, please cancel with this link", button: "View or cancel reservation", deposit: "Deposit (paid)", depositKept: "The deposit is refunded if you cancel in time.",
+    remSubject: (h) => `Reminder: your table – ${h}`, remText: "this is a reminder of your table reservation. We look forward to seeing you. If anything changes, please cancel with the link.", waitSubject: (h) => `A table has become available – ${h}`, waitText: "a table has become available on your preferred day. First come, first served.", waitButton: "Reserve now" },
+  fr: { subject: (h) => `Votre réservation de table – ${h}`, text: "merci, votre table est réservée. Nous nous réjouissons de vous accueillir.", day: "Date", time: "Heure", persons: "Personnes", cancel: "Si vous ne pouvez pas venir, annulez s'il vous plaît via ce lien", button: "Voir ou annuler la réservation", deposit: "Acompte (payé)", depositKept: "L'acompte est remboursé en cas d'annulation dans les délais.",
+    remSubject: (h) => `Rappel de votre table – ${h}`, remText: "nous vous rappelons votre réservation de table. Nous nous réjouissons de vous accueillir. En cas de changement, annulez via le lien.", waitSubject: (h) => `Une table s'est libérée – ${h}`, waitText: "une table s'est libérée pour le jour souhaité. Premier arrivé, premier servi.", waitButton: "Réserver maintenant" },
+  it: { subject: (h) => `La vostra prenotazione del tavolo – ${h}`, text: "grazie, il vostro tavolo è prenotato. Vi aspettiamo con piacere.", day: "Data", time: "Ora", persons: "Persone", cancel: "Se non potete venire, annullate con questo link", button: "Vedi o annulla la prenotazione", deposit: "Caparra (pagata)", depositKept: "La caparra viene rimborsata in caso di annullamento tempestivo.",
+    remSubject: (h) => `Promemoria del vostro tavolo – ${h}`, remText: "vi ricordiamo la prenotazione del tavolo. Vi aspettiamo con piacere. Se qualcosa cambia, annullate con il link.", waitSubject: (h) => `Si è liberato un tavolo – ${h}`, waitText: "si è liberato un tavolo per il giorno desiderato. Vale l'ordine di arrivo.", waitButton: "Prenota ora" },
+  nl: { subject: (h) => `Uw tafelreservering – ${h}`, text: "hartelijk dank, uw tafel is gereserveerd. We kijken uit naar uw komst.", day: "Datum", time: "Tijd", persons: "Personen", cancel: "Kunt u niet komen, annuleer dan via deze link", button: "Reservering bekijken of annuleren", deposit: "Aanbetaling (voldaan)", depositKept: "De aanbetaling wordt terugbetaald bij tijdige annulering.",
+    remSubject: (h) => `Herinnering aan uw tafel – ${h}`, remText: "wij herinneren u aan uw tafelreservering. We kijken uit naar uw komst. Verandert er iets, annuleer dan via de link.", waitSubject: (h) => `Er is een tafel vrijgekomen – ${h}`, waitText: "er is een tafel vrijgekomen op uw gewenste dag. Wie het eerst reserveert, krijgt hem.", waitButton: "Nu reserveren" },
 };
 
 const KIND_DE: Record<string, string> = { table: "Tisch reservieren", group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
@@ -366,12 +373,19 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
       return wrap(c, gl, wb.subject(c.hotel.name), [hi + ",", wb.text(c.hotel.name, stay), wb.text2, `${wb.unsub}: ${String(c.data.unsubscribeUrl ?? "")}`], [],
         { href: String(c.data.url ?? c.baseUrl), label: wb.button });
     }
-    case "table_reserved": {
+    case "table_reserved":
+    case "table_reminder": {
       const r = TR[gl];
       const ownDomain = Boolean(c.hotel.primaryDomain) && env().NODE_ENV === "production" && !env().ENVIRONMENT_LABEL;
       const url = `${c.baseUrl}${ownDomain ? "" : `/h/${c.hotel.slug}`}/${gl}/tisch/${String(c.data.token)}`;
-      return wrap(c, gl, r.subject(c.hotel.name), [m.hi(String(c.data.name ?? "")) + ",", r.text, `${r.cancel}: ${url}`],
-        [`${r.day}: ${formatDay(String(c.data.day), gl)}`, `${r.time}: ${c.data.time}`, `${r.persons}: ${c.data.party}`], { href: url, label: r.button });
+      const dep = Number(c.data.depositRappen ?? 0);
+      const reminder = template === "table_reminder";
+      return wrap(c, gl, reminder ? r.remSubject(c.hotel.name) : r.subject(c.hotel.name), [m.hi(String(c.data.name ?? "")) + ",", reminder ? r.remText : r.text, `${r.cancel}: ${url}`, ...(dep && !reminder ? [r.depositKept] : [])],
+        [`${r.day}: ${formatDay(String(c.data.day), gl)}`, `${r.time}: ${c.data.time}`, `${r.persons}: ${c.data.party}`, ...(dep ? [`${r.deposit}: ${formatChf(dep)}`] : [])], { href: url, label: r.button });
+    }
+    case "table_waitlist": {
+      const r = TR[gl];
+      return wrap(c, gl, r.waitSubject(c.hotel.name), [m.hi(String(c.data.name ?? "")) + ",", r.waitText], [`${r.day}: ${formatDay(String(c.data.day), gl)}`, `${r.persons}: ${c.data.party}`], { href: String(c.data.url ?? c.baseUrl), label: r.waitButton });
     }
     case "waitlist_available": {
       const dm = D[gl];

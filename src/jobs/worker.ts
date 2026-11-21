@@ -2,6 +2,7 @@
  * Hintergrund-Jobs mit pg-boss (SPEC 2): eigener Prozess `npm run worker`.
  * - holds:   abgelaufene Holds freigeben (jede Minute, SPEC 5.5)
  * - waitlist: Warteliste prüfen und Gäste benachrichtigen (alle 5 Minuten, SPEC 19.29)
+ * - table-reservations: Tischreservierungen: unbezahlte freigeben, Wartelisten, Erinnerungen (alle 5 Minuten, SPEC 19.49)
  * - booking-recovery: Erinnerung nach abgebrochener Buchung (alle 10 Minuten, SPEC 19.29)
  * - winback: Wiederkehr-Mail an Gäste mit Werbe-Einwilligung (täglich 10:10, SPEC 19.32)
  * - monthly-mail: Monatsmail an die Inhaber (am 2. des Monats 07:30, SPEC 19.32)
@@ -37,12 +38,14 @@ import { aiPricingJob } from "../services/ai-pricing";
 import { deliverDue, webhookCleanup } from "../services/webhooks";
 import { recoveryJob, waitlistJob, winbackJob } from "../services/direct-tools";
 import { monthlyMailJob } from "../services/monthly-mail";
+import { tableJob } from "../services/reservations";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "webhooks", cron: "* * * * *", run: () => deliverDue() },
   { name: "webhook-cleanup", cron: "50 3 * * *", run: () => webhookCleanup() },
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
   { name: "waitlist", cron: "*/5 * * * *", run: () => waitlistJob() },
+  { name: "table-reservations", cron: "*/5 * * * *", run: () => tableJob() },
   { name: "booking-recovery", cron: "*/10 * * * *", run: () => recoveryJob() },
   { name: "winback", cron: "10 10 * * *", run: () => winbackJob() },
   { name: "monthly-mail", cron: "30 7 2 * *", run: () => monthlyMailJob() },

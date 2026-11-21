@@ -3,8 +3,14 @@
  * Zeiten sind lokale Uhrzeiten 'HH:MM' des Betriebs, Tage 'YYYY-MM-DD'. Eine Reservierung belegt `durationMin` Minuten ab Beginn.
  */
 export type Window = { from: string; to: string };
-export type ResSettings = { onlineEnabled: boolean; windows: Window[]; durationMin: number; maxParty: number; capacity: number; leadHours: number; horizonDays: number };
-export type ResLite = { id?: string; time: string; party: number; tableId: string | null; status: string };
+export type ResSettings = {
+  onlineEnabled: boolean; windows: Window[]; durationMin: number; maxParty: number; capacity: number; leadHours: number; horizonDays: number;
+  /** Anzahlung je Person in Rappen (0 = keine), gilt ab `depositFromParty` Personen; kostenlose Stornierung bis `cancelHours` vor Beginn */
+  depositPerPersonRappen: number; depositFromParty: number; cancelHours: number; reminderHours: number; autoAssign: boolean;
+};
+export type ResLite = { id?: string; time: string; party: number; tableId: string | null; status: string; createdAt?: Date };
+/** Nicht bezahlte Online-Reservierung hält Plätze nur so lange (Stripe-Zahlungsseite läuft nach 30 Minuten ab) */
+export const PENDING_MINUTES = 35;
 
 export const SLOT_STEP_MIN = 30;
 export const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -33,7 +39,8 @@ export function slotTimes(ws: Window[]): string[] {
 }
 
 const overlaps = (a: string, b: string, dur: number) => toMin(a) < toMin(b) + dur && toMin(b) < toMin(a) + dur;
-const active = (r: ResLite) => r.status === "confirmed" || r.status === "seated";
+const active = (r: ResLite, now: Date = new Date()) =>
+  r.status === "confirmed" || r.status === "seated" || (r.status === "pending" && (!r.createdAt || now.getTime() - r.createdAt.getTime() < PENDING_MINUTES * 60_000));
 
 /** Gäste, die gleichzeitig (überlappend) am Tisch sitzen oder erwartet werden */
 export function coversAt(existing: ResLite[], time: string, dur: number): number {
@@ -42,7 +49,7 @@ export function coversAt(existing: ResLite[], time: string, dur: number): number
 
 /** Tisch zur Zeit noch frei? (ohne die Reservierung `ignoreId`, z. B. beim Umsetzen) */
 export function tableFree(existing: ResLite[], tableId: string, time: string, dur: number, ignoreId?: string): boolean {
-  return !existing.some((r) => active(r) && r.tableId === tableId && r.id !== ignoreId && overlaps(time, r.time, dur));
+  return !existing.some((r) => active(r) && r.tableId === tableId && (ignoreId === undefined || r.id !== ignoreId) && overlaps(time, r.time, dur));
 }
 
 export type Slot = { time: string; ok: boolean };
@@ -57,4 +64,19 @@ export function onlineSlots(s: ResSettings, day: string, party: number, existing
     const early = daysAhead === 0 && toMin(time) < now.minutes + s.leadHours * 60;
     return { time, ok: !early && coversAt(existing, time, s.durationMin) + party <= s.capacity };
   });
+}
+
+/** Anzahlung für eine Gruppe in Rappen (0 = keine) */
+export const depositFor = (s: ResSettings, party: number) => (s.depositPerPersonRappen > 0 && party >= s.depositFromParty ? s.depositPerPersonRappen * party : 0);
+
+/** Anzahlung zurückerstatten? Nur bei Storno spätestens `cancelHours` vor Beginn */
+export const refundable = (s: ResSettings, startsAt: Date, now: Date) => now.getTime() <= startsAt.getTime() - s.cancelHours * 3_600_000;
+
+/**
+ * Passender Tisch: der kleinste freie mit genug Plätzen (kein Zusammenstellen mehrerer Tische).
+ * Bei gleicher Grösse der erste in der Reihenfolge der Liste. Null, wenn keiner passt.
+ */
+export function suggestTable(tables: { id: string; seats: number }[], existing: ResLite[], party: number, time: string, dur: number, ignoreId?: string): string | null {
+  const fit = tables.filter((t) => t.seats >= party && tableFree(existing, t.id, time, dur, ignoreId)).sort((a, b) => a.seats - b.seats);
+  return fit[0]?.id ?? null;
 }
