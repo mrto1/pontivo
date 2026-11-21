@@ -65,3 +65,47 @@ test("Küche: Posten erscheint, antippen meldet fertig", async ({ page, context,
   await page.getByRole("button", { name: "Alles fertig" }).click();
   await expect(page.getByText("Nichts offen.")).toBeVisible();
 });
+
+/** Tischplan und Reservierung (SPEC 19.49 Etappe C): Gast reserviert online, Personal sieht es, Gast storniert */
+test("Reservierung: online buchen, Liste, Storno per Link; Plan zeigt Tisch", async ({ page, context, baseURL }) => {
+  const h = await makeHotel();
+  await db().insert(hotelModules).values([{ hotelId: h.hotel.id, module: "invoicing", enabled: true }, { hotelId: h.hotel.id, module: "pos", enabled: true }]).onConflictDoNothing();
+  const email = `res-${Math.random().toString(36).slice(2, 8)}@example.ch`;
+  await addMember(h.hotel.id, email, "owner", "e2e");
+  const [u] = await db().select().from(users).where(eq(users.email, email));
+  await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
+  const { saveTable, saveTablePlan, listTables } = await import("../../src/services/pos");
+  const { saveSettings } = await import("../../src/services/reservations");
+  const { addDays, todayIn } = await import("../../src/domain/dates");
+  await saveTable(h.hotel.id, "Tisch 1", "e2e");
+  const [t] = await listTables(h.hotel.id);
+  await saveTablePlan(h.hotel.id, [{ id: t.id, x: 300, y: 300 }], "e2e");
+  const day = addDays(todayIn(h.hotel.timezone), 5);
+
+  // Gast: Online aus → Hinweis; dann an
+  await page.goto(`/h/${h.hotel.slug}/de/tisch`);
+  await expect(page.getByText("Online-Reservierung ist hier nicht möglich")).toBeVisible();
+  await saveSettings(h.hotel.id, { onlineEnabled: true, windows: [{ from: "18:00", to: "20:00" }], durationMin: 90, maxParty: 6, capacity: 20, leadHours: 0, horizonDays: 30 }, "e2e");
+  await page.goto(`/h/${h.hotel.slug}/de/tisch?date=${day}&party=2`);
+  const form = page.getByTestId("reserve-form");
+  await form.getByLabel("Name").fill("Frau Muster");
+  await form.getByLabel("E-Mail").fill("muster@example.ch");
+  await form.getByRole("button", { name: "Verbindlich reservieren" }).click();
+  await expect(page.getByRole("heading", { name: "Ihr Tisch ist reserviert." })).toBeVisible();
+  const link = page.url();
+
+  // Personal sieht die Reservierung und setzt den Tisch
+  await page.goto(`/mypontivo/${h.hotel.id}/restaurant/reservierungen?day=${day}`);
+  const list = page.getByTestId("res-list");
+  await expect(list.getByText("Frau Muster")).toBeVisible();
+  await list.getByLabel("Tisch Frau Muster").selectOption({ label: "Tisch 1 (2)" });
+  await list.getByRole("button", { name: "Setzen" }).click();
+  await expect(page.getByText("Tisch zugewiesen")).toBeVisible();
+  await page.goto(`/mypontivo/${h.hotel.id}/restaurant`);
+  await expect(page.getByTestId("plan-area").getByText("Tisch 1")).toBeVisible();
+
+  // Gast storniert
+  await page.goto(link.replace("?new=1", ""));
+  await page.getByRole("button", { name: "Reservierung stornieren" }).click();
+  await expect(page.getByRole("heading", { name: "Die Reservierung wurde storniert." })).toBeVisible();
+});

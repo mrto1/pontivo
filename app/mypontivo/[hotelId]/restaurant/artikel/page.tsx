@@ -2,8 +2,9 @@ import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
-import { PosError, importItems, importTables, listItems, listOptionGroups, listTables, saveItem, saveOption, saveOptionGroup, saveTable, setGroupItems, setOptionActive } from "@/src/services/pos";
+import { PosError, importItems, importTables, listItems, listOptionGroups, listTables, saveItem, saveOption, saveOptionGroup, saveTable, saveTableDetails, saveTablePlan, setGroupItems, setOptionActive } from "@/src/services/pos";
 import { FormSwitch } from "@/components/admin/FormSwitch";
+import { FloorPlan } from "@/components/admin/FloorPlan";
 import { formatChf } from "@/src/domain/money";
 import { parsePosItems, parsePosTables } from "@/src/domain/pos-import";
 
@@ -73,6 +74,23 @@ async function groupItems(f: FormData) {
   try { await setGroupItems(c.hotel.id, s(f, "groupId"), f.getAll("itemId").map(String), c.actor); }
   catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, e.message); }
   here(c.hotel.id, "Zuordnung gespeichert.");
+}
+async function tableDetails(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  try { await saveTableDetails(c.hotel.id, s(f, "id"), { seats: Number(s(f, "seats")), shape: s(f, "shape") === "round" ? "round" : "square" }, c.actor); }
+  catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
+  here(c.hotel.id, "Tisch gespeichert.");
+}
+async function planSave(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  try {
+    const raw = JSON.parse(s(f, "positions")) as { id: string; x: number | null; y: number | null }[];
+    if (!Array.isArray(raw)) throw new PosError("Plan ungültig.");
+    await saveTablePlan(c.hotel.id, raw.map((p) => ({ id: String(p.id), x: p.x === null ? null : Number(p.x), y: p.y === null ? null : Number(p.y) })), c.actor);
+  } catch (e) { if (!(e instanceof PosError) && !(e instanceof SyntaxError)) throw e; here(c.hotel.id, "Plan nicht gespeichert."); }
+  here(c.hotel.id, "Tischplan gespeichert.");
 }
 async function csvImport(f: FormData) {
   "use server";
@@ -151,7 +169,23 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
           <div><button className="btn">Gruppe anlegen</button></div>
         </form>
       </section>
-      <form action={table} className="card stack">{H}<h2>Tische ({tables.length})</h2><p className="small muted">{tables.map((t) => t.name).join(", ")}</p><div><label>Neuer Tisch</label><input name="name" required maxLength={30} /></div><div><button className="btn secondary">Anlegen</button></div></form>
+      <form action={table} className="card stack">{H}<h2>Tische ({tables.length})</h2><div><label htmlFor="tname">Neuer Tisch</label><input id="tname" name="name" required maxLength={30} /></div><div><button className="btn secondary">Anlegen</button></div></form>
+      {tables.length ? (
+        <section className="card stack" id="tischplan" data-testid="table-plan">
+          <h2>Tischplan</h2>
+          <p className="small muted">Plätze und Form je Tisch festlegen, dann die Tische im Plan an ihren Ort ziehen. Der Plan erscheint bei «Restaurant» mit dem aktuellen Zustand (frei, offen, reserviert).</p>
+          <div className="stack">
+            {tables.map((t) => (
+              <form key={t.id} action={tableDetails} className="inline-form">{H}<input type="hidden" name="id" value={t.id} />
+                <strong style={{ minWidth: 90 }}>{t.name}</strong>
+                <label htmlFor={`seats-${t.id}`} className="small">Plätze</label><input id={`seats-${t.id}`} name="seats" type="number" min={1} max={50} defaultValue={t.seats} style={{ width: 70 }} />
+                <label htmlFor={`shape-${t.id}`} className="small">Form</label><select id={`shape-${t.id}`} name="shape" defaultValue={t.shape}><option value="square">eckig</option><option value="round">rund</option></select>
+                <button className="btn secondary small">Speichern</button></form>
+            ))}
+          </div>
+          <FloorPlan tables={tables.map((t) => ({ id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY }))} editable action={planSave} hotelId={hotel.id} />
+        </section>
+      ) : null}
       <form action={csvImport} className="card stack">{H}
         <h2>Per CSV importieren</h2>
         <p className="small muted">Speisekarte oder Tischliste aus Excel oder Ihrer bisherigen Kasse übernehmen. Alles oder nichts: Bei einem Fehler wird nichts gespeichert und die Zeile genannt. Was es schon gibt (gleicher Name), wird übersprungen.</p>

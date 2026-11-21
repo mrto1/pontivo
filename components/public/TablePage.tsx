@@ -1,0 +1,79 @@
+import type { Hotel } from "@/src/db/schema";
+import { formatDay, type Locale } from "@/src/i18n/dict";
+import { RES } from "@/src/i18n/reservation";
+import { addDays, todayIn } from "@/src/domain/dates";
+import { getSettings, reservationByToken, slotsFor } from "@/src/services/reservations";
+import { Shell } from "./Shell";
+import { cancelReservationAction, reserveAction } from "./table-actions";
+
+/** Öffentliche Tischreservierung (SPEC 19.49 Etappe C): Datum und Personen wählen, freie Zeiten, Daten, Bestätigung */
+export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; locale: Locale; base: string; sp: Record<string, string | string[] | undefined> }) {
+  const r = RES[locale];
+  const one = (k: string) => { const v = sp[k]; return Array.isArray(v) ? v[0] : v; };
+  const settings = await getSettings(hotel.id);
+  const today = todayIn(hotel.timezone);
+  const day = one("date") ?? "";
+  const party = Math.max(1, Math.min(50, Number(one("party")) || 2));
+  const slots = settings.onlineEnabled && day ? (await slotsFor(hotel, day, party)).filter((x) => x.ok) : null;
+  return (
+    <Shell hotel={hotel} locale={locale} base={base} path="/tisch">
+      <section style={{ padding: "32px 0", maxWidth: 560 }} className="stack">
+        <h1>{r.title}</h1>
+        {!settings.onlineEnabled ? <p className="notice warn">{r.off}</p> : (
+          <>
+            {one("msg") ? <p className="notice error" role="alert">{one("msg")}</p> : null}
+            <form method="get" className="stack">
+              <div><label htmlFor="date">{r.date}</label><input id="date" name="date" type="date" min={today} max={addDays(today, settings.horizonDays)} defaultValue={day} required /></div>
+              <div><label htmlFor="party">{r.guests}</label><input id="party" name="party" type="number" min={1} max={50} defaultValue={party} required /></div>
+              <div><button className="btn secondary">{r.show}</button></div>
+            </form>
+            {party > settings.maxParty ? <p className="notice warn">{r.callUs}</p> : null}
+            {slots && party <= settings.maxParty ? (
+              slots.length ? (
+                <form action={reserveAction} className="stack" data-testid="reserve-form">
+                  <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="locale" value={locale} /><input type="hidden" name="base" value={base} />
+                  <input type="hidden" name="day" value={day} /><input type="hidden" name="party" value={party} />
+                  <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px" }} />
+                  <fieldset className="stack"><legend><strong>{r.times}</strong> · {formatDay(day, locale)}</legend>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                      {slots.map((x, n) => <label key={x.time} className="btn secondary"><input type="radio" name="time" value={x.time} required defaultChecked={n === 0} /> {x.time}</label>)}
+                    </div>
+                  </fieldset>
+                  <div><label htmlFor="name">{r.name}</label><input id="name" name="name" required maxLength={80} autoComplete="name" /></div>
+                  <div><label htmlFor="email">{r.email}</label><input id="email" name="email" type="email" maxLength={200} autoComplete="email" /></div>
+                  <div><label htmlFor="phone">{r.phone}</label><input id="phone" name="phone" type="tel" maxLength={40} autoComplete="tel" /></div>
+                  <p className="small muted">{r.contact}</p>
+                  <div><label htmlFor="note">{r.note}</label><input id="note" name="note" maxLength={300} /></div>
+                  <div><button className="btn">{r.book}</button></div>
+                </form>
+              ) : <p className="notice warn">{r.none}</p>
+            ) : null}
+          </>
+        )}
+      </section>
+    </Shell>
+  );
+}
+
+/** Bestätigung und Storno über den Link aus der Mail */
+export async function TableTokenPage({ hotel, locale, base, token, sp }: { hotel: Hotel; locale: Locale; base: string; token: string; sp: Record<string, string | string[] | undefined> }) {
+  const r = RES[locale];
+  const res = await reservationByToken(token);
+  const mine = res && res.hotelId === hotel.id ? res : null;
+  return (
+    <Shell hotel={hotel} locale={locale} base={base} path="/tisch">
+      <section style={{ padding: "32px 0", maxWidth: 560 }} className="stack">
+        {!mine ? <><h1>{r.title}</h1><p className="notice warn">{r.cancelled}</p></> : (
+          <>
+            <h1>{sp.cancelled ? r.cancelDone : mine.status === "cancelled" ? r.cancelled : sp.new ? r.booked : r.title}</h1>
+            <p><strong>{r.when}:</strong> {formatDay(mine.day, locale)}, {mine.time} · {mine.party} {r.guests}</p>
+            <p>{mine.name}</p>
+            {mine.status === "confirmed" ? (
+              <form action={cancelReservationAction}><input type="hidden" name="token" value={token} /><input type="hidden" name="locale" value={locale} /><input type="hidden" name="base" value={base} /><button className="btn secondary">{r.cancel}</button></form>
+            ) : null}
+          </>
+        )}
+      </section>
+    </Shell>
+  );
+}

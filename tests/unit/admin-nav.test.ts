@@ -29,7 +29,7 @@ describe("Admin-Menü", () => {
   it("Seitenschlüssel und Adressen bleiben wie bisher", () => {
     const byKey = Object.fromEntries(allPages(nav).map((i) => [i.key, i.href.replace("/mypontivo/h1/", "")]));
     expect(byKey).toMatchObject({
-      home: "/mypontivo/h1", housekeeping: "housekeeping", inbox: "inbox", restaurant: "restaurant", kasse: "kasse", posclose: "restaurant/abschluss", plan: "plan", calendar: "calendar", pricing: "preise",
+      home: "/mypontivo/h1", housekeeping: "housekeeping", inbox: "inbox", restaurant: "restaurant", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", kasse: "kasse", posclose: "restaurant/abschluss", plan: "plan", calendar: "calendar", pricing: "preise",
       bookings: "bookings", groups: "groups", resources: "resources", vouchers: "vouchers", guestbook: "guestbook", marketing: "marketing", feedback: "feedback",
       invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung", reports: "berichte",
       settings: "settings", rooms: "rooms", extras: "rooms/extras", payments: "zahlungen", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
@@ -40,7 +40,7 @@ describe("Admin-Menü", () => {
   it("Reiter der Hauptpunkte", () => {
     expect(tabKeys("Heute")).toEqual(["home", "inbox", "housekeeping", "g-restaurant"]);
     expect(group("Heute").tabs![0].label).toBe("Tagesliste");
-    expect(group("Heute").tabs![3].tabs!.map((t) => t.key)).toEqual(["restaurant", "kasse", "kitchen", "posclose"]);
+    expect(group("Heute").tabs![3].tabs!.map((t) => t.key)).toEqual(["restaurant", "kasse", "reservations", "kitchen", "posclose"]);
     expect(tabKeys("Kalender")).toEqual(["plan", "calendar", "pricing"]);
     expect(tabKeys("Buchungen")).toEqual(["bookings", "groups", "resources", "vouchers", "g-guests"]);
     expect(group("Buchungen").tabs![4].tabs!.map((t) => t.key)).toEqual(["guestbook", "marketing", "feedback"]);

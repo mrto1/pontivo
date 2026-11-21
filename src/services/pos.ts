@@ -58,6 +58,27 @@ export async function saveTable(hotelId: string, name: string, actor: string): P
   return t;
 }
 
+/** Plätze und Form eines Tisches (SPEC 19.49 Etappe C) */
+export async function saveTableDetails(hotelId: string, id: string, i: { seats: number; shape: "square" | "round" }, actor: string) {
+  if (!Number.isInteger(i.seats) || i.seats < 1 || i.seats > 50) throw new PosError("Plätze: 1 bis 50.");
+  if (i.shape !== "square" && i.shape !== "round") throw new PosError("Form ungültig.");
+  const [t] = await db().update(posTables).set({ seats: i.seats, shape: i.shape }).where(and(eq(posTables.id, id), eq(posTables.hotelId, hotelId))).returning();
+  if (!t) throw new PosError("Tisch nicht gefunden.");
+  await audit(db(), { hotelId, actor, action: "pos.table_update", entity: "pos_table", entityId: id });
+}
+
+/** Lage der Tische im Plan speichern (Promille der Fläche); x/y null = nicht im Plan */
+export async function saveTablePlan(hotelId: string, positions: { id: string; x: number | null; y: number | null }[], actor: string) {
+  for (const p of positions) {
+    const ok = (v: number | null) => v === null || (Number.isInteger(v) && v >= 0 && v <= 1000);
+    if (!ok(p.x) || !ok(p.y) || (p.x === null) !== (p.y === null)) throw new PosError("Position ungültig.");
+  }
+  await db().transaction(async (tx) => {
+    for (const p of positions) await tx.update(posTables).set({ planX: p.x, planY: p.y }).where(and(eq(posTables.id, p.id), eq(posTables.hotelId, hotelId)));
+    await audit(tx, { hotelId, actor, action: "pos.table_plan", entity: "pos_table", entityId: hotelId, details: { tables: positions.length } });
+  });
+}
+
 /** CSV-Import Artikel (alles oder nichts, SPEC 19.48): Artikel mit gleichem Namen und gleicher Kategorie gibt es schon und werden übersprungen */
 export async function importItems(hotelId: string, rowsIn: import("../domain/pos-import").PosItemRow[], actor: string): Promise<{ created: number; skipped: number }> {
   return db().transaction(async (tx) => {

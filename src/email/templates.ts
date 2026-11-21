@@ -200,6 +200,15 @@ const X: Record<Locale, {
     iSubject: (h) => `Uw aanvraag – ${h}`, iText: "hartelijk dank voor uw aanvraag. We hebben hem ontvangen en nemen zo snel mogelijk contact op.", tSubject: (h) => `Uw tafelreservering – ${h}`, tText: "hartelijk dank voor uw reserveringsaanvraag. Die is geldig zodra wij hem hebben bevestigd – we nemen zo snel mogelijk contact op.", tDate: "Datum", tTime: "Tijd", tPersons: "Personen" },
 };
 
+/** Bestätigung einer Tischreservierung (SPEC 19.49 Etappe C) */
+const TR: Record<Locale, { subject: (h: string) => string; text: string; day: string; time: string; persons: string; cancel: string; button: string }> = {
+  de: { subject: (h) => `Ihre Tischreservierung – ${h}`, text: "vielen Dank, Ihr Tisch ist reserviert. Wir freuen uns auf Sie.", day: "Datum", time: "Zeit", persons: "Personen", cancel: "Falls Sie nicht kommen können, stornieren Sie bitte über diesen Link", button: "Reservierung ansehen oder stornieren" },
+  en: { subject: (h) => `Your table reservation – ${h}`, text: "thank you, your table is reserved. We look forward to seeing you.", day: "Date", time: "Time", persons: "Guests", cancel: "If you cannot come, please cancel with this link", button: "View or cancel reservation" },
+  fr: { subject: (h) => `Votre réservation de table – ${h}`, text: "merci, votre table est réservée. Nous nous réjouissons de vous accueillir.", day: "Date", time: "Heure", persons: "Personnes", cancel: "Si vous ne pouvez pas venir, annulez s'il vous plaît via ce lien", button: "Voir ou annuler la réservation" },
+  it: { subject: (h) => `La vostra prenotazione del tavolo – ${h}`, text: "grazie, il vostro tavolo è prenotato. Vi aspettiamo con piacere.", day: "Data", time: "Ora", persons: "Persone", cancel: "Se non potete venire, annullate con questo link", button: "Vedi o annulla la prenotazione" },
+  nl: { subject: (h) => `Uw tafelreservering – ${h}`, text: "hartelijk dank, uw tafel is gereserveerd. We kijken uit naar uw komst.", day: "Datum", time: "Tijd", persons: "Personen", cancel: "Kunt u niet komen, annuleer dan via deze link", button: "Reservering bekijken of annuleren" },
+};
+
 const KIND_DE: Record<string, string> = { table: "Tisch reservieren", group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
 
 /** Gäste-Mail mit den eigenen Texten des Hotels (SPEC 17.5), sonst die Standardtexte */
@@ -356,6 +365,13 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
       const stay = new Intl.DateTimeFormat(gl, { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${String(c.data.stayMonth)}-01T00:00:00Z`));
       return wrap(c, gl, wb.subject(c.hotel.name), [hi + ",", wb.text(c.hotel.name, stay), wb.text2, `${wb.unsub}: ${String(c.data.unsubscribeUrl ?? "")}`], [],
         { href: String(c.data.url ?? c.baseUrl), label: wb.button });
+    }
+    case "table_reserved": {
+      const r = TR[gl];
+      const ownDomain = Boolean(c.hotel.primaryDomain) && env().NODE_ENV === "production" && !env().ENVIRONMENT_LABEL;
+      const url = `${c.baseUrl}${ownDomain ? "" : `/h/${c.hotel.slug}`}/${gl}/tisch/${String(c.data.token)}`;
+      return wrap(c, gl, r.subject(c.hotel.name), [m.hi(String(c.data.name ?? "")) + ",", r.text, `${r.cancel}: ${url}`],
+        [`${r.day}: ${formatDay(String(c.data.day), gl)}`, `${r.time}: ${c.data.time}`, `${r.persons}: ${c.data.party}`], { href: url, label: r.button });
     }
     case "waitlist_available": {
       const dm = D[gl];

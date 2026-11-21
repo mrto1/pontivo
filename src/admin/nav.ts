@@ -57,7 +57,7 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
           { key: "home", label: "Tagesliste", href: base },
           link("inbox", "Posteingang"),
           link("housekeeping", "Reinigung"),
-          { ...link("g-restaurant", "Restaurant", "restaurant"), tabs: [link("restaurant", "Tische"), link("kasse", "Kasse"), link("kitchen", "Küche", "restaurant/kueche"), link("posclose", "Kassenabschluss", "restaurant/abschluss")] },
+          { ...link("g-restaurant", "Restaurant", "restaurant"), tabs: [link("restaurant", "Tische"), link("kasse", "Kasse"), link("reservations", "Reservierungen", "restaurant/reservierungen"), link("kitchen", "Küche", "restaurant/kueche"), link("posclose", "Kassenabschluss", "restaurant/abschluss")] },
         ],
       },
       // Kalender: Zeitraster je Zimmertyp. Erster Reiter ist der Zimmerplan, solange die Rezeption (Modul frontdesk) an ist

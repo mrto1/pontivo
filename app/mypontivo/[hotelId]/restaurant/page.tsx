@@ -5,6 +5,11 @@ import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { PosError, openOrder, tablesOverview, webDevice } from "@/src/services/pos";
 import { formatChf } from "@/src/domain/money";
+import { FloorPlan } from "@/components/admin/FloorPlan";
+import { reservationsOfDay } from "@/src/services/reservations";
+import { todayIn } from "@/src/domain/dates";
+import { toMin } from "@/src/domain/reservations";
+import { formatInTimeZone } from "date-fns-tz";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -29,10 +34,25 @@ export default async function RestaurantPage({ params, searchParams }: { params:
   const { hotel } = await requireHotel(hotelId, "staff", "restaurant");
   await requireModule(hotel.id, "pos");
   const tables = await tablesOverview(hotel.id);
+  const today = todayIn(hotel.timezone);
+  const nowMin = Number(formatInTimeZone(new Date(), hotel.timezone, "H")) * 60 + Number(formatInTimeZone(new Date(), hotel.timezone, "m"));
+  const todays = (await reservationsOfDay(hotel.id, today)).filter((r) => r.status === "confirmed");
+  /** nächste Reservierung am Tisch, die in den nächsten 90 Minuten beginnt oder schon läuft */
+  const nextRes = (tableId: string) => todays.find((r) => r.tableId === tableId && toMin(r.time) + 90 > nowMin && toMin(r.time) < nowMin + 90);
+  const planned = tables.filter(({ table }) => table.planX !== null && table.planY !== null);
   return (
     <div className="stack">
       <h1>Restaurant</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
+      {planned.length ? (
+        <FloorPlan tables={planned.map(({ table, orders }) => { const r = nextRes(table.id); const open = orders.reduce((a, o) => a + o.openRappen, 0); return {
+          id: table.id, name: table.name, seats: table.seats, shape: table.shape, x: table.planX, y: table.planY,
+          tone: orders.length ? "busy" as const : r ? "soon" as const : "free" as const,
+          info: orders.length ? formatChf(open) : r ? `${r.time} ${r.name}` : "frei",
+          href: orders[0] ? `/mypontivo/${hotel.id}/restaurant/bestellung/${orders[0].order.id}` : undefined,
+        }; })} />
+      ) : null}
+      <p className="small"><Link href={`/mypontivo/${hotel.id}/restaurant/reservierungen`}>Reservierungen heute: {todays.length}</Link></p>
       {tables.length ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
           {tables.map(({ table, orders }) => (

@@ -1001,3 +1001,14 @@ pre { overflow-x: auto; }
 .kds-ticket.late { border-color: var(--danger, #b3261e); }
 .kds-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .kds-line { width: 100%; text-align: left; font-size: 1.1rem; padding: 12px; border-radius: 8px; border: 1px solid var(--border, #ddd); background: transparent; cursor: pointer; }
+
+/* Tischplan (SPEC 19.49 Etappe C) */
+.plan-area { position: relative; width: 100%; aspect-ratio: 3 / 2; border: 1px dashed var(--border, #ccc); border-radius: 12px; background: repeating-linear-gradient(0deg, transparent 0 39px, rgba(0,0,0,.04) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, rgba(0,0,0,.04) 39px 40px); touch-action: none; overflow: hidden; }
+.plan-empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 16px; }
+.plan-table { position: absolute; transform: translate(-50%, -50%); min-width: 64px; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px; border: 2px solid var(--border, #bbb); background: var(--surface, #fff); color: inherit; text-decoration: none; text-align: center; }
+.plan-table.square { border-radius: 10px; }
+.plan-table.round { border-radius: 999px; min-width: 76px; min-height: 76px; }
+.plan-table.editable { cursor: grab; user-select: none; }
+.plan-table.free { border-color: #2e7d32; }
+.plan-table.busy { border-color: #b3261e; background: rgba(179, 38, 30, .08); }
+.plan-table.soon { border-color: #b26a00; background: rgba(178, 106, 0, .08); }
