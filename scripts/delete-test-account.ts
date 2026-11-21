@@ -1,5 +1,5 @@
 /**
- * Testkonto samt Betrieb(en) löschen (nicht rückgängig). Komfortabler im Admin unter /admin/plattform.
+ * Testkonto samt Betrieb(en) löschen (nicht rückgängig). Komfortabler im Admin unter /plattform.
  *   node --import tsx scripts/delete-test-account.ts <email>          zeigt nur, was gelöscht würde
  *   node --import tsx scripts/delete-test-account.ts <email> --yes    löscht
  * Betriebe mit weiteren Mitgliedern bleiben; «live» nur mit --include-live; Plattform-Admins nie.

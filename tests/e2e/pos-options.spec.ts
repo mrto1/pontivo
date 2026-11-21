@@ -19,7 +19,7 @@ test("Restaurant: Garstufe als Pflichtgruppe, Bestellung mit Sonderwunsch", asyn
   const dev = await createDevice(h.hotel.id, "T1", "Tablet", "e2e");
   const order = await openOrder(h.hotel.id, { tableId: null, deviceId: dev.id, label: "Bar" }, "e2e");
 
-  await page.goto(`/mypontivo/${h.hotel.id}/restaurant/artikel`);
+  await page.goto(`/admin/${h.hotel.id}/restaurant/artikel`);
   const form = page.locator("form").filter({ has: page.getByRole("heading", { name: "Neue Gruppe" }) });
   await form.getByLabel("Name").fill("Garstufe");
   await form.getByRole("switch").click();
@@ -34,7 +34,7 @@ test("Restaurant: Garstufe als Pflichtgruppe, Bestellung mit Sonderwunsch", asyn
   await group.getByRole("button", { name: "Zuordnung speichern" }).click();
   await expect(page.getByText("Zuordnung gespeichert")).toBeVisible();
 
-  await page.goto(`/mypontivo/${h.hotel.id}/restaurant/bestellung/${order.id}`);
+  await page.goto(`/admin/${h.hotel.id}/restaurant/bestellung/${order.id}`);
   await page.getByLabel("Sonderwunsch (optional)").fill("ohne Zwiebeln");
   await page.getByRole("button", { name: "Hinzufügen" }).click();
   const step = page.getByTestId("options-step");
@@ -60,7 +60,7 @@ test("Küche: Posten erscheint, antippen meldet fertig", async ({ page, context,
   const dev = await createDevice(h.hotel.id, "T1", "Tablet", "e2e");
   const order = await openOrder(h.hotel.id, { tableId: null, deviceId: dev.id, label: "Bar" }, "e2e");
   await addLines(h.hotel, order.id, [{ itemId: item.id, quantity: 2, note: "mit Spiegelei" }], "e2e");
-  await page.goto(`/mypontivo/${h.hotel.id}/restaurant/kueche`);
+  await page.goto(`/admin/${h.hotel.id}/restaurant/kueche`);
   await expect(page.getByTestId("kds").getByText("2 × Rösti · mit Spiegelei")).toBeVisible();
   await page.getByRole("button", { name: "Alles fertig" }).click();
   await expect(page.getByText("Nichts offen.")).toBeVisible();
@@ -95,13 +95,13 @@ test("Reservierung: online buchen, Liste, Storno per Link; Plan zeigt Tisch", as
   const link = page.url();
 
   // Personal sieht die Reservierung und setzt den Tisch
-  await page.goto(`/mypontivo/${h.hotel.id}/restaurant/reservierungen?day=${day}`);
+  await page.goto(`/admin/${h.hotel.id}/restaurant/reservierungen?day=${day}`);
   const list = page.getByTestId("res-list");
   await expect(list.getByText("Frau Muster")).toBeVisible();
   await list.getByLabel("Tisch Frau Muster").selectOption({ label: "Tisch 1 (2)" });
   await list.getByRole("button", { name: "Setzen" }).click();
   await expect(page.getByText("Tisch zugewiesen")).toBeVisible();
-  await page.goto(`/mypontivo/${h.hotel.id}/restaurant`);
+  await page.goto(`/admin/${h.hotel.id}/restaurant`);
   await expect(page.getByTestId("plan-area").getByText("Tisch 1")).toBeVisible();
 
   // Gast storniert

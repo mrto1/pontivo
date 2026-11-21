@@ -42,7 +42,7 @@ export async function sitemapXml(hotel: Hotel): Promise<string> {
 
 /** Suchmaschinen und KI-Crawler dürfen alles Öffentliche lesen; Verwaltung, Schnittstellen und persönliche Buchungslinks nicht. */
 export function robotsTxt(hotel: Hotel | null): string {
-  const lines = ["User-agent: *", "Allow: /", "Disallow: /mypontivo", "Disallow: /admin", "Disallow: /api/", "Disallow: /b/", "Disallow: /v/", "Disallow: /vorschau", ""];
+  const lines = ["User-agent: *", "Allow: /", "Disallow: /admin", "Disallow: /plattform", "Disallow: /api/", "Disallow: /b/", "Disallow: /v/", "Disallow: /vorschau", ""];
   // Die Plattform-Domain selbst hat keine Hotel-Sitemap
   if (hotel) lines.push(`Sitemap: ${publicBase(hotel)}/sitemap.xml`);
   return lines.join("\n") + "\n";

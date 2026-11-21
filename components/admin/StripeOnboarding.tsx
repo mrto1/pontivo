@@ -39,7 +39,7 @@ export function StripeOnboarding({ hotelId, publishableKey, privacyUrl, returnTo
   async function exit() {
     setDone(true);
     await fetch(`/api/admin/hotels/${hotelId}/stripe-session`, { method: "PUT" }).catch(() => null);
-    window.location.href = returnTo ?? `/mypontivo/${hotelId}/einrichten?step=zahlungen&stripe=return`;
+    window.location.href = returnTo ?? `/admin/${hotelId}/einrichten?step=zahlungen&stripe=return`;
   }
 
   if (error) return <p className="notice warn">{error} Bitte den Knopf zur Stripe-Seite verwenden.</p>;

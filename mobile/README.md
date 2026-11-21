@@ -1,6 +1,6 @@
 # myPontivo als App (Android und iOS)
 
-Die App ist eine Hülle um die bestehende Admin-Oberfläche (`https://pontivo.ch/mypontivo`). Es gibt keine zweite Codebasis: Änderungen an der Oberfläche sind sofort in der App, ohne Store-Update. Die Hülle liefert, was ein Browser nicht kann: Eintrag im Play Store / App Store und Mitteilungen auf dem Handy (auf iOS und im Android-WebView funktionieren Web-Push-Mitteilungen der Webseite nicht verlässlich).
+Die App ist eine Hülle um die bestehende Admin-Oberfläche (`https://pontivo.ch/admin`). Es gibt keine zweite Codebasis: Änderungen an der Oberfläche sind sofort in der App, ohne Store-Update. Die Hülle liefert, was ein Browser nicht kann: Eintrag im Play Store / App Store und Mitteilungen auf dem Handy (auf iOS und im Android-WebView funktionieren Web-Push-Mitteilungen der Webseite nicht verlässlich).
 
 Spezifikation und Annahmen: `docs/SPEC.md` 19.23. **Was schon im Server vorbereitet ist** (committet, ohne Zutun lauffähig):
 - Erkennung der App (`MyPontivoApp` im User-Agent): «Als App installieren» entfällt, auf «Mein Konto» erscheint «Mitteilungen in der App einschalten».

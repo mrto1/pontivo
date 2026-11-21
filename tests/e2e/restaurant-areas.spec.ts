@@ -22,7 +22,7 @@ test("Hotel mit Restaurant: Umschalter Hotel | Restaurant", async ({ page, conte
   await login(context, baseURL!, h.hotel.id, "owner");
   const nav = page.locator(".admin-nav");
 
-  await page.goto(`/mypontivo/${h.hotel.id}`);
+  await page.goto(`/admin/${h.hotel.id}`);
   const sw = page.getByRole("group", { name: "Bereich wählen" });
   await expect(sw.getByRole("button", { name: /Hotel/ })).toHaveAttribute("aria-pressed", "true");
   await expect(nav.getByRole("link", { name: "Kalender" })).toBeVisible();
@@ -35,16 +35,16 @@ test("Hotel mit Restaurant: Umschalter Hotel | Restaurant", async ({ page, conte
 
   // geteilte Seite bleibt im Bereich Gastronomie; Startseite führt zur Tagesübersicht
   await expect.poll(async () => (await context.cookies()).find((c) => c.name.startsWith("pv_area_"))?.value).toBe("dining");
-  await page.goto(`/mypontivo/${h.hotel.id}/vouchers`);
+  await page.goto(`/admin/${h.hotel.id}/vouchers`);
   await expect(nav.getByRole("link", { name: "Reservierungen" })).toBeVisible();
-  await page.goto(`/mypontivo/${h.hotel.id}`);
+  await page.goto(`/admin/${h.hotel.id}`);
   await expect(page).toHaveURL(/\/restaurant\/heute$/);
   // Seite der Unterkunft wechselt den Bereich von selbst (z. B. Link aus einer Mail)
-  await page.goto(`/mypontivo/${h.hotel.id}/bookings`);
+  await page.goto(`/admin/${h.hotel.id}/bookings`);
   await expect(nav.getByRole("link", { name: "Kalender" })).toBeVisible();
   await expect(sw.getByRole("button", { name: /Hotel/ })).toHaveAttribute("aria-pressed", "true");
   await expect.poll(async () => (await context.cookies()).find((c) => c.name.startsWith("pv_area_"))?.value).toBe("lodging"); // gemerkt, sobald die Seite geladen ist
-  await page.goto(`/mypontivo/${h.hotel.id}`);
+  await page.goto(`/admin/${h.hotel.id}`);
   await expect(page.getByRole("heading", { name: "Tagesliste" })).toBeVisible();
 });
 
@@ -53,30 +53,30 @@ test("Reines Restaurant: nur Gastronomie, kein Umschalter; Service landet in der
   await db().update(hotels).set({ propertyType: "restaurant", status: "draft", onboarding: { startedAt: new Date().toISOString(), reminders: 0 } }).where(eq(hotels.id, hotel.id));
   await db().insert(hotelModules).values([{ hotelId: hotel.id, module: "restaurant", enabled: true }]).onConflictDoNothing();
   await login(context, baseURL!, hotel.id, "owner");
-  await page.goto(`/mypontivo/${hotel.id}`);
+  await page.goto(`/admin/${hotel.id}`);
   await expect(page).toHaveURL(/\/restaurant\/heute$/);
   await expect(page.getByRole("group", { name: "Bereich wählen" })).toHaveCount(0);
   await expect(page.locator(".admin-nav a")).toHaveText(["Heute", "Reservierungen", "Bestellungen", "Finanzen"]);
-  await page.goto(`/mypontivo/${hotel.id}/einstellungen`);
+  await page.goto(`/admin/${hotel.id}/einstellungen`);
   await expect(page.getByRole("link", { name: "Zimmer & Tarife" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Speisekarte" }).first()).toBeVisible();
   // Assistent mit Restaurant-Schritten
-  await page.goto(`/mypontivo/${hotel.id}/einrichten?step=tische`);
+  await page.goto(`/admin/${hotel.id}/einrichten?step=tische`);
   await page.getByLabel("Anzahl Tische").fill("6");
   await page.getByRole("button", { name: "Speichern und weiter" }).click();
-  await page.goto(`/mypontivo/${hotel.id}/einrichten?step=tische`); // Angaben fehlen noch, darum führt «weiter» zuerst dorthin
+  await page.goto(`/admin/${hotel.id}/einrichten?step=tische`); // Angaben fehlen noch, darum führt «weiter» zuerst dorthin
   await expect(page.getByText("6 Tische mit zusammen 24 Plätzen")).toBeVisible();
   // Konzept 7a: Reservation sofort live, ohne Stripe; Checkliste im Heute
   const owners = await db().select({ id: hotelMembers.userId }).from(hotelMembers).where(eq(hotelMembers.hotelId, hotel.id));
   for (const o of owners) await db().update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, o.id));
-  await page.goto(`/mypontivo/${hotel.id}/einrichten?step=reservierung`);
+  await page.goto(`/admin/${hotel.id}/einrichten?step=reservierung`);
   await page.getByLabel("Mittag von").fill("11:30"); await page.getByLabel("bis").first().fill("13:30");
   await page.getByRole("button", { name: "Reservation live schalten" }).click();
   await expect(page).toHaveURL(/ok=1/);
-  await page.goto(`/mypontivo/${hotel.id}/einrichten?step=reservierung`);
+  await page.goto(`/admin/${hotel.id}/einrichten?step=reservierung`);
   await expect(page.getByTestId("reservation-live")).toContainText("Reservierung ist online");
   await expect(page.getByRole("img", { name: "QR-Code zur Tischreservierung" })).toBeVisible();
-  await page.goto(`/mypontivo/${hotel.id}/restaurant/heute`);
+  await page.goto(`/admin/${hotel.id}/restaurant/heute`);
   const check = page.getByTestId("ready-checklist");
   await expect(check).toContainText("Bereit für den Betrieb");
   await expect(check.getByRole("link", { name: "Speisekarte" })).toBeVisible(); // noch offen
@@ -91,7 +91,7 @@ test("Reines Restaurant: nur Gastronomie, kein Umschalter; Service landet in der
   await db().insert(hotelModules).values([{ hotelId: h2.hotel.id, module: "restaurant", enabled: true }]).onConflictDoNothing();
   await context.clearCookies();
   await login(context, baseURL!, h2.hotel.id, "service");
-  await page.goto(`/mypontivo/${h2.hotel.id}`);
+  await page.goto(`/admin/${h2.hotel.id}`);
   await expect(page).toHaveURL(/\/restaurant\/heute$/);
   await expect(page.getByRole("group", { name: "Bereich wählen" })).toHaveCount(0);
 });
@@ -124,7 +124,7 @@ test("Restaurant-Website: Tisch reservieren, Kartei bei der Reservierung", async
   await login(context, baseURL!, hotel.id, "owner");
   const { reservationsBetween } = await import("../../src/services/reservations");
   const [r] = await reservationsBetween(hotel.id, "2000-01-01", "2100-01-01");
-  await page.goto(`/mypontivo/${hotel.id}/restaurant/reservierungen?day=${day ?? r.day}`);
+  await page.goto(`/admin/${hotel.id}/restaurant/reservierungen?day=${day ?? r.day}`);
   const list = page.getByTestId("res-list");
   await list.getByText("Kartei").click();
   await list.getByLabel("Tags (Komma)").fill("Fensterplatz");
@@ -132,6 +132,6 @@ test("Restaurant-Website: Tisch reservieren, Kartei bei der Reservierung", async
   await list.getByRole("button", { name: "Speichern" }).last().click();
   await expect(page.getByText("Kartei gespeichert")).toBeVisible();
   await expect(page.getByTestId("res-list").getByText("Kartei: ohne Nüsse")).toBeVisible();
-  await page.goto(`/mypontivo/${hotel.id}/guestbook`);
+  await page.goto(`/admin/${hotel.id}/guestbook`);
   await expect(page.getByText("treu@example.ch")).toBeVisible();
 });

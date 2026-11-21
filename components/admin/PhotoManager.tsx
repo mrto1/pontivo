@@ -1,5 +1,5 @@
 import { MAX_PHOTOS } from "@/src/services/rooms";
-import { photoAction } from "@/app/mypontivo/[hotelId]/photo-actions";
+import { photoAction } from "@/app/admin/[hotelId]/photo-actions";
 import { PhotoGrid } from "./PhotoGrid";
 
 /** Fotos verwalten (Hotel oder Zimmertyp): Raster mit Sortieren und ✕, darunter das Hochladen. `page` = Seite, auf der zurückgekehrt wird. */

@@ -14,7 +14,7 @@ test("Zimmertyp: Karte öffnet Seitenleiste, Name ändern, Tarif ansehen, Escape
   const [u] = await db().select().from(users).where(eq(users.email, email));
   await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
 
-  await page.goto(`/mypontivo/${h.hotel.id}/rooms`);
+  await page.goto(`/admin/${h.hotel.id}/rooms`);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.getByRole("link", { name: /Einzelzimmer bearbeiten/ }).click();
   const dlg = page.getByRole("dialog");

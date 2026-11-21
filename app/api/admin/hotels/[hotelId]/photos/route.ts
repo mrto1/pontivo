@@ -13,7 +13,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ hotelId: strin
   const userId = readSessionValue((await cookies()).get(SESSION_COOKIE)?.value);
   if (!userId || !atLeast(await roleIn(userId, hotelId), "manager")) return new Response("Not found", { status: 404 });
   const from = new URL(req.url).searchParams.get("from");
-  const base = `${env().APP_BASE_URL}/mypontivo/${hotelId}`;
+  const base = `${env().APP_BASE_URL}/admin/${hotelId}`;
   const back = (msg: string, roomTypeId: string | null = null, anchor = "") => {
     const m = encodeURIComponent(msg);
     // Zurück auf die Seite, von der das Formular kam (Assistent, Website-Seite, sonst Zimmer-Seite)
@@ -29,7 +29,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ hotelId: strin
   const roomTypeId = String(form.get("roomTypeId") ?? "") || null;
   if (form.get("target") === "logo") {
     const f = form.get("file");
-    const toEmbed = (msg: string) => Response.redirect(`${env().APP_BASE_URL}/mypontivo/${hotelId}/site?msg=${encodeURIComponent(msg)}`, 303);
+    const toEmbed = (msg: string) => Response.redirect(`${env().APP_BASE_URL}/admin/${hotelId}/site?msg=${encodeURIComponent(msg)}`, 303);
     if (!(f instanceof File) || f.size === 0) return toEmbed("Keine Datei ausgewählt");
     try {
       const url = await saveImage(hotelId, new Uint8Array(await f.arrayBuffer()));

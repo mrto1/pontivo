@@ -45,7 +45,7 @@ export default async function Unterkunft() {
     >
       {list.length ? (
         <p>
-          Entwicklung: {list.map((h, i) => <span key={h.id}>{i ? " · " : ""}<a href={`/h/${h.slug}/de`}>{h.name}</a></span>)} · <a href="/mypontivo">Admin</a>
+          Entwicklung: {list.map((h, i) => <span key={h.id}>{i ? " · " : ""}<a href={`/h/${h.slug}/de`}>{h.name}</a></span>)} · <a href="/admin">Admin</a>
         </p>
       ) : null}
     </PontivoHome>

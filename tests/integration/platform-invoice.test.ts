@@ -49,7 +49,7 @@ describe("Rechnung an das Hotel", () => {
     const mail = (await mails(h.id, "host_minimum_charged"))[0];
     expect(mail.data).toMatchObject({ invoiceNo: c.invoiceNo, invoiceId: c.id });
     const r = render("host_minimum_charged", "de", { hotel: h, data: mail.data as Record<string, unknown>, baseUrl: "https://x" });
-    expect(r.text).toContain(`/mypontivo/${h.id}/plattform-rechnung/${c.id}`);
+    expect(r.text).toContain(`/admin/${h.id}/plattform-rechnung/${c.id}`);
     await runMonthlyMinimum(new Date(), NO_VAT);
     expect((await chargeOf(h.id)).invoiceNo).toBe(c.invoiceNo);
   });

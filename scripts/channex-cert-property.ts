@@ -87,5 +87,5 @@ for (const [id, cx, kind] of map) {
 }
 
 console.log(`Testbetrieb angelegt: ${hotel.name} (${hotel.id}), Inhaber ${email}`);
-console.log(`Admin: /mypontivo/${hotel.id}  → Channex → ${opt("property") ? "Abgleich einschalten" : "In Channex anlegen, dann Abgleich einschalten"}`);
+console.log(`Admin: /admin/${hotel.id}  → Channex → ${opt("property") ? "Abgleich einschalten" : "In Channex anlegen, dann Abgleich einschalten"}`);
 await closeDb();

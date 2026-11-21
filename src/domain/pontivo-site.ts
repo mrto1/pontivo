@@ -1,5 +1,5 @@
 /**
- * Texte der Pontivo-Startseite: Standardwerte im Code, Änderungen im Plattform-Admin (`/admin/plattform/website`) in der Datenbank.
+ * Texte der Pontivo-Startseite: Standardwerte im Code, Änderungen im Plattform-Admin (`/plattform/website`) in der Datenbank.
  * Platzhalter in Texten: {name} = Plattformname, {fee} = Gebühr in Prozent, {emailTo} = « an <Kontakt-E-Mail>» (leer ohne Adresse).
  * Reine Logik ohne I/O.
  */

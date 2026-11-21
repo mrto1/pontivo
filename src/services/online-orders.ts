@@ -354,7 +354,7 @@ type Ex = Parameters<typeof enqueueEmail>[0];
 /** Neue Bestellung melden: Push an alle Geräte, Mail an den Betrieb, Eingangsbestätigung an den Gast */
 async function announceNew(ex: Ex, hotel: Hotel, o: OnlineOrder) {
   const kind = o.kind === "delivery" ? "Lieferung" : "Abholung";
-  await enqueuePush(ex, hotel.id, `order:${o.id}`, { title: `Neue Bestellung ${o.number}${o.isTest ? " (Probe)" : ""}`, body: `${kind} · CHF ${(o.totalRappen / 100).toFixed(2)} · ${o.name}`, url: `/mypontivo/${hotel.id}/restaurant/bestellungen` });
+  await enqueuePush(ex, hotel.id, `order:${o.id}`, { title: `Neue Bestellung ${o.number}${o.isTest ? " (Probe)" : ""}`, body: `${kind} · CHF ${(o.totalRappen / 100).toFixed(2)} · ${o.name}`, url: `/admin/${hotel.id}/restaurant/bestellungen` });
   if (o.email && !o.isTest) await enqueueEmail(ex, { hotelId: hotel.id, template: "order_received", to: o.email, language: o.language, data: orderMailData(hotel, o) });
 }
 
@@ -575,7 +575,7 @@ export async function onlineOrdersJob(now = new Date()): Promise<{ alarmed: numb
     // ASSUMPTION: Alarme gehen an das Telefon des Betriebs (Grunddaten) und an die Kontakt-Mail
     if (hotel.contactPhone) await enqueueSms(db(), { hotelId: hotel.id, to: hotel.contactPhone, text, kind: "alarm", ref: `order-alarm:${o.id}` });
     await enqueueEmail(db(), { hotelId: hotel.id, template: "order_alarm", to: hotel.contactEmail, language: "de", data: { number: o.number, text } });
-    await enqueuePush(db(), hotel.id, `order-alarm:${o.id}`, { title: `Bestellung ${o.number} wartet`, body: text, url: `/mypontivo/${hotel.id}/restaurant/bestellungen` });
+    await enqueuePush(db(), hotel.id, `order-alarm:${o.id}`, { title: `Bestellung ${o.number} wartet`, body: text, url: `/admin/${hotel.id}/restaurant/bestellungen` });
     alarmed++;
   }
   // Herzschlag: während der Öffnungszeit muss ein Bestellbildschirm erreichbar sein

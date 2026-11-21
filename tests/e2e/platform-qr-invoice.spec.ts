@@ -21,7 +21,7 @@ test("Grundgebühr per QR-Rechnung: wählen, Zahlteil, Zahlung in der Plattform-
   await db().update(users).set({ isPlatformAdmin: true }).where(eq(users.id, u.id));
   await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
 
-  await page.goto(`/mypontivo/${hotel.id}/zahlungen`);
+  await page.goto(`/admin/${hotel.id}/zahlungen`);
   await page.getByTestId("billing-method").getByLabel(/QR-Rechnung/).check();
   await page.getByRole("button", { name: "Zahlungsart speichern" }).click();
   await expect(page.getByText(/Grundgebühr per QR-Rechnung: gilt ab der nächsten Monatsrechnung/)).toBeVisible();
@@ -30,12 +30,12 @@ test("Grundgebühr per QR-Rechnung: wählen, Zahlteil, Zahlung in der Plattform-
   const today = todayIn("Europe/Zurich");
   const no = `R-2099-${String(Math.floor(Math.random() * 90000) + 10000)}`;
   const [c] = await db().insert(platformCharges).values({ hotelId: hotel.id, month: "2026-10", feesRappen: 0, minimumRappen: 1900, chargeRappen: 1900, netRappen: 1900, status: "invoiced", method: "qr", dueDate: addDays(today, 30), invoiceNo: no, invoiceDate: today }).returning();
-  await page.goto(`/mypontivo/${hotel.id}/plattform-rechnung/${c.id}`);
+  await page.goto(`/admin/${hotel.id}/plattform-rechnung/${c.id}`);
   await expect(page.getByTestId("platform-qr")).toContainText("Zahlteil");
   await expect(page.getByTestId("platform-qr")).toContainText("CH44 3199 9123 0008 8901 2");
   await expect(page.getByText("Zu bezahlen")).toBeVisible();
 
-  await page.goto("/admin/plattform/rechnungen");
+  await page.goto("/plattform/rechnungen");
   const row = page.getByTestId("open-qr").getByRole("row", { name: new RegExp(no) });
   await expect(row).toContainText("offen, fällig");
   await row.getByRole("button", { name: "Bezahlt" }).click();

@@ -12,7 +12,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ hotelId: strin
   const { hotelId } = await ctx.params;
   const userId = readSessionValue((await cookies()).get(SESSION_COOKIE)?.value);
   if (!userId || !atLeast(await roleIn(userId, hotelId), "manager")) return new Response("Not found", { status: 404 });
-  const back = (msg: string) => Response.redirect(`${env().APP_BASE_URL}/mypontivo/${hotelId}/site?msg=${encodeURIComponent(msg)}#dokumente`, 303);
+  const back = (msg: string) => Response.redirect(`${env().APP_BASE_URL}/admin/${hotelId}/site?msg=${encodeURIComponent(msg)}#dokumente`, 303);
 
   const len = Number(req.headers.get("content-length") ?? 0);
   if (len > MAX_PDF_BYTES + 100_000) return back(`Nicht möglich: Datei zu gross (max. ${MAX_PDF_BYTES / 1024 / 1024} MB)`);

@@ -8,6 +8,6 @@ if (!email || !/@/.test(email)) {
   process.exit(1);
 }
 createUser(email, { name, platformAdmin: true }).then(
-  async (u) => { console.log(`Plattform-Admin: ${u.email} – Login unter /mypontivo/login`); await closeDb(); },
+  async (u) => { console.log(`Plattform-Admin: ${u.email} – Login unter /admin/login`); await closeDb(); },
   (e) => { console.error(e); process.exit(1); },
 );

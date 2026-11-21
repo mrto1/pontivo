@@ -36,12 +36,12 @@ function recorder() {
 const pending = (hotelId: string) => db().select().from(pushOutbox).where(eq(pushOutbox.hotelId, hotelId));
 
 describe("Push-Mitteilungen", () => {
-  it("einreihen: pro Ereignis nur einmal, Link nur auf /mypontivo/", async () => {
+  it("einreihen: pro Ereignis nur einmal, Link nur auf /admin/", async () => {
     const h = await makeHotel();
-    await enqueuePush(db(), h.hotel.id, "x:1", { title: "A", body: "b", url: `/mypontivo/${h.hotel.id}/bookings` });
-    await enqueuePush(db(), h.hotel.id, "x:1", { title: "A", body: "b", url: `/mypontivo/${h.hotel.id}/bookings` });
+    await enqueuePush(db(), h.hotel.id, "x:1", { title: "A", body: "b", url: `/admin/${h.hotel.id}/bookings` });
+    await enqueuePush(db(), h.hotel.id, "x:1", { title: "A", body: "b", url: `/admin/${h.hotel.id}/bookings` });
     expect(await pending(h.hotel.id)).toHaveLength(1);
-    await expect(enqueuePush(db(), h.hotel.id, "x:2", { title: "A", body: "b", url: "https://evil.example/" })).rejects.toThrow(/\/mypontivo\//);
+    await expect(enqueuePush(db(), h.hotel.id, "x:2", { title: "A", body: "b", url: "https://evil.example/" })).rejects.toThrow(/\/admin\//);
   });
 
   it("Geräte: nur https, pro Hotel und Gerät ein Eintrag, nur das eigene Gerät lässt sich abmelden", async () => {
@@ -65,7 +65,7 @@ describe("Push-Mitteilungen", () => {
     await saveSubscription(a.hotel.id, u, sub("a1"), null);
     await saveSubscription(a.hotel.id, u, sub("gone"), null);
     await saveSubscription(b.hotel.id, u, sub("b1"), null);
-    await enqueuePush(db(), a.hotel.id, "t:1", { title: "Neue Buchung", body: "X", url: `/mypontivo/${a.hotel.id}/bookings` });
+    await enqueuePush(db(), a.hotel.id, "t:1", { title: "Neue Buchung", body: "X", url: `/admin/${a.hotel.id}/bookings` });
     const sent: string[] = [];
     setPushSender(async (t) => {
       if (t.endpoint.endsWith("/gone")) throw Object.assign(new Error("gone"), { statusCode: 410 });
@@ -81,14 +81,14 @@ describe("Push-Mitteilungen", () => {
 
   it("ohne Geräte: Eintrag wird verworfen; bei vorübergehendem Fehler wird wiederholt, nach 3 Versuchen 'failed'", async () => {
     const h = await makeHotel();
-    await enqueuePush(db(), h.hotel.id, "n:1", { title: "T", body: "b", url: `/mypontivo/${h.hotel.id}` });
+    await enqueuePush(db(), h.hotel.id, "n:1", { title: "T", body: "b", url: `/admin/${h.hotel.id}` });
     recorder();
     await sendDuePushes();
     expect((await pending(h.hotel.id))[0].status).toBe("cancelled");
 
     const u = await makeUser();
     await saveSubscription(h.hotel.id, u, sub("flaky"), null);
-    await enqueuePush(db(), h.hotel.id, "n:2", { title: "T", body: "b", url: `/mypontivo/${h.hotel.id}` });
+    await enqueuePush(db(), h.hotel.id, "n:2", { title: "T", body: "b", url: `/admin/${h.hotel.id}` });
     setPushSender(async () => {
       throw Object.assign(new Error("5xx"), { statusCode: 503 });
     });
@@ -116,8 +116,8 @@ describe("Push-Mitteilungen", () => {
     expect(booked).toBeTruthy();
     expect(booked!.title).toBe("Neue Buchung");
     expect(booked!.body).toContain(booking.reference);
-    expect(booked!.url).toBe(`/mypontivo/${h.hotel.id}/bookings/${booking.id}`);
-    expect(rows.find((r) => r.dedupeKey === `inquiry:${inq.id}`)).toMatchObject({ title: "Neue Anfrage", url: `/mypontivo/${h.hotel.id}/inquiries` });
+    expect(booked!.url).toBe(`/admin/${h.hotel.id}/bookings/${booking.id}`);
+    expect(rows.find((r) => r.dedupeKey === `inquiry:${inq.id}`)).toMatchObject({ title: "Neue Anfrage", url: `/admin/${h.hotel.id}/inquiries` });
     for (const r of rows) expect(`${r.title} ${r.body}`).not.toMatch(/Erika|Geheim|@/);
   });
 });

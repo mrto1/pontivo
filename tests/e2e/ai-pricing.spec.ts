@@ -14,10 +14,10 @@ test("Preisempfehlung: KI-Modul an, Seite lädt", async ({ page, context, baseUR
   await addMember(h.hotel.id, email, "owner", "e2e");
   const [u] = await db().select().from(users).where(eq(users.email, email));
   await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
-  await page.goto(`/mypontivo/${h.hotel.id}/preise`);
+  await page.goto(`/admin/${h.hotel.id}/preise`);
   await expect(page.getByRole("heading", { name: "Preisempfehlung" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Jetzt nach Regeln neu berechnen" })).toBeVisible();
   // KI-Zusatz-Seite nennt den Tarif
-  await page.goto(`/mypontivo/${h.hotel.id}/ki-chat`);
+  await page.goto(`/admin/${h.hotel.id}/ki-chat`);
   await expect(page.getByText("Enthält die KI-Preisempfehlung")).toBeVisible();
 });

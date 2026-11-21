@@ -26,14 +26,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
-      { source: "/mypontivo/:path*", headers: adminHeaders },
       { source: "/admin/:path*", headers: adminHeaders },
+      { source: "/plattform/:path*", headers: adminHeaders },
     ];
   },
-  // Alte Hotel-Adressen unter /admin/<hotel>/… (E-Mail-Links, Lesezeichen, Push) führen weiter nach /mypontivo. /admin selbst und /admin/plattform gehören der Plattform-Verwaltung.
+  // Alte Adressen (E-Mail-Links, Lesezeichen, Push): Hotel-Oberfläche früher /mypontivo, Plattform-Verwaltung früher /admin/plattform.
   async redirects() {
     return [
-      { source: "/admin/:path((?!plattform(?:/|$)).*)", destination: "/mypontivo/:path", permanent: true },
+      { source: "/admin/plattform/:path*", destination: "/plattform/:path*", permanent: true },
+      { source: "/admin/plattform", destination: "/plattform", permanent: true },
+      { source: "/mypontivo/:path*", destination: "/admin/:path*", permanent: true },
+      { source: "/mypontivo", destination: "/admin", permanent: true },
     ];
   },
 };

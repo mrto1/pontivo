@@ -23,7 +23,7 @@ test("Kasse: offline bestellen und kassieren, später übertragen", async ({ pag
   await createDevice(h.hotel.id, "T1", "Tablet", "e2e");
   await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
 
-  await page.goto(`/mypontivo/${h.hotel.id}/kasse`);
+  await page.goto(`/admin/${h.hotel.id}/kasse`);
   await page.getByRole("button", { name: /^T1/ }).click();
   await expect(page.getByTestId("status")).toContainText("alles übertragen");
 

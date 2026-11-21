@@ -35,7 +35,7 @@ async function main() {
     console.log("Hotel angelegt:", hotel.name, hotel.id);
     const email = process.env.SEED_ADMIN_EMAIL ?? "admin@example.ch";
     await createUser(email, { name: "Admin", platformAdmin: true, hotelId: hotel.id, role: "owner" });
-    console.log("Admin-Benutzer:", email, "(Login unter /mypontivo/login)");
+    console.log("Admin-Benutzer:", email, "(Login unter /admin/login)");
   }
   await closeDb();
 }

@@ -16,7 +16,7 @@ Vor jeder Arbeit lesen: `docs/SPEC.md` (Auftrag, Quelle der Wahrheit) und `db/sc
 ## Aufbau
 
 ```
-app/                    Next.js App Router (öffentliche Seiten, /b/<token>, /mypontivo, /api)
+app/                    Next.js App Router (öffentliche Seiten, /b/<token>, /admin, /api)
 components/public/      Hotel-Website und Buchungsstrecke
 src/domain/             reine Logik ohne I/O (Preise, Kurtaxe, Verfügbarkeit, Storno, Zustandsautomat)
 src/services/           DB-Logik (Suche, Buchungen/Hold, Kalender, Einstellungen)

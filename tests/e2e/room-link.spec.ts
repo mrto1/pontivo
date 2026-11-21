@@ -20,7 +20,7 @@ test("Restaurant verbindet sich mit dem Schlüssel des Hotels", async ({ page, c
   const [u] = await db().select().from(users).where(eq(users.email, email));
   await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
 
-  await page.goto(`/mypontivo/${r.hotel.id}/restaurant/geraete`);
+  await page.goto(`/admin/${r.hotel.id}/restaurant/geraete`);
   const box = page.getByTestId("room-link");
   await box.getByLabel("Schlüssel des Hotels").fill("pnt_falsch");
   await box.getByRole("button", { name: "Verbinden" }).click();

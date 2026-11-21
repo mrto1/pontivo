@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { dayNotices } from "../../src/domain/day-notices";
 
-const base = { base: "/mypontivo/h", manages: true, channexEnabled: true, channexFailed: 0, roomTypesWithoutPhoto: [], openGuestRequests: 0, openInquiries: 0, inboxVisible: true };
+const base = { base: "/admin/h", manages: true, channexEnabled: true, channexFailed: 0, roomTypesWithoutPhoto: [], openGuestRequests: 0, openInquiries: 0, inboxVisible: true };
 
 describe("Hinweise auf «Tag» (SPEC 19.42)", () => {
   it("ohne Anlass keine Hinweise", () => expect(dayNotices(base)).toEqual([]));
   it("jeder Hinweis führt direkt zur passenden Seite", () => {
     const n = dayNotices({ ...base, channexFailed: 3, roomTypesWithoutPhoto: [{ id: "rt1", name: "Doppelzimmer" }], openGuestRequests: 2, openInquiries: 1 });
     const href = (k: string) => n.find((x) => x.key === k)?.href;
-    expect(href("channex")).toBe("/mypontivo/h/channex");
-    expect(href("photos")).toBe("/mypontivo/h/rooms?rt=rt1&tab=fotos");
-    expect(href("wishes")).toBe("/mypontivo/h/inbox?quelle=wuensche");
-    expect(href("inquiries")).toBe("/mypontivo/h/inbox?quelle=web");
+    expect(href("channex")).toBe("/admin/h/channex");
+    expect(href("photos")).toBe("/admin/h/rooms?rt=rt1&tab=fotos");
+    expect(href("wishes")).toBe("/admin/h/inbox?quelle=wuensche");
+    expect(href("inquiries")).toBe("/admin/h/inbox?quelle=web");
     expect(n.find((x) => x.key === "channex")!.tone).toBe("warn");
   });
   it("Mitarbeitende sehen keine Einstellungs-Hinweise, nur den Posteingang", () => {

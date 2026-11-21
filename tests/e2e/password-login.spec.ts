@@ -14,7 +14,7 @@ test("Passwort-Login: falsches Passwort, richtiges Passwort, Passwort ändern", 
   const [u] = await db().select().from(users).where(eq(users.email, email));
   await setPasswordUnchecked(u.id, "testtest");
 
-  await page.goto("/mypontivo/login");
+  await page.goto("/admin/login");
   await expect(page.getByRole("heading", { name: "Anmelden" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Passwort vergessen/ })).toBeVisible();
   await page.fill("#email", email);
@@ -27,10 +27,10 @@ test("Passwort-Login: falsches Passwort, richtiges Passwort, Passwort ändern", 
   await page.fill("#password", "testtest");
   await page.waitForTimeout(800);
   await page.getByRole("button", { name: "Anmelden", exact: true }).click();
-  await expect(page).toHaveURL(new RegExp(`/mypontivo(/${h.hotel.id})?$`));
+  await expect(page).toHaveURL(new RegExp(`/admin(/${h.hotel.id})?$`));
 
   // Passwort ändern: das alte muss stimmen
-  await page.goto(`/mypontivo/${h.hotel.id}/mypontivo`);
+  await page.goto(`/admin/${h.hotel.id}/mypontivo`);
   await page.waitForLoadState("networkidle");
   await page.fill("#pw-cur", "testtest");
   await page.getByTestId("pw-new").fill("neues-passwort");

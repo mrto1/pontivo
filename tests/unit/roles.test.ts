@@ -89,7 +89,7 @@ describe("Zahnrad und Menü je Rolle (SPEC 19.42)", () => {
     // Reinigung: nur ein Hauptpunkt, der direkt zur Reinigung führt
     const h = visibleNav(hotel, "housekeeping", none).nav;
     expect(h.primary).toHaveLength(1);
-    expect(h.primary[0].href).toBe("/mypontivo/h/housekeeping");
+    expect(h.primary[0].href).toBe("/admin/h/housekeeping");
     // Service: Restaurant mit Tische und Kasse
     const s = visibleNav(hotel, "service", new Set(["posclose"])).nav;
     expect(allPages(s).map((i) => i.key).filter((k) => ["restaurant", "kasse"].includes(k))).toEqual(["restaurant", "kasse"]);

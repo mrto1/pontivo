@@ -55,7 +55,7 @@ export function adminNav(hotel: HotelRef, hiddenIn: ReadonlySet<string> = new Se
 }
 
 function baseNav(hotel: HotelRef, area: Area): Nav {
-  const base = `/mypontivo/${hotel.id}`;
+  const base = `/admin/${hotel.id}`;
   const link = (key: string, label: string, path = key, extra: Partial<NavItem> = {}): NavItem => ({ key, label, href: `${base}/${path}`, ...extra });
   const set = (group: string, item: NavItem, lead: string): NavItem => ({ ...item, group, lead });
   // Restaurant-Baum (SPEC 20.1, Navigation Teil B): gleiche Seiten und Schlüssel, eigene vier Hauptpunkte

@@ -22,7 +22,7 @@ export function PasskeyLogin() {
     const options = await (await fetch("/api/auth/passkey/options", { method: "POST" })).json();
     const response = await startAuthentication({ optionsJSON: options, useBrowserAutofill: autofill });
     const r = await fetch("/api/auth/passkey/verify", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(response) });
-    if (r.ok) { rememberPasskey(); window.location.href = (await r.json()).mfa ? "/mypontivo/login/2fa" : "/mypontivo"; return; }
+    if (r.ok) { rememberPasskey(); window.location.href = (await r.json()).mfa ? "/admin/login/2fa" : "/admin"; return; }
     throw new Error("verify");
   }
 

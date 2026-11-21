@@ -31,7 +31,7 @@ test("Gästeportal: Wunsch, Erledigt, Check-out", async ({ page, context, baseUR
   await addMember(h.hotel.id, email, "owner", "e2e");
   const [u] = await db().select().from(users).where(eq(users.email, email));
   await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
-  await page.goto(`/mypontivo/${h.hotel.id}/inbox?quelle=wuensche`);
+  await page.goto(`/admin/${h.hotel.id}/inbox?quelle=wuensche`);
   await expect(page.getByText("Zusätzliche Handtücher")).toBeVisible();
   await page.getByPlaceholder("Kurze Antwort an den Gast (optional)").fill("Liegen bereit");
   await page.getByRole("button", { name: "Erledigt (Gast sieht es)" }).click();

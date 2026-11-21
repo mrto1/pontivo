@@ -27,7 +27,7 @@ export async function getAirbnbChannel(hotelId: string): Promise<AirbnbChannel |
   return (row as AirbnbChannel) ?? null;
 }
 
-const returnUrl = (hotelId: string) => `${env().APP_BASE_URL.replace(/\/$/, "")}/mypontivo/${hotelId}/channex/airbnb/return`;
+const returnUrl = (hotelId: string) => `${env().APP_BASE_URL.replace(/\/$/, "")}/admin/${hotelId}/channex/airbnb/return`;
 
 /**
  * Schritt 1: Verbindungs-Link erzeugen. Bei bestehender Verbindung wird sie neu verbunden (channel_id), z. B. wenn

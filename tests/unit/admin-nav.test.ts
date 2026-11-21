@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { adminNav, allPages, allPagesBoth, areaOfPath, bestMatch, inSettings, isActive, isActiveIn, leafKeys, sectionFor, settingsGroups } from "../../src/admin/nav";
 import { hiddenNavKeys } from "../../src/domain/modules";
-import { GET as manifest } from "../../app/mypontivo/manifest.webmanifest/route";
-import { GET as sw } from "../../app/mypontivo/sw.js/route";
-import { GET as icon } from "../../app/mypontivo/pwa-icon/[size]/route";
+import { GET as manifest } from "../../app/admin/manifest.webmanifest/route";
+import { GET as sw } from "../../app/admin/sw.js/route";
+import { GET as icon } from "../../app/admin/pwa-icon/[size]/route";
 
 const hotel = { id: "h1", slug: "demo", primaryDomain: null };
 
 describe("Admin-Menü", () => {
   const nav = adminNav(hotel);
-  const home = "/mypontivo/h1";
+  const home = "/admin/h1";
   const group = (label: string) => nav.primary.find((i) => i.label === label)!;
   const tabKeys = (label: string) => group(label).tabs!.map((t) => t.key);
 
@@ -17,19 +17,19 @@ describe("Admin-Menü", () => {
     const all = allPages(nav);
     const keys = all.map((i) => i.key);
     expect(new Set(keys).size).toBe(keys.length);
-    for (const i of all) expect(i.href.startsWith("/mypontivo/h1")).toBe(true);
+    for (const i of all) expect(i.href.startsWith("/admin/h1")).toBe(true);
     expect(nav.primary.map((i) => i.label)).toEqual(["Heute", "Kalender", "Buchungen", "Finanzen"]);
-    expect(nav.settings.href).toBe("/mypontivo/h1/einstellungen");
-    expect(nav.account.href).toBe("/mypontivo/h1/mypontivo");
+    expect(nav.settings.href).toBe("/admin/h1/einstellungen");
+    expect(nav.account.href).toBe("/admin/h1/mypontivo");
     expect(keys).not.toContain("embed");
     expect(keys).not.toContain("inquiries");
     expect(keys).not.toContain("einrichten");
   });
 
   it("Seitenschlüssel und Adressen bleiben wie bisher", () => {
-    const byKey = Object.fromEntries(allPagesBoth(hotel).map((i) => [i.key, i.href.replace("/mypontivo/h1/", "")]));
+    const byKey = Object.fromEntries(allPagesBoth(hotel).map((i) => [i.key, i.href.replace("/admin/h1/", "")]));
     expect(byKey).toMatchObject({
-      home: "/mypontivo/h1", housekeeping: "housekeeping", inbox: "inbox", restaurant: "restaurant", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", kasse: "kasse", posclose: "restaurant/abschluss", plan: "plan", calendar: "calendar", pricing: "preise",
+      home: "/admin/h1", housekeeping: "housekeeping", inbox: "inbox", restaurant: "restaurant", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", kasse: "kasse", posclose: "restaurant/abschluss", plan: "plan", calendar: "calendar", pricing: "preise",
       bookings: "bookings", groups: "groups", resources: "resources", vouchers: "vouchers", guestbook: "guestbook", marketing: "marketing", feedback: "feedback",
       invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung", reports: "berichte",
       settings: "settings", rooms: "rooms", extras: "rooms/extras", payments: "zahlungen", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
@@ -64,11 +64,11 @@ describe("Admin-Menü", () => {
   });
 
   it("Kalender startet mit dem Zimmerplan, wenn die Rezeption an ist, sonst mit Preise & Verfügbarkeit", () => {
-    expect(group("Kalender").href).toBe("/mypontivo/h1/plan");
+    expect(group("Kalender").href).toBe("/admin/h1/plan");
     const off = adminNav(hotel, new Set(["plan"]));
     const cal = off.primary.find((i) => i.label === "Kalender")!;
     expect(cal.tabs![0].key).toBe("calendar");
-    expect(cal.href).toBe("/mypontivo/h1/calendar");
+    expect(cal.href).toBe("/admin/h1/calendar");
   });
 
   it("Gastronomie: Reservierung, Speisekarte, Küche mit Modul restaurant; Tische, Kasse, Abschluss nur mit pos (SPEC 20.1)", () => {
@@ -97,7 +97,7 @@ describe("Admin-Menü", () => {
   });
 
   it("Bereich aus der Adresse: Gastronomie-Seiten legen ihn fest, geteilte Seiten nicht (SPEC 20.1)", () => {
-    const home = "/mypontivo/h1";
+    const home = "/admin/h1";
     const navs = { lodging: adminNav(hotel), dining: adminNav(hotel, new Set(), { area: "dining" }) };
     expect(areaOfPath(`${home}/restaurant/reservierungen`, navs, home)).toBe("dining");
     expect(areaOfPath(`${home}/restaurant/abschluss`, navs, home)).toBe("dining");
@@ -120,14 +120,14 @@ describe("Admin-Menü", () => {
     expect(n.primary.map((i) => i.label)).toEqual(["Heute", "Kalender", "Buchungen", "Finanzen"]);
     expect(allPages(n).map((i) => i.key)).not.toContain("plan");
     expect(allPages(n).map((i) => i.key)).not.toContain("frontdesk"); // Seite gibt es nicht mehr
-    expect(n.primary[0].href).toBe("/mypontivo/h1");
+    expect(n.primary[0].href).toBe("/admin/h1");
   });
 
   it("Gruppen verschwinden ganz, wenn alle Seiten fehlen; Zahnrad bleibt erreichbar", () => {
     const all = new Set(leafKeys(nav).filter((k) => !["home"].includes(k)));
     const n = adminNav(hotel, all);
     expect(n.primary.map((i) => i.label)).toEqual(["Heute"]);
-    expect(n.settings.href).toBe("/mypontivo/h1/einstellungen");
+    expect(n.settings.href).toBe("/admin/h1/einstellungen");
     expect(n.settings.tabs).toEqual([]);
   });
 
@@ -156,18 +156,18 @@ describe("Admin-Menü", () => {
 });
 
 describe("PWA", () => {
-  it("Manifest nur für /mypontivo, mit 192er und 512er Icon", async () => {
+  it("Manifest nur für /admin, mit 192er und 512er Icon", async () => {
     const m = await manifest().json();
-    expect(m).toMatchObject({ start_url: "/mypontivo", scope: "/mypontivo/", display: "standalone" });
+    expect(m).toMatchObject({ start_url: "/admin", scope: "/admin/", display: "standalone" });
     expect(m.icons.map((i: { sizes: string }) => i.sizes)).toEqual(expect.arrayContaining(["192x192", "512x512"]));
   });
 
-  it("Service Worker: Geltungsbereich /mypontivo, nichts ausser der Offline-Seite wird gespeichert", async () => {
+  it("Service Worker: Geltungsbereich /admin, nichts ausser der Offline-Seite wird gespeichert", async () => {
     const res = sw();
-    expect(res.headers.get("Service-Worker-Allowed")).toBe("/mypontivo/");
+    expect(res.headers.get("Service-Worker-Allowed")).toBe("/admin/");
     const js = await res.text();
-    expect(js).toContain('"/mypontivo/offline"');
-    expect(js).toContain('startsWith("/mypontivo")');
+    expect(js).toContain('"/admin/offline"');
+    expect(js).toContain('startsWith("/admin")');
     expect(js).not.toMatch(/cache\.put|addAll/);
   });
 
@@ -180,13 +180,13 @@ describe("PWA", () => {
 
   it("Zahnrad-Seite unter einer Adresse von «Bestellungen» bleibt im Zahnrad (Speisekarte)", () => {
     const nav = adminNav(hotel, new Set(), { area: "dining" });
-    const p = "/mypontivo/h1/restaurant/artikel";
-    expect(inSettings(p, nav, "/mypontivo/h1")).toBe(true);
-    expect(isActiveIn(p, nav, nav.primary[0], "/mypontivo/h1")).toBe(false);
-    expect(sectionFor(p, nav, "/mypontivo/h1")?.key).not.toBe("g-dining-orders");
-    expect(isActiveIn(p, nav, nav.primary[2], "/mypontivo/h1")).toBe(false);
+    const p = "/admin/h1/restaurant/artikel";
+    expect(inSettings(p, nav, "/admin/h1")).toBe(true);
+    expect(isActiveIn(p, nav, nav.primary[0], "/admin/h1")).toBe(false);
+    expect(sectionFor(p, nav, "/admin/h1")?.key).not.toBe("g-dining-orders");
+    expect(isActiveIn(p, nav, nav.primary[2], "/admin/h1")).toBe(false);
     // Tische bleiben unter Bestellungen
-    expect(inSettings("/mypontivo/h1/restaurant", nav, "/mypontivo/h1")).toBe(false);
-    expect(isActiveIn("/mypontivo/h1/restaurant", nav, nav.primary[2], "/mypontivo/h1")).toBe(true);
+    expect(inSettings("/admin/h1/restaurant", nav, "/admin/h1")).toBe(false);
+    expect(isActiveIn("/admin/h1/restaurant", nav, nav.primary[2], "/admin/h1")).toBe(true);
   });
 });

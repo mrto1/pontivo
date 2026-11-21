@@ -24,7 +24,7 @@ test("Startseite, Unterkünfte und Restaurant-Seite mit Freischaltung", async ({
     await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
     await page.goto("/restaurant");
     await expect(page.getByRole("note")).toContainText("Entwurf");
-    await page.goto("/admin/plattform/website");
+    await page.goto("/plattform/website");
     await page.getByRole("button", { name: "Restaurant-Seite freischalten" }).click();
     await expect(page.getByText("Restaurant-Seite ist jetzt öffentlich.")).toBeVisible();
     await context.clearCookies();

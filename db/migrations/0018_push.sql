@@ -18,7 +18,7 @@ CREATE TABLE push_outbox (
   dedupe_key  text NOT NULL,                 -- z. B. "booking_new:<buchung>": pro Ereignis nur eine Mitteilung
   title       text NOT NULL,
   body        text NOT NULL,
-  url         text NOT NULL,                 -- relativer Pfad unter /mypontivo/
+  url         text NOT NULL,                 -- relativer Pfad unter /admin/
   status      text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','sent','failed','cancelled')),
   attempts    integer NOT NULL DEFAULT 0,
   created_at  timestamptz NOT NULL DEFAULT now(),

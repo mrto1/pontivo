@@ -75,7 +75,7 @@ async function uniqueHotelSlug(name: string): Promise<string> {
  * Neuer Gastgeber: Betrieb (Entwurf), Benutzer (Inhaber), Annahme der Bedingungen, Mindestgebühr,
  * Willkommensmail und Login-Link. Gibt den Login-Link zurück (für die Entwicklung ohne Mailversand).
  */
-/** Die E-Mail-Adresse hat schon ein Konto: kein zweites Konto und kein zweiter Entwurf (weitere Betriebe: angemeldet über /mypontivo/neu) */
+/** Die E-Mail-Adresse hat schon ein Konto: kein zweites Konto und kein zweiter Entwurf (weitere Betriebe: angemeldet über /admin/neu) */
 export class DisposableEmailError extends Error {
   constructor() { super("Wegwerf-E-Mail-Adresse"); }
 }
@@ -201,7 +201,7 @@ export type CheckItem = { key: string; title: string; done: boolean; href: strin
  * was Pontivo nicht beschleunigen kann (Stripe-Prüfung, eigene Domain), mit Hinweis und erwarteter Dauer.
  */
 export async function diningChecklist(hotel: Hotel): Promise<CheckItem[]> {
-  const base = `/mypontivo/${hotel.id}`;
+  const base = `/admin/${hotel.id}`;
   const resto = isRestaurant(hotel.propertyType);
   const [tables, items, cfg] = await Promise.all([
     db().select({ id: posTables.id }).from(posTables).where(and(eq(posTables.hotelId, hotel.id), eq(posTables.active, true))),

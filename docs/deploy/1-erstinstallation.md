@@ -87,6 +87,6 @@ docker compose --env-file .env.production -f docker-compose.prod.yml logs -f app
 docker compose --env-file .env.production -f docker-compose.prod.yml exec app node --import tsx scripts/create-admin.ts du@pontivo.ch "Vorname Name"
 ```
 
-Dann auf https://pontivo.ch/mypontivo/login anmelden (Login-Link per E-Mail, dafür braucht es Postmark).
+Dann auf https://pontivo.ch/admin/login anmelden (Login-Link per E-Mail, dafür braucht es Postmark).
 
 Weiter mit [2-dienste.md](2-dienste.md): E-Mail, Zahlung, Channex, Bot-Schutz. Danach [3-testumgebung.md](3-testumgebung.md) und [5-betrieb.md](5-betrieb.md) (Sicherung nicht vergessen).

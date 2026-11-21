@@ -29,8 +29,8 @@ export function MarketingShell({ contact, account, restaurant, current, heroImag
             {link("/unterkunft", "Unterkünfte", "unterkunft")}
             {restaurant ? link("/restaurant", "Restaurants", "restaurant") : null}
             <a href="#kontakt">Kontakt</a>
-            {st ? null : account ? null : <a className={s.loginLink} href="/mypontivo/login">Anmelden</a>}
-            {account && !st ? <a className={s.btn} href="/mypontivo">{account.label}</a> : <a className={s.btn} href={st ? mailHref(contact, "Pontivo für unseren Betrieb") : signupHref}>{st ? "Anfragen" : "Registrieren"}</a>}
+            {st ? null : account ? null : <a className={s.loginLink} href="/admin/login">Anmelden</a>}
+            {account && !st ? <a className={s.btn} href="/admin">{account.label}</a> : <a className={s.btn} href={st ? mailHref(contact, "Pontivo für unseren Betrieb") : signupHref}>{st ? "Anfragen" : "Registrieren"}</a>}
           </nav>
         </header>
         {children}
@@ -38,7 +38,7 @@ export function MarketingShell({ contact, account, restaurant, current, heroImag
           <span>© {new Date().getFullYear()} {contact.name}</span>
           <span className={s.hosting}><SwissFlag /> {tagline}</span>
           <nav className={s.footLinks} aria-label="Rechtliches">
-            {st ? null : <a href="/mypontivo/login">{account ? "myPontivo" : "Anmelden"}</a>}
+            {st ? null : <a href="/admin/login">{account ? "myPontivo" : "Anmelden"}</a>}
             <a href={pageHref("/impressum", st)}>Impressum</a>
             <a href={pageHref("/datenschutz", st)}>Datenschutz</a>
             <a href={pageHref("/gastgeber-bedingungen", st)}>Bedingungen für Gastgeber</a>

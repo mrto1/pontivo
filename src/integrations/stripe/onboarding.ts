@@ -61,7 +61,7 @@ export async function ensureConnectedAccount(hotel: Hotel, actor: string): Promi
 }
 
 /** Account Link (type=account_onboarding) für den Button im Admin */
-export async function onboardingLink(hotel: Hotel, actor: string, returnPath = `/mypontivo/${hotel.id}/zahlungen`): Promise<string> {
+export async function onboardingLink(hotel: Hotel, actor: string, returnPath = `/admin/${hotel.id}/zahlungen`): Promise<string> {
   const accountId = await ensureConnectedAccount(hotel, actor);
   const base = env().APP_BASE_URL;
   const sep = returnPath.includes("?") ? "&" : "?";

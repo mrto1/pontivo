@@ -23,7 +23,7 @@ describe("Modul-Register", () => {
     // ohne Rezeption (und ohne Preisempfehlung): Kalender ist nur noch Preise & Verfügbarkeit, ohne Reiter
     expect(cal.tabs).toBeUndefined();
     expect(cal.key).toBe("calendar");
-    expect(cal.href).toBe("/mypontivo/h1/calendar");
+    expect(cal.href).toBe("/admin/h1/calendar");
     // Finanzen ohne Rechnung & Kasse: Debitoren braucht sie ebenfalls; übrig Eigentümer, Statistik, Buchhaltung
     const fin = nav.primary.find((i) => i.icon === "finance")!;
     expect(fin.tabs?.map((t) => t.key)).not.toContain("invoices");

@@ -54,7 +54,7 @@ describe("GEO (SPEC 14e)", () => {
   it("robots.txt: Verwaltung und persönliche Links gesperrt, Sitemap nur mit Hotel", async () => {
     const { hotel } = await setup();
     const r = robotsTxt(hotel);
-    expect(r).toContain("Disallow: /mypontivo");
+    expect(r).toContain("Disallow: /admin");
     expect(r).toContain("Disallow: /b/");
     expect(r).toContain("Sitemap:");
     expect(robotsTxt(null)).not.toContain("Sitemap:");

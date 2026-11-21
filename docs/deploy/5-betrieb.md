@@ -42,7 +42,7 @@ Der Container `backup` sichert täglich die Datenbank und die Uploads nach `/opt
 - Nachts um 04:10 gleicht ein Job Stripe-Zahlungen mit Buchungen ab (bezahlt ohne bestätigte Buchung, bestätigt ohne Zahlung, bezahlt aber abgelaufen) und meldet Abweichungen per Mail. Er ändert nichts selbst.
 
 ## Betriebe und Benutzer verwalten, Testkonten löschen
-Bequem im Admin: `https://pontivo.ch/admin/plattform` (nur Plattform-Admin; Link unten auf der Übersicht). Dort: Betriebe pausieren oder wieder online nehmen, Mitglieder hinzufügen oder entfernen, Login-Link senden, Sicherheit (Passkeys, Authenticator) eines Benutzers zurücksetzen, Betriebe und Benutzer endgültig löschen (Bestätigung durch Eintippen von Name bzw. E-Mail). Jede Löschung und jedes Zurücksetzen steht im Protokoll (`audit_log`).
+Bequem im Admin: `https://pontivo.ch/plattform` (nur Plattform-Admin; Link unten auf der Übersicht). Dort: Betriebe pausieren oder wieder online nehmen, Mitglieder hinzufügen oder entfernen, Login-Link senden, Sicherheit (Passkeys, Authenticator) eines Benutzers zurücksetzen, Betriebe und Benutzer endgültig löschen (Bestätigung durch Eintippen von Name bzw. E-Mail). Jede Löschung und jedes Zurücksetzen steht im Protokoll (`audit_log`).
 
 Alternativ per Kommandozeile (Testkonto samt Betrieb):
 Löscht ein Konto und seine Betriebe vollständig, mit allen Buchungen, Gästen und Mails (nicht rückgängig). Ohne `--yes` zeigt das Skript nur, was gelöscht würde. Betriebe mit weiteren Mitgliedern oder Status «live» bleiben (live nur mit `--include-live`), Plattform-Admins werden nie gelöscht.

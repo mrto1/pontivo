@@ -1,33 +1,28 @@
-import { BrandMark } from "@/components/admin/BrandMark";
-import type { Metadata } from "next";
-import { currentUserId } from "@/src/auth/guard";
-import { getUser } from "@/src/auth/session";
-import { platformNav, PLATFORM_HOME } from "@/src/admin/platform-nav";
-import { initials } from "@/src/domain/avatar";
-import { AdminNav } from "@/components/admin/AdminNav";
-import { SectionTabs } from "@/components/admin/SectionTabs";
+import type { Metadata, Viewport } from "next";
+import { PwaRegister } from "@/components/admin/PwaRegister";
 
-// /admin ist die Plattform-Verwaltung (nur Plattform-Admins, Einstieg: /admin).
-// Die Hotel-Oberfläche heisst myPontivo und liegt unter /mypontivo.
-export const metadata: Metadata = { robots: { index: false, follow: false } };
-export const dynamic = "force-dynamic";
+// Admin als installierbare Web-App (PWA). Manifest, Icon und Service Worker gelten nur unter /admin,
+// die Hotel-Websites sind davon nicht betroffen.
+export const metadata: Metadata = {
+  applicationName: "myPontivo",
+  manifest: "/admin/manifest.webmanifest",
+  icons: { icon: "/admin/pwa-icon/192", apple: "/admin/pwa-icon/180" },
+  appleWebApp: { capable: true, title: "myPontivo", statusBarStyle: "default" },
+};
 
-export default async function PlatformAdminLayout({ children }: { children: React.ReactNode }) {
-  const id = await currentUserId();
-  const user = id ? await getUser(id) : null;
-  const nav = platformNav();
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#131c2e" },
+  ],
+  viewportFit: "cover",
+};
+
+export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="pv-admin">
-      <header className="admin-head">
-        <div className="wrap">
-          <a href={PLATFORM_HOME} className="brand admin-brand" title="myPontivo"><BrandMark /><span className="muted brand-name">Plattform</span></a>
-          {user?.isPlatformAdmin ? <AdminNav nav={nav} home={PLATFORM_HOME} userLabel={`${user.email} · Zu meinen Betrieben`} initials={initials(user.name, user.email)} showSettings={false} /> : null}
-        </div>
-      </header>
-      <main className="wrap admin-main">
-        {user?.isPlatformAdmin ? <SectionTabs nav={nav} home={PLATFORM_HOME} /> : null}
-        {children}
-      </main>
+      {children}
+      <PwaRegister />
     </div>
   );
 }

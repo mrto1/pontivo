@@ -150,19 +150,20 @@ describe("Sicherheits-Kopfzeilen", () => {
     expect(securityHeaders.some((h) => h.key === "X-Frame-Options")).toBe(false);
     expect(adminHeaders).toContainEqual({ key: "X-Frame-Options", value: "DENY" });
     const rules = await nextConfig.headers!();
-    expect(rules.map((r) => r.source)).toEqual(["/:path*", "/mypontivo/:path*", "/admin/:path*"]);
+    expect(rules.map((r) => r.source)).toEqual(["/:path*", "/admin/:path*", "/plattform/:path*"]);
     expect(nextConfig.poweredByHeader).toBe(false);
   });
 });
 
-describe("Adressen /mypontivo und /admin", () => {
-  it("alte Hotel-Adressen unter /admin führen nach /mypontivo; /admin selbst und /admin/plattform bleiben der Plattform-Verwaltung", async () => {
+describe("Adressen /admin und /plattform", () => {
+  it("alte Adressen /mypontivo und /admin/plattform führen dauerhaft weiter", async () => {
     const r = await nextConfig.redirects!();
-    expect(r.some((x) => x.source === "/admin")).toBe(false);
-    const rx = new RegExp(`^${r[0].source.replace("/:path((?!plattform(?:/|$)).*)", "/((?!plattform(?:/|$)).*)")}$`);
-    expect(rx.test("/admin/abc/calendar")).toBe(true);
-    expect(rx.test("/admin/login")).toBe(true);
-    expect(rx.test("/admin/plattform")).toBe(false);
-    expect(rx.test("/admin/plattform/website")).toBe(false);
+    const to = (src: string) => r.find((x) => x.source === src)?.destination;
+    expect(to("/mypontivo/:path*")).toBe("/admin/:path*");
+    expect(to("/mypontivo")).toBe("/admin");
+    expect(to("/admin/plattform/:path*")).toBe("/plattform/:path*");
+    expect(r.every((x) => x.permanent === true)).toBe(true);
+    // /admin selbst wird nicht umgeleitet: dort liegt die Hotel-Oberfläche
+    expect(r.some((x) => x.source === "/admin" || x.source === "/admin/:path*")).toBe(false);
   });
 });

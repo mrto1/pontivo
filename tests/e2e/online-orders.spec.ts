@@ -50,7 +50,7 @@ test("Gast bestellt zum Abholen (bar), Restaurant nimmt an, meldet bereit und ab
 
   // Restaurant: Bestellbildschirm mit Selbstprüfung
   await login(context, baseURL!, h.id, "service");
-  await page.goto(`/mypontivo/${h.id}/restaurant/bestellungen`);
+  await page.goto(`/admin/${h.id}/restaurant/bestellungen`);
   await expect(page.getByRole("heading", { name: /Online-Bestellungen/ })).toContainText("1 neu");
   await page.getByRole("button", { name: "Prüfung starten" }).click();
   await page.getByRole("button", { name: "Ja, gehört" }).click();
@@ -79,7 +79,7 @@ test("Lieferung: Fahrer sieht Adresse und Betrag, fährt los und liefert bar", a
   const { order } = await createOnlineOrder(h, { kind: "delivery", time: "asap", payment: "cash", name: "Ben", phone: "079 222 33 44", email: "", language: "de", lines: [{ itemId: item.id, quantity: 1, optionIds: [], note: "" }], address: { street: "Marktgasse", houseNo: "5", postalCode: "9000", city: "St. Gallen", bell: "Muster" } });
   await acceptOrder(h, order.id, 0, "e2e");
   await login(context, baseURL!, h.id, "driver");
-  await page.goto(`/mypontivo/${h.id}`);
+  await page.goto(`/admin/${h.id}`);
   await expect(page).toHaveURL(/\/restaurant\/fahrer$/);
   const card = page.getByTestId(`delivery-${order.number}`);
   await expect(card).toContainText("Marktgasse 5, 9000 St. Gallen");
@@ -89,7 +89,7 @@ test("Lieferung: Fahrer sieht Adresse und Betrag, fährt los und liefert bar", a
   await expect(page.getByText("Keine offenen Lieferungen.")).toBeVisible();
   // Tagesabrechnung ohne Modul Kasse (SPEC 20.8)
   await login(context, baseURL!, h.id, "owner");
-  await page.goto(`/mypontivo/${h.id}/restaurant/online-verkaeufe`);
+  await page.goto(`/admin/${h.id}/restaurant/online-verkaeufe`);
   await expect(page.getByTestId("online-sales")).toContainText("CHF 23.00");
   await expect(page.getByRole("link", { name: "CSV" })).toBeVisible();
   await page.goto(`/h/${h.slug}/de/bestellung/${order.publicToken}`);
@@ -100,7 +100,7 @@ test("Einstellungen: Live-Prüfung nennt Gründe, Liefergebiet anlegen, Speiseka
   const { h } = await restaurant();
   await db().update(onlineOrderSettings).set({ enabled: false, testPassedAt: null }).where(eq(onlineOrderSettings.hotelId, h.id));
   await login(context, baseURL!, h.id, "owner");
-  await page.goto(`/mypontivo/${h.id}/restaurant/bestellung-einstellungen`);
+  await page.goto(`/admin/${h.id}/restaurant/bestellung-einstellungen`);
   await expect(page.getByTestId("orders-live")).toContainText("Probebestellung noch nicht bestanden");
   await page.getByLabel("Name").fill("Stadt");
   await page.getByLabel("Postleitzahlen").fill("9000, 9008");
@@ -109,7 +109,7 @@ test("Einstellungen: Live-Prüfung nennt Gründe, Liefergebiet anlegen, Speiseka
   await page.getByRole("button", { name: "Probebestellung starten" }).click();
   await expect(page).toHaveURL(/restaurant\/bestellungen\?probe=1/);
   await expect(page.getByTestId("order-T-001")).toBeVisible();
-  await page.goto(`/mypontivo/${h.id}/restaurant/artikel`);
+  await page.goto(`/admin/${h.id}/restaurant/artikel`);
   await page.getByTestId("items-online").getByText("Margherita").click();
   await page.getByTestId("items-online").getByLabel("Sesam").check();
   await page.getByTestId("items-online").getByRole("button", { name: "Speichern" }).click();

@@ -17,7 +17,7 @@ test("Reinigung: Zähler, Statusschalter heute, an anderen Tagen gesperrt", asyn
   const [u] = await db().select().from(users).where(eq(users.email, email));
   await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
 
-  await page.goto(`/mypontivo/${h.hotel.id}/housekeeping`);
+  await page.goto(`/admin/${h.hotel.id}/housekeeping`);
   const first = page.locator(".hk-card").first();
   await expect(page.locator(".hk-summary")).toContainText("Schmutzig");
   await expect(first.getByRole("button", { name: /✓/ })).toHaveCount(0);
@@ -28,7 +28,7 @@ test("Reinigung: Zähler, Statusschalter heute, an anderen Tagen gesperrt", asyn
   await expect(page.locator(".hk-card.dirty")).toHaveCount(0);
 
   const tomorrow = addDays(todayIn("Europe/Zurich"), 1);
-  await page.goto(`/mypontivo/${h.hotel.id}/housekeeping?day=${tomorrow}`);
+  await page.goto(`/admin/${h.hotel.id}/housekeeping?day=${tomorrow}`);
   await expect(page.getByText("nur für heute")).toBeVisible();
   await expect(page.locator(".hk-seg.ro").first()).toBeVisible();
 });

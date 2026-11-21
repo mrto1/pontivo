@@ -30,7 +30,7 @@ npm run worker                       # optional, zweites Terminal: Holds freigeb
 ```
 
 - Hotel-Website: http://demo-gasthof.localhost:3000 (Hotel wird über die Domain erkannt) oder Vorschau http://localhost:3000/h/demo-gasthof/de
-- Admin: http://localhost:3000/mypontivo/login mit `admin@example.ch`. Ohne `POSTMARK_SERVER_TOKEN` erscheint der Login-Link direkt auf der Seite und E-Mails werden im Worker-Terminal ausgegeben.
+- Admin: http://localhost:3000/admin/login mit `admin@example.ch`. Ohne `POSTMARK_SERVER_TOKEN` erscheint der Login-Link direkt auf der Seite und E-Mails werden im Worker-Terminal ausgegeben.
 - Mit `PAYMENT_PROVIDER=fake` wird jede Buchung sofort bestätigt (ohne Zahlung).
 - Hotel behält eigene Website: Admin → «Einbinden» (Logo, Farbe, Link zurück, Buchungs-Knopf/Suchleiste als Code-Schnipsel `/widget/<slug>.js`).
 - Zimmer, Tarife und Fotos: Admin → «Zimmer» (Namen auch auf Englisch).
