@@ -263,6 +263,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [x] Gebührenregel (Entscheid 10): Anzahlung für Tischreservationen bleibt **gebührenfrei** (Entscheid Betreiber 21.11.2026).
 - [x] Adresssuche geo.admin.ch (R4): geprüft 21.11.2026: FAQ nennt 20 Anfragen/Minute im 24/7-Mittel als «fair use» (laut geo.admin.ch seit 1.1.2025 verdoppelt, ohne Zahl). Erwartete Last (ca. 5 Anfragen je Lieferbestellung) weit darunter. Bei mehr als ca. 2000 Lieferbestellungen pro Tag vorab info@geo.admin.ch kontaktieren.
 - [x] SMS-Anbieter und Weiterverrechnung der SMS-Kosten (R3/R4: Alarm bei nicht angenommener Bestellung, Herzschlag-Ausfall, «bereit»/«unterwegs» an den Gast). Entschieden 21.11.2026: **ASPSMS**; Alarme an das Restaurant inklusive, SMS an Gäste wählbar und zum Selbstkostenpreis weiterverrechnet.
+- [ ] R6 (SPEC 20.10) Treuhänder: Posten eines verpachteten Restaurants auf der Hotelrechnung – mit MWST des Hotels (Weiterverkauf, heute so gebaut: Standard-Satz, 0 % → ohne) oder als durchlaufender Posten im Namen des Restaurants ohne MWST des Hotels? Davon hängt ab, ob das Hotel die Beträge brutto an den Pächter weitergibt.
 - [ ] Pilotbetrieb (Restaurant/Take-away, idealerweise GloriaFood-Nutzer).
 - [ ] Treuhänder: MWST-Satz der Liefergebühr (Annahme 2,6 % wie die Speisen), Bons bei Online-Zahlung.
 - [x] Grundgebühr (Konzept 7a, Schritt 8 und Abschnitt 6): Entschieden 21.11.2026: **beide Wege anbieten**, Karte (Stripe) oder QR-Rechnung; die Plattformverwaltung erzeugt und versendet Rechnungen und Mahnungen.

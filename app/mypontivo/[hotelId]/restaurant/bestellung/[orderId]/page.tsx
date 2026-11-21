@@ -2,6 +2,7 @@ import { Notice } from "@/components/admin/Notice";
 import { notFound, redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
+import { remoteGuests } from "@/src/services/room-link";
 import { PosError, addDiscount, addLines, groupsOfItem, listItems, orderView, pay, reverseLine, reverseReceipt, webDevice } from "@/src/services/pos";
 import { METHODS, METHOD_LABEL, selectionTotal, type Method } from "@/src/domain/pos";
 import { atLeast } from "@/src/domain/roles";
@@ -90,6 +91,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const v = await orderView(hotel.id, orderId);
   if (!v) notFound();
   const items = (await listItems(hotel.id, true));
+  const linked = await remoteGuests(hotel.id); // Gäste des verbundenen Hotels (SPEC 20.10)
   const manager = atLeast(role, "manager");
   const pick = sp.artikel ? items.find((i) => i.id === sp.artikel) : undefined;
   const pickGroups = pick ? await groupsOfItem(db(), hotel.id, pick.id) : [];
@@ -139,7 +141,8 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         ) : <p className="muted">Noch nichts bestellt.</p>}
         <p><strong>Noch offen: {formatChf(v.openTotalRappen)}</strong></p>
         <div><label htmlFor="method">Zahlart</label><select id="method" name="method">{METHODS.map((m) => <option key={m} value={m}>{METHOD_LABEL[m]}</option>)}</select></div>
-        <div><label htmlFor="reference">Buchungsnummer (nur «Aufs Zimmer»)</label><input id="reference" name="reference" maxLength={20} /></div>
+        <div><label htmlFor="reference">Buchungsnummer (nur «Aufs Zimmer»)</label><input id="reference" name="reference" maxLength={20} list={linked.length ? "linked-guests" : undefined} />
+          {linked.length ? <datalist id="linked-guests">{linked.map((g) => <option key={g.reference} value={g.reference}>{g.room ? `Zimmer ${g.room}: ` : ""}{g.name}</option>)}</datalist> : null}</div>
         <div><label htmlFor="tip">Trinkgeld CHF (nicht aufs Zimmer mit MWST)</label><input id="tip" name="tip" inputMode="decimal" /></div>
         <div><button className="btn" disabled={!v.openTotalRappen}>Kassieren</button></div>
         <p className="small muted">Karte und TWINT: bitte erst kassieren, wenn die Zahlung am Gerät bestätigt ist.</p>

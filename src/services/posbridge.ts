@@ -87,3 +87,26 @@ export async function addItemFromPos(key: ApiKey, req: FolioItemRequest): Promis
     return { item: ex, created: false, bookingReference: b.reference };
   });
 }
+
+/** Gäste im Haus für eine Kasse (SPEC 20.10): Buchungsnummer, Zimmer, «Nachname V.»; heute im Haus oder Abreise heute, nur bestätigte */
+export async function inHouseForBridge(hotelId: string): Promise<{ booking_reference: string; room: string | null; name: string }[]> {
+  const [h] = await db().select({ tz: hotels.timezone }).from(hotels).where(eq(hotels.id, hotelId));
+  const today = todayIn(h.tz);
+  const list = rows<{ reference: string; room: string | null; first: string | null; last: string | null }>(await db().execute(sql`
+    SELECT b.reference, min(r.number) AS room, g.first_name AS first, g.last_name AS last FROM bookings b
+      LEFT JOIN guests g ON g.id = b.guest_id AND g.hotel_id = b.hotel_id
+      LEFT JOIN room_stays rs ON rs.booking_id = b.id AND rs.hotel_id = b.hotel_id AND rs.from_day <= ${today} AND rs.to_day >= ${today}
+      LEFT JOIN rooms r ON r.id = rs.room_id AND r.hotel_id = rs.hotel_id
+     WHERE b.hotel_id = ${hotelId} AND b.status = 'confirmed' AND b.checkin <= ${today} AND b.checkout >= ${today}
+     GROUP BY b.id, b.reference, g.first_name, g.last_name ORDER BY min(r.number) NULLS LAST, b.reference LIMIT 400`));
+  return list.map((g) => ({ booking_reference: g.reference, room: g.room, name: [g.last?.trim(), g.first?.trim() ? `${g.first.trim()[0]}.` : ""].filter(Boolean).join(" ") }));
+}
+
+/** Summe der von einem Schlüssel gebuchten Posten je Monat (Abrechnung mit dem Pächter, SPEC 20.10) */
+export async function bridgeTotals(hotelId: string, months = 3): Promise<{ keyId: string; month: string; count: number; totalRappen: number }[]> {
+  const [h] = await db().select({ tz: hotels.timezone }).from(hotels).where(eq(hotels.id, hotelId));
+  return rows<{ key_id: string; month: string; n: number; total: number }>(await db().execute(sql`
+    SELECT substr(source, 5) AS key_id, to_char(created_at AT TIME ZONE ${h.tz}, 'YYYY-MM') AS month, count(*)::int AS n, coalesce(sum(quantity * unit_price_rappen), 0)::int AS total
+      FROM folio_items WHERE hotel_id = ${hotelId} AND source LIKE 'pos:%' AND source <> 'pos' AND created_at > now() - (${months} || ' months')::interval
+     GROUP BY 1, 2 ORDER BY 2 DESC`)).map((r) => ({ keyId: r.key_id, month: r.month, count: r.n, totalRappen: r.total }));
+}

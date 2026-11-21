@@ -1,4 +1,5 @@
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
+import { remoteGuests } from "./room-link";
 import { db, rows } from "../db/client";
 import { posDevices, posOrders, type Hotel } from "../db/schema";
 import { todayIn } from "../domain/dates";
@@ -55,7 +56,8 @@ export async function bootstrap(hotel: Hotel, key: string, code?: string) {
   if (!code) return { devices: list };
   const dev = await claim(hotel.id, code, key);
   await db().update(posDevices).set({ lastSeenAt: new Date() }).where(eq(posDevices.id, dev.id));
-  const [items, tables, guests, orders] = await Promise.all([listItems(hotel.id, true), listTables(hotel.id), guestsInHouse(hotel), openOrders(hotel.id)]);
+  const [items, tables, own, remote, orders] = await Promise.all([listItems(hotel.id, true), listTables(hotel.id), guestsInHouse(hotel), remoteGuests(hotel.id), openOrders(hotel.id)]);
+  const guests = [...own, ...remote]; // eigene Gäste und Gäste des verbundenen Hotels (SPEC 20.10)
   const groups = await catalogGroups(hotel.id, items.map((i) => i.id));
   return {
     devices: list, device: { code: dev.code, lastBon: dev.lastBon }, today: todayIn(hotel.timezone),
@@ -95,6 +97,6 @@ export async function offlineWarnings(hotelId: string) {
      WHERE hotel_id = ${hotelId} AND action = 'pos.sync_rejected' AND details->>'kind' = 'pay' ORDER BY id DESC LIMIT 30`));
   const unassigned = rows<{ number: string; total: number; day: string }>(await db().execute(sql`
     SELECT r.number, p.amount_rappen AS total, r.business_day::text AS day FROM pos_payments p JOIN pos_receipts r ON r.id = p.receipt_id
-     WHERE p.hotel_id = ${hotelId} AND p.method = 'room' AND p.booking_id IS NULL ORDER BY r.seq DESC LIMIT 50`));
+     WHERE p.hotel_id = ${hotelId} AND p.method = 'room' AND p.booking_id IS NULL AND p.remote_link_id IS NULL ORDER BY r.seq DESC LIMIT 50`));
   return { unsynced, rejected, unassigned };
 }

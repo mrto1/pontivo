@@ -1512,6 +1512,9 @@ export const posPayments = pgTable("pos_payments", {
   amountRappen: integer("amount_rappen").notNull(),
   bookingId: uuid("booking_id"),
   folioItemIds: uuid("folio_item_ids").array().notNull().default([]),
+  /** Aufs Zimmer bei einem anderen Betrieb (SPEC 20.10): Verbindung und Buchungsnummer des Hotels */
+  remoteLinkId: uuid("remote_link_id"),
+  remoteReference: text("remote_reference"),
 });
 export type PosPayment = typeof posPayments.$inferSelect;
 
@@ -1929,3 +1932,17 @@ export const smsOutbox = pgTable("sms_outbox", {
   createdAt: ts("created_at").notNull().defaultNow(),
   sentAt: ts("sent_at"),
 });
+
+/** Verbindung eines verpachteten Restaurants zum Hotel (SPEC 20.10): Schlüssel des Hotels verschlüsselt, höchstens eine aktive */
+export const roomLinks = pgTable("room_links", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  label: text("label").notNull().default(""),
+  keyEnc: text("key_enc").notNull(),
+  keyPrefix: text("key_prefix").notNull(),
+  createdBy: text("created_by").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  lastUsedAt: ts("last_used_at"),
+  revokedAt: ts("revoked_at"),
+});
+export type RoomLink = typeof roomLinks.$inferSelect;

@@ -2,7 +2,8 @@ import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
-import { PosBridgeError, createApiKey, listApiKeys, revokeApiKey } from "@/src/services/posbridge";
+import { PosBridgeError, bridgeTotals, createApiKey, listApiKeys, revokeApiKey } from "@/src/services/posbridge";
+import { formatChf } from "@/src/domain/money";
 import { env } from "@/src/env";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,8 @@ export default async function PosBridgePage({ params, searchParams }: { params: 
   const sp = await searchParams;
   const { hotel } = await requireHotel(hotelId, "owner");
   await requireModule(hotel.id, "posbridge");
-  const keys = await listApiKeys(hotel.id);
+  const [keys, totals] = await Promise.all([listApiKeys(hotel.id), bridgeTotals(hotel.id)]);
+  const keyLabel = new Map(keys.map((k) => [k.id, k.label]));
   const url = `${env().APP_BASE_URL}/api/v1/folio-items`;
   return (
     <div className="stack">
@@ -64,6 +66,18 @@ export default async function PosBridgePage({ params, searchParams }: { params: 
           </tbody></table>
         ) : <p className="muted">Noch kein Schlüssel.</p>}
       </section>
+      {totals.length ? (
+        <section className="card stack" data-testid="bridge-totals">
+          <h2>Gebuchte Posten je Monat</h2>
+          <p className="small muted">Was Kassen über die Schnittstelle aufs Zimmer gebucht haben, z. B. Ihr Pächter. Grundlage für die Abrechnung mit ihm.</p>
+          <table className="table small"><thead><tr><th>Monat</th><th>Schlüssel</th><th>Posten</th><th>Betrag</th></tr></thead>
+            <tbody>{totals.map((t) => <tr key={`${t.month}-${t.keyId}`}><td>{t.month}</td><td>{keyLabel.get(t.keyId) ?? t.keyId}</td><td>{t.count}</td><td>{formatChf(t.totalRappen)}</td></tr>)}</tbody></table>
+        </section>
+      ) : null}
+      <section className="card stack">
+        <h2>Verpachtetes Restaurant mit Pontivo</h2>
+        <p className="small">Führt Ihr Pächter seine Kasse ebenfalls mit Pontivo, geben Sie ihm einen Schlüssel. Er trägt ihn unter «Geräte & Kasse → Hotel verbinden» ein. Seine Kasse zeigt dann Ihre Gäste im Haus (Zimmer, Nachname und Initiale) und bucht «aufs Zimmer» direkt auf Ihre Hotelrechnung. Widerrufen Sie den Schlüssel, endet die Verbindung sofort.</p>
+      </section>
       <section className="card stack">
         <h2>Für den Kassenanbieter</h2>
         <p><code>POST {url}</code><br />Header: <code>Authorization: Bearer pnt_…</code>, <code>Content-Type: application/json</code></p>
@@ -75,6 +89,7 @@ export default async function PosBridgePage({ params, searchParams }: { params: 
   "vat": "standard",              // standard | stay | none
   "external_id": "KASSE-2026-000123"
 }`}</pre>
+        <p className="small">Gäste im Haus: <code>GET {`${env().APP_BASE_URL}/api/v1/in-house`}</code> mit demselben Schlüssel, Antwort <code>{`{ "guests": [{ "booking_reference", "room", "name" }] }`}</code> (Name als «Nachname V.»).</p>
         <p className="small muted">Antwort 201 = gebucht, 200 = Wiederholung derselben Beleg-ID (nichts doppelt), 404 = kein Gast im Zimmer, 409 = mehrdeutig oder Beleg-ID mit anderem Inhalt, 401 = Schlüssel ungültig, 429 = zu viele Anfragen.</p>
       </section>
     </div>

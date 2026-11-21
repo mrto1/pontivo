@@ -13,6 +13,7 @@ import { GENESIS_HASH, hashReceipt, verifyChain } from "../domain/pos-chain";
 import { checkChoice, composeLine, NOTE_MAX, type ChosenOption, type GroupDef } from "../domain/pos-options";
 import { audit } from "./audit";
 import { invoicingSettings } from "./invoicing";
+import { RoomLinkError, activeLink, chargeRemote } from "./room-link";
 
 /**
  * Restaurant und Kasse (SPEC 19.16). Bestellzeilen, Bons, Zahlungen und Tagesabschlüsse werden nur angehängt (Datenbank-Trigger sperren
@@ -416,9 +417,11 @@ export async function pay(hotel: Hotel, i: PayInput, actor: string): Promise<Pos
     const roomPay = i.payments.find((p) => p.method === "room");
     if (roomPay && i.payments.length > 1) throw new PosError("Aufs Zimmer geht nur als einzige Zahlart.");
     let bookingId: string | null = null;
+    let viaLink = false;
     if (roomPay) {
       const [b] = await tx.select({ id: bookings.id, status: bookings.status }).from(bookings).where(and(eq(bookings.hotelId, hotelId), eq(bookings.reference, (i.bookingReference ?? "").trim().toUpperCase())));
       if (b && b.status === "confirmed") bookingId = b.id;
+      else if (!b && (i.bookingReference ?? "").trim() && (await activeLink(hotelId))) viaLink = true; // Buchung beim verbundenen Hotel (SPEC 20.10)
       else if (!i.lenientRoom) throw new PosError("Buchung für «aufs Zimmer» nicht gefunden oder nicht bestätigt.");
     }
     const bonNo = await takeBonNo(tx, device, i.bonNo);
@@ -434,8 +437,13 @@ export async function pay(hotel: Hotel, i: PayInput, actor: string): Promise<Pos
     const [receipt] = await tx.insert(posReceipts).values({ id: receiptId, hotelId, orderId: i.orderId, deviceId: device.id, bonNo, number, seq: head.seq, kind: "sale", items, totalRappen: t.totalRappen, vat: t.vat, tipRappen: tip, businessDay: day, late: bd.late, cashier: actor, paidAt, deviceAt: i.deviceAt ?? null, prevHash: head.prevHash, hash }).returning();
     let folioIds: string[] = [];
     if (roomPay && bookingId) folioIds = await postToRoom(tx, hotelId, bookingId, receipt, items, tip, actor);
-    for (const p of i.payments) await tx.insert(posPayments).values({ hotelId, receiptId, method: p.method, amountRappen: p.amountRappen, bookingId, folioItemIds: p.method === "room" ? folioIds : [] });
-    await audit(tx, { hotelId, actor, action: "pos.pay", entity: "pos_receipt", entityId: receiptId, details: { number, totalRappen: t.totalRappen, methods: i.payments.map((p) => p.method), ...(roomPay && !bookingId ? { unassignedRoom: i.bookingReference ?? "" } : {}) } });
+    let remote: { linkId: string; reference: string } | null = null;
+    if (viaLink) {
+      try { remote = await chargeRemote(hotelId, hotel.name, i.bookingReference ?? "", receipt, items, tip); }
+      catch (e) { if (!(e instanceof RoomLinkError)) throw e; if (!i.lenientRoom) throw new PosError(e.message); }
+    }
+    for (const p of i.payments) await tx.insert(posPayments).values({ hotelId, receiptId, method: p.method, amountRappen: p.amountRappen, bookingId, folioItemIds: p.method === "room" ? folioIds : [], ...(p.method === "room" && remote ? { remoteLinkId: remote.linkId, remoteReference: remote.reference } : {}) });
+    await audit(tx, { hotelId, actor, action: "pos.pay", entity: "pos_receipt", entityId: receiptId, details: { number, totalRappen: t.totalRappen, methods: i.payments.map((p) => p.method), ...(roomPay && !bookingId && !remote ? { unassignedRoom: i.bookingReference ?? "" } : {}), ...(remote ? { roomLink: remote.linkId, remoteReference: remote.reference } : {}) } });
     return receipt;
   });
 }
@@ -489,11 +497,15 @@ export async function reverseReceipt(hotel: Hotel, receiptId: string, deviceId: 
     const rec = { hotelId, number, seq: head.seq, kind: "reversal", reversesReceiptId: orig.id, items, totalRappen: -orig.totalRappen, vat, tipRappen: tip, businessDay: day, cashier: actor, paidAt: paidAt.toISOString() };
     const hash = hashReceipt(head.prevHash, rec);
     const [rv] = await tx.insert(posReceipts).values({ id: crypto.randomUUID(), hotelId, orderId: orig.orderId, deviceId: device.id, bonNo, number, seq: head.seq, kind: "reversal", reversesReceiptId: orig.id, items, totalRappen: -orig.totalRappen, vat, tipRappen: tip, businessDay: day, late: bd.late, cashier: actor, paidAt, prevHash: head.prevHash, hash }).returning();
-    if (room) {
+    if (room?.bookingId) {
       // Posten aufs Zimmer gegenbuchen: die ursprünglichen Posten sind nicht auf einer Rechnung, also löschen wir sie nicht, sondern buchen negativ
-      await postToRoom(tx, hotelId, room.bookingId!, { ...rv, kind: "reversal" } as PosReceipt, orig.items.map((x) => ({ ...x, quantity: -x.quantity })), orig.tipRappen, actor);
-          }
-    for (const p of pays) await tx.insert(posPayments).values({ hotelId, receiptId: rv.id, method: p.method, amountRappen: -p.amountRappen, bookingId: p.bookingId, folioItemIds: [] });
+      await postToRoom(tx, hotelId, room.bookingId, { ...rv, kind: "reversal" } as PosReceipt, orig.items.map((x) => ({ ...x, quantity: -x.quantity })), orig.tipRappen, actor);
+    } else if (room?.remoteLinkId && room.remoteReference) {
+      // Beim verbundenen Hotel gegenbuchen (SPEC 20.10)
+      try { await chargeRemote(hotelId, hotel.name, room.remoteReference, rv, items, orig.tipRappen, orig.id, room.remoteLinkId); }
+      catch (e) { if (!(e instanceof RoomLinkError)) throw e; throw new PosError(e.message); }
+    }
+    for (const p of pays) await tx.insert(posPayments).values({ hotelId, receiptId: rv.id, method: p.method, amountRappen: -p.amountRappen, bookingId: p.bookingId, folioItemIds: [], remoteLinkId: p.remoteLinkId, remoteReference: p.remoteReference });
     await audit(tx, { hotelId, actor, action: "pos.receipt_reverse", entity: "pos_receipt", entityId: orig.id, details: { number, reason: why } });
     return rv;
   });
