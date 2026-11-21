@@ -35,6 +35,8 @@ test("Startseite, Unterkünfte und Restaurant-Seite mit Freischaltung", async ({
     await expect(page.getByRole("heading", { name: /Website, Reservation, Bestellung und Kasse/, level: 1 })).toBeVisible();
     await expect(page.locator("#preise")).toContainText("CHF 29 pro Monat");
     await expect(page.locator("#preise")).toContainText("ohne Gebühr");
+    await expect(page.getByTestId("order-fee-note")).toContainText("Einführungspreis");
+    await expect(page.getByTestId("order-fee-note")).toContainText("1.9 % pro Bestellung");
     await page.getByRole("link", { name: "Jetzt selbst einrichten" }).click();
     await expect(page).toHaveURL(/\/registrieren\?art=restaurant$/);
     await expect(page.getByRole("heading", { name: /Ihr Restaurant online/ })).toBeVisible();

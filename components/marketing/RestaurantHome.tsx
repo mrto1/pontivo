@@ -36,7 +36,7 @@ export function RestaurantHome({ contact, account, draft, fee, feeBps, minimum, 
   ];
   const prices = [
     ["Grundgebühr", `mindestens ${minimum} pro Monat`, "Website auf Wunsch, Tischreservation, Erinnerungen, Gästeliste"],
-    ["Online-Bestellung", flat ? `${flat} pro Monat` : `${fee} % pro Bestellung, keine Obergrenze`, flat ? "Abholung und Lieferung, Bestellbildschirm mit Alarm; keine Gebühr pro Bestellung, egal wie viele" : "Abholung und Lieferung, Bestellbildschirm mit Alarm"],
+    ["Online-Bestellung", flat ? `${flat} pro Monat (Einführungspreis)` : `${fee} % pro Bestellung, keine Obergrenze`, flat ? "Abholung und Lieferung, Bestellbildschirm mit Alarm; keine Gebühr pro Bestellung, egal wie viele" : "Abholung und Lieferung, Bestellbildschirm mit Alarm"],
     ["Online-Gutscheine", `${fee} % auf den bezahlten Betrag`, "Gutscheine auf Ihrer Website"],
     ["Anzahlung bei Reservation", "ohne Gebühr", "Schutz vor leeren Tischen"],
     ["Kasse", "CHF 29 pro Monat", "Kasse mit Bons, Tagesabschluss, offline-fähig; keine Gebühr von uns auf Kartenzahlungen im Lokal"],
@@ -47,6 +47,7 @@ export function RestaurantHome({ contact, account, draft, fee, feeBps, minimum, 
     { q: "Liefern Sie auch aus?", a: "Ja. Gäste wählen Abholung oder Lieferung. Sie liefern mit Ihren eigenen Fahrern in den Postleitzahlen-Gebieten, die Sie festlegen. Bar bei Lieferung können Sie erlauben oder ausschalten." },
     { q: "Brauche ich spezielle Geräte?", a: "Nein. Kasse und Bestellbildschirm laufen im Browser auf Tablet, Handy oder Computer." },
     { q: "Was passiert, wenn niemand eine Bestellung annimmt?", a: "Nach fünf Minuten kommt ein Alarm per SMS und Mail, nach zehn Minuten wird die Bestellung storniert und der Gast bekommt sein Geld zurück. Ist kein Bestellbildschirm erreichbar, pausiert die Online-Bestellung von selbst." },
+    ...(flat ? [{ q: "Bleibt die Online-Bestellung pauschal?", a: `Vorerst ja: ${flat} pro Monat, egal wie viele Bestellungen. Wir planen, später auf ${fee} % pro Bestellung umzustellen. Das kündigen wir Ihnen vorher an, und Sie können monatlich kündigen.` }] : []),
     { q: "Was passiert, wenn das Internet ausfällt?", a: "Die Kasse arbeitet weiter und überträgt alles, sobald die Verbindung zurück ist." },
     { q: "Wem gehören die Gästedaten?", a: "Ihnen. Wir verkaufen keine Daten und betreiben keinen Marktplatz, auf dem Ihre Gäste zur Konkurrenz weitergeleitet werden." },
   ];
@@ -112,6 +113,7 @@ export function RestaurantHome({ contact, account, draft, fee, feeBps, minimum, 
           </table>
         </div>
         <p className={s.fieldHint}>Die {fee} % auf Gutscheine werden an die Grundgebühr angerechnet: Kommen in einem Monat mehr als {minimum} Gebühren zusammen, zahlen Sie nur die {fee} %. Keine Gebühr pro Gast, keine Einrichtungsgebühr, monatlich kündbar, Bezahlung per Karte oder QR-Rechnung. Alle Preise ohne MWST, sofern geschuldet.</p>
+        {flat ? <p className={s.fieldHint} data-testid="order-fee-note">Online-Bestellung: Die Pauschale von {flat} ist ein Einführungspreis. Wir planen, später auf {fee} % pro Bestellung umzustellen, wie bei Buchungen und Gutscheinen. Eine Änderung kündigen wir Ihnen vorher an; Sie können dann monatlich kündigen.</p> : null}
       </section>
 
       {today <= SWITCH_UNTIL ? (

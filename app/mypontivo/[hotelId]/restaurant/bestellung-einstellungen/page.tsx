@@ -73,7 +73,7 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
   return (
     <div className="stack">
       <h1>Online-Bestellung & Lieferung</h1>
-      <p className="small muted" data-testid="order-price">Preis: {model === "fixed" ? `${formatChf(ORDER_MODULE_RAPPEN)} pro Monat, keine Gebühr pro Bestellung (auch bar). Verrechnet für jeden Monat, in dem die Online-Bestellung eingeschaltet ist.` : `${hotel.platformFeeBps / 100} % pro Bestellung (auch bar, dann mit der Monatsrechnung).`}</p>
+      <p className="small muted" data-testid="order-price">Preis: {model === "fixed" ? `${formatChf(ORDER_MODULE_RAPPEN)} pro Monat, keine Gebühr pro Bestellung (auch bar). Verrechnet für jeden Monat, in dem die Online-Bestellung eingeschaltet ist. Einführungspreis: Wir planen, später auf ${hotel.platformFeeBps / 100} % pro Bestellung umzustellen, und kündigen das vorher an.` : `${hotel.platformFeeBps / 100} % pro Bestellung (auch bar, dann mit der Monatsrechnung).`}</p>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <section className="card stack" data-testid="orders-live">
         <h2>Status</h2>
