@@ -6,6 +6,7 @@ import { isLimitedRole, roleLabel } from "@/src/domain/roles";
 import { moduleRows } from "@/src/services/modules";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { SectionTabs } from "@/components/admin/SectionTabs";
+import { BrandMark } from "@/components/admin/BrandMark";
 import { SettingsFrame } from "@/components/admin/SettingsFrame";
 import { TooltipHost } from "@/components/admin/TooltipHost";
 import { SetupNotices } from "@/components/admin/SetupNotices";
@@ -30,7 +31,7 @@ export default async function HotelAdminLayout({ children, params }: { children:
     <>
       <header className="admin-head">
         <div className="wrap">
-          <a href="/mypontivo" className="brand admin-brand">myPontivo<span className="muted" style={{ fontWeight: 400 }}> · {hotel.name}</span></a>
+          <a href="/mypontivo" className="brand admin-brand" title="myPontivo: Betrieb wechseln"><BrandMark /><span className="muted brand-name">{hotel.name}</span></a>
           {others.length > 0 && !user.isPlatformAdmin ? (
             <details className="small" style={{ display: "inline-block", marginLeft: 12 }}>
               <summary>Betrieb wechseln</summary>

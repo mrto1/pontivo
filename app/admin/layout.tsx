@@ -1,3 +1,4 @@
+import { BrandMark } from "@/components/admin/BrandMark";
 import type { Metadata } from "next";
 import { currentUserId } from "@/src/auth/guard";
 import { getUser } from "@/src/auth/session";
@@ -19,7 +20,7 @@ export default async function PlatformAdminLayout({ children }: { children: Reac
     <div className="pv-admin">
       <header className="admin-head">
         <div className="wrap">
-          <a href={PLATFORM_HOME} className="brand admin-brand">myPontivo<span className="muted" style={{ fontWeight: 400 }}> · Plattform</span></a>
+          <a href={PLATFORM_HOME} className="brand admin-brand" title="myPontivo"><BrandMark /><span className="muted brand-name">Plattform</span></a>
           {user?.isPlatformAdmin ? <AdminNav nav={nav} home={PLATFORM_HOME} userLabel={`${user.email} · Zu meinen Betrieben`} initials={initials(user.name, user.email)} showSettings={false} /> : null}
         </div>
       </header>

@@ -136,7 +136,10 @@ details > summary::-webkit-details-marker { display: none; }
 .admin-head { background: var(--surface); border-bottom: 1px solid var(--line); }
 .admin-head { position: sticky; top: 0; z-index: 20; padding-top: env(safe-area-inset-top); }
 .admin-head .wrap { display: flex; align-items: center; gap: 20px; height: 56px; position: relative; }
-.admin-brand { font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw; }
+.admin-brand { font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw; display: inline-flex; align-items: center; gap: 10px; }
+.brand-mark { flex: none; width: 30px; height: 30px; color: var(--accent); }
+.brand-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .admin-nav { display: flex; gap: 4px; align-items: center; }
 .admin-nav a { color: var(--muted); text-decoration: none; padding: 8px 10px; border-radius: 8px; white-space: nowrap; }
 .admin-nav a:hover { background: var(--accent-soft); }
