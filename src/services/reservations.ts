@@ -21,6 +21,12 @@ export const DEFAULT_SETTINGS: ResSettings = {
   depositPerPersonRappen: 0, depositFromParty: 1, cancelHours: 24, reminderHours: 24, autoAssign: true,
 };
 
+/** Online-Reservierung für Gäste möglich? (Modul «restaurant» an und Online-Reservierung eingeschaltet, SPEC 20.2) */
+export async function tableReservationOnline(hotelId: string): Promise<boolean> {
+  const [m] = rows<{ on: boolean }>(await db().execute(sql`SELECT enabled AS on FROM hotel_modules WHERE hotel_id = ${hotelId} AND module = 'restaurant'`));
+  return !!m?.on && (await getSettings(hotelId)).onlineEnabled;
+}
+
 export async function getSettings(hotelId: string): Promise<ResSettings> {
   const [r] = await db().select().from(restaurantSettings).where(eq(restaurantSettings.hotelId, hotelId));
   if (!r) return DEFAULT_SETTINGS;
@@ -83,7 +89,7 @@ export function reservationUrl(hotel: Hotel, locale: string, token: string): str
 
 /** Freie Zeiten für Gäste an einem Tag */
 export async function slotsFor(hotel: Hotel, day: string, party: number): Promise<Slot[]> {
-  if (!isDay(day)) return [];
+  if (!isDay(day) || !(await tableReservationOnline(hotel.id))) return [];
   const [s, ex] = await Promise.all([getSettings(hotel.id), reservationsOfDay(hotel.id, day)]);
   const now = nowIn(hotel);
   return onlineSlots(s, day, party, ex, now, diffDays(now.day, day));
@@ -107,16 +113,18 @@ export async function createReservation(hotel: Hotel, i: ReservationInput, sourc
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new PosError("E-Mail-Adresse ungültig.");
   if (source === "online" && !email && !phone) throw new PosError("Bitte E-Mail oder Telefon angeben.");
   const s = await getSettings(hotel.id);
-  const deposit = source === "online" ? depositFor(s, i.party) : 0;
+  // Anzahlung erst, wenn Stripe Zahlungen freigegeben hat (Konzept 7a: Prüfung blockiert nur Zahlungen, nicht die Reservierung)
+  const stripeOk = env().PAYMENT_PROVIDER !== "stripe" || !!(hotel.stripeAccountId && hotel.stripeChargesEnabled);
+  const deposit = source === "online" && stripeOk ? depositFor(s, i.party) : 0;
   if (deposit > 0 && !email) throw new PosError("Für die Anzahlung brauchen wir Ihre E-Mail-Adresse.");
-  if (deposit > 0 && !hotel.stripeAccountId) throw new PosError("Online-Zahlung ist hier nicht möglich. Bitte rufen Sie uns an.");
+
   const token = randomBytes(18).toString("base64url");
   const r = await db().transaction(async (tx) => {
     const existing = await tx.select().from(posReservations).where(and(eq(posReservations.hotelId, hotel.id), eq(posReservations.day, i.day)));
     if (source === "online") {
       const now = nowIn(hotel);
       const slot = onlineSlots(s, i.day, i.party, existing, now, diffDays(now.day, i.day)).find((x) => x.time === i.time);
-      if (!s.onlineEnabled) throw new PosError("Online-Reservierung ist nicht aktiv.");
+      if (!s.onlineEnabled || !(await tableReservationOnline(hotel.id))) throw new PosError("Online-Reservierung ist nicht aktiv.");
       if (i.party > s.maxParty) throw new PosError(`Für Gruppen ab ${s.maxParty + 1} Personen bitte anrufen.`);
       if (!slot || !slot.ok) throw new PosError("Diese Zeit ist leider nicht mehr frei. Bitte eine andere wählen.");
     }

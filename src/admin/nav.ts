@@ -60,7 +60,7 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
   // Restaurant-Baum (SPEC 20.1, Navigation Teil B): gleiche Seiten und Schlüssel, eigene vier Hauptpunkte
   const dining: NavItem[] = [
     { key: "g-dining-today", label: "Heute", href: `${base}/restaurant/heute`, icon: "home", tabs: [link("dininghome", "Tagesübersicht", "restaurant/heute"), link("inbox", "Posteingang")] },
-    { key: "g-dining-res", label: "Reservierungen", href: `${base}/restaurant/reservierungen`, icon: "bookings", tabs: [link("reservations", "Liste", "restaurant/reservierungen"), link("resplan", "Tischplan", "restaurant/tischplan"), link("waitlist", "Warteliste", "restaurant/warteliste")] },
+    { key: "g-dining-res", label: "Reservierungen", href: `${base}/restaurant/reservierungen`, icon: "bookings", tabs: [link("reservations", "Liste", "restaurant/reservierungen"), link("resplan", "Tischplan", "restaurant/tischplan"), link("waitlist", "Warteliste", "restaurant/warteliste"), link("guestbook", "Gäste")] },
     { key: "g-dining-orders", label: "Bestellungen", href: `${base}/restaurant`, icon: "orders", tabs: [link("restaurant", "Tische"), link("kasse", "Kasse"), link("kitchen", "Küche", "restaurant/kueche")] },
     { key: "g-dining-finance", label: "Finanzen", href: `${base}/restaurant/abschluss`, icon: "finance", tabs: [link("posclose", "Kassenabschluss", "restaurant/abschluss"), link("invoices", "Rechnungen"), link("vouchers", "Gutscheine"), link("accountingexport", "Buchhaltung", "buchhaltung")] },
   ];

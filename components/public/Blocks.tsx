@@ -6,6 +6,8 @@ import { RichText } from "./RichText";
 import { MapEmbed } from "./MapEmbed";
 import { fill } from "@/src/i18n/dict";
 import { voucherSettings, vouchersAvailable } from "@/src/services/vouchers";
+import { tableReservationOnline } from "@/src/services/reservations";
+import { RES } from "@/src/i18n/reservation";
 import { formatChf } from "@/src/domain/money";
 import { roomDescription, roomName } from "@/src/domain/i18n-names";
 import { addDays, todayIn } from "@/src/domain/dates";
@@ -278,6 +280,23 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
               <div><label htmlFor={`c-${b.id}`}>{d.inqPersons}</label><input id={`c-${b.id}`} name="persons" type="number" min={1} max={2000} required={tableOnly} /></div>
               <div style={{ gridColumn: "1 / -1" }}><label htmlFor={`m-${b.id}`}>{d.inqMessage}</label><textarea id={`m-${b.id}`} name="message" rows={4} maxLength={4000} /></div>
               <div style={{ gridColumn: "1 / -1" }}><p className="small muted">{b.kinds.includes("table") ? `${d.inqTableHint} ` : ""}{d.inqPrivacy}</p><button className="btn">{d.inqSend}</button></div>
+            </form>
+          </section>,
+        );
+        break;
+      }
+      case "reserve": {
+        if (!(await tableReservationOnline(hotel.id))) break;
+        const r = RES[lang];
+        const today = todayIn(hotel.timezone);
+        out.push(
+          <section key={b.id} id={`b-${b.id}`} className="blk blk-reserve">
+            <Heading text={tr(b.heading, lang) || r.title} />
+            {tr(b.intro, lang) ? <RichText text={tr(b.intro, lang)} /> : null}
+            <form className="card form-grid" action={`${base}/${lang}/tisch`} method="get" data-testid="reserve-block">
+              <div><label htmlFor={`rd-${b.id}`}>{r.date}</label><input id={`rd-${b.id}`} name="date" type="date" min={today} defaultValue={today} required /></div>
+              <div><label htmlFor={`rp-${b.id}`}>{r.guests}</label><input id={`rp-${b.id}`} name="party" type="number" min={1} max={50} defaultValue={2} required /></div>
+              <div style={{ gridColumn: "1 / -1" }}><button className="btn">{r.show}</button></div>
             </form>
           </section>,
         );

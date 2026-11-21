@@ -86,7 +86,7 @@ describe("Admin-Menü", () => {
     const d = adminNav(hotel, new Set(), { area: "dining", kind: "restaurant" });
     expect(d.primary.map((i) => i.label)).toEqual(["Heute", "Reservierungen", "Bestellungen", "Finanzen"]);
     expect(d.primary.map((i) => i.tabs!.map((t) => t.key))).toEqual([
-      ["dininghome", "inbox"], ["reservations", "resplan", "waitlist"], ["restaurant", "kasse", "kitchen"], ["posclose", "invoices", "vouchers", "accountingexport"],
+      ["dininghome", "inbox"], ["reservations", "resplan", "waitlist", "guestbook"], ["restaurant", "kasse", "kitchen"], ["posclose", "invoices", "vouchers", "accountingexport"],
     ]);
     const keys = allPages(d).map((i) => i.key);
     for (const k of ["rooms", "extras", "channex", "ical", "gaesteportal", "upsell", "direct", "api", "access", "migration", "plan", "calendar", "housekeeping"]) expect(keys).not.toContain(k);

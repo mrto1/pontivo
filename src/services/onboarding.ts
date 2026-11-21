@@ -152,26 +152,77 @@ export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
   ];
 }
 
-/** Schritte für reine Restaurants (SPEC 20.1): ohne Zimmer, Kurtaxe und Ankunft */
+/**
+ * Schritte für reine Restaurants (SPEC 20.1, Selbst-Onboarding Konzept 7a): feste Reihenfolge, Reservation geht vor allem anderen live.
+ * Es gibt keinen Schritt «Online gehen»: «Reservation live schalten» stellt Website und Reservierung zugleich online. Stripe blockiert nur Zahlungen.
+ */
 async function restaurantSteps(hotel: Hotel): Promise<Step[]> {
   const [tables, items, cfg] = await Promise.all([
     db().select({ id: posTables.id }).from(posTables).where(and(eq(posTables.hotelId, hotel.id), eq(posTables.active, true))),
     db().select({ id: posItems.id }).from(posItems).where(and(eq(posItems.hotelId, hotel.id), eq(posItems.active, true))),
     db().select().from(restaurantSettings).where(eq(restaurantSettings.hotelId, hotel.id)),
   ]);
-  const photos = hotel.content.photos?.length ?? 0;
   return [
     { key: "betrieb", title: "Angaben und Öffnungszeiten", done: !!(hotel.addressLine && hotel.postalCode && hotel.city), required: true },
-    { key: "funktionen", title: "Was brauchen Sie?", done: !!hotel.onboarding.modulesChosenAt, required: true },
     { key: "tische", title: "Tische und Plätze", done: tables.length > 0, required: true },
+    { key: "reservierung", title: "Reservation live schalten", done: !!cfg[0]?.onlineEnabled && hotel.status === "live", required: true },
     { key: "speisekarte", title: "Speisekarte", done: items.length > 0, required: true },
-    { key: "reservierung", title: "Reservierung online", done: !!cfg[0]?.onlineEnabled, required: false },
-    { key: "fotos", title: "Fotos", done: photos > 0, required: false },
-    { key: "zahlungen", title: "Zahlungen empfangen", done: !!(hotel.stripeAccountId && hotel.stripeChargesEnabled) || env().PAYMENT_PROVIDER !== "stripe", required: false },
+    { key: "zahlungen", title: "Zahlungen (Stripe)", done: stripeReady(hotel), required: false },
+    { key: "funktionen", title: "Weitere Funktionen", done: !!hotel.onboarding.modulesChosenAt, required: false },
     { key: "karte", title: "Karte für die Grundgebühr", done: hotel.monthlyMinimumRappen === 0 || !!hotel.billingPaymentMethodId, required: hotel.monthlyMinimumRappen > 0 },
-    { key: "live", title: "Online gehen", done: hotel.status === "live", required: true },
     ...(bookingOnly(hotel) ? [{ key: "einbinden" as const, title: "Auf Website einbauen", done: !!hotel.onboarding.embeddedAt, required: false }] : []),
   ];
+}
+
+/** Kann der Betrieb online Geld annehmen? (Testbetrieb ohne Stripe: ja) */
+export const stripeReady = (h: Pick<Hotel, "stripeAccountId" | "stripeChargesEnabled">) => env().PAYMENT_PROVIDER !== "stripe" || !!(h.stripeAccountId && h.stripeChargesEnabled);
+
+/** Restaurant: Reservation und Website online stellen (Konzept 7a Schritt 3), ohne auf Stripe zu warten */
+export async function goLiveRestaurant(hotel: Hotel, actor: string, now = new Date()) {
+  await ensureHomePage(hotel, actor);
+  if (hotel.status !== "live") await setHotelStatus(hotel, "live", actor);
+  const [h] = await db().select().from(hotels).where(eq(hotels.id, hotel.id));
+  await db().update(hotels).set({ liveSince: h.liveSince ?? now }).where(eq(hotels.id, hotel.id));
+}
+
+/** Alle Pflichtschritte erledigt → Einrichtung abgeschlossen (Hinweiszeile verschwindet) */
+export async function markSetupCompleteIfDone(hotel: Hotel, now = new Date()) {
+  if (hotel.onboarding.completedAt) return;
+  const steps = await onboardingSteps(hotel);
+  if (steps.some((s) => s.required && !s.done)) return;
+  await db().update(hotels).set({ onboarding: { ...hotel.onboarding, completedAt: now.toISOString() } }).where(eq(hotels.id, hotel.id));
+}
+
+export type CheckItem = { key: string; title: string; done: boolean; href: string; hint?: string; wait?: boolean };
+
+/**
+ * Checkliste «Bereit für den Betrieb» im Heute der Gastronomie (Konzept 7a). Jeder offene Schritt mit Link;
+ * was Pontivo nicht beschleunigen kann (Stripe-Prüfung, eigene Domain), mit Hinweis und erwarteter Dauer.
+ */
+export async function diningChecklist(hotel: Hotel): Promise<CheckItem[]> {
+  const base = `/mypontivo/${hotel.id}`;
+  const resto = isRestaurant(hotel.propertyType);
+  const [tables, items, cfg] = await Promise.all([
+    db().select({ id: posTables.id }).from(posTables).where(and(eq(posTables.hotelId, hotel.id), eq(posTables.active, true))),
+    db().select({ id: posItems.id }).from(posItems).where(and(eq(posItems.hotelId, hotel.id), eq(posItems.active, true))),
+    db().select().from(restaurantSettings).where(eq(restaurantSettings.hotelId, hotel.id)),
+  ]);
+  const online = !!cfg[0]?.onlineEnabled && hotel.status === "live";
+  const stripe = stripeReady(hotel);
+  const list: CheckItem[] = [];
+  if (resto) list.push({ key: "betrieb", title: "Angaben und Öffnungszeiten", done: !!(hotel.addressLine && hotel.city), href: `${base}/einrichten?step=betrieb` });
+  list.push({ key: "tische", title: "Tische und Plätze", done: tables.length > 0, href: resto ? `${base}/einrichten?step=tische` : `${base}/restaurant/einstellungen` });
+  list.push({ key: "reservierung", title: "Reservation online", done: online, href: resto ? `${base}/einrichten?step=reservierung` : `${base}/restaurant/einstellungen#online`, hint: online ? undefined : "Gäste reservieren über Ihre Website, einen Link oder QR-Code. Geht sofort, ohne Stripe." });
+  list.push({ key: "speisekarte", title: "Speisekarte", done: items.length > 0, href: `${base}/restaurant/artikel`, hint: items.length ? undefined : "Per KI aus Website oder PDF, per CSV oder von Hand." });
+  list.push({
+    key: "zahlungen", title: "Zahlungen (Stripe)", done: stripe, href: resto ? `${base}/einrichten?step=zahlungen` : `${base}/zahlungen`, wait: !stripe && !!hotel.stripeAccountId,
+    hint: stripe ? undefined : hotel.stripeAccountId
+      ? "In Prüfung bei Stripe, meist 1–2 Werktage. Pontivo kann das nicht beschleunigen. Bis dahin ohne Anzahlung; Reservierungen laufen normal."
+      : "Nötig für Anzahlungen und später die Online-Bestellung. Alles andere läuft schon ohne.",
+  });
+  if (resto && hotel.monthlyMinimumRappen > 0) list.push({ key: "karte", title: "Karte für die Grundgebühr", done: !!hotel.billingPaymentMethodId, href: `${base}/einrichten?step=karte` });
+  list.push({ key: "domain", title: "Eigene Domain (freiwillig)", done: !!hotel.primaryDomain, href: `${base}/site`, hint: hotel.primaryDomain ? undefined : "Später möglich. Nach der Umstellung beim Domain-Anbieter dauert es bis zu 24 Stunden." });
+  return list;
 }
 
 export const bookingOnly = (h: Pick<Hotel, "content">) => h.content.brand?.mode === "booking_only" && !!h.content.brand.websiteUrl;
@@ -204,7 +255,9 @@ export async function detectEmbed(hotel: Hotel, fetcher: typeof fetch = fetch): 
 export function nextOpenStep(steps: Step[]): StepKey {
   const req = steps.find((s) => s.required && !s.done && s.key !== "live");
   if (req) return req.key;
-  const live = steps.find((s) => s.key === "live")!;
+  const live = steps.find((s) => s.key === "live");
+  // Restaurant (ohne Schritt «Online gehen»): nächster freiwilliger offener Schritt, sonst der erste
+  if (!live) return (steps.find((s) => !s.done) ?? steps[0]).key;
   if (!live.done) return "live";
   const embed = steps.find((s) => s.key === "einbinden" && !s.done);
   return embed ? "einbinden" : "live";

@@ -42,8 +42,10 @@ export async function ensureHomePage(hotel: Hotel, actor: string): Promise<SiteP
       headline: { de: hotel.content.de?.headline ?? hotel.name, en: hotel.content.en?.headline ?? hotel.name },
       intro: { de: hotel.content.de?.intro ?? "", en: hotel.content.en?.intro ?? "" },
       image: photo && /^\/media\//.test(photo.url) ? { url: photo.url, alt: photo.alt } : null,
+      // Restaurant (SPEC 20.2): keine Zimmersuche, stattdessen «Tisch reservieren»
+      showSearch: hotel.propertyType !== "restaurant",
     }),
-    newBlock("rooms", newId()),
+    newBlock(hotel.propertyType === "restaurant" ? "reserve" : "rooms", newId()),
   ];
   const [p] = await db()
     .insert(sitePages)

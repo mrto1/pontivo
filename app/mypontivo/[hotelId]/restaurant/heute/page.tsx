@@ -2,12 +2,13 @@ import Link from "next/link";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule, moduleRows } from "@/src/services/modules";
 import { isOn } from "@/src/domain/modules";
-import { listItems, listTables, tablesOverview } from "@/src/services/pos";
-import { getSettings, reservationsOfDay, waitlistOfDay } from "@/src/services/reservations";
+import { listTables, tablesOverview } from "@/src/services/pos";
+import { reservationsOfDay, waitlistOfDay } from "@/src/services/reservations";
 import { todayIn } from "@/src/domain/dates";
 import { formatDay } from "@/src/i18n/dict";
 import { formatChf } from "@/src/domain/money";
 import { atLeast, hasArea } from "@/src/domain/roles";
+import { diningChecklist } from "@/src/services/onboarding";
 
 export const dynamic = "force-dynamic";
 const STATUS = { pending: "Zahlung offen", confirmed: "erwartet", seated: "am Tisch", cancelled: "storniert", noshow: "nicht erschienen" } as const;
@@ -21,8 +22,8 @@ export default async function DiningToday({ params }: { params: Promise<{ hotelI
   const today = todayIn(hotel.timezone);
   const rows = await moduleRows(hotel.id);
   const pos = isOn(rows, "pos") && hasArea(role, "restaurant");
-  const [list, wait, items, tables, cfg, open] = await Promise.all([
-    reservationsOfDay(hotel.id, today), waitlistOfDay(hotel.id, today), listItems(hotel.id, true), listTables(hotel.id), getSettings(hotel.id),
+  const [list, wait, tables, open] = await Promise.all([
+    reservationsOfDay(hotel.id, today), waitlistOfDay(hotel.id, today), listTables(hotel.id),
     pos ? tablesOverview(hotel.id) : Promise.resolve([]),
   ]);
   const tname = new Map(tables.map((t) => [t.id, t.name]));
@@ -32,18 +33,26 @@ export default async function DiningToday({ params }: { params: Promise<{ hotelI
   const seated = live.filter((r) => r.status === "seated");
   const openTables = open.filter((t) => t.orders.length);
   const manager = atLeast(role, "manager");
-  const notices: { text: string; href: string }[] = [];
-  if (manager && !items.length) notices.push({ text: "Noch keine Speisekarte: Artikel per KI, CSV oder von Hand anlegen.", href: `${base}/restaurant/artikel` });
-  if (manager && !tables.length) notices.push({ text: "Noch keine Tische: Tische und Plätze anlegen, dann im Tischplan platzieren.", href: `${base}/restaurant/einstellungen` });
-  if (manager && !cfg.onlineEnabled) notices.push({ text: "Online-Reservierung ist aus: Gäste können noch nicht selbst reservieren.", href: `${base}/restaurant/einstellungen#online` });
+  // Checkliste «Bereit für den Betrieb» (Konzept 7a): jeder offene Schritt mit Link, Wartezeiten mit Hinweis
+  const checklist = manager ? await diningChecklist(hotel) : [];
+  const openItems = checklist.filter((c) => !c.done && c.key !== "domain");
   return (
     <div className="stack">
       <h1 style={{ margin: 0 }}>Heute</h1>
       <p className="muted" style={{ margin: 0 }}>{formatDay(today, "de")}</p>
-      {notices.length ? (
-        <section className="stack" aria-label="Hinweise">
-          {notices.map((n) => <a key={n.href} href={n.href} className="notice" style={{ display: "block", textDecoration: "none", color: "inherit" }}>{n.text} <strong>→</strong></a>)}
-        </section>
+      {checklist.length ? (
+        <details className="card stack" open={openItems.length > 0} data-testid="ready-checklist">
+          <summary><strong>Bereit für den Betrieb</strong> <span className="small muted">{checklist.filter((c) => c.done).length} von {checklist.length} erledigt</span></summary>
+          <ul className="list" style={{ marginTop: 8 }}>
+            {checklist.map((c) => (
+              <li key={c.key}>
+                <span aria-hidden="true">{c.done ? "✓" : c.wait ? "⏳" : "○"}</span> {c.done ? c.title : <a href={c.href}>{c.title}</a>}
+                {c.wait ? <span className="badge warn" style={{ marginLeft: 6 }}>in Prüfung</span> : null}
+                {!c.done && c.hint ? <div className="small muted">{c.hint}</div> : null}
+              </li>
+            ))}
+          </ul>
+        </details>
       ) : null}
       <div className="hk-summary" aria-label="Übersicht" data-testid="dining-summary">
         <span className="hk-stat"><b>{live.length}</b> Reservierungen</span>

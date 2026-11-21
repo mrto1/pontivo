@@ -7,6 +7,8 @@ import { requireModule } from "@/src/services/modules";
 import { PosError, importTables, listTables, saveTable, saveTableDetails, saveTablePlan } from "@/src/services/pos";
 import { getSettings, saveSettings } from "@/src/services/reservations";
 import { parsePosTables } from "@/src/domain/pos-import";
+import { publicBase } from "@/src/services/brand";
+import QRCode from "qrcode";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -69,7 +71,8 @@ export default async function RestaurantSettingsPage({ params, searchParams }: {
   await requireModule(hotel.id, "restaurant");
   const [tables, cfg] = await Promise.all([listTables(hotel.id), getSettings(hotel.id)]);
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
-  const publicUrl = `/h/${hotel.slug}/${hotel.defaultLanguage}/tisch`;
+  const publicUrl = `${publicBase(hotel)}/${hotel.defaultLanguage}/tisch`;
+  const qr = cfg.onlineEnabled ? await QRCode.toDataURL(publicUrl, { margin: 1, width: 180 }) : null;
   return (
     <div className="stack">
       <h1>Tischplan & Reservierung online</h1>
@@ -103,6 +106,7 @@ export default async function RestaurantSettingsPage({ params, searchParams }: {
           {H}
           <h2>Online-Reservierung für Gäste</h2>
           <FormSwitch name="onlineEnabled" defaultOn={cfg.onlineEnabled} label="Gäste können online reservieren" hint={<>Formular unter <a href={publicUrl}>{publicUrl}</a> (der Knopf «Tisch reservieren» auf Ihrer Website führt dorthin).</>} />
+          {qr ? <div className="inline-form"><img src={qr} alt="QR-Code zur Tischreservierung" width={120} height={120} /><span className="small muted">QR-Code für Tischkarten, Schaufenster oder Flyer (Rechtsklick → Bild speichern).</span></div> : null}
           <p className="small muted">Zeitfenster, in denen Gäste einen Tisch beginnen können (im Raster von 30 Minuten):</p>
           <div className="inline-form">
             {[1, 2].map((n) => { const w = cfg.windows[n - 1]; return (
@@ -123,7 +127,7 @@ export default async function RestaurantSettingsPage({ params, searchParams }: {
             <div><label htmlFor="cancelHours">Gratis stornieren bis (Std. vorher)</label><input id="cancelHours" name="cancelHours" type="number" min={0} max={168} defaultValue={cfg.cancelHours} style={{ width: 90 }} /></div>
             <div><label htmlFor="reminderHours">Erinnerung (Std. vorher, 0 = aus)</label><input id="reminderHours" name="reminderHours" type="number" min={0} max={72} defaultValue={cfg.reminderHours} style={{ width: 90 }} /></div>
           </div>
-          <p className="small muted">Die Anzahlung wird online über Stripe bezahlt (Ihr verbundenes Konto, keine Plattformgebühr) und bei rechtzeitiger Stornierung zurückerstattet. Storniert der Betrieb, kommt sie immer zurück; bei «nicht erschienen» bleibt sie. Den bezahlten Betrag ziehen Sie bei der Rechnung ab.</p>
+          <p className="small muted">Die Anzahlung wird online über Stripe bezahlt (Ihr verbundenes Konto, keine Plattformgebühr) und bei rechtzeitiger Stornierung zurückerstattet. Sie gilt erst, wenn Stripe Ihr Konto freigegeben hat; bis dahin wird ohne Anzahlung reserviert. Storniert der Betrieb, kommt sie immer zurück; bei «nicht erschienen» bleibt sie. Den bezahlten Betrag ziehen Sie bei der Rechnung ab.</p>
           <div><button className="btn">Speichern</button></div>
         </form>
     </div>

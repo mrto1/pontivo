@@ -14,8 +14,10 @@ export function setupBanner(h: SetupHotel, steps: SetupStep[] | null): Banner | 
   if (setupOpen(h) && steps) {
     const done = steps.filter((s) => s.done).length;
     const open = steps.some((s) => s.required && !s.done && s.key !== "live");
+    const hasLive = steps.some((s) => s.key === "live");
     return open
       ? { kind: "open", done, total: steps.length, cta: "Einrichtung fortsetzen", path: "einrichten", text: `Die Einrichtung ist noch nicht abgeschlossen (${done} von ${steps.length} Schritten). Kalender und Zahlen sind erst danach aussagekräftig.` }
+      : !hasLive ? null
       : { kind: "almost", done, total: steps.length, cta: "Online gehen", path: "einrichten?step=live", text: "Fast geschafft: Ihr Betrieb ist startklar, nur «Online gehen» fehlt." };
   }
   if (h.status === "paused" && h.onboarding.completedAt) return { kind: "paused", done: 0, total: 0, cta: "Wieder online schalten", path: "settings", text: "Ihr Betrieb ist pausiert. Gäste können nicht buchen." };
@@ -37,7 +39,8 @@ export const PAGE_NEEDS: Record<string, Need> = {
 
 /** Noch nicht erfüllte Voraussetzungen (nur solange die Einrichtung läuft) */
 export function unmetNeeds(steps: SetupStep[]): Need[] {
-  return (Object.keys(NEEDS) as Need[]).filter((n) => !steps.find((s) => s.key === NEEDS[n].step)?.done);
+  // Schritt, den es für die Betriebsart nicht gibt (z. B. Zimmer beim Restaurant), zählt als erfüllt
+  return (Object.keys(NEEDS) as Need[]).filter((n) => steps.some((s) => s.key === NEEDS[n].step && !s.done));
 }
 
 /** Parallelbetrieb: bisherige Software läuft noch (Antwort «ja» im Assistenten oder Import), bis das Umschalten bestätigt ist */

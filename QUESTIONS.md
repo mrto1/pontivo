@@ -265,3 +265,4 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] SMS-Anbieter und Weiterverrechnung der SMS-Kosten (R3/R4: Alarm bei nicht angenommener Bestellung, Herzschlag-Ausfall, «bereit»/«unterwegs» an den Gast). Betreiber 21.11.2026: «je nach Pricing» → Preisvergleich vorlegen (vor R3). Bis zum Entscheid: Mail und Push, SMS-Stelle vorbereitet.
 - [ ] Pilotbetrieb (Restaurant/Take-away, idealerweise GloriaFood-Nutzer).
 - [ ] Treuhänder: MWST-Satz der Liefergebühr (Annahme 2,6 % wie die Speisen), Bons bei Online-Zahlung.
+- [ ] Selbst-Onboarding (Konzept 7a, Schritt 8 und Abschnitt 6): Grundgebühr heute per hinterlegter Karte (Stripe); Konzept nennt «Rechnung per QR-Rechnung» bzw. Abos jährlich per QR-Rechnung. Umstellen (für Restaurants oder alle Betriebe)? Bis zum Entscheid bleibt die Karte.

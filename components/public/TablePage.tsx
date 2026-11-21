@@ -2,8 +2,9 @@ import type { Hotel } from "@/src/db/schema";
 import { formatDay, type Locale } from "@/src/i18n/dict";
 import { RES } from "@/src/i18n/reservation";
 import { addDays, todayIn } from "@/src/domain/dates";
-import { getSettings, reservationByToken, slotsFor } from "@/src/services/reservations";
+import { getSettings, reservationByToken, slotsFor, tableReservationOnline } from "@/src/services/reservations";
 import { Shell } from "./Shell";
+import { env } from "@/src/env";
 import { AutoRefresh } from "./AutoRefresh";
 import { depositFor } from "@/src/domain/reservations";
 import { formatChf } from "@/src/domain/money";
@@ -13,7 +14,10 @@ import { cancelReservationAction, reserveAction, waitlistAction } from "./table-
 export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; locale: Locale; base: string; sp: Record<string, string | string[] | undefined> }) {
   const r = RES[locale];
   const one = (k: string) => { const v = sp[k]; return Array.isArray(v) ? v[0] : v; };
-  const settings = await getSettings(hotel.id);
+  const settings = { ...(await getSettings(hotel.id)) };
+  settings.onlineEnabled = await tableReservationOnline(hotel.id); // ohne Modul «restaurant» keine Online-Reservierung
+  // Anzahlung nur, wenn Stripe Zahlungen freigegeben hat (sonst wird ohne Anzahlung reserviert)
+  if (env().PAYMENT_PROVIDER === "stripe" && !(hotel.stripeAccountId && hotel.stripeChargesEnabled)) settings.depositPerPersonRappen = 0;
   const today = todayIn(hotel.timezone);
   const day = one("date") ?? "";
   const party = Math.max(1, Math.min(50, Number(one("party")) || 2));

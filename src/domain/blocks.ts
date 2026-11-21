@@ -76,6 +76,8 @@ export const blockSchema = z.discriminatedUnion("type", [
   }),
   z.object({ id: z.string(), type: z.literal("inquiry"), heading: l10n(200), intro: l10n(1000), kinds: z.array(z.enum(INQUIRY_KINDS)).min(1).default(["group", "seminar", "wedding"]) }),
   z.object({ id: z.string(), type: z.literal("voucher"), heading: l10n(200), intro: l10n(1000) }),
+  // Tisch reservieren (SPEC 20.2): Datum und Personen, führt zu den freien Zeiten auf /[sprache]/tisch
+  z.object({ id: z.string(), type: z.literal("reserve"), heading: l10n(200), intro: l10n(1000) }),
   // Speisekarte: Gerichte mit Rubrik (aufeinanderfolgende gleiche Rubriken werden gruppiert), Preis in Rappen
   z.object({
     id: z.string(), type: z.literal("menu"), heading: l10n(200), intro: l10n(1000),
@@ -118,6 +120,7 @@ export const BLOCK_TYPES: { type: BlockType; label: string; hint: string }[] = [
   { type: "faq", label: "Häufige Fragen", hint: "Fragen und Antworten zum Aufklappen – spart Anrufe, hilft bei Google" },
   { type: "tips", label: "Ausflugstipps", hint: "Wanderungen, Ausflüge, Restaurants in der Umgebung" },
   { type: "inquiry", label: "Anfrageformular", hint: "Tischreservation, Gruppen, Seminare, Hochzeiten – kommt per E-Mail und im Admin an" },
+  { type: "reserve", label: "Tisch reservieren", hint: "Datum und Personen wählen, freie Zeiten sehen und online reservieren (Funktion Restaurant)" },
   { type: "voucher", label: "Gutscheine", hint: "Gäste kaufen Wertgutscheine online, Sie lösen sie im Admin ein" },
 ];
 

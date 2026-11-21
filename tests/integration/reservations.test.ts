@@ -8,6 +8,7 @@ import { assignTable, autoAssignDay, cancelByToken, cancelUnpaid, createReservat
 import { FakePaymentProvider } from "../../src/payments/fake";
 import { setPaymentProvider } from "../../src/payments/provider";
 import { posReservations, hotels as hotelsTable } from "../../src/db/schema";
+import { hotelModules as hotelModulesT } from "../../src/db/schema";
 import { makeHotel } from "../helpers";
 
 afterAll(closeDb);
@@ -16,6 +17,7 @@ async function setup() {
   const h = await makeHotel({}, [{ name: "Doppelzimmer", roomCount: 1, maxAdults: 2, maxChildren: 1, maxOccupancy: 3, basePriceRappen: 15000 }]);
   const [hotel] = await db().select().from(hotels).where(eq(hotels.id, h.hotel.id));
   const day = addDays(todayIn(hotel.timezone), 3);
+  await db().insert(hotelModulesT).values({ hotelId: hotel.id, module: "restaurant", enabled: true }); // SPEC 20.2: Online braucht das Modul
   await saveSettings(hotel.id, { onlineEnabled: true, windows: [{ from: "18:00", to: "20:00" }], durationMin: 90, maxParty: 6, capacity: 10, leadHours: 0, horizonDays: 30, depositPerPersonRappen: 0, depositFromParty: 1, cancelHours: 24, reminderHours: 24, autoAssign: true }, "t");
   return { hotel, day };
 }

@@ -7,7 +7,7 @@ import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import {
   addUnit, bookingOnly, CANCEL_TEMPLATES, chooseModules, detectEmbed, goLiveFromWizard, markEmbedded, isWholeUnit, nextOpenStep, onboardingSteps, OnboardingError, PROPERTY_LABEL,
-  isRestaurant, quickTables, setArrivalInfo, setGuestInfo, unitWord, updateBasics, type StepKey,
+  goLiveRestaurant, isRestaurant, markSetupCompleteIfDone, quickTables, setArrivalInfo, setGuestInfo, unitWord, updateBasics, type StepKey,
 } from "@/src/services/onboarding";
 import { CHOICES, RESTAURANT_CHOICES } from "@/src/domain/module-choice";
 import { WEEKDAYS_DE, hoursText, parseHoursText } from "@/src/domain/reservations";
@@ -30,6 +30,7 @@ import { env } from "@/src/env";
 import { publicBase } from "@/src/services/brand";
 import { CopyBox } from "@/components/admin/CopyBox";
 import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
+import QRCode from "qrcode";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +54,8 @@ async function step(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>
   } catch (e) {
     redirect(`/mypontivo/${c.hotel.id}/einrichten?step=${here}&error=${encodeURIComponent(errText(e))}`);
   }
-  const fresh = (await requireHotel(c.hotel.id, min)).hotel;
+  let fresh = (await requireHotel(c.hotel.id, min)).hotel;
+  if (isRestaurant(fresh.propertyType)) { await markSetupCompleteIfDone(fresh); fresh = (await requireHotel(c.hotel.id, min)).hotel; }
   revalidatePath(`/mypontivo/${c.hotel.id}`, "layout"); // Chip und Banner in der Kopfzeile aktualisieren
   const stay = s(f, "stay") === "1";
   redirect(`/mypontivo/${c.hotel.id}/einrichten?step=${stay ? here : nextOpenStep(await onboardingSteps(fresh))}&ok=1`);
@@ -93,6 +95,8 @@ async function saveOnlineStep(f: FormData) {
     const cur = await getSettings(hotel.id);
     const windows = [1, 2].flatMap((n) => (s(f, `from${n}`) && s(f, `to${n}`) ? [{ from: s(f, `from${n}`), to: s(f, `to${n}`) }] : []));
     await saveSettings(hotel.id, { ...cur, onlineEnabled: true, windows, capacity: Number(s(f, "capacity") || cur.capacity), maxParty: Number(s(f, "maxParty") || cur.maxParty) }, actor);
+    // Konzept 7a Schritt 3: Reservation und Website sofort live, ohne auf Stripe zu warten
+    try { await goLiveRestaurant(hotel, actor); } catch (e) { throw new OnboardingError(`Reservierung ist eingestellt, aber noch nicht online: ${(e as Error).message}`); }
   });
 }
 
@@ -319,9 +323,20 @@ export default async function Wizard({ params, searchParams }: { params: Promise
     case "reservierung": {
       const cfg = await getSettings(hotel.id);
       const seats = (await listTables(hotel.id)).reduce((a, t) => a + t.seats, 0);
+      const live = cfg.onlineEnabled && hotel.status === "live";
+      const link = `${publicBase(hotel)}/${hotel.defaultLanguage}/tisch`;
       body = (
         <form action={saveOnlineStep} className="stack">{H}
-          <p>Gäste reservieren auf Ihrer Website selbst und bekommen eine Bestätigung mit Storno-Link. Sie sehen alles unter Reservierungen.</p>
+          {live ? (
+            <div className="notice stack" data-testid="reservation-live">
+              <strong>✓ Reservierung ist online.</strong>
+              <span>Link für Ihre Website, Google-Profil oder Social Media:</span>
+              <CopyBox text={link} label="Link zur Reservierung" />
+              <span className="small">QR-Code für Tischkarten, Schaufenster oder Flyer:</span>
+              <img src={await QRCode.toDataURL(link, { margin: 1, width: 200 })} alt="QR-Code zur Tischreservierung" width={200} height={200} />
+            </div>
+          ) : null}
+          <p>Gäste reservieren auf Ihrer Website, über einen Link oder QR-Code selbst und bekommen eine Bestätigung mit Storno-Link. Das geht sofort, ohne auf Stripe zu warten; die Anzahlung bleibt aus, bis Stripe freigegeben ist.</p>
           <p className="small muted" style={{ margin: 0 }}>Zeitfenster, in denen ein Tisch beginnen kann (im Raster von 30 Minuten):</p>
           <div className="form-grid">
             {[1, 2].map((n) => { const w = cfg.windows[n - 1]; return (
@@ -333,7 +348,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             <div><label htmlFor="maxParty">Grösste Gruppe online</label><input id="maxParty" name="maxParty" type="number" min={1} max={50} defaultValue={cfg.maxParty} /></div>
           </div>
           <p className="small muted">Anzahlung, Erinnerung, Warteliste und Vorlauf stellen Sie später unter <a href={`/mypontivo/${hotel.id}/restaurant/einstellungen#online`}>Tischplan & Reservierung online</a> ein.</p>
-          <div style={{ display: "flex", gap: 8 }}><button className="btn">Einschalten und weiter</button>{skipBtn}</div>
+          <div style={{ display: "flex", gap: 8 }}><button className="btn">{live ? "Speichern und weiter" : "Reservation live schalten"}</button></div>
         </form>
       );
       break;
@@ -494,6 +509,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       ) : (
         <div className="stack">
           <p>Gäste bezahlen mit TWINT, Karte, Apple Pay oder Google Pay. Das Geld geht direkt auf Ihr eigenes Konto bei Stripe und wird Ihnen auf Ihr Bankkonto überwiesen. Dafür eröffnen Sie bei Stripe ein Konto (ca. 10 Minuten, Ausweis und IBAN bereithalten).</p>
+          {resto ? <p className="small muted">Die Prüfung durch Stripe dauert meist 1–2 Werktage; Pontivo kann sie nicht beschleunigen. Solange blockiert sie nur Zahlungen (Anzahlung, später Online-Bestellung). Reservierung und Website laufen schon.</p> : null}
           {sp.stripe === "return" ? <p className="notice">Zurück von Stripe. Die Prüfung kann einige Minuten dauern.</p> : null}
           <p>Status: {hotel.stripeChargesEnabled ? <span className="badge">✓ Zahlungen möglich</span> : hotel.stripeAccountId ? <span className="badge warn">in Prüfung oder unvollständig</span> : <span className="badge warn">noch kein Konto</span>}</p>
           {isOwner && !hotel.stripeChargesEnabled && env().STRIPE_PUBLISHABLE_KEY && sp.stripe !== "return" ? (

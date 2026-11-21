@@ -25,7 +25,7 @@ export function startModules(wholeUnit: boolean, restaurant = false): Record<str
   if (wholeUnit) m.frontdesk = false; // Ferienwohnungen brauchen meist keine Rezeption
   if (restaurant) {
     // Reines Restaurant (SPEC 20.1): ohne Zimmer, Rezeption, Housekeeping, Meldeschein, Gruppen und Zimmer-Statistik
-    Object.assign(m, { restaurant: true, frontdesk: false, housekeeping: false, statistics: false, guests: false, groups: false });
+    Object.assign(m, { restaurant: true, guestnotes: true, frontdesk: false, housekeeping: false, statistics: false, guests: false, groups: false });
   }
   return m;
 }

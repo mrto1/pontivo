@@ -148,6 +148,7 @@ function blockFromForm(f: FormData, type: BlockType, id: string, alts: Map<strin
     }) };
     case "inquiry": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro"), kinds: f.getAll("kinds").map(String) };
     case "voucher": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro") };
+    case "reserve": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro") };
     case "menu": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro"), note: l10n(f, "note"), items: rows(f, (k) => {
       const name = l10n(f, `${k}.name`);
       if (!Object.values(name).some(Boolean)) return null;
@@ -509,6 +510,12 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
           ))}
         </fieldset>
         <LField name="note" label="Hinweis (optional)" value={b.note} rows={2} max={1000} langs={langs} />
+      </>);
+    case "reserve":
+      return (<>
+        <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
+        <LField name="intro" label="Einleitung" value={b.intro} rows={2} max={1000} langs={langs} />
+        <p className="muted small">Zeiten, Plätze und Ein/Aus stellen Sie unter <a href={`/mypontivo/${hotelId}/restaurant/einstellungen#online`}>Tischplan & Reservierung online</a> ein. Ist die Online-Reservierung aus, bleibt der Baustein unsichtbar.</p>
       </>);
     case "voucher":
       return (<>

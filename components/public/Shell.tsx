@@ -13,6 +13,8 @@ import { aiChatActive } from "@/src/services/ai-module";
 import { chatLocale } from "@/src/services/chat";
 import { CHAT_TEXT } from "@/src/i18n/chat";
 import { ChatWidget } from "./ChatWidget";
+import { RES } from "@/src/i18n/reservation";
+import { tableReservationOnline } from "@/src/services/reservations";
 
 /** Rahmen der Hotel-Seiten: Kopf mit Logo, Fusszeile, Erscheinungsbild des Hotels (Farbe, Logo) */
 export async function Shell({ hotel, locale, base, path = "", current, noBookButton, chatToken, children }: { hotel: Hotel; locale: Locale; base: string; path?: string; current?: string; noBookButton?: boolean; chatToken?: string; children: React.ReactNode }) {
@@ -30,8 +32,11 @@ export async function Shell({ hotel, locale, base, path = "", current, noBookBut
   const jsonLd = await hotelJsonLd(hotel, locale, publicBase(hotel), pages);
   // Fester «Jetzt buchen»-Knopf auf dem Handy (nicht auf Buchungs- und Gutscheinseiten)
   const today = todayIn(hotel.timezone);
-  const bookHref = `${base}/${locale}/book?checkin=${addDays(today, 1)}&checkout=${addDays(today, 3)}&adults=2`;
-  const showBook = !noBookButton && hotel.status === "live";
+  // Reines Restaurant (SPEC 20.2): der feste Knopf führt zur Tischreservierung, sofern online eingeschaltet
+  const resto = hotel.propertyType === "restaurant";
+  const tableOnline = resto && (await tableReservationOnline(hotel.id));
+  const bookHref = resto ? `${base}/${locale}/tisch` : `${base}/${locale}/book?checkin=${addDays(today, 1)}&checkout=${addDays(today, 3)}&adults=2`;
+  const showBook = !noBookButton && hotel.status === "live" && (!resto || tableOnline);
   const langs = hotelLocales(hotel);
   const nav = bookingOnly ? [] : pages.filter((p) => p.showInNav && p.slug !== "");
   const imprint = pages.find((p) => p.slug === "impressum");
@@ -63,7 +68,7 @@ export async function Shell({ hotel, locale, base, path = "", current, noBookBut
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(jsonLd) }} />
       <main className="wrap">{children}</main>
       {chat ? <ChatWidget hotel={hotel.slug} locale={chatLocale(hotel, locale)} token={chatToken} text={chat} /> : null}
-      {showBook ? <a className="sticky-book btn" href={bookHref}>{d.bookNow}</a> : null}
+      {showBook ? <a className="sticky-book btn" href={bookHref}>{resto ? RES[locale].title : d.bookNow}</a> : null}
       <footer className="foot">
         <div className="wrap">
           <strong>{hotel.name}</strong>

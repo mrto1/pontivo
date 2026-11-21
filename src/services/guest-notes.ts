@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { bookings, guestProfiles, guests, type GuestProfile } from "../db/schema";
+import { rows as sqlRows } from "../db/client";
 import { audit } from "./audit";
 
 /** Gäste-Notizen und Tags (SPEC 17.2): pro Betrieb und E-Mail-Adresse, nie über Betriebe hinweg. */
@@ -44,7 +45,22 @@ export async function saveProfile(hotelId: string, email: string, input: { note:
   });
 }
 
-export type KarteiRow = { email: string; name: string; stays: number; lastCheckin: string | null; tags: string[]; note: string };
+export type KarteiRow = { email: string; name: string; stays: number; lastCheckin: string | null; tags: string[]; note: string; visits: number; lastVisit: string | null };
+
+/** Ab so vielen Restaurantbesuchen gilt ein Gast als Stammgast (SPEC 20.2, berechnet, nicht gespeichert) */
+export const REGULAR_VISITS = 3;
+
+/** Restaurantbesuche je E-Mail: am Tisch oder bestätigt und vorbei (SPEC 20.2) */
+export async function restaurantVisits(hotelId: string, emails?: string[]): Promise<Map<string, { visits: number; lastVisit: string | null; name: string }>> {
+  const list = emails?.map(norm).filter(Boolean);
+  if (list && !list.length) return new Map();
+  const r = sqlRows<{ email: string; visits: number; last: string | null; name: string }>(await db().execute(sql`
+    SELECT lower(email) AS email, count(*) FILTER (WHERE status = 'seated' OR (status = 'confirmed' AND day < current_date))::int AS visits,
+           (max(day) FILTER (WHERE status = 'seated' OR (status = 'confirmed' AND day < current_date)))::text AS last, max(name) AS name
+      FROM pos_reservations WHERE hotel_id = ${hotelId} AND email <> ''${list ? sql` AND lower(email) IN (${sql.join(list.map((e) => sql`${e}`), sql`, `)})` : sql``}
+     GROUP BY lower(email)`));
+  return new Map(r.map((x) => [x.email, { visits: x.visits, lastVisit: x.last, name: x.name }]));
+}
 
 /** Kartei: alle Gäste mit Buchung oder Notiz; Suche über Name, E-Mail, Tag, Notiz */
 export async function kartei(hotelId: string, q = "", tag = "", limit = 200): Promise<KarteiRow[]> {
@@ -54,15 +70,24 @@ export async function kartei(hotelId: string, q = "", tag = "", limit = 200): Pr
   }).from(guests).leftJoin(bookings, eq(bookings.guestId, guests.id)).where(eq(guests.hotelId, hotelId)).groupBy(sql`lower(${guests.email})`);
   const profiles = await db().select().from(guestProfiles).where(eq(guestProfiles.hotelId, hotelId));
   const byEmail = new Map(profiles.map((p) => [p.email, p]));
+  const visits = await restaurantVisits(hotelId);
   const out: KarteiRow[] = rows.map((r) => {
     const p = byEmail.get(r.email);
-    return { email: r.email, name: [r.first, r.last].filter(Boolean).join(" "), stays: r.stays, lastCheckin: r.lastCheckin, tags: p?.tags ?? [], note: p?.note ?? "" };
+    const v = visits.get(r.email);
+    return { email: r.email, name: [r.first, r.last].filter(Boolean).join(" "), stays: r.stays, lastCheckin: r.lastCheckin, tags: p?.tags ?? [], note: p?.note ?? "", visits: v?.visits ?? 0, lastVisit: v?.lastVisit ?? null };
   });
+  // Gäste nur aus Tischreservierungen (ohne Hotelbuchung) kommen dazu
+  const known = new Set(out.map((r) => r.email));
+  for (const [email, v] of visits) {
+    if (known.has(email)) continue;
+    const p = byEmail.get(email);
+    out.push({ email, name: v.name, stays: 0, lastCheckin: null, tags: p?.tags ?? [], note: p?.note ?? "", visits: v.visits, lastVisit: v.lastVisit });
+  }
   const needle = q.trim().toLowerCase();
   const t = tag.trim().toLowerCase();
   return out
     .filter((r) => (!needle || [r.name, r.email, r.note, ...r.tags].some((x) => x.toLowerCase().includes(needle))) && (!t || r.tags.some((x) => x.toLowerCase() === t)))
-    .sort((a, b) => (b.lastCheckin ?? "").localeCompare(a.lastCheckin ?? "") || a.name.localeCompare(b.name))
+    .sort((a, b) => [b.lastCheckin ?? "", b.lastVisit ?? ""].sort().pop()!.localeCompare([a.lastCheckin ?? "", a.lastVisit ?? ""].sort().pop()!) || a.name.localeCompare(b.name))
     .slice(0, limit);
 }
 

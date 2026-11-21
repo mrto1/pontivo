@@ -1,6 +1,8 @@
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
-import { allTags, kartei } from "@/src/services/guest-notes";
+import { allTags, kartei, REGULAR_VISITS } from "@/src/services/guest-notes";
+import { moduleRows } from "@/src/services/modules";
+import { isOn } from "@/src/domain/modules";
 import { formatDay } from "@/src/i18n/dict";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +15,9 @@ export default async function Guestbook({ params, searchParams }: { params: Prom
   await requireModule(hotel.id, "guestnotes");
   const q = (sp.q ?? "").slice(0, 80);
   const tag = (sp.tag ?? "").slice(0, 24);
-  const [rows, tags] = await Promise.all([kartei(hotel.id, q, tag), allTags(hotel.id)]);
+  const [rows, tags, mods] = await Promise.all([kartei(hotel.id, q, tag), allTags(hotel.id), moduleRows(hotel.id)]);
+  const dining = isOn(mods, "restaurant");
+  const lodging = hotel.propertyType !== "restaurant";
   return (
     <div className="stack">
       <h1>Kartei</h1>
@@ -27,13 +31,13 @@ export default async function Guestbook({ params, searchParams }: { params: Prom
       <section className="card">
         {rows.length ? (
           <div className="scroll-x"><table className="table">
-            <thead><tr><th>Gast</th><th>Aufenthalte</th><th>Letzte Anreise</th><th>Tags</th><th>Notiz</th></tr></thead>
+            <thead><tr><th>Gast</th>{lodging ? <><th>Aufenthalte</th><th>Letzte Anreise</th></> : null}{dining ? <><th>Restaurant</th><th>Letzter Besuch</th></> : null}<th>Tags</th><th>Notiz</th></tr></thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.email}>
                   <td><strong>{r.name || "–"}</strong><div className="small muted">{r.email}</div></td>
-                  <td>{r.stays}</td>
-                  <td className="small">{r.lastCheckin ? formatDay(r.lastCheckin, "de") : "–"}</td>
+                  {lodging ? <><td>{r.stays}</td><td className="small">{r.lastCheckin ? formatDay(r.lastCheckin, "de") : "–"}</td></> : null}
+                  {dining ? <><td>{r.visits}{r.visits >= REGULAR_VISITS ? <> <span className="badge">Stammgast</span></> : null}</td><td className="small">{r.lastVisit ? formatDay(r.lastVisit, "de") : "–"}</td></> : null}
                   <td>{r.tags.map((t) => <span key={t} className="badge" style={{ marginRight: 4 }}>{t}</span>)}</td>
                   <td className="small">{r.note.slice(0, 120)}{r.note.length > 120 ? "…" : ""}</td>
                 </tr>
@@ -42,7 +46,7 @@ export default async function Guestbook({ params, searchParams }: { params: Prom
           </table></div>
         ) : <p className="muted small">Keine Treffer.</p>}
       </section>
-      <p className="small muted">Notizen und Tags bearbeiten Sie bei der Buchung des Gastes. Sie gelten für die E-Mail-Adresse und nur in diesem Betrieb.</p>
+      <p className="small muted">Notizen und Tags bearbeiten Sie bei der Buchung{dining ? " oder bei der Tischreservierung" : ""} des Gastes. Sie gelten für die E-Mail-Adresse und nur in diesem Betrieb.{dining ? ` Ab ${REGULAR_VISITS} Restaurantbesuchen steht «Stammgast». Allergien nur als kurzer Hinweis für die Küche (z. B. «ohne Nüsse»), keine Gesundheitsangaben.` : ""}</p>
     </div>
   );
 }
