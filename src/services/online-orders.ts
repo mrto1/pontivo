@@ -7,7 +7,7 @@ import {
   type DeliveryZone, type Hotel, type OnlineOrder, type OnlineOrderItem, type OnlineOrderSettings,
 } from "../db/schema";
 import { addDays, todayIn, zonedToUtc } from "../domain/dates";
-import { platformFee } from "../domain/pricing";
+import { PILOT_SLOTS, flatForMonth, orderFee, pilotUntilFor, type OrderFeeState } from "../domain/order-fee";
 import { checkChoice, composeLine, NOTE_MAX } from "../domain/pos-options";
 import { acceptsOrders, addressKey, cleanAllergens, deliveryFee, goLiveProblems, openNow, orderNumber, orderSlots, zoneFor, type OrderSlot } from "../domain/online-order";
 import { enqueueEmail } from "../email/enqueue";
@@ -35,7 +35,7 @@ export const HEARTBEAT_STALE_MIN = 3;
 
 export const DEFAULT_ORDER_SETTINGS: Omit<OnlineOrderSettings, "hotelId" | "updatedAt"> = {
   enabled: false, pickup: true, delivery: false, slotMinutes: 15, maxPerSlot: 5, deliveryPerSlot: 3, leadMin: 20, cutoffMin: 15,
-  cashPickup: false, cashDelivery: false, cashMaxRappen: null, guestSms: false, pausedUntil: null, autoPaused: false, testPassedAt: null,
+  cashPickup: false, cashDelivery: false, cashMaxRappen: null, guestSms: false, pausedUntil: null, autoPaused: false, testPassedAt: null, startedOn: null, pilotUntil: null,
 };
 
 export async function orderSettings(hotelId: string): Promise<OnlineOrderSettings> {
@@ -80,6 +80,58 @@ export async function setOrdersEnabled(hotel: Hotel, on: boolean, actor: string)
   }
   await upsertSettings(hotel.id, { enabled: on, ...(on ? { pausedUntil: null, autoPaused: false } : {}) });
   await audit(db(), { hotelId: hotel.id, actor, action: on ? "orders.enable" : "orders.disable", entity: "online_order_settings", entityId: hotel.id });
+  if (on) await markOrderStart(hotel, actor);
+}
+
+/**
+ * Erstes Einschalten: Beginn des Sonderangebots; die ersten 10 Betriebe werden Pilotbetrieb (SPEC 20.4).
+ * ASSUMPTION: automatisch beim ersten Einschalten; Plattform-Admin kann den Status entziehen oder vergeben.
+ */
+async function markOrderStart(hotel: Hotel, actor: string) {
+  await db().transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('order-pilot'))`);
+    const [s] = await tx.select().from(onlineOrderSettings).where(eq(onlineOrderSettings.hotelId, hotel.id));
+    if (!s || s.startedOn) return;
+    const day = todayIn(hotel.timezone);
+    const [{ n }] = rows<{ n: number }>(await tx.execute(sql`SELECT count(*)::int AS n FROM online_order_settings WHERE pilot_until IS NOT NULL`));
+    const pilotUntil = n < PILOT_SLOTS ? pilotUntilFor(day) : null;
+    await tx.update(onlineOrderSettings).set({ startedOn: day, pilotUntil }).where(eq(onlineOrderSettings.hotelId, hotel.id));
+    await audit(tx, { hotelId: hotel.id, actor, action: "orders.start", entity: "online_order_settings", entityId: hotel.id, details: { startedOn: day, pilotUntil } });
+  });
+}
+
+export const pilotSlotsLeft = async (): Promise<number> => {
+  const [{ n }] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM online_order_settings WHERE pilot_until IS NOT NULL`));
+  return Math.max(0, PILOT_SLOTS - n);
+};
+
+/** Pilotbetriebe für die Plattform-Verwaltung */
+export async function listOrderPilots() {
+  return rows<{ hotel_id: string; name: string; started_on: string | null; pilot_until: string | null; enabled: boolean }>(await db().execute(sql`
+    SELECT s.hotel_id, h.name, s.started_on::text, s.pilot_until::text, s.enabled FROM online_order_settings s JOIN hotels h ON h.id = s.hotel_id
+     WHERE s.started_on IS NOT NULL ORDER BY s.pilot_until IS NULL, s.started_on, h.name`));
+}
+
+/** Pilotstatus vergeben (12 Monate ab Start, nur mit freiem Platz) oder entziehen (Platz wird frei) */
+export async function setOrderPilot(hotelId: string, on: boolean, actor: string) {
+  await db().transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('order-pilot'))`);
+    const [s] = await tx.select().from(onlineOrderSettings).where(eq(onlineOrderSettings.hotelId, hotelId));
+    if (!s?.startedOn) throw new PosError("Der Betrieb hat die Online-Bestellung noch nie eingeschaltet.");
+    if (on && !s.pilotUntil) {
+      const [{ n }] = rows<{ n: number }>(await tx.execute(sql`SELECT count(*)::int AS n FROM online_order_settings WHERE pilot_until IS NOT NULL`));
+      if (n >= PILOT_SLOTS) throw new PosError(`Alle ${PILOT_SLOTS} Pilotplätze sind vergeben.`);
+    }
+    const pilotUntil = on ? (s.pilotUntil ?? pilotUntilFor(s.startedOn)) : null;
+    await tx.update(onlineOrderSettings).set({ pilotUntil }).where(eq(onlineOrderSettings.hotelId, hotelId));
+    await audit(tx, { hotelId, actor, action: on ? "orders.pilot_grant" : "orders.pilot_revoke", entity: "online_order_settings", entityId: hotelId, details: { pilotUntil } });
+  });
+}
+
+/** Preisstand der Online-Bestellung eines Betriebs */
+export async function orderFeeState(hotelId: string): Promise<OrderFeeState> {
+  const s = await orderSettings(hotelId);
+  return { model: await orderFeeModel(), startedOn: s.startedOn ?? null, pilotUntil: s.pilotUntil ?? null };
 }
 
 /** Pause von Hand: Minuten (0 = fortsetzen) oder bis morgen früh */
@@ -222,17 +274,20 @@ export async function createOnlineOrder(hotel: Hotel, i: OrderInput, opts: { tes
   }
   const day = todayIn(hotel.timezone, now);
   const token = randomBytes(18).toString("base64url");
-  const feeModel = await orderFeeModel(); // vorerst fest pro Monat statt 1,9 % pro Bestellung (SPEC 20.4)
+  const feeState = await orderFeeState(hotel.id); // Sonderangebot, Normalpreis, Pilot-Kostendach (SPEC 20.4)
   const order = await db().transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`online-order:${hotel.id}:${day}`}))`);
     const [{ n }] = rows<{ n: number }>(await tx.execute(sql`SELECT count(*)::int + 1 AS n FROM online_orders WHERE hotel_id = ${hotel.id} AND day = ${day}`));
+    // Bisherige Gebühren im Monat (Kostendach); abgelehnte und abgebrochene zählen nicht
+    const [{ m }] = opts.test ? [{ m: 0 }] : rows<{ m: number }>(await tx.execute(sql`SELECT coalesce(sum(fee_rappen),0)::int AS m FROM online_orders WHERE hotel_id = ${hotel.id} AND NOT is_test
+       AND to_char(day, 'YYYY-MM') = ${day.slice(0, 7)} AND status NOT IN ('rejected','expired','cancelled','not_accepted')`));
     const [o] = await tx.insert(onlineOrders).values({
       hotelId: hotel.id, day, number: opts.test ? `T-${String(n).padStart(3, "0")}` : orderNumber(n), publicToken: token, kind: i.kind,
       status: i.payment === "card" && !opts.test ? "pending_payment" : "new", payment: i.payment, name, phone, email, language: isLocale(i.language) ? i.language : "de",
       street: clean(a?.street ?? "", 120), houseNo: clean(a?.houseNo ?? "", 20), postalCode: (a?.postalCode ?? "").trim(), city: clean(a?.city ?? "", 80),
       floor: clean(a?.floor ?? "", 40), bell: clean(a?.bell ?? "", 60), addressHint: clean(a?.hint ?? "", 200), zoneId: zone?.id ?? null,
       items: priced.items, subtotalRappen: priced.subtotalRappen, deliveryFeeRappen: fee, totalRappen: total,
-      feeRappen: opts.test || feeModel === "fixed" ? 0 : platformFee(total, hotel.platformFeeBps), requestedAt, note: clean(i.note ?? "", 300), isTest: !!opts.test,
+      feeRappen: opts.test ? 0 : orderFee(feeState, day, total, hotel.platformFeeBps, m), requestedAt, note: clean(i.note ?? "", 300), isTest: !!opts.test,
     }).returning();
     await audit(tx, { hotelId: hotel.id, actor: opts.test ? "test" : "guest", action: "orders.create", entity: "online_order", entityId: o.id, details: { kind: o.kind, total, payment: o.payment, test: !!opts.test } });
     if (o.status === "new") await announceNew(tx, hotel, o);
@@ -532,10 +587,10 @@ export async function orderFeesForMonth(hotel: Hotel, month: string): Promise<{ 
   return { total: r?.total ?? 0, uncollected: r?.cash ?? 0 };
 }
 
-/** Monatspauschale Online-Bestellung (SPEC 20.4): fällig im Modell «fixed», wenn die Online-Bestellung beim Abrechnen eingeschaltet ist oder im Monat echte Bestellungen hatte */
+/** Monatspauschale Online-Bestellung (SPEC 20.4): fällig im Sonderangebot (oder Modell «fixed»), wenn die Online-Bestellung beim Abrechnen eingeschaltet ist oder im Monat echte Bestellungen hatte */
 export async function orderModuleFee(hotel: Hotel, month: string): Promise<number> {
   const { ORDER_MODULE_RAPPEN } = await import("../domain/platform-invoice");
-  if ((await orderFeeModel()) !== "fixed") return 0;
+  if (!flatForMonth(await orderFeeState(hotel.id), month)) return 0;
   if ((await orderSettings(hotel.id)).enabled) return ORDER_MODULE_RAPPEN;
   const [r] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM online_orders WHERE hotel_id = ${hotel.id} AND NOT is_test AND status IN ('accepted','ready','out','completed') AND to_char(created_at AT TIME ZONE ${hotel.timezone}, 'YYYY-MM') = ${month}`));
   return r?.n ? ORDER_MODULE_RAPPEN : 0;

@@ -32,7 +32,7 @@ export default async function PlatformInvoice({ params }: { params: Promise<{ ho
     ...(c.aiModuleRappen > 0 ? [{ label: "KI-Chat, Modul", net: c.aiModuleRappen }] : []),
     ...(c.aiPacksRappen > 0 ? [{ label: "KI-Chat, Zusatzpakete", net: c.aiPacksRappen }] : []),
     ...(c.posModuleRappen > 0 ? [{ label: "Kasse, Monatspreis", net: c.posModuleRappen }] : []),
-    ...(c.orderModuleRappen > 0 ? [{ label: "Online-Bestellung, Monatspauschale", net: c.orderModuleRappen }] : []),
+    ...(c.orderModuleRappen > 0 ? [{ label: "Online-Bestellung, Sonderangebot pauschal", net: c.orderModuleRappen }] : []),
     ...(c.smsRappen > 0 ? [{ label: "SMS an Gäste (Selbstkosten)", net: c.smsRappen }] : []),
   ];
   const qr = await chargeQr(hotel, c);

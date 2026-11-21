@@ -6,6 +6,8 @@ import { getHotelById } from "@/src/services/hotels";
 import { addMember, removeMember, setHotelStatus } from "@/src/services/settings";
 import { requestLoginLink } from "@/src/auth/session";
 import type { Role } from "@/src/domain/roles";
+import { setOrderPilot } from "@/src/services/online-orders";
+import { PosError } from "@/src/services/pos";
 import { PlatformSettingsError, savePlatformBilling, savePlatformVat, setOrderFeeModel } from "@/src/services/platform-settings";
 import { importPlatformCamt, markChargePaid, remindNow, resendQrInvoice, retryCharge, processCharges } from "@/src/services/billing";
 import { formatChf } from "@/src/domain/money";
@@ -177,5 +179,19 @@ export async function orderFeeSwitch(f: FormData) {
   const admin = await requirePlatformAdmin();
   const model = String(f.get("model")) === "percent" ? "percent" : "fixed";
   await setOrderFeeModel(model, `user:${admin.id}`);
-  go(to, model === "percent" ? "Online-Bestellung: ab sofort 1,9 % pro Bestellung (neue Bestellungen; Pauschale entfällt ab dem laufenden Monat)" : "Online-Bestellung: ab sofort CHF 59 pro Monat, keine Gebühr pro Bestellung");
+  go(to, model === "percent" ? "Online-Bestellung: ab sofort 1,9 % pro Bestellung (neue Bestellungen; Pauschale nur noch im Sonderangebot, erste 3 Monate ab Einschalten)" : "Online-Bestellung: ab sofort CHF 59 pro Monat, keine Gebühr pro Bestellung");
+}
+
+/** Pilotbetrieb Online-Bestellung vergeben oder entziehen (SPEC 20.4) */
+export async function orderPilotSet(f: FormData) {
+  const to = target(f);
+  const admin = await requirePlatformAdmin();
+  const on = String(f.get("on")) === "1";
+  try {
+    await setOrderPilot(String(f.get("hotelId") ?? ""), on, `user:${admin.id}`);
+  } catch (e) {
+    if (e instanceof PosError) go(to, e.message, "error");
+    throw e;
+  }
+  go(to, on ? "Pilotbetrieb vergeben" : "Pilotstatus entzogen, Platz ist frei");
 }

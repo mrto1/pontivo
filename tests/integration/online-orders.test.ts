@@ -197,4 +197,61 @@ describe("Ohne Modul Kasse (SPEC 20.8)", () => {
     await setOrderFeeModel("percent", "t");
     expect(await orderModuleFee(h, month)).toBe(0);
   });
+
+  it("Sonderangebot und Pilotbetriebe: Start beim ersten Einschalten, die ersten 10 mit Kostendach CHF 149", async () => {
+    const S = await import("../../src/db/schema");
+    const { orderModuleFee, pilotSlotsLeft, setOrderPilot } = await import("../../src/services/online-orders");
+    const { introUntil, pilotUntilFor, PILOT_SLOTS } = await import("../../src/domain/order-fee");
+    await db().update(S.onlineOrderSettings).set({ pilotUntil: null }); // Plätze frei (Tests laufen nacheinander)
+    const { h, pizza, big, noon } = await setup();
+    await saveZone(h.id, null, { name: "Stadt", postalCodes: ["9000"], minOrderRappen: 0, feeRappen: 0, freeFromRappen: null, extraMinutes: 0 }, "t");
+    await db().insert(S.onlineOrderSettings).values({ hotelId: h.id }).onConflictDoNothing();
+    await db().update(S.onlineOrderSettings).set({ testPassedAt: new Date() }).where(eq(S.onlineOrderSettings.hotelId, h.id));
+    await setOrdersEnabled(h, true, "t");
+    const today = todayIn(h.timezone);
+    const cfg = await orderSettings(h.id);
+    expect(cfg).toMatchObject({ startedOn: today, pilotUntil: pilotUntilFor(today) });
+    expect(await pilotSlotsLeft()).toBe(PILOT_SLOTS - 1);
+    // Aus- und wieder einschalten ändert den Start nicht
+    await setOrdersEnabled(h, false, "t");
+    await setOrdersEnabled(h, true, "t");
+    expect((await orderSettings(h.id)).startedOn).toBe(today);
+
+    await setOrderFeeModel("percent", "t");
+    const month = today.slice(0, 7);
+    const { order: o1 } = await createOnlineOrder(h, order(pizza.id, [big.id]), { now: noon });
+    expect(o1.feeRappen).toBe(0); // Sonderangebot
+    expect(await orderModuleFee(h, month)).toBe(5900);
+
+    // Nach dem Sonderangebot: 1,9 %, gedeckelt auf CHF 149 im Monat
+    const after = introUntil(today);
+    await db().update(S.onlineOrderSettings).set({ startedOn: "2020-01-01", pilotUntil: "2099-01-01" }).where(eq(S.onlineOrderSettings.hotelId, h.id));
+    expect(after > today).toBe(true);
+    expect(await orderModuleFee(h, month)).toBe(0);
+    const { order: o2 } = await createOnlineOrder(h, order(pizza.id, [big.id]), { now: noon });
+    expect(o2.feeRappen).toBe(84);
+    await db().update(S.onlineOrders).set({ feeRappen: 14_880 }).where(eq(S.onlineOrders.id, o2.id)); // Monat fast am Dach
+    const { order: o3 } = await createOnlineOrder(h, order(pizza.id, [big.id]), { now: noon });
+    expect(o3.feeRappen).toBe(20);
+    const { order: o4 } = await createOnlineOrder(h, order(pizza.id, [big.id]), { now: noon });
+    expect(o4.feeRappen).toBe(0);
+
+    // Plätze: nach 10 vergeben keiner mehr; entziehen gibt frei
+    for (let i = 0; i < PILOT_SLOTS - 1; i++) {
+      const { hotel: x } = await makeHotel({}, []);
+      await db().insert(S.onlineOrderSettings).values({ hotelId: x.id, startedOn: "2020-01-01", pilotUntil: "2099-01-01" });
+    }
+    expect(await pilotSlotsLeft()).toBe(0);
+    const { h: h2 } = await setup();
+    await db().insert(S.onlineOrderSettings).values({ hotelId: h2.id }).onConflictDoNothing();
+    await db().update(S.onlineOrderSettings).set({ testPassedAt: new Date() }).where(eq(S.onlineOrderSettings.hotelId, h2.id));
+    await saveZone(h2.id, null, { name: "Stadt", postalCodes: ["9000"], minOrderRappen: 0, feeRappen: 0, freeFromRappen: null, extraMinutes: 0 }, "t");
+    await setOrdersEnabled(h2, true, "t");
+    expect(await orderSettings(h2.id)).toMatchObject({ startedOn: todayIn(h2.timezone), pilotUntil: null });
+    await expect(setOrderPilot(h2.id, true, "t")).rejects.toThrow(/Pilotplätze/);
+    await setOrderPilot(h.id, false, "t");
+    await setOrderPilot(h2.id, true, "t");
+    expect((await orderSettings(h2.id)).pilotUntil).toBe(pilotUntilFor(todayIn(h2.timezone)));
+    await db().update(S.onlineOrderSettings).set({ pilotUntil: null });
+  });
 });

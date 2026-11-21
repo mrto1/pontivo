@@ -31,7 +31,7 @@ export function PortalHome({ contact, account, restaurant, fee, minimum }: { con
     <MarketingShell contact={contact} account={account} restaurant={restaurant} current="home" heroImage tagline={restaurant ? "Direktbuchung, Reservation und Bestellung für das Schweizer Gastgewerbe · Server und Datenbank bei Infomaniak in Genf" : "Direktbuchung für das Schweizer Gastgewerbe · Server und Datenbank bei Infomaniak in Genf"} signupHref="/registrieren">
       <section className={s.heroSolo}>
         <h1 className={s.heroTitle}>Ihre Gäste direkt bei Ihnen. Ohne Umweg.</h1>
-        <p className={s.heroLead}>{restaurant ? `Gäste buchen, bestellen und reservieren direkt bei Ihnen, mit TWINT, Karte oder bar. Nur ${fee} % pro Buchung, Online-Bestellung vorerst pauschal. Für Schweizer Unterkünfte und Restaurants.` : `Gäste buchen direkt bei Ihnen, mit TWINT oder Karte. Nur ${fee} % auf das, was über ${contact.name} läuft. Für Schweizer Unterkünfte.`}</p>
+        <p className={s.heroLead}>{restaurant ? `Gäste buchen, bestellen und reservieren direkt bei Ihnen, mit TWINT, Karte oder bar. Nur ${fee} % pro Buchung und Bestellung. Für Schweizer Unterkünfte und Restaurants.` : `Gäste buchen direkt bei Ihnen, mit TWINT oder Karte. Nur ${fee} % auf das, was über ${contact.name} läuft. Für Schweizer Unterkünfte.`}</p>
         <div className={s.heroActions}>
           <a className={s.btn} href={pageHref("/unterkunft", st)}>Für Unterkünfte</a>
           {restaurant ? <a className={s.btn} href={pageHref("/restaurant", st)}>Für Restaurants</a> : <a className={s.btnGhost} href={talk}>Gespräch vereinbaren</a>}
@@ -63,7 +63,7 @@ export function PortalHome({ contact, account, restaurant, fee, minimum }: { con
           <div className={s.priceFig}>{fee} %</div>
           <div>
             <h2 className={s.h2}>Sie zahlen nur, was über {contact.name} läuft</h2>
-            <p>Einen kleinen Anteil an dem, was über {contact.name} läuft{restaurant ? ", bei der Online-Bestellung vorerst eine feste Monatspauschale" : ""}, und eine tiefe Mindestgebühr von {minimum} pro Monat. Keine Einrichtungsgebühr, keine Gebühr pro Gast, monatlich kündbar.</p>
+            <p>Einen kleinen Anteil an dem, was über {contact.name} läuft, und eine tiefe Mindestgebühr von {minimum} pro Monat. Keine Einrichtungsgebühr, keine Gebühr pro Gast, monatlich kündbar.</p>
             <p className={s.fieldHint}>Die genauen Preise stehen auf den Seiten für <a href={pageHref("/unterkunft", st) + "#preis"}>Unterkünfte</a>{restaurant ? <> und <a href={pageHref("/restaurant", st) + "#preise"}>Restaurants</a></> : null}. Preise ohne MWST, sofern geschuldet.</p>
           </div>
         </div>

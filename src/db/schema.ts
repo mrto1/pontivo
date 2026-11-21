@@ -1837,6 +1837,8 @@ export const onlineOrderSettings = pgTable("online_order_settings", {
   pausedUntil: ts("paused_until"),
   autoPaused: boolean("auto_paused").notNull().default(false),
   testPassedAt: ts("test_passed_at"),
+  /** Erstes Einschalten (Beginn Sonderangebot, SPEC 20.4) */ startedOn: date("started_on", { mode: "string" }),
+  /** Pilotbetrieb: Kostendach bis (exklusiv) */ pilotUntil: date("pilot_until", { mode: "string" }),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 export type OnlineOrderSettings = typeof onlineOrderSettings.$inferSelect;

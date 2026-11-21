@@ -6,11 +6,14 @@ import QRCode from "qrcode";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { PosError } from "@/src/services/pos";
-import { listZones, orderReadiness, orderSettings, publicUrl, saveOrderSettings, saveZone, screensOf, setOrdersEnabled, startTestOrder } from "@/src/services/online-orders";
+import { listZones, orderReadiness, orderSettings, pilotSlotsLeft, publicUrl, saveOrderSettings, saveZone, screensOf, setOrdersEnabled, startTestOrder } from "@/src/services/online-orders";
 import { parsePostalCodes } from "@/src/domain/online-order";
 import { formatChf } from "@/src/domain/money";
 import { ORDER_MODULE_RAPPEN } from "@/src/domain/platform-invoice";
 import { orderFeeModel } from "@/src/services/platform-settings";
+import { orderPriceText } from "@/src/domain/order-fee";
+import { feePercentText } from "@/src/domain/fee";
+import { todayIn } from "@/src/domain/dates";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -66,6 +69,7 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
   const { hotel } = await requireHotel(hotelId, "manager");
   await requireModule(hotel.id, "restaurant");
   const [cfg, problems, zones, screens, model] = await Promise.all([orderSettings(hotel.id), orderReadiness(hotel), listZones(hotel.id), screensOf(hotel.id), orderFeeModel()]);
+  const slotsLeft = cfg.startedOn ? 0 : await pilotSlotsLeft();
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   const base = `/mypontivo/${hotel.id}`;
   const link = `${publicUrl(hotel)}/${hotel.defaultLanguage}/bestellen`;
@@ -73,7 +77,7 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
   return (
     <div className="stack">
       <h1>Online-Bestellung & Lieferung</h1>
-      <p className="small muted" data-testid="order-price">Preis: {model === "fixed" ? `${formatChf(ORDER_MODULE_RAPPEN)} pro Monat, keine Gebühr pro Bestellung (auch bar). Verrechnet für jeden Monat, in dem die Online-Bestellung eingeschaltet ist. Einführungspreis: Wir planen, später auf ${hotel.platformFeeBps / 100} % pro Bestellung umzustellen, und kündigen das vorher an.` : `${hotel.platformFeeBps / 100} % pro Bestellung (auch bar, dann mit der Monatsrechnung).`}</p>
+      <p className="small muted" data-testid="order-price">Preis: {orderPriceText({ model, startedOn: cfg.startedOn, pilotUntil: cfg.pilotUntil }, todayIn(hotel.timezone), feePercentText(hotel.platformFeeBps), ORDER_MODULE_RAPPEN, slotsLeft)}</p>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <section className="card stack" data-testid="orders-live">
         <h2>Status</h2>
