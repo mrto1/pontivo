@@ -995,3 +995,9 @@ pre { overflow-x: auto; }
 .opt-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); }
 .opt-list { border-bottom: 1px solid var(--line); }
 .opt-row .module-text { flex: 1; min-width: 0; }
+
+/* Küchenbildschirm (SPEC 19.49 Etappe B) */
+.kds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.kds-ticket.late { border-color: var(--danger, #b3261e); }
+.kds-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.kds-line { width: 100%; text-align: left; font-size: 1.1rem; padding: 12px; border-radius: 8px; border: 1px solid var(--border, #ddd); background: transparent; cursor: pointer; }

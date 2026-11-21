@@ -21,9 +21,18 @@ async function item(f: FormData) {
   "use server";
   const c = await guard(f);
   try {
-    await saveItem(c.hotel.id, s(f, "id") || null, { category: s(f, "category"), name: s(f, "name"), priceRappen: Math.round(Number(s(f, "price").replace(",", ".")) * 100), vatDineInBps: bps(s(f, "vatDineIn")), vatTakeawayBps: bps(s(f, "vatTakeaway")), dailySpecial: f.get("dailySpecial") === "on", active: f.get("active") !== "off" }, c.actor);
+    await saveItem(c.hotel.id, s(f, "id") || null, { category: s(f, "category"), name: s(f, "name"), priceRappen: Math.round(Number(s(f, "price").replace(",", ".")) * 100), vatDineInBps: bps(s(f, "vatDineIn")), vatTakeawayBps: bps(s(f, "vatTakeaway")), dailySpecial: f.get("dailySpecial") === "on", active: f.get("active") !== "off", station: stationOf(s(f, "station")) }, c.actor);
   } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
   here(c.hotel.id, "Gespeichert.");
+}
+const stationOf = (v: string) => (v === "bar" || v === "none" ? v : "kitchen") as "kitchen" | "bar" | "none";
+const STATION = { kitchen: "Küche", bar: "Bar", none: "Keine" } as const;
+async function station(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  const it = (await listItems(c.hotel.id)).find((i) => i.id === s(f, "id"));
+  if (it) await saveItem(c.hotel.id, it.id, { ...it, category: it.category ?? "", station: stationOf(s(f, "station")) }, c.actor);
+  here(c.hotel.id, "Station gespeichert.");
 }
 async function toggle(f: FormData) {
   "use server";
@@ -101,14 +110,16 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
         <div><label>Preis CHF</label><input name="price" inputMode="decimal" required /></div>
         <div><label>MWST im Haus %</label><input name="vatDineIn" inputMode="decimal" defaultValue="8.1" /></div>
         <div><label>MWST Take-away %</label><input name="vatTakeaway" inputMode="decimal" defaultValue="2.6" /></div>
+        <div><label htmlFor="nstation">Station (Küchenbildschirm)</label><select id="nstation" name="station" defaultValue="kitchen">{Object.entries(STATION).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
         <div><label><input type="checkbox" name="dailySpecial" /> Tagesangebot</label></div>
         <div><button className="btn">Speichern</button></div>
         <p className="small muted">Die Sätze legt Ihr Treuhänder fest. Hotelzimmer-Posten beim Restaurant: Getränke und Speisen im Haus 8,1 %, Take-away 2,6 % (Stand der Standardsätze; bitte prüfen).</p>
       </form>
       <section className="card">
         <h2>Artikel</h2>
-        {items.length ? <table className="table"><thead><tr><th>Name</th><th>Preis</th><th>Haus</th><th>Take-away</th><th /></tr></thead><tbody>
+        {items.length ? <table className="table"><thead><tr><th>Name</th><th>Preis</th><th>Haus</th><th>Take-away</th><th>Station</th><th /></tr></thead><tbody>
           {items.map((i) => <tr key={i.id}><td>{i.category ? `${i.category}: ` : ""}{i.name}{i.dailySpecial ? " ★" : ""}{i.active ? "" : " (aus)"}</td><td>{formatChf(i.priceRappen)}</td><td>{(i.vatDineInBps / 100).toFixed(1)} %</td><td>{(i.vatTakeawayBps / 100).toFixed(1)} %</td>
+            <td><form action={station} className="inline-form">{H}<input type="hidden" name="id" value={i.id} /><select name="station" defaultValue={i.station} aria-label={`Station ${i.name}`}>{Object.entries(STATION).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select> <button className="btn secondary small">Setzen</button></form></td>
             <td><form action={toggle}>{H}<input type="hidden" name="id" value={i.id} /><button className="btn secondary small">{i.active ? "Ausblenden" : "Einblenden"}</button></form></td></tr>)}
         </tbody></table> : <p className="muted">Noch kein Artikel.</p>}
       </section>

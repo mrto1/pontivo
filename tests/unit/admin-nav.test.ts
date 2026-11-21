@@ -40,7 +40,7 @@ describe("Admin-Menü", () => {
   it("Reiter der Hauptpunkte", () => {
     expect(tabKeys("Heute")).toEqual(["home", "inbox", "housekeeping", "g-restaurant"]);
     expect(group("Heute").tabs![0].label).toBe("Tagesliste");
-    expect(group("Heute").tabs![3].tabs!.map((t) => t.key)).toEqual(["restaurant", "kasse", "posclose"]);
+    expect(group("Heute").tabs![3].tabs!.map((t) => t.key)).toEqual(["restaurant", "kasse", "kitchen", "posclose"]);
     expect(tabKeys("Kalender")).toEqual(["plan", "calendar", "pricing"]);
     expect(tabKeys("Buchungen")).toEqual(["bookings", "groups", "resources", "vouchers", "g-guests"]);
     expect(group("Buchungen").tabs![4].tabs!.map((t) => t.key)).toEqual(["guestbook", "marketing", "feedback"]);

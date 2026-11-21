@@ -1094,3 +1094,9 @@ Auftrag des Betreibers: Optionen und Sonderwünsche je Artikel, Menüs/Kombis, K
 - **Prüfung auf dem Server** (`src/domain/pos-options.ts`): Optionen müssen zu den Gruppen des Artikels gehören, Pflicht-Gruppen brauchen mindestens eine Wahl, Einzelwahl höchstens eine, Mehrfachwahl höchstens `max_choices`. Ohne Angaben bei Pflicht-Gruppen: «Bitte wählen: …». Offline (Snapshot) gilt der Preis, wie ihn das Gerät zeigte; die Optionen werden geprüft, der Betrag nicht neu gerechnet.
 - **Oberfläche:** Restaurant (Einstellungen → Verkauf): Karte «Optionen und Menüs» (Gruppen, Optionen, Zuordnung zu Artikeln). Bestellung: Artikel mit Gruppen führen in einen Auswahlschritt (`?artikel=<id>`), Sonderwunsch auch bei Artikeln ohne Gruppen. Offline-Kasse: gleiche Auswahl auf dem Gerät.
 - Nicht in Etappe A: Optionen in CSV-Import, Mengenregeln je Option, Zutaten/Allergene.
+
+**Etappe B: Küchenbildschirm im Browser**
+- Jeder Artikel hat eine **Station** (`pos_items.station`: Küche, Bar oder keine; Standard Küche). Einstellbar unter Einstellungen → Verkauf → Restaurant.
+- Seite **Küche** (`restaurant/kueche`, Bereich «kitchen», Reiter unter Heute → Restaurant; Rolle «Service» hat sie): offene Posten der gewählten Station (Küche/Bar), nach Bestellung gruppiert, älteste zuerst, mit Tisch, Wartezeit (ab 15 Min. hervorgehoben), Optionen und Sonderwunsch. Antippen einer Zeile oder «Alles fertig» meldet fertig; die Seite lädt alle 10 Sekunden neu.
+- «Fertig» steht in `pos_line_done` (Zeile, Zeit, Person); Bestellzeilen bleiben unveränderbar. Stornierte Zeilen (Netto-Menge 0) und Posten älter als 1 Tag erscheinen nicht. Offline erfasste Bestellungen erscheinen nach der Übertragung.
+- Nicht in Etappe B: Drucker (Bons), Gangfolge/Zurückhalten, Töne, eigene Küchen-Geräte-Anmeldung.

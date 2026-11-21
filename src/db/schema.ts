@@ -1355,6 +1355,8 @@ export const posItems = pgTable("pos_items", {
   dailySpecial: boolean("daily_special").notNull().default(false),
   active: boolean("active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
+  /** Station für den Küchenbildschirm (SPEC 19.49): Küche, Bar oder keine */
+  station: text("station").$type<"kitchen" | "bar" | "none">().notNull().default("kitchen"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type PosItem = typeof posItems.$inferSelect;
@@ -1440,6 +1442,12 @@ export const posOrderLines = pgTable("pos_order_lines", {
   /** gewählte Optionen (SPEC 19.49), nur beim Einfügen gesetzt */
   options: jsonb("options").$type<{ group: string; name: string; priceRappen: number }[] | null>(),
   note: text("note").notNull().default(""),
+});
+export const posLineDone = pgTable("pos_line_done", {
+  lineId: uuid("line_id").primaryKey(),
+  hotelId: uuid("hotel_id").notNull(),
+  doneAt: ts("done_at").notNull().defaultNow(),
+  doneBy: text("done_by").notNull(),
 });
 export type PosOrderLine = typeof posOrderLines.$inferSelect;
 

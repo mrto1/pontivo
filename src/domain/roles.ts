@@ -17,7 +17,7 @@ export const ROLE_AREAS: Record<LimitedRole, readonly string[]> = {
   reception: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "tag", "calendar", "bookings", "plan", "housekeeping", "resources", "reports", "guestbook", "inbox", "vouchers", "invoices", "dayclose", "groups"],
   housekeeping: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "housekeeping"],
   accounting: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "invoices", "dayclose", "debtors", "owners", "statistics", "hesta", "accountingexport"],
-  service: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "restaurant", "kasse"],
+  service: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "restaurant", "kitchen", "kasse"],
 };
 
 /** Standardrollen, die ein Betrieb in Name und Seiten anpassen kann (Inhaber, Manager und Mitarbeitende sind abgestuft und bleiben fest) */
@@ -33,6 +33,7 @@ export const CONFIGURABLE_AREAS: { key: string; label: string; group: string }[]
   { group: "Heute", key: "housekeeping", label: "Reinigung" },
   { group: "Heute", key: "inbox", label: "Posteingang" },
   { group: "Heute", key: "restaurant", label: "Restaurant (Tische)" },
+  { group: "Heute", key: "kitchen", label: "Küchenbildschirm" },
   { group: "Heute", key: "kasse", label: "Kasse" },
   { group: "Kalender", key: "plan", label: "Zimmerplan" },
   { group: "Kalender", key: "calendar", label: "Preise & Verfügbarkeit (ansehen)" },

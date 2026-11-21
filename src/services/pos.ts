@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
 import {
-  bookings, folioItems, posDayCloses, posDevices, posItemGroups, posItems, posOptionGroups, posOptions, posOrderLines, posOrders, posPayments, posReceipts, posTables,
+  bookings, folioItems, posDayCloses, posDevices, posItemGroups, posItems, posLineDone, posOptionGroups, posOptions, posOrderLines, posOrders, posPayments, posReceipts, posTables,
   type Hotel, type PosDevice, type PosItem, type PosOrder, type PosOrderLine, type PosReceipt, type PosTable, type PosReceiptItem,
 } from "../db/schema";
 import { todayIn } from "../domain/dates";
@@ -24,7 +24,7 @@ const clean = (s: string | undefined, n: number) => (s ?? "").trim().slice(0, n)
 
 // ---------------------------------------------------------------- Artikel, Tische, Geräte
 
-export type ItemInput = { category?: string; name: string; priceRappen: number; vatDineInBps: number; vatTakeawayBps: number; dailySpecial?: boolean; active?: boolean; sortOrder?: number };
+export type ItemInput = { category?: string; name: string; priceRappen: number; vatDineInBps: number; vatTakeawayBps: number; dailySpecial?: boolean; active?: boolean; sortOrder?: number; station?: "kitchen" | "bar" | "none" };
 
 export const listItems = (hotelId: string, onlyActive = false) =>
   db().select().from(posItems).where(onlyActive ? and(eq(posItems.hotelId, hotelId), eq(posItems.active, true)) : eq(posItems.hotelId, hotelId)).orderBy(asc(posItems.category), asc(posItems.sortOrder), asc(posItems.name));
@@ -34,7 +34,8 @@ export async function saveItem(hotelId: string, id: string | null, i: ItemInput,
   if (!name) throw new PosError("Der Name fehlt.");
   if (!Number.isInteger(i.priceRappen) || i.priceRappen < 0 || i.priceRappen > 10_000_000) throw new PosError("Preis ungültig.");
   for (const b of [i.vatDineInBps, i.vatTakeawayBps]) if (!Number.isInteger(b) || b < 0 || b > 2500) throw new PosError("MWST-Satz ungültig (0 bis 25 %).");
-  const v = { category: clean(i.category, 60), name, priceRappen: i.priceRappen, vatDineInBps: i.vatDineInBps, vatTakeawayBps: i.vatTakeawayBps, dailySpecial: i.dailySpecial ?? false, active: i.active ?? true, sortOrder: i.sortOrder ?? 0 };
+  const v = { category: clean(i.category, 60), name, priceRappen: i.priceRappen, vatDineInBps: i.vatDineInBps, vatTakeawayBps: i.vatTakeawayBps, dailySpecial: i.dailySpecial ?? false, active: i.active ?? true, sortOrder: i.sortOrder ?? 0, ...(i.station ? { station: i.station } : {}) };
+  if (i.station && !["kitchen", "bar", "none"].includes(i.station)) throw new PosError("Station ungültig.");
   return db().transaction(async (tx) => {
     let it: PosItem;
     if (id) {
@@ -538,4 +539,40 @@ export async function releaseDevice(hotelId: string, deviceId: string, actor: st
   const [d] = await db().update(posDevices).set({ claimedKey: null }).where(and(eq(posDevices.id, deviceId), eq(posDevices.hotelId, hotelId))).returning({ code: posDevices.code });
   if (!d) throw new PosError("Gerät nicht gefunden.");
   await audit(db(), { hotelId, actor, action: "pos.device_release", entity: "pos_device", entityId: deviceId, details: { code: d.code } });
+}
+
+// ---------------------------------------------------------------- Küchenbildschirm (SPEC 19.49 Etappe B)
+
+export type Station = "kitchen" | "bar";
+export type Ticket = { orderId: string; label: string; table: string | null; since: Date; lines: { id: string; quantity: number; description: string; note: string; mode: "dine_in" | "takeaway"; at: Date }[] };
+
+/** Offene Zeilen einer Station, nach Bestellung gruppiert, älteste zuerst. Stornierte Zeilen (Menge netto 0) und erledigte fehlen. */
+export async function openTickets(hotelId: string, station: Station): Promise<Ticket[]> {
+  const r = rows<{ id: string; order_id: string; description: string; quantity: number; note: string; mode: "dine_in" | "takeaway"; created_at: Date; label: string; table_name: string | null }>(await db().execute(sql`
+    SELECT l.id, l.order_id, l.description, l.quantity, l.note, l.mode, l.created_at, o.label, t.name AS table_name
+      FROM pos_order_lines l
+      JOIN pos_items i ON i.id = l.item_id AND i.hotel_id = l.hotel_id
+      JOIN pos_orders o ON o.id = l.order_id AND o.hotel_id = l.hotel_id
+      LEFT JOIN pos_tables t ON t.id = o.table_id AND t.hotel_id = o.hotel_id
+     WHERE l.hotel_id = ${hotelId} AND l.reverses_line_id IS NULL AND l.quantity > 0 AND i.station = ${station}
+       AND l.created_at > now() - interval '1 day'
+       AND NOT EXISTS (SELECT 1 FROM pos_line_done d WHERE d.line_id = l.id AND d.hotel_id = l.hotel_id)
+       AND l.quantity + coalesce((SELECT sum(x.quantity) FROM pos_order_lines x WHERE x.reverses_line_id = l.id AND x.hotel_id = l.hotel_id), 0) > 0
+     ORDER BY l.created_at, l.id`));
+  const by = new Map<string, Ticket>();
+  for (const x of r) {
+    const t = by.get(x.order_id) ?? { orderId: x.order_id, label: x.label, table: x.table_name, since: new Date(x.created_at), lines: [] };
+    t.lines.push({ id: x.id, quantity: x.quantity, description: x.description, note: x.note, mode: x.mode, at: new Date(x.created_at) });
+    by.set(x.order_id, t);
+  }
+  return [...by.values()];
+}
+
+/** Zeilen als fertig melden (je Zeile einmal, Wiederholung unschädlich) */
+export async function markDone(hotelId: string, lineIds: string[], actor: string) {
+  if (!lineIds.length) return 0;
+  const valid = await db().select({ id: posOrderLines.id }).from(posOrderLines).where(and(eq(posOrderLines.hotelId, hotelId), inArray(posOrderLines.id, lineIds)));
+  if (!valid.length) throw new PosError("Zeile nicht gefunden.");
+  await db().insert(posLineDone).values(valid.map((v) => ({ lineId: v.id, hotelId, doneBy: actor }))).onConflictDoNothing();
+  return valid.length;
 }

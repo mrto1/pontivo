@@ -46,3 +46,22 @@ test("Restaurant: Garstufe als Pflichtgruppe, Bestellung mit Sonderwunsch", asyn
   await page.getByTestId("options-step").getByRole("button", { name: "Hinzufügen" }).click();
   await expect(page.getByRole("cell", { name: "Entrecôte · medium · ohne Zwiebeln" })).toBeVisible();
 });
+
+/** Küchenbildschirm (SPEC 19.49 Etappe B) */
+test("Küche: Posten erscheint, antippen meldet fertig", async ({ page, context, baseURL }) => {
+  const h = await makeHotel();
+  await db().insert(hotelModules).values([{ hotelId: h.hotel.id, module: "invoicing", enabled: true }, { hotelId: h.hotel.id, module: "pos", enabled: true }]).onConflictDoNothing();
+  const email = `kds-${Math.random().toString(36).slice(2, 8)}@example.ch`;
+  await addMember(h.hotel.id, email, "owner", "e2e");
+  const [u] = await db().select().from(users).where(eq(users.email, email));
+  await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
+  const { addLines } = await import("../../src/services/pos");
+  const item = await saveItem(h.hotel.id, null, { category: "Essen", name: "Rösti", priceRappen: 2150, vatDineInBps: 810, vatTakeawayBps: 260 }, "e2e");
+  const dev = await createDevice(h.hotel.id, "T1", "Tablet", "e2e");
+  const order = await openOrder(h.hotel.id, { tableId: null, deviceId: dev.id, label: "Bar" }, "e2e");
+  await addLines(h.hotel, order.id, [{ itemId: item.id, quantity: 2, note: "mit Spiegelei" }], "e2e");
+  await page.goto(`/mypontivo/${h.hotel.id}/restaurant/kueche`);
+  await expect(page.getByTestId("kds").getByText("2 × Rösti · mit Spiegelei")).toBeVisible();
+  await page.getByRole("button", { name: "Alles fertig" }).click();
+  await expect(page.getByText("Nichts offen.")).toBeVisible();
+});

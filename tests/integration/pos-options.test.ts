@@ -53,3 +53,22 @@ describe("Optionen und Menüs (SPEC 19.49)", () => {
     expect(l.options).toEqual([{ group: "Garstufe", name: "well done", priceRappen: 0 }]);
   });
 });
+
+describe("Küchenbildschirm (SPEC 19.49 Etappe B)", () => {
+  it("offene Zeilen je Station, fertig melden, Storno und Mandantentrennung", async () => {
+    const { markDone, openTickets, reverseLine } = await import("../../src/services/pos");
+    const s = await setup();
+    const bier = await saveItem(s.hotel.id, null, { category: "Getränke", name: "Bier", priceRappen: 600, vatDineInBps: 810, vatTakeawayBps: 810, station: "bar" }, "t");
+    const wasser = await saveItem(s.hotel.id, null, { category: "Getränke", name: "Wasser", priceRappen: 300, vatDineInBps: 810, vatTakeawayBps: 810, station: "none" }, "t");
+    const lines = await addLines(s.hotel, s.order.id, [{ itemId: s.steak.id, quantity: 2, optionIds: [s.medium.id], note: "ohne Zwiebeln" }, { itemId: bier.id, quantity: 1 }, { itemId: wasser.id, quantity: 1 }], "k");
+    const k = await openTickets(s.hotel.id, "kitchen");
+    expect(k).toHaveLength(1);
+    expect(k[0].lines[0].description).toBe("Entrecôte · medium · ohne Zwiebeln");
+    expect((await openTickets(s.hotel.id, "bar"))[0].lines.map((l) => l.description)).toEqual(["Bier"]); // Wasser ohne Station fehlt
+    expect(await openTickets((await setup()).hotel.id, "kitchen")).toHaveLength(0);
+    await markDone(s.hotel.id, [lines[0].id], "koch");
+    expect(await openTickets(s.hotel.id, "kitchen")).toHaveLength(0);
+    await reverseLine(s.hotel.id, lines[1].id, 1, "Irrtum", "m");
+    expect(await openTickets(s.hotel.id, "bar")).toHaveLength(0);
+  });
+});
