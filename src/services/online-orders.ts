@@ -20,6 +20,7 @@ import { getHotelById } from "./hotels";
 import { invoicingSettings } from "./invoicing";
 import { PosError, addLines, catalogGroups, createDevice, groupsOfItem, pay } from "./pos";
 import { getSettings as resSettings } from "./reservations";
+import { orderFeeModel } from "./platform-settings";
 import { enqueueSms } from "./sms";
 
 /**
@@ -221,6 +222,7 @@ export async function createOnlineOrder(hotel: Hotel, i: OrderInput, opts: { tes
   }
   const day = todayIn(hotel.timezone, now);
   const token = randomBytes(18).toString("base64url");
+  const feeModel = await orderFeeModel(); // vorerst fest pro Monat statt 1,9 % pro Bestellung (SPEC 20.4)
   const order = await db().transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`online-order:${hotel.id}:${day}`}))`);
     const [{ n }] = rows<{ n: number }>(await tx.execute(sql`SELECT count(*)::int + 1 AS n FROM online_orders WHERE hotel_id = ${hotel.id} AND day = ${day}`));
@@ -230,7 +232,7 @@ export async function createOnlineOrder(hotel: Hotel, i: OrderInput, opts: { tes
       street: clean(a?.street ?? "", 120), houseNo: clean(a?.houseNo ?? "", 20), postalCode: (a?.postalCode ?? "").trim(), city: clean(a?.city ?? "", 80),
       floor: clean(a?.floor ?? "", 40), bell: clean(a?.bell ?? "", 60), addressHint: clean(a?.hint ?? "", 200), zoneId: zone?.id ?? null,
       items: priced.items, subtotalRappen: priced.subtotalRappen, deliveryFeeRappen: fee, totalRappen: total,
-      feeRappen: opts.test ? 0 : platformFee(total, hotel.platformFeeBps), requestedAt, note: clean(i.note ?? "", 300), isTest: !!opts.test,
+      feeRappen: opts.test || feeModel === "fixed" ? 0 : platformFee(total, hotel.platformFeeBps), requestedAt, note: clean(i.note ?? "", 300), isTest: !!opts.test,
     }).returning();
     await audit(tx, { hotelId: hotel.id, actor: opts.test ? "test" : "guest", action: "orders.create", entity: "online_order", entityId: o.id, details: { kind: o.kind, total, payment: o.payment, test: !!opts.test } });
     if (o.status === "new") await announceNew(tx, hotel, o);
@@ -528,4 +530,13 @@ export async function orderFeesForMonth(hotel: Hotel, month: string): Promise<{ 
        (payment = 'card' AND status IN ('accepted','ready','out','completed') AND to_char(accepted_at AT TIME ZONE ${hotel.timezone}, 'YYYY-MM') = ${month})
        OR (payment = 'cash' AND status = 'completed' AND to_char(completed_at AT TIME ZONE ${hotel.timezone}, 'YYYY-MM') = ${month}))`));
   return { total: r?.total ?? 0, uncollected: r?.cash ?? 0 };
+}
+
+/** Monatspauschale Online-Bestellung (SPEC 20.4): fällig im Modell «fixed», wenn die Online-Bestellung beim Abrechnen eingeschaltet ist oder im Monat echte Bestellungen hatte */
+export async function orderModuleFee(hotel: Hotel, month: string): Promise<number> {
+  const { ORDER_MODULE_RAPPEN } = await import("../domain/platform-invoice");
+  if ((await orderFeeModel()) !== "fixed") return 0;
+  if ((await orderSettings(hotel.id)).enabled) return ORDER_MODULE_RAPPEN;
+  const [r] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM online_orders WHERE hotel_id = ${hotel.id} AND NOT is_test AND status IN ('accepted','ready','out','completed') AND to_char(created_at AT TIME ZONE ${hotel.timezone}, 'YYYY-MM') = ${month}`));
+  return r?.n ? ORDER_MODULE_RAPPEN : 0;
 }

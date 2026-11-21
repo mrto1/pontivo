@@ -73,3 +73,11 @@ describe("QR-Rechnung der Plattform (SPEC 20.6)", () => {
     expect(chargeStatusText({ status: "invoiced", attempts: 0, dueDate: "2026-12-01", dunningLevel: 2 }, "2026-12-30")).toEqual({ text: "überfällig, fällig 01.12.2026 · 1. Mahnung", warn: true });
   });
 });
+
+describe("Online-Bestellung pauschal (SPEC 20.4)", () => {
+  it("Pauschale kommt obendrauf und wird nicht an die Mindestgebühr angerechnet", async () => {
+    const { billMonth } = await import("../../src/domain/platform-invoice");
+    const b = billMonth({ feesRappen: 500, minimumRappen: 1900, aiRappen: 0, vatBps: 0, orderModuleRappen: 5900 });
+    expect(b).toMatchObject({ netRappen: 1900 + 5900, shortfallRappen: 1400, payRappen: 1400 + 5900, withheldRappen: 500 });
+  });
+});

@@ -14,16 +14,18 @@ const SWITCH_UNTIL = "2027-04-30";
  * Seite für Restaurants (SPEC 20.9, Texte: Claude Docs «Pontivo Website-Texte», Abschnitt 3).
  * Preise nach Restaurant-Konzept Abschnitt 6 (Anzahlung für Tischreservation gebührenfrei, Entscheid 21.11.2026).
  */
-export function RestaurantHome({ contact, account, draft, fee, feeBps, minimum, today }: {
+export function RestaurantHome({ contact, account, draft, fee, feeBps, minimum, today, orderFlatRappen }: {
   contact: ShellContact; account: { label: string } | null; draft: boolean; fee: string; feeBps: number; minimum: string; today: string;
+  /** Online-Bestellung pauschal pro Monat (SPEC 20.4); null = Prozent pro Bestellung */ orderFlatRappen: number | null;
 }) {
   const st = contact.staticSite;
   const talk = mailHref(contact, "Pontivo für unser Restaurant");
-  const ours = (TURNOVER * feeBps) / 10_000;
+  const ours = orderFlatRappen !== null ? orderFlatRappen / 100 : (TURNOVER * feeBps) / 10_000;
+  const flat = orderFlatRappen !== null ? `CHF ${fmt(orderFlatRappen / 100)}` : "";
   const rows = [
     { label: "Lieferplattform, Restaurant liefert selbst (ca. 13 %)", cost: TURNOVER * 0.13, ours: false },
     { label: "Lieferplattform mit deren Kurieren (ca. 30 %)", cost: TURNOVER * 0.3, ours: false },
-    { label: `${contact.name} (${fee} %)`, cost: ours, ours: true },
+    { label: flat ? `${contact.name} (pauschal ${flat} pro Monat)` : `${contact.name} (${fee} %)`, cost: ours, ours: true },
   ];
   const max = TURNOVER * 0.3;
   const blocks = [
@@ -34,7 +36,7 @@ export function RestaurantHome({ contact, account, draft, fee, feeBps, minimum, 
   ];
   const prices = [
     ["Grundgebühr", `mindestens ${minimum} pro Monat`, "Website auf Wunsch, Tischreservation, Erinnerungen, Gästeliste"],
-    ["Online-Bestellung", `${fee} % pro Bestellung, keine Obergrenze`, "Abholung und Lieferung, Bestellbildschirm mit Alarm"],
+    ["Online-Bestellung", flat ? `${flat} pro Monat` : `${fee} % pro Bestellung, keine Obergrenze`, flat ? "Abholung und Lieferung, Bestellbildschirm mit Alarm; keine Gebühr pro Bestellung, egal wie viele" : "Abholung und Lieferung, Bestellbildschirm mit Alarm"],
     ["Online-Gutscheine", `${fee} % auf den bezahlten Betrag`, "Gutscheine auf Ihrer Website"],
     ["Anzahlung bei Reservation", "ohne Gebühr", "Schutz vor leeren Tischen"],
     ["Kasse", "CHF 29 pro Monat", "Kasse mit Bons, Tagesabschluss, offline-fähig; keine Gebühr von uns auf Kartenzahlungen im Lokal"],
@@ -109,7 +111,7 @@ export function RestaurantHome({ contact, account, draft, fee, feeBps, minimum, 
             <tbody>{prices.map(([a, b, c]) => <tr key={a}><td><strong>{a}</strong></td><td>{b}</td><td>{c}</td></tr>)}</tbody>
           </table>
         </div>
-        <p className={s.fieldHint}>Die {fee} % werden an die Grundgebühr angerechnet: Kommen in einem Monat mehr als {minimum} Gebühren zusammen, zahlen Sie nur die {fee} %. Keine Gebühr pro Gast, keine Einrichtungsgebühr, monatlich kündbar, Bezahlung per Karte oder QR-Rechnung. Alle Preise ohne MWST, sofern geschuldet.</p>
+        <p className={s.fieldHint}>Die {fee} % auf Gutscheine werden an die Grundgebühr angerechnet: Kommen in einem Monat mehr als {minimum} Gebühren zusammen, zahlen Sie nur die {fee} %. Keine Gebühr pro Gast, keine Einrichtungsgebühr, monatlich kündbar, Bezahlung per Karte oder QR-Rechnung. Alle Preise ohne MWST, sofern geschuldet.</p>
       </section>
 
       {today <= SWITCH_UNTIL ? (

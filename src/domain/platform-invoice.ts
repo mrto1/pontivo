@@ -54,9 +54,9 @@ export type MonthBilling = {
  * `feesRappen`: alle verdienten Plattformgebühren des Monats; davon `uncollectedRappen` nicht über Stripe einbehalten (z. B. Online-Bestellung bar, SPEC 20.4).
  * `smsRappen`: weiterverrechnete Gast-SMS. Belastet wird: Differenz zum Minimum + nicht einbehaltene Gebühren + KI + SMS + MWST.
  */
-export function billMonth(o: { feesRappen: number; minimumRappen: number; aiRappen: number; vatBps: number; uncollectedRappen?: number; smsRappen?: number }): MonthBilling {
+export function billMonth(o: { feesRappen: number; minimumRappen: number; aiRappen: number; vatBps: number; uncollectedRappen?: number; smsRappen?: number; orderModuleRappen?: number }): MonthBilling {
   const uncollected = Math.min(o.uncollectedRappen ?? 0, o.feesRappen);
-  const sms = o.smsRappen ?? 0;
+  const sms = (o.smsRappen ?? 0) + (o.orderModuleRappen ?? 0); // feste Beträge obendrauf, nicht an die Mindestgebühr angerechnet
   const base = Math.max(o.feesRappen, o.minimumRappen);
   const net = base + o.aiRappen + sms;
   const vat = o.vatBps > 0 ? vatOnNet(net, o.vatBps) : 0;
@@ -98,3 +98,10 @@ export function chargeStatusText(c: { status: string; attempts: number; dueDate:
   const overdue = !!c.dueDate && c.dueDate < today;
   return { text: `${overdue ? "überfällig" : "offen"}, fällig ${due}${level ? ` · ${level}` : ""}`, warn: overdue };
 }
+
+// ---------------------------------------------------------------- Online-Bestellung: Preismodell (SPEC 20.4, Entscheid 21.11.2026)
+
+/** Feste Monatspauschale der Online-Bestellung, solange die ESTV die Plattformfrage (Art. 20a MWSTG) nicht geklärt hat */
+export const ORDER_MODULE_RAPPEN = 5900;
+/** «fixed» = CHF 59 pro Monat, keine Gebühr pro Bestellung; «percent» = Plattformgebühr (1,9 %) pro Bestellung. Ziel: «percent», sobald die ESTV es bestätigt. */
+export type OrderFeeModel = "fixed" | "percent";

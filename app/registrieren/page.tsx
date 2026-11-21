@@ -80,7 +80,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
               <li><strong>Online-Bestellung</strong> – sobald Stripe Ihre Zahlungen freigibt, mit Probebestellung live schalten.</li>
             </ol>
             <div className="card small">
-              <strong>Preis:</strong> mindestens CHF 19 pro Monat (Reservation und Website inklusive), {feePercentText()} % pro Online-Bestellung, Kasse CHF 29 pro Monat. Keine Gebühr pro Gast, keine Einrichtungsgebühr, monatlich kündbar.
+              <strong>Preis:</strong> mindestens CHF 19 pro Monat (Reservation und Website inklusive), Online-Bestellung CHF 59 pro Monat ohne Gebühr pro Bestellung, Kasse CHF 29 pro Monat. Keine Gebühr pro Gast, keine Einrichtungsgebühr, monatlich kündbar.
             </div>
           </>) : (<>
           <h1>Direktbuchung für Ihren Betrieb – in 20 Minuten eingerichtet</h1>

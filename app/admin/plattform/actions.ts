@@ -6,7 +6,7 @@ import { getHotelById } from "@/src/services/hotels";
 import { addMember, removeMember, setHotelStatus } from "@/src/services/settings";
 import { requestLoginLink } from "@/src/auth/session";
 import type { Role } from "@/src/domain/roles";
-import { PlatformSettingsError, savePlatformBilling, savePlatformVat } from "@/src/services/platform-settings";
+import { PlatformSettingsError, savePlatformBilling, savePlatformVat, setOrderFeeModel } from "@/src/services/platform-settings";
 import { importPlatformCamt, markChargePaid, remindNow, resendQrInvoice, retryCharge, processCharges } from "@/src/services/billing";
 import { formatChf } from "@/src/domain/money";
 import { importSchoolHolidays } from "@/src/services/holidays";
@@ -169,4 +169,13 @@ export async function camtImport(f: FormData) {
   if (r.duplicates) parts.push(`${r.duplicates} schon früher verbucht`);
   if (r.unmatched.length) parts.push(`nicht zugeordnet: ${r.unmatched.slice(0, 5).map((u) => `${u.bookedOn} ${formatChf(u.amountRappen)} (${u.why})`).join("; ")}`);
   go(to, parts.join(" · "), r.unmatched.length && !r.matched.length ? "error" : "done");
+}
+
+/** Preismodell der Online-Bestellung (SPEC 20.4): fest CHF 59/Monat oder 1,9 % pro Bestellung */
+export async function orderFeeSwitch(f: FormData) {
+  const to = target(f);
+  const admin = await requirePlatformAdmin();
+  const model = String(f.get("model")) === "percent" ? "percent" : "fixed";
+  await setOrderFeeModel(model, `user:${admin.id}`);
+  go(to, model === "percent" ? "Online-Bestellung: ab sofort 1,9 % pro Bestellung (neue Bestellungen; Pauschale entfällt ab dem laufenden Monat)" : "Online-Bestellung: ab sofort CHF 59 pro Monat, keine Gebühr pro Bestellung");
 }

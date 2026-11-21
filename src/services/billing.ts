@@ -16,7 +16,7 @@ import { DUNNING_LABEL, matchByReference, nextDunningLevel, parseCamt054 } from 
 import { isQrIban, qrReference, swissQrPayload } from "../domain/invoice";
 import { platformInfo } from "../legal/texts";
 import { swissQrSvg } from "./invoicing";
-import { orderFeesForMonth } from "./online-orders";
+import { orderFeesForMonth, orderModuleFee } from "./online-orders";
 import { billableSmsCount } from "./sms";
 
 /**
@@ -69,16 +69,17 @@ export async function runMonthlyMinimum(now = new Date(), vatOverride?: Platform
     const orderFees = await orderFeesForMonth(h, month);
     const fees = (await feesForMonth(h, month)) + orderFees.total;
     const smsRappen = (await billableSmsCount(h.id, month)) * env().SMS_GUEST_PRICE_RAPPEN;
-    // Nichts zu verrechnen (kein Minimum, kein KI-Chat, keine Gebühren, keine SMS): keine Rechnung
-    if (!minApplies && aiTotal === 0 && fees === 0 && smsRappen === 0) continue;
-    const b = billMonth({ feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, aiRappen: aiTotal, vatBps: vatOn ? vat.bps : 0, uncollectedRappen: orderFees.uncollected, smsRappen });
+    const orderModuleRappen = await orderModuleFee(h, month);
+    // Nichts zu verrechnen (kein Minimum, kein KI-Chat, keine Gebühren, keine SMS, keine Pauschale): keine Rechnung
+    if (!minApplies && aiTotal === 0 && fees === 0 && smsRappen === 0 && orderModuleRappen === 0) continue;
+    const b = billMonth({ feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, aiRappen: aiTotal, vatBps: vatOn ? vat.bps : 0, uncollectedRappen: orderFees.uncollected, smsRappen, orderModuleRappen });
     const [{ n }] = rows<{ n: number }>(await db().execute(sql`SELECT nextval('platform_invoice_seq')::int AS n`));
     // Weg der Zahlung (SPEC 20.6): Karte belasten oder QR-Rechnung mit Fälligkeit
     const qr = h.billingMethod === "qr";
     const due = qr && b.payRappen > 0 ? addDays(today, terms.paymentDays) : null;
     const ins = await db().insert(platformCharges).values({
       hotelId: h.id, month, feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, chargeRappen: b.payRappen,
-      aiModuleRappen: ai?.moduleRappen ?? 0, aiPacksRappen: ai?.packsRappen ?? 0, uncollectedFeesRappen: orderFees.uncollected, smsRappen,
+      aiModuleRappen: ai?.moduleRappen ?? 0, aiPacksRappen: ai?.packsRappen ?? 0, uncollectedFeesRappen: orderFees.uncollected, smsRappen, orderModuleRappen,
       status: b.payRappen > 0 ? (qr ? "invoiced" : "pending") : "none", method: qr ? "qr" : "card", dueDate: due,
       netRappen: b.netRappen, vatBps: vatOn ? vat.bps : 0, vatRappen: b.vatRappen, vatNumber: vatOn ? vat.number : null,
       invoiceNo: invoiceNumber(Number(today.slice(0, 4)), n), invoiceDate: today,

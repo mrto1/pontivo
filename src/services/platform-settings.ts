@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { platformSettings } from "../db/schema";
-import { DEFAULT_PLATFORM_BILLING, DEFAULT_PLATFORM_VAT, cleanPlatformVat, type PlatformBilling, type PlatformVat } from "../domain/platform-invoice";
+import { DEFAULT_PLATFORM_BILLING, DEFAULT_PLATFORM_VAT, cleanPlatformVat, type OrderFeeModel, type PlatformBilling, type PlatformVat } from "../domain/platform-invoice";
 import { cleanIban, isSwissIban } from "../domain/invoice";
 import { env } from "../env";
 import { audit } from "./audit";
@@ -65,5 +65,20 @@ export async function setRestaurantPublic(on: boolean, actor: string): Promise<v
   await db().transaction(async (tx) => {
     await tx.insert(platformSettings).values({ key: RESTAURANT_KEY, value: on, updatedBy: actor }).onConflictDoUpdate({ target: platformSettings.key, set: { value: on, updatedAt: new Date(), updatedBy: actor } });
     await audit(tx, { hotelId: null, actor, action: "platform.restaurant_public", entity: "platform_settings", entityId: RESTAURANT_KEY, details: { on } });
+  });
+}
+
+const ORDER_FEE_KEY = "order_fee_model";
+
+/** Preismodell der Online-Bestellung (SPEC 20.4). Standard «fixed» (CHF 59/Monat), bis die ESTV die Plattformfrage positiv beantwortet. */
+export async function orderFeeModel(): Promise<OrderFeeModel> {
+  const [r] = await db().select().from(platformSettings).where(eq(platformSettings.key, ORDER_FEE_KEY));
+  return r?.value === "percent" ? "percent" : "fixed";
+}
+
+export async function setOrderFeeModel(model: OrderFeeModel, actor: string): Promise<void> {
+  await db().transaction(async (tx) => {
+    await tx.insert(platformSettings).values({ key: ORDER_FEE_KEY, value: model, updatedBy: actor }).onConflictDoUpdate({ target: platformSettings.key, set: { value: model, updatedAt: new Date(), updatedBy: actor } });
+    await audit(tx, { hotelId: null, actor, action: "platform.order_fee_model", entity: "platform_settings", entityId: ORDER_FEE_KEY, details: { model } });
   });
 }

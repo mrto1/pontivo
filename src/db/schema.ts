@@ -656,6 +656,8 @@ export const platformCharges = pgTable("platform_charges", {
   /** nicht über Stripe einbehaltene Gebühren (Online-Bestellung bar, SPEC 20.4) und weiterverrechnete Gast-SMS */
   uncollectedFeesRappen: integer("uncollected_fees_rappen").notNull().default(0),
   smsRappen: integer("sms_rappen").notNull().default(0),
+  /** Monatspauschale Online-Bestellung (SPEC 20.4), in chargeRappen enthalten */
+  orderModuleRappen: integer("order_module_rappen").notNull().default(0),
   status: text("status").$type<"none" | "pending" | "succeeded" | "failed" | "invoiced">().notNull(),
   /** Weg der Zahlung (SPEC 20.6): Karte belasten oder QR-Rechnung mit Fälligkeit und Mahnstufen */
   method: text("method").$type<"card" | "qr">().notNull().default("card"),

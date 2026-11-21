@@ -12,9 +12,10 @@ import {
   pauseOrders, readyOrder, rejectOrder, saveOrderSettings, saveZone, screenOrders, setOrdersEnabled, startTestOrder, saveItemOnline, onlineMenu, onlineOrderingOn,
 } from "../../src/services/online-orders";
 import { makeHotel } from "../helpers";
+import { setOrderFeeModel } from "../../src/services/platform-settings";
 
 afterAll(closeDb);
-afterEach(() => setPaymentProvider(null));
+afterEach(async () => { setPaymentProvider(null); await setOrderFeeModel("fixed", "t"); });
 
 const allDay = Object.fromEntries([0, 1, 2, 3, 4, 5, 6].map((d) => [String(d), [{ from: "00:00", to: "23:59" }]]));
 
@@ -52,6 +53,7 @@ describe("Online-Bestellung (SPEC 20.4)", () => {
   });
 
   it("Karte: bezahlt → neu, Annahme legt Küche und Bon an (Take-away), bereit, abgeholt; Gebühr 1,9 %", async () => {
+    await setOrderFeeModel("percent", "t"); // Ziel-Modell nach positiver ESTV-Auskunft
     const { h, pizza, big, noon } = await setup();
     await saveZone(h.id, null, { name: "Stadt", postalCodes: ["9000"], minOrderRappen: 0, feeRappen: 0, freeFromRappen: null, extraMinutes: 0 }, "t");
     await db().insert((await import("../../src/db/schema")).onlineOrderSettings).values({ hotelId: h.id }).onConflictDoNothing();
@@ -78,6 +80,7 @@ describe("Online-Bestellung (SPEC 20.4)", () => {
   });
 
   it("Bar und Lieferung: Mindestwert, Liefergebühr als Bonzeile, Fahrer, Bon erst bei Übergabe, nicht angenommen markiert", async () => {
+    await setOrderFeeModel("percent", "t"); // Ziel-Modell nach positiver ESTV-Auskunft
     const { h, pizza, big, noon } = await setup();
     const { onlineOrderSettings } = await import("../../src/db/schema");
     await db().insert(onlineOrderSettings).values({ hotelId: h.id, enabled: true, testPassedAt: new Date(), delivery: true, cashDelivery: true }).onConflictDoUpdate({ target: onlineOrderSettings.hotelId, set: { enabled: true, testPassedAt: new Date() } });
@@ -178,5 +181,20 @@ describe("Ohne Modul Kasse (SPEC 20.8)", () => {
     const j = await journalFor(h, day, day);
     expect(j.some((x) => x.doc === `ONL-${day}`)).toBe(true);
     expect(j.filter((x) => x.ref === `ONL-${day}`).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("Preismodell vorerst fest (SPEC 20.4): keine Gebühr pro Bestellung, CHF 59 pro Monat, sobald eingeschaltet", async () => {
+    const { h, pizza, big, noon } = await setup();
+    const S = await import("../../src/db/schema");
+    const { orderModuleFee } = await import("../../src/services/online-orders");
+    const month = todayIn(h.timezone).slice(0, 7);
+    expect(await orderModuleFee(h, month)).toBe(0); // nicht eingeschaltet, keine Bestellungen
+    await db().insert(S.onlineOrderSettings).values({ hotelId: h.id }).onConflictDoNothing();
+    await db().update(S.onlineOrderSettings).set({ enabled: true, testPassedAt: new Date() }).where(eq(S.onlineOrderSettings.hotelId, h.id));
+    const { order: o } = await createOnlineOrder(h, order(pizza.id, [big.id]), { now: noon });
+    expect(o.feeRappen).toBe(0);
+    expect(await orderModuleFee(h, month)).toBe(5900);
+    await setOrderFeeModel("percent", "t");
+    expect(await orderModuleFee(h, month)).toBe(0);
   });
 });

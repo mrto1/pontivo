@@ -9,7 +9,8 @@ import { formatChf } from "@/src/domain/money";
 import { todayIn } from "@/src/domain/dates";
 import { DEFAULT_MONTHLY_MINIMUM_RAPPEN } from "@/src/legal/host-terms";
 import { accountLink } from "@/src/services/account-link";
-import { restaurantPublic } from "@/src/services/platform-settings";
+import { orderFeeModel, restaurantPublic } from "@/src/services/platform-settings";
+import { ORDER_MODULE_RAPPEN } from "@/src/domain/platform-invoice";
 import { currentUserId } from "@/src/auth/guard";
 import { getUser } from "@/src/auth/session";
 
@@ -20,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const on = await restaurantPublic();
   return {
     title: `${name} für Restaurants – Website, Reservation, Online-Bestellung und Kasse`,
-    description: `Website, Tischreservation, Online-Bestellung mit Abholung und Lieferung und Kasse in einem System, aus der Schweiz, mit TWINT. ${feePercentText()} % pro Online-Bestellung, ohne Gebühr pro Gast.`,
+    description: `Website, Tischreservation, Online-Bestellung mit Abholung und Lieferung und Kasse in einem System, aus der Schweiz, mit TWINT. Online-Bestellung CHF 59 pro Monat ohne Gebühr pro Bestellung, ohne Gebühr pro Gast.`,
     alternates: { canonical: "/restaurant" },
     ...(on ? {} : { robots: { index: false, follow: false } }),
   };
@@ -46,6 +47,7 @@ export default async function Restaurant() {
       feeBps={DEFAULT_PLATFORM_FEE_BPS}
       minimum={formatChf(DEFAULT_MONTHLY_MINIMUM_RAPPEN).replace(".00", "")}
       today={todayIn("Europe/Zurich")}
+      orderFlatRappen={(await orderFeeModel()) === "fixed" ? ORDER_MODULE_RAPPEN : null}
     />
   );
 }

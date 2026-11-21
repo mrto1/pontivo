@@ -9,6 +9,8 @@ import { PosError } from "@/src/services/pos";
 import { listZones, orderReadiness, orderSettings, publicUrl, saveOrderSettings, saveZone, screensOf, setOrdersEnabled, startTestOrder } from "@/src/services/online-orders";
 import { parsePostalCodes } from "@/src/domain/online-order";
 import { formatChf } from "@/src/domain/money";
+import { ORDER_MODULE_RAPPEN } from "@/src/domain/platform-invoice";
+import { orderFeeModel } from "@/src/services/platform-settings";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -63,7 +65,7 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
   const sp = await searchParams;
   const { hotel } = await requireHotel(hotelId, "manager");
   await requireModule(hotel.id, "restaurant");
-  const [cfg, problems, zones, screens] = await Promise.all([orderSettings(hotel.id), orderReadiness(hotel), listZones(hotel.id), screensOf(hotel.id)]);
+  const [cfg, problems, zones, screens, model] = await Promise.all([orderSettings(hotel.id), orderReadiness(hotel), listZones(hotel.id), screensOf(hotel.id), orderFeeModel()]);
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   const base = `/mypontivo/${hotel.id}`;
   const link = `${publicUrl(hotel)}/${hotel.defaultLanguage}/bestellen`;
@@ -71,6 +73,7 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
   return (
     <div className="stack">
       <h1>Online-Bestellung & Lieferung</h1>
+      <p className="small muted" data-testid="order-price">Preis: {model === "fixed" ? `${formatChf(ORDER_MODULE_RAPPEN)} pro Monat, keine Gebühr pro Bestellung (auch bar). Verrechnet für jeden Monat, in dem die Online-Bestellung eingeschaltet ist.` : `${hotel.platformFeeBps / 100} % pro Bestellung (auch bar, dann mit der Monatsrechnung).`}</p>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <section className="card stack" data-testid="orders-live">
         <h2>Status</h2>
@@ -111,7 +114,7 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
           <div><label htmlFor="cutoffMin">Bestellschluss vor Schliessung (Min.)</label><input id="cutoffMin" name="cutoffMin" type="number" min={0} max={240} defaultValue={cfg.cutoffMin} style={{ width: 90 }} /></div>
         </div>
         <FormSwitch name="cashPickup" defaultOn={cfg.cashPickup} label="Bar bei Abholung erlauben" />
-        <FormSwitch name="cashDelivery" defaultOn={cfg.cashDelivery} label="Bar bei Lieferung erlauben" hint="Telefon ist Pflicht; Adressen mit früherer Nicht-Annahme werden markiert. Die Gebühr von 1,9 % gilt auch bar (kommt auf die Monatsrechnung)." />
+        <FormSwitch name="cashDelivery" defaultOn={cfg.cashDelivery} label="Bar bei Lieferung erlauben" hint="Telefon ist Pflicht; Adressen mit früherer Nicht-Annahme werden markiert. " />
         <div><label htmlFor="cashMax">Höchstbetrag bar CHF (leer = ohne)</label><input id="cashMax" name="cashMax" inputMode="decimal" defaultValue={cfg.cashMaxRappen ? (cfg.cashMaxRappen / 100).toString() : ""} style={{ width: 120 }} /></div>
         <FormSwitch name="guestSms" defaultOn={cfg.guestSms} label="SMS an Gäste («bereit», «unterwegs»)" hint="Zusätzlich zur Mail. Kosten zum Selbstkostenpreis auf der Monatsrechnung (ca. 8 Rappen je SMS). Alarme an Sie sind inklusive." />
         <p className="small muted">Bestellt werden kann innerhalb der Öffnungszeiten (Grunddaten). Gäste bezahlen online mit Karte oder TWINT; Sie nehmen jede Bestellung auf dem Bestellbildschirm an. Nicht angenommene Bestellungen lösen nach 5 Minuten einen Alarm aus und werden nach 10 Minuten automatisch storniert und erstattet.</p>

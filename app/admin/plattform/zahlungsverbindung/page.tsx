@@ -3,7 +3,8 @@ import { getPlatformBilling } from "@/src/services/platform-settings";
 import { isQrIban } from "@/src/domain/invoice";
 import { splitAddress } from "@/src/domain/platform-invoice";
 import { platformInfo } from "@/src/legal/texts";
-import { saveBilling } from "../actions";
+import { orderFeeSwitch, saveBilling } from "../actions";
+import { orderFeeModel } from "@/src/services/platform-settings";
 import { Flash, PageHead } from "../Flash";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ const TO = "/admin/plattform/zahlungsverbindung";
 export default async function Zahlungsverbindung({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   await requirePlatformAdmin();
   const sp = await searchParams;
-  const b = await getPlatformBilling();
+  const [b, model] = await Promise.all([getPlatformBilling(), orderFeeModel()]);
   const p = platformInfo();
   const addr = splitAddress(p.address);
   return (
@@ -29,6 +30,13 @@ export default async function Zahlungsverbindung({ searchParams }: { searchParam
         </form>
         <p className="small">{b.iban ? <>Aktuell: <strong>{isQrIban(b.iban) ? "QR-IBAN (Referenz QRR, Bankdatei ordnet zu)" : "IBAN (ohne Referenz; Zahlungen von Hand erfassen)"}</strong>, Frist {b.paymentDays} Tage.</> : <span className="badge warn">Keine IBAN: QR-Rechnungen entstehen ohne Zahlteil.</span>}</p>
         <p className="small muted">Zahlungsempfänger im Zahlteil: {p.operator}, {addr ? `${addr.street}, ${addr.zip} ${addr.city}` : <span className="badge warn">Adresse unvollständig (PLATFORM_ADDRESS)</span>}.</p>
+      </section>
+      <section className="card stack" data-testid="order-fee-model">
+        <h2>Preismodell Online-Bestellung</h2>
+        <p>Aktuell: <strong>{model === "fixed" ? "CHF 59 pro Monat, keine Gebühr pro Bestellung" : "1,9 % pro Bestellung"}</strong>.</p>
+        <p className="small muted">Vorerst fest pro Monat, weil die Plattformbesteuerung (Art. 20a MWSTG) bei umsatzabhängiger Gebühr nicht geklärt ist (Anfrage bei der ESTV). Auf 1,9 % erst umstellen, wenn die ESTV schriftlich bestätigt hat, dass Pontivo keine Plattform im Sinne von Art. 20a ist, und nach Ankündigung an die Betriebe gemäss Bedingungen für Gastgeber.</p>
+        <form action={orderFeeSwitch}><input type="hidden" name="to" value={TO} /><input type="hidden" name="model" value={model === "fixed" ? "percent" : "fixed"} />
+          <button className="btn secondary small">{model === "fixed" ? "Auf 1,9 % pro Bestellung umstellen" : "Zurück auf CHF 59 pro Monat"}</button></form>
       </section>
     </div>
   );
