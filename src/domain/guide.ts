@@ -64,7 +64,7 @@ export const progress = (tasks: GuideTask[], done: ReadonlySet<string>) => ({ do
 
 /** Hilfe je Funktion: ein Satz «So fangen Sie an» (die Beschreibung steht schon im Modul-Register) */
 export const HELP_START: Record<string, string> = {
-  frontdesk: "Die Tagesliste «Tag» gibt es immer. Mit der Rezeption teilen Sie im Zimmerplan (Kalender) die Zimmer zu.",
+  frontdesk: "Die «Tagesliste» unter «Heute» gibt es immer. Mit der Rezeption teilen Sie im Zimmerplan (Kalender) die Zimmer zu.",
   housekeeping: "Nach jeder Abreise erscheint ein Reinigungsauftrag. Das Personal öffnet die Liste am Handy und setzt das Zimmer auf «sauber».",
   invoicing: "Öffnen Sie eine Buchung und wählen Sie «Rechnung erstellen». Zahlungen vor Ort buchen Sie in derselben Buchung.",
   debtors: "Legen Sie die Firma einmal an. Bei einer Buchung wählen Sie dann «auf Rechnung», die Zahlungsfrist kommt aus der Firma.",

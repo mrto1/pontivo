@@ -87,7 +87,7 @@ export default async function Overview({ params, searchParams }: { params: Promi
   const noData = isToday && !v.notices.length && !v.arrivals.length && !v.departures.length && !v.inHouse.length && !v.balances?.length && !v.overdue?.length;
   return (
     <div className="stack">
-      <h1 style={{ margin: 0 }}>Tag</h1>
+      <h1 style={{ margin: 0 }}>Tagesliste</h1>
       <PeriodNav prev={`${base}?day=${addDays(v.day, -1)}`} next={`${base}?day=${addDays(v.day, 1)}`} todayHref={base} todayActive={isToday} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: v.day, param: "day" }}>
         {showPlan ? <a className="btn secondary small" href={`${base}/plan`}>Zimmerplan</a> : null}
       </PeriodNav>

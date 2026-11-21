@@ -1,6 +1,6 @@
 /**
  * Menü des Admin-Bereichs an einer Stelle.
- * - `primary`: die vier Hauptpunkte (Übersicht, Kalender, Buchungen, Finanzen) nach Häufigkeit: untere Leiste (Handy) bzw. Kopfzeile (Desktop). Es gibt kein «Mehr».
+ * - `primary`: die vier Hauptpunkte (Heute, Kalender, Buchungen, Finanzen) nach Häufigkeit: untere Leiste (Handy) bzw. Kopfzeile (Desktop). Es gibt kein «Mehr».
  * - `settings`: Zahnrad oben rechts (nur Inhaber und Manager) mit den Punkten zum Betrieb in drei Gruppen (`group`), eigene Seite /einstellungen.
  * - `tabs`: Unterseiten eines Menüpunkts. Sie erscheinen als Reiter über der Seite, im Menü steht nur der Sammelpunkt.
  *   Reiter können selbst Reiter haben (zweite Reihe).
@@ -50,14 +50,14 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
   const set = (group: string, item: NavItem, lead: string): NavItem => ({ ...item, group, lead });
   return {
     primary: [
-      // Übersicht: was heute zu tun ist
+      // Heute: der laufende Tagesbetrieb
       {
-        key: "g-overview", label: "Übersicht", href: base, icon: "home",
+        key: "g-overview", label: "Heute", href: base, icon: "home",
         tabs: [
-          { key: "home", label: "Tag", href: base },
+          { key: "home", label: "Tagesliste", href: base },
           link("housekeeping", "Reinigung"),
           link("inbox", "Posteingang"),
-          link("guests", "Check-in & Meldeschein"),
+          link("guests", "Check-in"),
           { ...link("g-restaurant", "Restaurant", "restaurant"), tabs: [link("restaurant", "Tische"), link("kasse", "Kasse"), link("posclose", "Kassenabschluss", "restaurant/abschluss")] },
         ],
       },

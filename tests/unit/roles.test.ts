@@ -84,7 +84,7 @@ describe("Zahnrad und Menü je Rolle (SPEC 19.42)", () => {
       expect(keys.every((k) => ROLE_AREAS[r].includes(k) || ["mypontivo", "firstweek", "help", "helpflows", "helpterms"].includes(k)), r).toBe(true);
       expect(nav.settings.tabs, r).toEqual([]);
     }
-    // Rezeption landet auf «Tag», dem ersten Reiter der Übersicht, zusammen mit Check-in & Meldeschein und Posteingang
+    // Rezeption landet auf der Tagesliste, dem ersten Reiter von «Heute», zusammen mit Check-in und Posteingang
     const rc = visibleNav(hotel, "reception", none).nav;
     expect(rc.primary[0].tabs!.map((t) => t.key)).toEqual(["home", "housekeeping", "inbox", "guests"]);
     // Reinigung: nur ein Hauptpunkt, der direkt zur Reinigung führt

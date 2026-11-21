@@ -87,7 +87,7 @@ export async function setGuestRequestDone(hotelId: string, id: string, done: boo
 
 /**
  * Selbst-Check-out (SPEC 19.41): der Gast meldet am Abreisetag, dass er geht. Die Buchung bleibt «bestätigt» (Rechnung, Zahlung
- * und Reinigung laufen wie bisher); es gibt einen Vermerk unter «Tag» und einen Eintrag im Posteingang, damit die Rezeption
+ * und Reinigung laufen wie bisher); es gibt einen Vermerk unter «Heute → Tagesliste» und einen Eintrag im Posteingang, damit die Rezeption
  * Schlüssel/Zimmer prüft und offene Posten abschliesst. Idempotent: zweiter Aufruf tut nichts.
  */
 export async function selfCheckout(hotel: Hotel, bookingId: string, today: string): Promise<"done" | "already"> {

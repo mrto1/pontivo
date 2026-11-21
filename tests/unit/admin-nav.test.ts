@@ -18,7 +18,7 @@ describe("Admin-Menü", () => {
     const keys = all.map((i) => i.key);
     expect(new Set(keys).size).toBe(keys.length);
     for (const i of all) expect(i.href.startsWith("/mypontivo/h1")).toBe(true);
-    expect(nav.primary.map((i) => i.label)).toEqual(["Übersicht", "Kalender", "Buchungen", "Finanzen"]);
+    expect(nav.primary.map((i) => i.label)).toEqual(["Heute", "Kalender", "Buchungen", "Finanzen"]);
     expect(nav.settings.href).toBe("/mypontivo/h1/einstellungen");
     expect(nav.account.href).toBe("/mypontivo/h1/mypontivo");
     expect(keys).not.toContain("embed");
@@ -38,9 +38,9 @@ describe("Admin-Menü", () => {
   });
 
   it("Reiter der Hauptpunkte", () => {
-    expect(tabKeys("Übersicht")).toEqual(["home", "housekeeping", "inbox", "guests", "g-restaurant"]);
-    expect(group("Übersicht").tabs![0].label).toBe("Tag");
-    expect(group("Übersicht").tabs![4].tabs!.map((t) => t.key)).toEqual(["restaurant", "kasse", "posclose"]);
+    expect(tabKeys("Heute")).toEqual(["home", "housekeeping", "inbox", "guests", "g-restaurant"]);
+    expect(group("Heute").tabs![0].label).toBe("Tagesliste");
+    expect(group("Heute").tabs![4].tabs!.map((t) => t.key)).toEqual(["restaurant", "kasse", "posclose"]);
     expect(tabKeys("Kalender")).toEqual(["plan", "calendar", "pricing"]);
     expect(tabKeys("Buchungen")).toEqual(["bookings", "groups", "resources", "vouchers", "g-guests"]);
     expect(group("Buchungen").tabs![4].tabs!.map((t) => t.key)).toEqual(["guestbook", "marketing", "feedback"]);
@@ -80,10 +80,10 @@ describe("Admin-Menü", () => {
     expect(without).not.toContain("posclose");
   });
 
-  it("Ferienwohnung mit Grundausstattung: Übersicht (nur Tag), Kalender, Buchungen, Finanzen", () => {
+  it("Ferienwohnung mit Grundausstattung: Heute (nur Tagesliste und Posteingang), Kalender, Buchungen, Finanzen", () => {
     const off = hiddenNavKeys([{ module: "frontdesk", enabled: false }]);
     const n = adminNav(hotel, off);
-    expect(n.primary.map((i) => i.label)).toEqual(["Übersicht", "Kalender", "Buchungen", "Finanzen"]);
+    expect(n.primary.map((i) => i.label)).toEqual(["Heute", "Kalender", "Buchungen", "Finanzen"]);
     expect(allPages(n).map((i) => i.key)).not.toContain("plan");
     expect(allPages(n).map((i) => i.key)).not.toContain("frontdesk"); // Seite gibt es nicht mehr
     expect(n.primary[0].href).toBe("/mypontivo/h1");
@@ -92,7 +92,7 @@ describe("Admin-Menü", () => {
   it("Gruppen verschwinden ganz, wenn alle Seiten fehlen; Zahnrad bleibt erreichbar", () => {
     const all = new Set(leafKeys(nav).filter((k) => !["home"].includes(k)));
     const n = adminNav(hotel, all);
-    expect(n.primary.map((i) => i.label)).toEqual(["Übersicht"]);
+    expect(n.primary.map((i) => i.label)).toEqual(["Heute"]);
     expect(n.settings.href).toBe("/mypontivo/h1/einstellungen");
     expect(n.settings.tabs).toEqual([]);
   });
@@ -103,7 +103,7 @@ describe("Admin-Menü", () => {
     expect(sectionFor(`${home}/channex/booking`, nav, home)?.label).toBe("Kanäle");
     expect(sectionFor(`${home}/zutritt`, nav, home)?.label).toBe("Geräte & Kasse");
     expect(sectionFor(`${home}/preise`, nav, home)?.label).toBe("Kalender");
-    expect(sectionFor(`${home}/inbox`, nav, home)?.label).toBe("Übersicht");
+    expect(sectionFor(`${home}/inbox`, nav, home)?.label).toBe("Heute");
     expect(sectionFor(`${home}/guestbook`, nav, home)?.label).toBe("Buchungen");
     expect(sectionFor(`${home}/hilfe`, nav, home)?.label).toBe("Mein Konto");
     expect(sectionFor(`${home}/einstellungen`, nav, home)).toBeNull();
@@ -115,8 +115,8 @@ describe("Admin-Menü", () => {
     expect(isActive(`${home}/vouchers`, group("Buchungen"), home)).toBe(true);
     expect(isActive(`${home}/calendar/x`, group("Kalender"), home)).toBe(true);
     expect(isActive(`${home}/calendarium`, group("Kalender"), home)).toBe(false);
-    expect(isActive(home, group("Übersicht"), home)).toBe(true);
-    expect(isActive(`${home}/calendar`, group("Übersicht"), home)).toBe(false);
+    expect(isActive(home, group("Heute"), home)).toBe(true);
+    expect(isActive(`${home}/calendar`, group("Heute"), home)).toBe(false);
     expect(bestMatch(`${home}/invoices/tagesabschluss`, group("Finanzen"), home)).toBeGreaterThan(bestMatch(`${home}/invoices/tagesabschluss`, { key: "x", label: "x", href: `${home}/invoices` }, home));
   });
 });

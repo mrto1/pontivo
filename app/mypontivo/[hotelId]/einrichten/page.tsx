@@ -413,7 +413,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       ) : hotel.status === "live" ? (
         <div className="stack">
           <p className="notice">✓ {hotel.name} ist online und buchbar.</p>
-          <p><a className="btn" href={preview} target="_blank">Website ansehen ↗</a> <a className="btn secondary" href={`/mypontivo/${hotel.id}`}>Zur Übersicht</a></p>
+          <p><a className="btn" href={preview} target="_blank">Website ansehen ↗</a> <a className="btn secondary" href={`/mypontivo/${hotel.id}`}>Zu «Heute»</a></p>
           <p className="small muted">Nächste Schritte: Website gestalten unter <a href={`/mypontivo/${hotel.id}/site`}>Website & Buchung</a>, Buchungsknopf auf Ihrer bisherigen Website einbinden ebenfalls dort, Link im Google-Unternehmensprofil eintragen.</p>
         </div>
       ) : (
@@ -450,7 +450,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <form action={embedCheck}>{H}<button className="btn">Meine Website prüfen</button></form>
             {hotel.onboarding.embeddedAt ? null : <form action={embedCheck}>{H}<input type="hidden" name="confirm" value="1" /><button className="btn secondary">Ist eingebaut</button></form>}
-            {hotel.onboarding.embeddedAt ? <a className="btn secondary" href={`/mypontivo/${hotel.id}`}>Zur Übersicht</a> : null}
+            {hotel.onboarding.embeddedAt ? <a className="btn secondary" href={`/mypontivo/${hotel.id}`}>Zu «Heute»</a> : null}
           </div>
         </div>
       );

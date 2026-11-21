@@ -29,11 +29,12 @@ export const BASE_AREAS = ["layout", "home", "mypontivo", "firstweek", "help", "
 
 /** Seiten, die in einer eigenen Rolle angehakt werden können (nur Seiten, die schon für «Mitarbeitende» offen sind) */
 export const CONFIGURABLE_AREAS: { key: string; label: string; group: string }[] = [
-  { group: "Übersicht", key: "tag", label: "Tag (An- & Abreisen)" },
-  { group: "Übersicht", key: "housekeeping", label: "Reinigung" },
-  { group: "Übersicht", key: "inbox", label: "Posteingang" },
-  { group: "Übersicht", key: "restaurant", label: "Restaurant (Tische)" },
-  { group: "Übersicht", key: "kasse", label: "Kasse" },
+  { group: "Heute", key: "tag", label: "Tagesliste (An- & Abreisen)" },
+  { group: "Heute", key: "housekeeping", label: "Reinigung" },
+  { group: "Heute", key: "inbox", label: "Posteingang" },
+  { group: "Heute", key: "guests", label: "Check-in & Meldeschein" },
+  { group: "Heute", key: "restaurant", label: "Restaurant (Tische)" },
+  { group: "Heute", key: "kasse", label: "Kasse" },
   { group: "Kalender", key: "plan", label: "Zimmerplan" },
   { group: "Kalender", key: "calendar", label: "Preise & Verfügbarkeit (ansehen)" },
   { group: "Buchungen", key: "bookings", label: "Buchungen" },
@@ -41,7 +42,6 @@ export const CONFIGURABLE_AREAS: { key: string; label: string; group: string }[]
   { group: "Buchungen", key: "resources", label: "Angebote vor Ort" },
   { group: "Buchungen", key: "vouchers", label: "Gutscheine" },
   { group: "Buchungen", key: "guestbook", label: "Gäste: Kartei" },
-  { group: "Buchungen", key: "guests", label: "Gäste: Check-in & Meldeschein" },
   { group: "Buchungen", key: "feedback", label: "Gäste: Bewertungen" },
   { group: "Finanzen", key: "invoices", label: "Rechnungen" },
   { group: "Finanzen", key: "dayclose", label: "Tagesabschluss" },

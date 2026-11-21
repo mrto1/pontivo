@@ -41,7 +41,7 @@ export default async function Guests({ params, searchParams }: { params: Promise
   return (
     <div className="stack">
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Check-in & Meldeschein</h1>
+        <h1 style={{ margin: 0 }}>Check-in und Meldeschein</h1>
         {enabled ? (
           <nav className="seg" aria-label="Bereich">
             {(Object.keys(TABS) as Tab[]).filter((t) => t !== "tax" || isManager).map((t) => (
