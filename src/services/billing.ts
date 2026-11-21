@@ -10,7 +10,7 @@ import { audit } from "./audit";
 import { aiBillFor, hotelsWithAiModule } from "./ai-module";
 import { monthlyReport } from "./report";
 import { shiftMonth } from "./overview";
-import { billMonth, invoiceNumber, REMINDER_DAYS, splitAddress, vatApplies, type PlatformVat } from "../domain/platform-invoice";
+import { billMonth, invoiceNumber, POS_MODULE_RAPPEN, REMINDER_DAYS, splitAddress, vatApplies, type PlatformVat } from "../domain/platform-invoice";
 import { getPlatformBilling, getPlatformVat } from "./platform-settings";
 import { DUNNING_LABEL, matchByReference, nextDunningLevel, parseCamt054 } from "../domain/debtors";
 import { isQrIban, qrReference, swissQrPayload } from "../domain/invoice";
@@ -38,6 +38,15 @@ export async function feesForMonth(hotel: Hotel, month: string): Promise<number>
     SELECT coalesce(sum(v.platform_fee_rappen), 0)::int AS fee FROM vouchers v JOIN hotels h ON h.id = v.hotel_id
      WHERE v.hotel_id = ${hotel.id} AND v.paid_at IS NOT NULL AND to_char(v.paid_at AT TIME ZONE h.timezone, 'YYYY-MM') = ${month}`));
   return bookingFees + v.fee;
+}
+
+/**
+ * Zusatzmodul Kasse (Konzept 6): CHF 29 für den abgerechneten Monat, wenn das Modul beim Abrechnen eingeschaltet ist.
+ * ASSUMPTION: kein Verlauf der Modul-Schalter vorhanden; massgebend ist der Stand am Abrechnungstag (Anfang Folgemonat), keine Teilmonate.
+ */
+export async function posModuleFee(hotelId: string): Promise<number> {
+  const [m] = rows<{ on: boolean }>(await db().execute(sql`SELECT enabled AS on FROM hotel_modules WHERE hotel_id = ${hotelId} AND module = 'pos'`));
+  return m?.on ? POS_MODULE_RAPPEN : 0;
 }
 
 /** Erster Monat, für den die Mindestgebühr gilt (Monat nach der Live-Schaltung) */
@@ -70,16 +79,17 @@ export async function runMonthlyMinimum(now = new Date(), vatOverride?: Platform
     const fees = (await feesForMonth(h, month)) + orderFees.total;
     const smsRappen = (await billableSmsCount(h.id, month)) * env().SMS_GUEST_PRICE_RAPPEN;
     const orderModuleRappen = await orderModuleFee(h, month);
+    const posModuleRappen = await posModuleFee(h.id);
     // Nichts zu verrechnen (kein Minimum, kein KI-Chat, keine Gebühren, keine SMS, keine Pauschale): keine Rechnung
-    if (!minApplies && aiTotal === 0 && fees === 0 && smsRappen === 0 && orderModuleRappen === 0) continue;
-    const b = billMonth({ feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, aiRappen: aiTotal, vatBps: vatOn ? vat.bps : 0, uncollectedRappen: orderFees.uncollected, smsRappen, orderModuleRappen });
+    if (!minApplies && aiTotal === 0 && fees === 0 && smsRappen === 0 && orderModuleRappen === 0 && posModuleRappen === 0) continue;
+    const b = billMonth({ feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, aiRappen: aiTotal, vatBps: vatOn ? vat.bps : 0, uncollectedRappen: orderFees.uncollected, smsRappen, orderModuleRappen, posModuleRappen });
     const [{ n }] = rows<{ n: number }>(await db().execute(sql`SELECT nextval('platform_invoice_seq')::int AS n`));
     // Weg der Zahlung (SPEC 20.6): Karte belasten oder QR-Rechnung mit Fälligkeit
     const qr = h.billingMethod === "qr";
     const due = qr && b.payRappen > 0 ? addDays(today, terms.paymentDays) : null;
     const ins = await db().insert(platformCharges).values({
       hotelId: h.id, month, feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, chargeRappen: b.payRappen,
-      aiModuleRappen: ai?.moduleRappen ?? 0, aiPacksRappen: ai?.packsRappen ?? 0, uncollectedFeesRappen: orderFees.uncollected, smsRappen, orderModuleRappen,
+      aiModuleRappen: ai?.moduleRappen ?? 0, aiPacksRappen: ai?.packsRappen ?? 0, uncollectedFeesRappen: orderFees.uncollected, smsRappen, orderModuleRappen, posModuleRappen,
       status: b.payRappen > 0 ? (qr ? "invoiced" : "pending") : "none", method: qr ? "qr" : "card", dueDate: due,
       netRappen: b.netRappen, vatBps: vatOn ? vat.bps : 0, vatRappen: b.vatRappen, vatNumber: vatOn ? vat.number : null,
       invoiceNo: invoiceNumber(Number(today.slice(0, 4)), n), invoiceDate: today,

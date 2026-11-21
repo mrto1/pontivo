@@ -81,3 +81,11 @@ describe("Online-Bestellung pauschal (SPEC 20.4)", () => {
     expect(b).toMatchObject({ netRappen: 1900 + 5900, shortfallRappen: 1400, payRappen: 1400 + 5900, withheldRappen: 500 });
   });
 });
+
+describe("Kasse als Zusatzmodul (Konzept 6)", () => {
+  it("CHF 29 obendrauf, nicht an die Mindestgebühr angerechnet", async () => {
+    const { billMonth, POS_MODULE_RAPPEN } = await import("../../src/domain/platform-invoice");
+    const b = billMonth({ feesRappen: 2500, minimumRappen: 1900, aiRappen: 0, vatBps: 0, posModuleRappen: POS_MODULE_RAPPEN });
+    expect(b).toMatchObject({ netRappen: 2500 + 2900, shortfallRappen: 0, payRappen: 2900 });
+  });
+});

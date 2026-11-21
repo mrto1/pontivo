@@ -1224,6 +1224,7 @@ Ein neues Restaurant richtet sich ohne Betreiber ein. Reservation in ca. 20 Minu
 - **Quittung an den Gast:** Die Statusseite der Bestellung zeigt nach der Zahlung die Quittung (Bon-Nummer, Zeitpunkt, Betrieb mit MWST-Nummer, MWST je Satz).
 - **Tagesabrechnung der Online-Verkäufe** (Seite `restaurant/online-verkaeufe`, Schlüssel `onlinesales`, unter Finanzen; Rollen Inhaber/Manager/Mitarbeitende und Buchhaltung): je Geschäftstag Anzahl, Total, MWST je Satz (netto, Steuer), online bezahlt, bar, Plattformgebühr; Monat blättern, Druck («Als PDF speichern») und CSV (`…/online-verkaeufe/csv?month=JJJJ-MM`). Grundlage: Bons des Geräts `ONL` (Probebestellungen haben keinen Bon).
 - **Buchhaltungsexport** (18.3, wenn eingeschaltet): je Tag ein Sammelbeleg `ONL-JJJJ-MM-TT` (Ertrag übrige Leistungen je MWST-Satz an Debitoren; Zahlung online an Konto Stripe, bar an Kasse).
+- **Preis Kasse:** CHF 29 pro Monat (Konzept 6) auf der Monatsrechnung (`platform_charges.pos_module_rappen`, obendrauf wie die Pauschale der Online-Bestellung), wenn das Modul `pos` am Abrechnungstag eingeschaltet ist; keine Teilmonate.
 - Das Modul `pos` schaltet nur den Verkauf im Lokal frei (Tische, Kasse, Getrennt-Zahlen, Kassenabschluss, Geräte). Hotel mit Restaurant ohne Modul: eigene Kasse bucht über PosBridge (19.15) aufs Zimmer.
 
 ### 20.9 R7: Öffentliche Seiten (Dachmarke, Unterkünfte, Restaurants)

@@ -658,6 +658,8 @@ export const platformCharges = pgTable("platform_charges", {
   smsRappen: integer("sms_rappen").notNull().default(0),
   /** Monatspauschale Online-Bestellung (SPEC 20.4), in chargeRappen enthalten */
   orderModuleRappen: integer("order_module_rappen").notNull().default(0),
+  /** Zusatzmodul Kasse (Konzept 6), in chargeRappen enthalten */
+  posModuleRappen: integer("pos_module_rappen").notNull().default(0),
   status: text("status").$type<"none" | "pending" | "succeeded" | "failed" | "invoiced">().notNull(),
   /** Weg der Zahlung (SPEC 20.6): Karte belasten oder QR-Rechnung mit Fälligkeit und Mahnstufen */
   method: text("method").$type<"card" | "qr">().notNull().default("card"),

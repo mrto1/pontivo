@@ -101,3 +101,14 @@ describe("Grundgebühr per QR-Rechnung (SPEC 20.6)", () => {
     await expect(savePlatformBilling({ iban: "CH00 1234", paymentDays: 30 }, "t")).rejects.toThrow(/IBAN/);
   });
 });
+
+describe("Kasse auf der Monatsrechnung (Konzept 6)", () => {
+  it("Modul Kasse eingeschaltet: CHF 29 zusätzlich zur Mindestgebühr", async () => {
+    setPaymentProvider(new FakePaymentProvider());
+    const h = await qrHost();
+    const { hotelModules } = await import("../../src/db/schema");
+    await db().insert(hotelModules).values({ hotelId: h.id, module: "pos", enabled: true }).onConflictDoUpdate({ target: [hotelModules.hotelId, hotelModules.module], set: { enabled: true } });
+    await runMonthlyMinimum(new Date(), NO_VAT);
+    expect(await chargeOf(h.id)).toMatchObject({ posModuleRappen: 2900, chargeRappen: 1900 + 2900 });
+  });
+});
