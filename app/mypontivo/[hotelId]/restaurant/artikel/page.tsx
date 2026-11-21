@@ -5,6 +5,10 @@ import { requireModule } from "@/src/services/modules";
 import { PosError, importItems, importTables, listItems, listOptionGroups, listTables, saveItem, saveOption, saveOptionGroup, saveTable, saveTableDetails, saveTablePlan, setGroupItems, setOptionActive } from "@/src/services/pos";
 import { FormSwitch } from "@/components/admin/FormSwitch";
 import { FloorPlan } from "@/components/admin/FloorPlan";
+import { env } from "@/src/env";
+import { LIMITS, setupImportGate } from "@/src/domain/setup-import";
+import { priceToRappen, type MenuDraft } from "@/src/domain/menu-import";
+import { SetupImportError, adoptMenu, discardImport, getImport, importMenuFromPdf, importMenuFromUrl, importsThisMonth, setupImportEnabled } from "@/src/services/setup-import";
 import { formatChf } from "@/src/domain/money";
 import { parsePosItems, parsePosTables } from "@/src/domain/pos-import";
 
@@ -92,6 +96,41 @@ async function planSave(f: FormData) {
   } catch (e) { if (!(e instanceof PosError) && !(e instanceof SyntaxError)) throw e; here(c.hotel.id, "Plan nicht gespeichert."); }
   here(c.hotel.id, "Tischplan gespeichert.");
 }
+const kiBack = (h: string, q: string): never => redirect(`/mypontivo/${h}/restaurant/artikel?${q}#ki`);
+async function kiRun(f: FormData, fn: (c: Awaited<ReturnType<typeof guard>>) => Promise<string>) {
+  const c = await guard(f);
+  let target: string;
+  try { target = await fn(c); } catch (e) {
+    if (e instanceof SetupImportError || e instanceof PosError) return kiBack(c.hotel.id, `msg=${encodeURIComponent(`Nicht möglich: ${e.message}`)}`);
+    throw e;
+  }
+  return kiBack(c.hotel.id, target);
+}
+async function menuUrl(f: FormData) {
+  "use server";
+  await kiRun(f, async (c) => `draft=${await importMenuFromUrl(c.hotel, s(f, "url"), c.actor)}`);
+}
+async function menuPdf(f: FormData) {
+  "use server";
+  await kiRun(f, async (c) => {
+    const file = f.get("file");
+    if (!(file instanceof File) || !file.size) throw new SetupImportError("Bitte eine PDF-Datei wählen.");
+    return `draft=${await importMenuFromPdf(c.hotel, new Uint8Array(await file.arrayBuffer()), file.name, c.actor)}`;
+  });
+}
+async function menuAdopt(f: FormData) {
+  "use server";
+  await kiRun(f, async (c) => {
+    const picks = f.getAll("pick").map((x) => Number(x)).filter((n) => Number.isInteger(n) && n >= 0).map((i) => ({ index: i, category: s(f, `cat_${i}`), name: s(f, `name_${i}`), priceRappen: priceToRappen(s(f, `price_${i}`)) ?? -1 }));
+    if (picks.some((p) => p.priceRappen < 0)) throw new PosError("Ein Preis ist ungültig.");
+    const r = await adoptMenu(c.hotel, s(f, "id"), picks, c.actor);
+    return `msg=${encodeURIComponent(`${r.created} Artikel übernommen${r.skipped ? `, ${r.skipped} übersprungen (gab es schon)` : ""}. MWST-Sätze und Stationen bitte kurz prüfen.`)}`;
+  });
+}
+async function menuDiscard(f: FormData) {
+  "use server";
+  await kiRun(f, async (c) => { await discardImport(c.hotel.id, s(f, "id"), c.actor); return `msg=${encodeURIComponent("Entwurf verworfen.")}`; });
+}
 async function csvImport(f: FormData) {
   "use server";
   const c = await guard(f);
@@ -115,6 +154,10 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
   const { hotel } = await requireHotel(hotelId, "manager");
   await requireModule(hotel.id, "pos");
   const [items, tables, groups] = await Promise.all([listItems(hotel.id), listTables(hotel.id), listOptionGroups(hotel.id)]);
+  const gate = setupImportGate(hotel, setupImportEnabled());
+  const runsLeft = Math.max(0, env().SETUP_RUNS_PER_MONTH - (await importsThisMonth(hotel.id, new Date(), "menu")));
+  const open = sp.draft ? await getImport(hotel.id, sp.draft) : null;
+  const menu = open && open.purpose === "menu" && open.status === "draft" ? (open.draft as unknown as MenuDraft) : null;
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   return (
     <div className="stack">
@@ -186,6 +229,34 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
           <FloorPlan tables={tables.map((t) => ({ id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY }))} editable action={planSave} hotelId={hotel.id} />
         </section>
       ) : null}
+      <section className="card stack" id="ki" data-testid="menu-ki">
+        <h2>Speisekarte mit KI einlesen</h2>
+        <p className="small muted">Die KI liest Ihre Speisekarte (Website oder PDF) und macht daraus einen <strong>Entwurf</strong> der Artikel mit Preisen. Sie prüfen und ändern ihn, erst dann wird übernommen. Die MWST-Sätze setzt die KI nicht: es gelten die Standardsätze, die Sie danach prüfen.</p>
+        {!gate.ok ? <p className="notice warn">{gate.reason}</p> : menu ? (
+          <form action={menuAdopt} className="stack" data-testid="menu-draft">
+            {H}<input type="hidden" name="id" value={open!.id} />
+            <p className="small">{menu.items.length} Artikel gefunden. Häkchen weg = nicht übernehmen; Name, Kategorie und Preis (CHF) können Sie ändern.</p>
+            <table className="table"><thead><tr><th /><th>Kategorie</th><th>Name</th><th>Preis CHF</th></tr></thead><tbody>
+              {menu.items.map((x, i) => (
+                <tr key={i}><td><input type="checkbox" name="pick" value={i} defaultChecked aria-label={`${x.name} übernehmen`} /></td>
+                  <td><input name={`cat_${i}`} defaultValue={x.category} maxLength={60} aria-label={`Kategorie ${x.name}`} /></td>
+                  <td><input name={`name_${i}`} defaultValue={x.name} maxLength={120} aria-label={`Name ${x.name}`} />{x.description ? <div className="small muted">{x.description}</div> : null}</td>
+                  <td><input name={`price_${i}`} defaultValue={(x.priceRappen / 100).toFixed(2)} inputMode="decimal" style={{ width: 90 }} aria-label={`Preis ${x.name}`} /></td></tr>
+              ))}
+            </tbody></table>
+            <div><button className="btn">Ausgewählte übernehmen</button></div>
+          </form>
+        ) : (
+          <>
+            <p className="small muted">Noch {runsLeft} von {env().SETUP_RUNS_PER_MONTH} Läufen in diesem Monat. Höchstens {LIMITS.maxPages} Seiten Ihrer Website bzw. ein PDF bis {LIMITS.pdfBytes / 1_000_000} MB und {LIMITS.pdfPages} Seiten. Bitte nur eigene Speisekarten verwenden. Der gelesene Text wird nicht gespeichert, nur der Entwurf.</p>
+            <div className="row">
+              <form action={menuUrl} className="stack" style={{ flex: 1 }}>{H}<div><label htmlFor="murl">Adresse der Speisekarte (https://…)</label><input id="murl" name="url" type="url" required placeholder="https://www.mein-restaurant.ch/speisekarte" /></div><div><button className="btn" disabled={runsLeft === 0}>Von der Website lesen</button></div></form>
+              <form action={menuPdf} className="stack" style={{ flex: 1 }} encType="multipart/form-data">{H}<div><label htmlFor="mpdf">PDF der Speisekarte</label><input id="mpdf" name="file" type="file" accept="application/pdf" required /></div><div><button className="btn" disabled={runsLeft === 0}>Aus dem PDF lesen</button></div></form>
+            </div>
+          </>
+        )}
+        {menu ? <form action={menuDiscard}>{H}<input type="hidden" name="id" value={open!.id} /><button className="btn secondary small">Entwurf verwerfen</button></form> : null}
+      </section>
       <form action={csvImport} className="card stack">{H}
         <h2>Per CSV importieren</h2>
         <p className="small muted">Speisekarte oder Tischliste aus Excel oder Ihrer bisherigen Kasse übernehmen. Alles oder nichts: Bei einem Fehler wird nichts gespeichert und die Zeile genannt. Was es schon gibt (gleicher Name), wird übersprungen.</p>

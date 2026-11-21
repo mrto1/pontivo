@@ -96,3 +96,51 @@ describe("KI-Einrichtung", () => {
     expect((await getImport(hotel.id, id))?.source).toBe("Prospekt.pdf");
   });
 });
+
+describe("KI-Speisekarte (SPEC 19.49 D)", () => {
+  const MENU = JSON.stringify({ items: [{ category: "Essen", name: "Rösti", price: 21.5 }, { category: "Essen", name: "Zürcher Geschnetzeltes", price: 38 }, { category: "Getränke", name: "Cola 3dl", price: "4.20" }] });
+  it("ohne Abo kein Lauf; mit Abo Entwurf, Übernahme mit geänderten Werten, nicht doppelt", async () => {
+    const { importMenuFromUrl, importMenuFromPdf, adoptMenu } = await import("../../src/services/setup-import");
+    const { listItems } = await import("../../src/services/pos");
+    const { hotel: bare } = await makeHotel({});
+    calls = 0;
+    setSetupImportFetch(ai(MENU), pages);
+    await expect(importMenuFromUrl(bare, "https://www.example-resto.ch/speisekarte", "t")).rejects.toThrow(/Karte|Bedingungen/);
+    expect(calls).toBe(0);
+
+    const hotel = await subscribed();
+    const id = await importMenuFromUrl(hotel, "https://www.example-resto.ch/speisekarte", "t");
+    const imp = (await getImport(hotel.id, id))!;
+    expect(imp).toMatchObject({ status: "draft", purpose: "menu" });
+    expect((imp.draft as { items: unknown[] }).items).toHaveLength(3);
+    // der Hotel-Zähler bleibt unberührt
+    const { importsThisMonth } = await import("../../src/services/setup-import");
+    expect(await importsThisMonth(hotel.id)).toBe(0);
+    expect(await importsThisMonth(hotel.id, new Date(), "menu")).toBe(1);
+
+    const r = await adoptMenu(hotel, id, [{ index: 0, category: "Hauptgang", name: "Rösti mit Spiegelei", priceRappen: 2350 }, { index: 2, category: "Getränke", name: "Cola 3dl", priceRappen: 420 }, { index: 9, category: "x", name: "gibt es nicht", priceRappen: 1 }], "t");
+    expect(r).toEqual({ created: 2, skipped: 0 });
+    const items = await listItems(hotel.id);
+    expect(items.map((x) => `${x.category}|${x.name}|${x.priceRappen}|${x.vatDineInBps}`).sort()).toEqual(["Getränke|Cola 3dl|420|810", "Hauptgang|Rösti mit Spiegelei|2350|810"]);
+    expect(await getImport(hotel.id, id)).toMatchObject({ status: "adopted", draft: {} });
+    await expect(adoptMenu(hotel, id, [{ index: 0, category: "", name: "X", priceRappen: 1 }], "t")).rejects.toThrow(SetupImportError);
+
+    // Hotel-Entwurf lässt sich nicht als Speisekarte übernehmen
+    setSetupImportFetch(ai(DRAFT), pages);
+    const hid = await importFromUrl(hotel, "https://www.example-hotel.ch", "t");
+    await expect(adoptMenu(hotel, hid, [{ index: 0, category: "", name: "X", priceRappen: 1 }], "t")).rejects.toThrow(/nicht mehr offen/);
+    // PDF: kein PDF, kein Lauf
+    await expect(importMenuFromPdf(hotel, new Uint8Array([1, 2, 3, 4, 5, 6]), "x.pdf", "t")).rejects.toThrow(/kein PDF/);
+  });
+
+  it("Monatslimit gilt je Zweck: Speisekarte nicht durch Hotel-Läufe blockiert", async () => {
+    const { importMenuFromUrl } = await import("../../src/services/setup-import");
+    const hotel = await subscribed();
+    setSetupImportFetch(ai(DRAFT), pages);
+    const n = env().SETUP_RUNS_PER_MONTH;
+    for (let i = 0; i < n; i++) await importFromUrl(hotel, "https://www.example-hotel.ch", "t");
+    await expect(importFromUrl(hotel, "https://www.example-hotel.ch", "t")).rejects.toThrow(/Monatslimit/);
+    setSetupImportFetch(ai(MENU), pages);
+    await expect(importMenuFromUrl(hotel, "https://www.example-resto.ch", "t")).resolves.toBeTruthy();
+  });
+});

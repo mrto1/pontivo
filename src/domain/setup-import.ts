@@ -41,7 +41,7 @@ const KEYWORDS = /zimmer|room|suite|unterkunft|accommodation|chambre|camera|wohn
 const SKIP_EXT = /\.(jpe?g|png|gif|webp|svg|pdf|zip|docx?|xlsx?|mp4|ico|css|js)(\?|$)/i;
 
 /** Weitere Seiten derselben Domain (https) mit passenden Stichwörtern im Pfad, höchstens `max` */
-export function pickLinks(base: string, html: string, max: number): string[] {
+export function pickLinks(base: string, html: string, max: number, keywords: RegExp = KEYWORDS): string[] {
   let b: URL;
   try { b = new URL(base); } catch { return []; }
   const out: string[] = [];
@@ -51,7 +51,7 @@ export function pickLinks(base: string, html: string, max: number): string[] {
     try { u = new URL(m[1], b); } catch { continue; }
     if (u.protocol !== "https:" || u.hostname !== b.hostname || SKIP_EXT.test(u.pathname + u.search)) continue;
     const key = u.origin + u.pathname.replace(/\/$/, "");
-    if (seen.has(key) || !KEYWORDS.test(decodeURIComponent(u.pathname))) continue;
+    if (seen.has(key) || !keywords.test(decodeURIComponent(u.pathname))) continue;
     seen.add(key);
     out.push(u.origin + u.pathname);
     if (out.length >= max) break;

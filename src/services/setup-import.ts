@@ -2,6 +2,8 @@ import { and, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { hotels, roomTypes, setupImports, type Hotel, type SetupImport } from "../db/schema";
 import { LIMITS, SYSTEM, htmlToText, isPdf, joinPages, parseDraft, pdfPageEstimate, pickLinks, setupImportGate, type Draft } from "../domain/setup-import";
+import { MENU_KEYWORDS, MENU_LIMITS, MENU_SYSTEM, draftToRows, parseMenuDraft, type MenuDraft } from "../domain/menu-import";
+import { importItems } from "./pos";
 import { env } from "../env";
 import { safeFetchText } from "../lib/safe-fetch";
 import { audit } from "./audit";
@@ -22,35 +24,37 @@ export function setSetupImportFetch(ai: FetchLike | null, page: ((url: string) =
 
 export const setupImportEnabled = () => !!env().ANTHROPIC_API_KEY && env().SETUP_RUNS_PER_MONTH > 0;
 
-export async function listImports(hotelId: string): Promise<SetupImport[]> {
-  return db().select().from(setupImports).where(eq(setupImports.hotelId, hotelId)).orderBy(desc(setupImports.createdAt)).limit(10);
+export type Purpose = "hotel" | "menu";
+
+export async function listImports(hotelId: string, purpose: Purpose = "hotel"): Promise<SetupImport[]> {
+  return db().select().from(setupImports).where(and(eq(setupImports.hotelId, hotelId), eq(setupImports.purpose, purpose))).orderBy(desc(setupImports.createdAt)).limit(10);
 }
 
-export async function importsThisMonth(hotelId: string, now = new Date()): Promise<number> {
+export async function importsThisMonth(hotelId: string, now = new Date(), purpose: Purpose = "hotel"): Promise<number> {
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const [r] = await db().select({ n: count() }).from(setupImports).where(and(eq(setupImports.hotelId, hotelId), gte(setupImports.createdAt, start)));
+  const [r] = await db().select({ n: count() }).from(setupImports).where(and(eq(setupImports.hotelId, hotelId), eq(setupImports.purpose, purpose), gte(setupImports.createdAt, start)));
   return r.n;
 }
 
 /** Lauf eröffnen: Sperren prüfen und Zeile anlegen, unter Sperre je Betrieb (kein Doppelklick-Umgehen) */
-async function openRun(hotel: Hotel, kind: "url" | "pdf", source: string, actor: string, now: Date): Promise<string> {
+async function openRun(hotel: Hotel, kind: "url" | "pdf", source: string, actor: string, now: Date, purpose: Purpose = "hotel"): Promise<string> {
   const [h] = await db().select().from(hotels).where(eq(hotels.id, hotel.id));
   const gate = setupImportGate(h, setupImportEnabled());
   if (!gate.ok) throw new SetupImportError(gate.reason);
   return db().transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${"setup-import:" + hotel.id}))`);
     const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    const [m] = await tx.select({ n: count() }).from(setupImports).where(and(eq(setupImports.hotelId, hotel.id), gte(setupImports.createdAt, start)));
+    const [m] = await tx.select({ n: count() }).from(setupImports).where(and(eq(setupImports.hotelId, hotel.id), eq(setupImports.purpose, purpose), gte(setupImports.createdAt, start)));
     if (m.n >= env().SETUP_RUNS_PER_MONTH) throw new SetupImportError(`Monatslimit erreicht (${env().SETUP_RUNS_PER_MONTH} Läufe). Im nächsten Monat wieder möglich; Zimmer und Texte können Sie jederzeit von Hand eintragen.`);
     const [d] = await tx.select({ n: count() }).from(setupImports).where(gte(setupImports.createdAt, new Date(now.getTime() - 86_400_000)));
     if (d.n >= env().SETUP_RUNS_PER_DAY_TOTAL) throw new SetupImportError("Die KI-Einrichtung ist heute stark ausgelastet. Bitte morgen nochmals versuchen.");
-    const [row] = await tx.insert(setupImports).values({ hotelId: hotel.id, kind, source: source.slice(0, 300), createdBy: actor, createdAt: now }).returning({ id: setupImports.id });
-    await audit(tx, { hotelId: hotel.id, actor, action: "setup_import.start", entity: "setup_import", entityId: row.id, details: { kind } });
+    const [row] = await tx.insert(setupImports).values({ hotelId: hotel.id, kind, purpose, source: source.slice(0, 300), createdBy: actor, createdAt: now }).returning({ id: setupImports.id });
+    await audit(tx, { hotelId: hotel.id, actor, action: "setup_import.start", entity: "setup_import", entityId: row.id, details: { kind, purpose } });
     return row.id;
   });
 }
 
-async function callAi(content: unknown[]): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
+async function callAi(content: unknown[], system: string = SYSTEM, maxTokens: number = LIMITS.maxOutputTokens): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
   const key = env().ANTHROPIC_API_KEY;
   if (!key) throw new SetupImportError("Die KI-Einrichtung ist nicht eingerichtet.");
   const f: FetchLike = fetchOverride ?? ((u, init) => fetch(u, init));
@@ -59,7 +63,7 @@ async function callAi(content: unknown[]): Promise<{ text: string; inputTokens: 
     res = await f("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({ model: env().SETUP_MODEL, max_tokens: LIMITS.maxOutputTokens, system: SYSTEM, messages: [{ role: "user", content }] }),
+      body: JSON.stringify({ model: env().SETUP_MODEL, max_tokens: maxTokens, system, messages: [{ role: "user", content }] }),
     });
   } catch (e) { throw new SetupImportError(`KI nicht erreichbar: ${(e as Error).message}`); }
   const body = await res.text();
@@ -70,16 +74,16 @@ async function callAi(content: unknown[]): Promise<{ text: string; inputTokens: 
   } catch { throw new SetupImportError("KI-Dienst: unerwartete Antwort"); }
 }
 
-async function finish(id: string, hotelId: string, run: () => Promise<{ text: string; inputTokens: number; outputTokens: number }>) {
+async function finish(id: string, hotelId: string, run: () => Promise<{ text: string; inputTokens: number; outputTokens: number }>, parse: (raw: string) => Record<string, unknown> | null = parseDraft as (raw: string) => Record<string, unknown> | null) {
   try {
     const r = await run();
-    const draft = parseDraft(r.text);
+    const draft = parse(r.text);
     if (!draft) {
       await db().update(setupImports).set({ status: "failed", error: "Aus der Quelle liess sich nichts Verlässliches lesen.", inputTokens: r.inputTokens, outputTokens: r.outputTokens }).where(eq(setupImports.id, id));
       throw new SetupImportError("Aus dieser Quelle liess sich nichts Verlässliches lesen. Versuchen Sie eine Seite mit den Zimmern oder ein anderes PDF.");
     }
     await db().update(setupImports).set({ status: "draft", draft, inputTokens: r.inputTokens, outputTokens: r.outputTokens }).where(eq(setupImports.id, id));
-    return draft;
+    return draft as Draft;
   } catch (e) {
     await db().update(setupImports).set({ status: "failed", error: (e as Error).message.slice(0, 300) }).where(and(eq(setupImports.id, id), eq(setupImports.status, "running")));
     throw e;
@@ -171,4 +175,64 @@ export async function adoptImport(hotel: Hotel, id: string, picks: Picks, actor:
     await tx.update(setupImports).set({ draft: {} }).where(eq(setupImports.id, id)); // Entwurfsdaten nach der Übernahme nicht aufbewahren
   });
   return { rooms, skippedRooms, faq, intro };
+}
+
+
+// ---------------------------------------------------------------- Speisekarte (SPEC 19.49 Etappe D)
+
+const menuText = (t: string) => `<source>\n${t}\n</source>`;
+
+export async function importMenuFromUrl(hotel: Hotel, rawUrl: string, actor: string, now = new Date()): Promise<string> {
+  const url = rawUrl.trim();
+  if (!url) throw new SetupImportError("Bitte die Adresse der Speisekarte angeben.");
+  const get = pageFetchOverride ?? ((u: string) => safeFetchText(u, { maxBytes: LIMITS.pageBytes, userAgent: "Pontivo-Setup/1.0 (+https://pontivo.ch)", accept: "text/html" }));
+  let first: string;
+  try { first = await get(url); } catch (e) { throw new SetupImportError(`Die Website konnte nicht geladen werden: ${(e as Error).message}`); }
+  const pages = [{ url, text: htmlToText(first) }];
+  for (const link of pickLinks(url, first, LIMITS.maxPages - 1, MENU_KEYWORDS)) {
+    try { pages.push({ url: link, text: htmlToText(await get(link)) }); } catch { /* Unterseite nicht lesbar */ }
+  }
+  const text = joinPages(pages.filter((p) => p.text.length > 40));
+  if (text.length < 100) throw new SetupImportError("Auf der Seite steht zu wenig Text (oft ein Bild oder ein PDF zum Herunterladen). Versuchen Sie, das PDF der Speisekarte hochzuladen.");
+  const id = await openRun(hotel, "url", url, actor, now, "menu");
+  await finish(id, hotel.id, () => callAi([{ type: "text", text: menuText(text) }], MENU_SYSTEM, MENU_LIMITS.maxOutputTokens), parseMenuDraft);
+  return id;
+}
+
+export async function importMenuFromPdf(hotel: Hotel, bytes: Uint8Array, fileName: string, actor: string, now = new Date()): Promise<string> {
+  if (!bytes.length) throw new SetupImportError("Bitte eine PDF-Datei wählen.");
+  if (bytes.length > LIMITS.pdfBytes) throw new SetupImportError(`Das PDF ist zu gross (höchstens ${LIMITS.pdfBytes / 1_000_000} MB).`);
+  if (!isPdf(bytes)) throw new SetupImportError("Das ist kein PDF.");
+  if (pdfPageEstimate(bytes) > LIMITS.pdfPages) throw new SetupImportError(`Das PDF hat zu viele Seiten (höchstens ${LIMITS.pdfPages}).`);
+  const id = await openRun(hotel, "pdf", fileName.replace(/[^\w .()-]/g, "").slice(0, 120), actor, now, "menu");
+  await finish(id, hotel.id, () => callAi([
+    { type: "document", source: { type: "base64", media_type: "application/pdf", data: Buffer.from(bytes).toString("base64") } },
+    { type: "text", text: "The menu is attached as PDF. Extract the items as instructed." },
+  ], MENU_SYSTEM, MENU_LIMITS.maxOutputTokens), parseMenuDraft);
+  return id;
+}
+
+export type MenuPick = { index: number; category: string; name: string; priceRappen: number };
+
+/**
+ * Geprüfte Artikel übernehmen (Name, Kategorie und Preis darf der Betrieb im Entwurf noch ändern). Gleichnamige Artikel gibt es schon: übersprungen.
+ * Status zuerst atomar umstellen: kein doppeltes Übernehmen.
+ */
+export async function adoptMenu(hotel: Hotel, id: string, picks: MenuPick[], actor: string): Promise<{ created: number; skipped: number }> {
+  const imp = await getImport(hotel.id, id);
+  if (!imp || imp.purpose !== "menu" || imp.status !== "draft") throw new SetupImportError("Dieser Entwurf ist nicht mehr offen.");
+  const d = imp.draft as unknown as MenuDraft;
+  const rows = draftToRows(
+    picks.filter((p, i, a) => d.items?.[p.index] && a.findIndex((x) => x.index === p.index) === i)
+      .map((p) => ({ category: p.category.trim().slice(0, 60), name: p.name.trim(), description: "", priceRappen: p.priceRappen })),
+  ).filter((r) => r.name && r.name.length <= 120 && Number.isInteger(r.priceRappen) && r.priceRappen >= 0 && r.priceRappen <= 10_000_000);
+  if (!rows.length) throw new SetupImportError("Bitte mindestens einen Artikel wählen.");
+  const claimed = await db().update(setupImports).set({ status: "adopted", adoptedAt: new Date() }).where(and(eq(setupImports.id, id), eq(setupImports.status, "draft"))).returning({ id: setupImports.id });
+  if (!claimed.length) throw new SetupImportError("Dieser Entwurf ist nicht mehr offen.");
+  const res = await importItems(hotel.id, rows, actor);
+  await db().transaction(async (tx) => {
+    await audit(tx, { hotelId: hotel.id, actor, action: "setup_import.adopt_menu", entity: "setup_import", entityId: id, details: res });
+    await tx.update(setupImports).set({ draft: {} }).where(eq(setupImports.id, id));
+  });
+  return res;
 }

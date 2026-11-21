@@ -1716,6 +1716,8 @@ export const setupImports = pgTable("setup_imports", {
   id: uuid("id").primaryKey().defaultRandom(),
   hotelId: uuid("hotel_id").notNull(),
   kind: text("kind").$type<"url" | "pdf">().notNull(),
+  /** «hotel» = Zimmer/Texte (SPEC 19.36), «menu» = Speisekarte fürs Restaurant (SPEC 19.49 Etappe D) */
+  purpose: text("purpose").$type<"hotel" | "menu">().notNull().default("hotel"),
   source: text("source").notNull().default(""),
   status: text("status").$type<"running" | "draft" | "adopted" | "discarded" | "failed">().notNull().default("running"),
   draft: jsonb("draft").$type<Record<string, unknown>>().notNull().default({}),
