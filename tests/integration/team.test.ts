@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { closeDb, db } from "../../src/db/client";
 import { users } from "../../src/db/schema";
 import { roleIn } from "../../src/auth/session";
-import { areasOf, canAccess, isLimitedRole, landingFor, roleLabel } from "../../src/domain/roles";
+import { areasOf, canAccess, encodeCustomRole, isLimitedRole, landingFor, roleLabel } from "../../src/domain/roles";
 import { changeMemberRole, deleteRole, listRoles, listStandardRoles, resetStandardRole, saveRole, saveStandardRole, setMemberRole, TeamError } from "../../src/services/team";
 import { makeHotel } from "../helpers";
 
@@ -14,19 +14,19 @@ const userId = async (email: string) => (await db().select().from(users).where(e
 describe("Team: eigene Rollen", () => {
   it("Rolle anlegen, Person zuweisen: nur angehakte Seiten, Landing und Name stimmen", async () => {
     const h = await makeHotel();
-    const r = await saveRole(h.hotel.id, null, { name: "Nachtportier", areas: ["frontdesk", "bookings", "gibt-es-nicht"] }, "t");
-    expect(r.areas).toEqual(["frontdesk", "bookings"]); // unbekannte Seiten fallen weg
+    const r = await saveRole(h.hotel.id, null, { name: "Nachtportier", areas: ["tag", "bookings", "gibt-es-nicht"] }, "t");
+    expect(r.areas).toEqual(["tag", "bookings"]); // unbekannte Seiten fallen weg
     const email = `n-${crypto.randomUUID()}@example.com`;
     await setMemberRole(h.hotel.id, email, `custom:${r.id}`, "t");
     const role = (await roleIn(await userId(email), h.hotel.id))!;
     expect(isLimitedRole(role)).toBe(true);
     expect(roleLabel(role)).toBe("Nachtportier");
-    expect(canAccess(role, "staff", "frontdesk")).toBe(true);
+    expect(canAccess(role, "staff", "tag")).toBe(true);
     expect(canAccess(role, "staff", "layout")).toBe(true);
     expect(canAccess(role, "staff", "invoices")).toBe(false);
     expect(canAccess(role, "manager", "bookings")).toBe(false); // nie über «staff» hinaus
     expect(areasOf(role as never)).toContain("bookings");
-    expect(landingFor(role as never)).toBe("frontdesk");
+    expect(landingFor(role as never)).toBe("");
   });
 
   it("Änderung der Rolle gilt sofort; Löschen nur ohne Personen; Rollen sind je Betrieb getrennt", async () => {
@@ -63,12 +63,12 @@ describe("Team: Standardrollen pro Betrieb anpassen", () => {
     const uid = await userId(email);
     expect(canAccess((await roleIn(uid, a.hotel.id))!, "staff", "invoices")).toBe(true); // Vorgabe
 
-    await saveStandardRole(a.hotel.id, "reception", { name: "Empfang", areas: ["frontdesk", "guests"] }, "t");
+    await saveStandardRole(a.hotel.id, "reception", { name: "Empfang", areas: ["tag", "guests"] }, "t");
     const ra = (await roleIn(uid, a.hotel.id))!;
     expect(roleLabel(ra)).toBe("Empfang");
-    expect(canAccess(ra, "staff", "frontdesk")).toBe(true);
+    expect(canAccess(ra, "staff", "tag")).toBe(true);
     expect(canAccess(ra, "staff", "invoices")).toBe(false);
-    expect(landingFor(ra as never)).toBe("frontdesk");
+    expect(landingFor(ra as never)).toBe("");
     const rb = (await roleIn(uid, b.hotel.id))!; // anderer Betrieb unverändert
     expect(rb).toBe("reception");
     expect(canAccess(rb, "staff", "invoices")).toBe(true);
@@ -88,5 +88,11 @@ describe("Team: Standardrollen pro Betrieb anpassen", () => {
     const def = (await listStandardRoles(h.hotel.id)).find((r) => r.key === "accounting")!;
     await saveStandardRole(h.hotel.id, "accounting", { name: def.name, areas: def.areas }, "t");
     expect((await listStandardRoles(h.hotel.id)).find((r) => r.key === "accounting")!.custom).toBe(false);
+  });
+});
+
+describe("Bereich «frontdesk» ist in «tag» aufgegangen (SPEC 19.42)", () => {
+  it("alter Bereichsname in gespeicherten Rollen gilt als «tag»", () => {
+    expect(areasOf(encodeCustomRole("Alt", ["frontdesk", "bookings"]) as never)).toContain("tag");
   });
 });

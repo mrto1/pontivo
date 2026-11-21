@@ -29,7 +29,7 @@ describe("Admin-Menü", () => {
   it("Seitenschlüssel und Adressen bleiben wie bisher", () => {
     const byKey = Object.fromEntries(allPages(nav).map((i) => [i.key, i.href.replace("/mypontivo/h1/", "")]));
     expect(byKey).toMatchObject({
-      frontdesk: "frontdesk", housekeeping: "housekeeping", inbox: "inbox", restaurant: "restaurant", kasse: "kasse", posclose: "restaurant/abschluss", plan: "plan", calendar: "calendar", pricing: "preise",
+      home: "/mypontivo/h1", housekeeping: "housekeeping", inbox: "inbox", restaurant: "restaurant", kasse: "kasse", posclose: "restaurant/abschluss", plan: "plan", calendar: "calendar", pricing: "preise",
       bookings: "bookings", groups: "groups", resources: "resources", vouchers: "vouchers", guestbook: "guestbook", guests: "guests", marketing: "marketing", feedback: "feedback",
       invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung",
       settings: "settings", rooms: "rooms", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
@@ -38,12 +38,12 @@ describe("Admin-Menü", () => {
   });
 
   it("Reiter der Hauptpunkte", () => {
-    expect(tabKeys("Übersicht")).toEqual(["home", "frontdesk", "housekeeping", "inbox", "g-restaurant"]);
+    expect(tabKeys("Übersicht")).toEqual(["home", "housekeeping", "inbox", "guests", "g-restaurant"]);
     expect(group("Übersicht").tabs![0].label).toBe("Tag");
     expect(group("Übersicht").tabs![4].tabs!.map((t) => t.key)).toEqual(["restaurant", "kasse", "posclose"]);
     expect(tabKeys("Kalender")).toEqual(["plan", "calendar", "pricing"]);
     expect(tabKeys("Buchungen")).toEqual(["bookings", "groups", "resources", "vouchers", "g-guests"]);
-    expect(group("Buchungen").tabs![4].tabs!.map((t) => t.key)).toEqual(["guestbook", "guests", "marketing", "feedback"]);
+    expect(group("Buchungen").tabs![4].tabs!.map((t) => t.key)).toEqual(["guestbook", "marketing", "feedback"]);
     expect(tabKeys("Finanzen")).toEqual(["invoices", "dayclose", "debtors", "owners", "g-statistics", "accountingexport"]);
     expect(group("Finanzen").tabs![4].tabs!.map((t) => t.key)).toEqual(["statistics", "hesta"]);
   });
@@ -64,7 +64,7 @@ describe("Admin-Menü", () => {
 
   it("Kalender startet mit dem Zimmerplan, wenn die Rezeption an ist, sonst mit Preise & Verfügbarkeit", () => {
     expect(group("Kalender").href).toBe("/mypontivo/h1/plan");
-    const off = adminNav(hotel, new Set(["plan", "frontdesk"]));
+    const off = adminNav(hotel, new Set(["plan"]));
     const cal = off.primary.find((i) => i.label === "Kalender")!;
     expect(cal.tabs![0].key).toBe("calendar");
     expect(cal.href).toBe("/mypontivo/h1/calendar");
@@ -84,7 +84,8 @@ describe("Admin-Menü", () => {
     const off = hiddenNavKeys([{ module: "frontdesk", enabled: false }]);
     const n = adminNav(hotel, off);
     expect(n.primary.map((i) => i.label)).toEqual(["Übersicht", "Kalender", "Buchungen", "Finanzen"]);
-    expect(allPages(n).map((i) => i.key)).not.toContain("frontdesk");
+    expect(allPages(n).map((i) => i.key)).not.toContain("plan");
+    expect(allPages(n).map((i) => i.key)).not.toContain("frontdesk"); // Seite gibt es nicht mehr
     expect(n.primary[0].href).toBe("/mypontivo/h1");
   });
 

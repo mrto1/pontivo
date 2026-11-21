@@ -21,10 +21,10 @@ export const GUIDE: Record<GuideRole, GuideTask[]> = {
     { key: "o_stats", area: "statistics", title: "Statistik anschauen", hint: "Belegung, Durchschnittspreis und Herkunft der Buchungen." },
   ],
   reception: [
-    { key: "r_today", area: "frontdesk", title: "Tagesliste öffnen", hint: "Anreisen, Abreisen und Gäste im Haus auf einen Blick." },
+    { key: "r_today", area: "home", title: "Tagesliste öffnen", hint: "Anreisen, Abreisen und Gäste im Haus auf einen Blick." },
     { key: "r_plan", area: "plan", title: "Zimmerplan ansehen", hint: "Zimmer zuteilen und bei Bedarf wechseln." },
     { key: "r_booking", area: "bookings", title: "Eine Buchung von Hand erfassen", hint: "Für Telefon und Walk-in. Der Kalender ist sofort aktuell." },
-    { key: "r_checkin", area: "frontdesk", title: "Einen Gast einchecken", hint: "Meldeschein prüfen, Zimmer zuteilen." },
+    { key: "r_checkin", area: "home", title: "Einen Gast einchecken", hint: "Meldeschein prüfen, Zimmer zuteilen." },
     { key: "r_invoice", area: "invoices", title: "Rechnung und Zahlung erfassen", hint: "Zahlung vor Ort verbuchen, Rechnung oder Quittung drucken." },
     { key: "r_dayclose", area: "dayclose", title: "Tagesabschluss üben", hint: "Bargeld zählen und den Tag abschliessen." },
     { key: "r_inbox", area: "inbox", title: "Posteingang lesen", hint: "Nachrichten von Gästen und Portalen an einem Ort." },
@@ -64,7 +64,7 @@ export const progress = (tasks: GuideTask[], done: ReadonlySet<string>) => ({ do
 
 /** Hilfe je Funktion: ein Satz «So fangen Sie an» (die Beschreibung steht schon im Modul-Register) */
 export const HELP_START: Record<string, string> = {
-  frontdesk: "Öffnen Sie «An- & Abreisen»: links die Anreisen, rechts die Abreisen. Mit «Einchecken» teilen Sie das Zimmer zu.",
+  frontdesk: "Die Tagesliste «Tag» gibt es immer. Mit der Rezeption teilen Sie im Zimmerplan (Kalender) die Zimmer zu.",
   housekeeping: "Nach jeder Abreise erscheint ein Reinigungsauftrag. Das Personal öffnet die Liste am Handy und setzt das Zimmer auf «sauber».",
   invoicing: "Öffnen Sie eine Buchung und wählen Sie «Rechnung erstellen». Zahlungen vor Ort buchen Sie in derselben Buchung.",
   debtors: "Legen Sie die Firma einmal an. Bei einer Buchung wählen Sie dann «auf Rechnung», die Zahlungsfrist kommt aus der Firma.",

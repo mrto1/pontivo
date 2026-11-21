@@ -31,7 +31,7 @@ export type Need = keyof typeof NEEDS;
 
 /** Menüpunkt (Seitenschlüssel in der Adresse) → was er braucht */
 export const PAGE_NEEDS: Record<string, Need> = {
-  calendar: "rooms", preise: "rooms", plan: "rooms", frontdesk: "rooms", housekeeping: "rooms", statistics: "rooms", hesta: "rooms", channex: "rooms", ical: "rooms",
+  calendar: "rooms", preise: "rooms", plan: "rooms", housekeeping: "rooms", statistics: "rooms", hesta: "rooms", channex: "rooms", ical: "rooms",
   invoices: "business",
 };
 

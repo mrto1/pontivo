@@ -16,7 +16,7 @@ export type ModuleDef = {
 };
 
 export const MODULES: ModuleDef[] = [
-  { key: "frontdesk", label: "Rezeption", description: "Tagesliste (Anreisen, Abreisen, im Haus), Zimmerplan und Zimmernummern. Sinnvoll für Hotels; Ferienwohnungen brauchen es meist nicht.", deps: [], defaultOn: true, navKeys: ["frontdesk", "plan"] },
+  { key: "frontdesk", label: "Rezeption", description: "Zimmerplan und Zimmernummern (die Tagesliste «Tag» gibt es immer). Sinnvoll für Hotels; Ferienwohnungen brauchen es meist nicht.", deps: [], defaultOn: true, navKeys: ["plan"] },
   { key: "housekeeping", label: "Housekeeping", description: "Reinigungsstatus je Zimmer, Tagesaufträge nach Abreise, Handy-Liste für das Reinigungspersonal und Meldungen zu Mängeln.", deps: ["frontdesk"], defaultOn: false, navKeys: ["housekeeping"] },
   { key: "guestnotes", label: "Gäste-Notizen", description: "Notizen und Tags zu Gästen (z. B. Stammgast, Wunsch Zimmer oben), sichtbar bei der Buchung, mit Suche. Bitte keine Gesundheits- oder sonstigen heiklen Angaben notieren.", deps: [], defaultOn: false, navKeys: ["guestbook"] },
   { key: "statistics", label: "Statistik", description: "Belegung, Durchschnittspreis (ADR), Umsatz pro verfügbarem Zimmer (RevPAR) und Herkunft der Buchungen, nach Monat und Zimmertyp; dazu die Monatszahlen für die Beherbergungsstatistik (HESTA).", deps: [], defaultOn: true, navKeys: ["statistics", "hesta"] },

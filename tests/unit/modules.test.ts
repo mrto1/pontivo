@@ -18,7 +18,7 @@ describe("Modul-Register", () => {
     const off = hiddenNavKeys([{ module: "frontdesk", enabled: false }, { module: "invoicing", enabled: false }]);
     const nav = adminNav(hotel, off);
     const keys = allPages(nav).map((i) => i.key);
-    for (const k of ["frontdesk", "plan", "invoices", "dayclose"]) expect(keys).not.toContain(k);
+    for (const k of ["plan", "invoices", "dayclose"]) expect(keys).not.toContain(k);
     const cal = nav.primary.find((i) => i.icon === "calendar")!;
     // ohne Rezeption (und ohne Preisempfehlung): Kalender ist nur noch Preise & Verfügbarkeit, ohne Reiter
     expect(cal.tabs).toBeUndefined();

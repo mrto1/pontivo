@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import { PeriodNav } from "@/components/admin/PeriodNav";
 import { requireHotel } from "@/src/auth/guard";
-import { isLimitedRole, landingFor } from "@/src/domain/roles";
+import { hasArea, isLimitedRole, landingFor, seesDay } from "@/src/domain/roles";
+import { addDays, isDay } from "@/src/domain/dates";
 import { atLeast } from "@/src/auth/session";
 import { formatChf } from "@/src/domain/money";
 import { setupOpen } from "@/src/domain/setup";
@@ -13,25 +15,36 @@ import type { DayRow } from "@/src/services/frontdesk";
 
 export const dynamic = "force-dynamic";
 
-function Rows({ rows, hotelId, empty }: { rows: DayRow[]; hotelId: string; empty: string }) {
-  if (!rows.length) return <p className="muted small" style={{ margin: 0 }}>{empty}</p>;
+function List({ title, rows, hotelId, empty }: { title: string; rows: DayRow[]; hotelId: string; empty: string }) {
   return (
-    <ul className="list">
-      {rows.map((r) => (
-        <li key={r.bookingId}>
-          <a href={`/mypontivo/${hotelId}/bookings/${r.bookingId}`}><strong>{r.guest}</strong></a>
-          <span className="muted small"> · {r.persons} Pers. · {r.rooms.length ? `Zimmer ${r.rooms.join(", ")}` : `${r.typeNames.join(", ")} (nicht zugewiesen)`}</span>
-        </li>
-      ))}
-    </ul>
+    <section className="card stack">
+      <h2 style={{ margin: 0 }}>{title} ({rows.length})</h2>
+      {rows.length ? (
+        <div className="scroll-x"><table className="table">
+          <thead><tr><th>Gast</th><th>Personen</th><th>Zimmer</th><th>Aufenthalt</th><th>Buchung</th></tr></thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.bookingId}>
+                <td>{r.guest}{r.guestCheckedOut ? <> <span className="badge">ausgecheckt (Portal)</span></> : null}</td>
+                <td>{r.persons}</td>
+                <td>{r.rooms.length ? r.rooms.join(", ") : <span className="muted small">{r.typeNames.join(", ")} (nicht zugewiesen)</span>}</td>
+                <td className="small">{formatDay(r.checkin, "de")} – {formatDay(r.checkout, "de")}</td>
+                <td><a href={`/mypontivo/${hotelId}/bookings/${r.bookingId}`}>{r.reference}</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table></div>
+      ) : <p className="muted small" style={{ margin: 0 }}>{empty}</p>}
+    </section>
   );
 }
 
-/** Startseite «Tag»: nur der heutige Tag. Kennzahlen mit Zeitraum stehen unter Finanzen → Statistik. */
-export default async function Overview({ params }: { params: Promise<{ hotelId: string }> }) {
+/** Startseite «Tag» (SPEC 19.42): Hinweise und Offenes für heute, An-/Abreisen und Gäste im Haus für jeden Tag (`?day=`). Kennzahlen mit Zeitraum stehen unter Finanzen → Statistik. */
+export default async function Overview({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
+  const sp = await searchParams;
   const { hotel, role } = await requireHotel(hotelId, "staff", "home");
-  if (isLimitedRole(role)) redirect(`/mypontivo/${hotel.id}/${landingFor(role)}`);
+  if (isLimitedRole(role) && !seesDay(role)) redirect(`/mypontivo/${hotel.id}/${landingFor(role)}`);
   const manages = atLeast(role, "manager");
   // Einrichtung läuft: «Tag» zeigt die Einrichtungskarte (das Menü bleibt voll, nichts ist gesperrt)
   if (manages && setupOpen(hotel)) {
@@ -64,14 +77,21 @@ export default async function Overview({ params }: { params: Promise<{ hotelId: 
     );
   }
   const rows = await moduleRows(hotel.id);
-  const inbox = isOn(rows, "inquiries") || isOn(rows, "inbox");
-  const v = await todayView(hotel, { manages, frontdesk: isOn(rows, "frontdesk"), inquiries: isOn(rows, "inquiries"), invoicing: isOn(rows, "invoicing"), inboxVisible: inbox });
+  const limited = isLimitedRole(role);
+  const inbox = (isOn(rows, "inquiries") || isOn(rows, "inbox")) && hasArea(role, "inbox");
+  const day0 = sp.day && isDay(sp.day) ? sp.day : undefined;
+  const v = await todayView(hotel, { day: day0, manages, inquiries: isOn(rows, "inquiries"), invoicing: isOn(rows, "invoicing") && !limited, inboxVisible: inbox });
+  const isToday = v.day === v.today;
+  const showPlan = isOn(rows, "frontdesk") && hasArea(role, "plan");
   const base = `/mypontivo/${hotel.id}`;
-  const noData = !v.notices.length && v.arrivals === null && !v.balances?.length && !v.overdue?.length;
+  const noData = isToday && !v.notices.length && !v.arrivals.length && !v.departures.length && !v.inHouse.length && !v.balances?.length && !v.overdue?.length;
   return (
     <div className="stack">
       <h1 style={{ margin: 0 }}>Tag</h1>
-      <p className="muted" style={{ margin: 0 }}>Heute, {formatDay(v.today, "de")}</p>
+      <PeriodNav prev={`${base}?day=${addDays(v.day, -1)}`} next={`${base}?day=${addDays(v.day, 1)}`} todayHref={base} todayActive={isToday} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: v.day, param: "day" }}>
+        {showPlan ? <a className="btn secondary small" href={`${base}/plan`}>Zimmerplan</a> : null}
+      </PeriodNav>
+      <p className="muted" style={{ margin: 0 }}>{isToday ? "Heute, " : ""}{formatDay(v.day, "de")}</p>
 
       {v.notices.length ? (
         <section className="stack" aria-label="Hinweise">
@@ -81,19 +101,9 @@ export default async function Overview({ params }: { params: Promise<{ hotelId: 
         </section>
       ) : null}
 
-      {v.arrivals !== null && v.departures !== null ? (
-        <div className="grid2">
-          <section className="card stack">
-            <h2 style={{ margin: 0 }}>Anreisen heute ({v.arrivals.length})</h2>
-            <Rows rows={v.arrivals} hotelId={hotel.id} empty="Keine Anreisen." />
-          </section>
-          <section className="card stack">
-            <h2 style={{ margin: 0 }}>Abreisen heute ({v.departures.length})</h2>
-            <Rows rows={v.departures} hotelId={hotel.id} empty="Keine Abreisen." />
-          </section>
-          <p className="muted small" style={{ margin: 0, gridColumn: "1 / -1" }}>{v.inHouse} Gäste-Buchungen im Haus. <a href={`${base}/frontdesk`}>Alle An- und Abreisen</a></p>
-        </div>
-      ) : null}
+      <List title={isToday ? "Anreisen heute" : "Anreisen"} rows={v.arrivals} hotelId={hotel.id} empty="Keine Anreisen." />
+      <List title={isToday ? "Abreisen heute" : "Abreisen"} rows={v.departures} hotelId={hotel.id} empty="Keine Abreisen." />
+      <List title="Im Haus" rows={v.inHouse} hotelId={hotel.id} empty="Niemand im Haus." />
 
       {v.balances?.length || v.overdue?.length ? (
         <section className="card stack">

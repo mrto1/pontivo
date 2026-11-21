@@ -12,7 +12,7 @@ export type Term = { term: string; meaning: string; inPontivo: string; area?: st
 const FRONT: GuideRole[] = ["owner", "reception"];
 
 export const WAYFINDING: Wayfinding[] = [
-  { area: "home", title: "Übersicht (erster Reiter «Tag»)", what: "Der heutige Tag auf einen Blick: Hinweise mit Direktlink zur passenden Einstellung, Anreisen und Abreisen heute, offene Zahlungen. Daneben als Reiter An- & Abreisen, Reinigung, Posteingang und Restaurant.", notThis: "Kennzahlen mit Zeitraum (Belegung, gesparte Provision) stehen unter Finanzen → Statistik." },
+  { area: "home", title: "Übersicht (erster Reiter «Tag»)", what: "Der Tag auf einen Blick: Anreisen, Abreisen und Gäste im Haus, mit Pfeilen und Datumsfeld auch für andere Tage (Vorschau). Für heute zusätzlich Hinweise mit Direktlink zur passenden Einstellung und offene Zahlungen. Daneben als Reiter Posteingang, Check-in & Meldeschein, Reinigung und Restaurant.", notThis: "Kennzahlen mit Zeitraum (Belegung, gesparte Provision) stehen unter Finanzen → Statistik." },
   { area: "calendar", title: "Kalender", what: "Das Zeitraster je Zimmertyp: wie viele Zimmer sind frei, was kostet die Nacht, wo gelten Regeln (Mindestaufenthalt, Stopp). Hier ändern Sie Preise und sperren Zimmer. Erster Reiter ist der Zimmerplan (mit Rezeption), dazu Preisempfehlung.", notThis: "Einzelne Gäste und Zahlungen sehen Sie hier nicht, das sind Vorgänge unter «Buchungen». Booking.com & Co. verbinden Sie unter Einstellungen → Kanäle." },
   { area: "plan", title: "Zimmerplan (erster Reiter im Kalender)", what: "Welches Zimmer ist an welchem Tag mit welchem Gast belegt. Hier teilen Sie konkrete Zimmernummern zu und wechseln Zimmer." },
   { area: "bookings", title: "Buchungen", what: "Alle Vorgänge: Gast, Zeitraum, Zahlung, Storno. Neue Buchung von Hand (Telefon, Walk-in), No-Show, Rückerstattung. Dazu Gruppen, Angebote vor Ort, Gutscheine und Gäste (Kartei, Check-in & Meldeschein, Newsletter, Bewertungen).", notThis: "Preise und Verfügbarkeit ändern Sie im Kalender, Rechnungen stehen unter Finanzen." },
@@ -33,9 +33,9 @@ export const FLOWS: Flow[] = [
     tip: "Ist der Gast nicht mehr erreichbar und das Zimmer wieder gefragt: Buchung öffnen und stornieren, die Nächte sind sofort wieder frei.",
   },
   {
-    key: "f_checkin", title: "Einen Gast einchecken", roles: FRONT, area: "frontdesk",
+    key: "f_checkin", title: "Einen Gast einchecken", roles: FRONT, area: "home",
     goal: "Der Gast kommt an: Zimmer zuteilen, Meldeschein und Kurtaxe erledigen.",
-    steps: ["Übersicht → «An- & Abreisen» öffnen. Dort stehen die Anreisen.", "Bei der Anreise «Einchecken» wählen und die Zimmernummer zuteilen (der Zimmerplan zeigt, welche frei ist).", "Meldeschein prüfen: Der Gast bekommt 7 Tage vor Anreise einen Link zum Online-Formular. Ausweis ansehen und am Empfang bestätigen, dass er gesehen wurde.", "Offene Restzahlung? In der Buchung als «vor Ort erhalten» verbuchen oder per Rechnung kassieren."],
+    steps: ["Übersicht → «Tag» öffnen (oder mit den Pfeilen den Tag wechseln). Dort stehen die Anreisen.", "Bei der Anreise «Einchecken» wählen und die Zimmernummer zuteilen (der Zimmerplan zeigt, welche frei ist).", "Meldeschein prüfen: Der Gast bekommt 7 Tage vor Anreise einen Link zum Online-Formular. Ausweis ansehen und am Empfang bestätigen, dass er gesehen wurde.", "Offene Restzahlung? In der Buchung als «vor Ort erhalten» verbuchen oder per Rechnung kassieren."],
     tip: "Zimmer wechseln Sie später im Zimmerplan, der Preis bleibt.",
   },
   {

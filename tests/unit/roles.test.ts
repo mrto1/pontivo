@@ -20,7 +20,7 @@ describe("Rollen (SPEC 17.4)", () => {
       expect(canAccess(r, "manager", "layout")).toBe(false);
       expect(canAccess(r, "staff", "settings")).toBe(false);
       expect(canAccess(r, "staff", "layout")).toBe(true);
-      expect(ROLE_AREAS[r]).toContain(LANDING[r]);
+      expect(ROLE_AREAS[r]).toContain(LANDING[r] === "" ? "tag" : LANDING[r]); // "" = Tag
     }
   });
 
@@ -31,7 +31,7 @@ describe("Rollen (SPEC 17.4)", () => {
     expect(canAccess("accounting", "staff", "invoices")).toBe(true);
     expect(canAccess("accounting", "staff", "statistics")).toBe(true);
     expect(canAccess("accounting", "staff", "bookings")).toBe(false);
-    expect(canAccess("reception", "staff", "frontdesk")).toBe(true);
+    expect(canAccess("reception", "staff", "tag")).toBe(true);
     expect(canAccess("reception", "staff", "statistics")).toBe(false);
     expect(canAccess("reception", "staff", "settings")).toBe(false);
     expect(canAccess("reception", "staff", "report")).toBe(false);
@@ -46,7 +46,7 @@ describe("Rollen (SPEC 17.4)", () => {
     const keys = new Set<string>();
     const walk = (items: { key: string; tabs?: { key: string }[] }[]) => items.forEach((i) => { keys.add(i.key); walk(i.tabs ?? []); });
     walk(nav.primary); walk(nav.settings.tabs ?? []); walk([nav.account]);
-    for (const areas of Object.values(ROLE_AREAS)) for (const a of areas) if (a !== "layout" && a !== "mypontivo") expect(keys.has(a), a).toBe(true);
+    for (const areas of Object.values(ROLE_AREAS)) for (const a of areas) if (a !== "layout" && a !== "mypontivo" && a !== "tag") expect(keys.has(a), a).toBe(true);
   });
 });
 
@@ -78,11 +78,15 @@ describe("Zahnrad und Menü je Rolle (SPEC 19.42)", () => {
       const { nav } = visibleNav(hotel, r, none);
       const keys = allPages(nav).map((i) => i.key);
       expect(nav.primary.length, r).toBeGreaterThan(0);
-      expect(keys, r).toContain(LANDING[r]);
-      expect(keys, r).not.toContain("home"); // «Tag» leitet um und würde einen toten Reiter ergeben
+      expect(keys, r).toContain(LANDING[r] === "" ? "home" : LANDING[r]);
+      // «Tag» sehen nur Rollen mit Bereich «tag»; für die anderen leitet die Seite um und ein Reiter wäre tot
+      expect(keys.includes("home"), r).toBe(ROLE_AREAS[r].includes("tag"));
       expect(keys.every((k) => ROLE_AREAS[r].includes(k) || ["mypontivo", "firstweek", "help", "helpflows", "helpterms"].includes(k)), r).toBe(true);
       expect(nav.settings.tabs, r).toEqual([]);
     }
+    // Rezeption landet auf «Tag», dem ersten Reiter der Übersicht, zusammen mit Check-in & Meldeschein und Posteingang
+    const rc = visibleNav(hotel, "reception", none).nav;
+    expect(rc.primary[0].tabs!.map((t) => t.key)).toEqual(["home", "housekeeping", "inbox", "guests"]);
     // Reinigung: nur ein Hauptpunkt, der direkt zur Reinigung führt
     const h = visibleNav(hotel, "housekeeping", none).nav;
     expect(h.primary).toHaveLength(1);

@@ -9,20 +9,28 @@ import { openGuestRequestCount } from "./guest-requests";
 import { newInquiryCount } from "./inquiries";
 import { listOpenInvoices, type OpenInvoice } from "./debtors";
 
-/** Startseite «Tag»: nur der heutige Tag (Hinweise, Anreisen und Abreisen, offene Zahlungen). Zahlen mit Zeitraum stehen in Finanzen → Statistik. */
+/**
+ * Startseite «Tag»: Anreisen, Abreisen und Gäste im Haus für einen wählbaren Tag (Vorschau).
+ * Hinweise und offene Zahlungen gehören zum Hier und Jetzt und gibt es nur für heute. Zahlen mit Zeitraum stehen in Finanzen → Statistik.
+ */
 export type OpenBalance = { bookingId: string; reference: string; guest: string; checkin: string; amountRappen: number };
 export type TodayView = {
   today: string;
+  /** angezeigter Tag */
+  day: string;
   notices: DayNotice[];
-  arrivals: DayRow[] | null;
-  departures: DayRow[] | null;
-  inHouse: number | null;
+  arrivals: DayRow[];
+  departures: DayRow[];
+  inHouse: DayRow[];
   balances: OpenBalance[] | null;
   overdue: OpenInvoice[] | null;
 };
 
-export async function todayView(hotel: Hotel, o: { manages: boolean; frontdesk: boolean; inquiries: boolean; invoicing: boolean; inboxVisible: boolean }): Promise<TodayView> {
+export async function todayView(hotel: Hotel, o: { day?: string; manages: boolean; inquiries: boolean; invoicing: boolean; inboxVisible: boolean }): Promise<TodayView> {
   const today = todayIn(hotel.timezone);
+  const day = o.day ?? today;
+  const lists = await dayLists(hotel.id, day);
+  if (day !== today) return { today, day, notices: [], ...lists, balances: null, overdue: null };
   const base = `/mypontivo/${hotel.id}`;
   const failed = o.manages && hotel.channexEnabled ? (await channexStatus(hotel.id)).failed : 0;
   const noPhoto = o.manages
@@ -34,7 +42,6 @@ export async function todayView(hotel: Hotel, o: { manages: boolean; frontdesk: 
     openInquiries: o.inboxVisible && o.inquiries ? await newInquiryCount(hotel.id) : 0,
     inboxVisible: o.inboxVisible,
   });
-  const lists = o.frontdesk ? await dayLists(hotel.id, today) : null;
   // Offene Restzahlungen für Aufenthalte, die bald beginnen oder laufen
   const balances = o.invoicing
     ? (await db().select({ id: bookings.id, reference: bookings.reference, checkin: bookings.checkin, amount: bookings.balanceRappen, first: guests.firstName, last: guests.lastName })
@@ -43,5 +50,5 @@ export async function todayView(hotel: Hotel, o: { manages: boolean; frontdesk: 
       .orderBy(asc(bookings.checkin)).limit(10)).map((b) => ({ bookingId: b.id, reference: b.reference, guest: [b.first, b.last].filter(Boolean).join(" ") || b.reference, checkin: b.checkin, amountRappen: b.amount }))
     : null;
   const overdue = o.invoicing ? (await listOpenInvoices(hotel)).filter((i) => i.daysOverdue > 0).slice(0, 10) : null;
-  return { today, notices, arrivals: lists?.arrivals ?? null, departures: lists?.departures ?? null, inHouse: lists ? lists.inHouse.length : null, balances, overdue };
+  return { today, day, notices, ...lists, balances, overdue };
 }

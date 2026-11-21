@@ -252,3 +252,4 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Das Gästeportal-Einstellungsseite (`gaesteportal`) steht im Auftrag nicht. ASSUMPTION: Zahnrad → Verkauf, neben Gäste-Mails.
 - «Tag» ist für `staff` sichtbar (zuvor nur Manager/Inhaber sahen die Übersicht). ASSUMPTION: Tagesliste ist für Mitarbeitende nützlich und enthält keine Zahlen zu Umsatz.
 - Die Monatsabrechnung («Abo & Gebühren») war für Manager sichtbar, ist jetzt nur Inhaber (Auftrag). Manager verlieren den Zugriff.
+- Tag/An- & Abreisen: Die Seite `frontdesk` wurde auf Wunsch entfernt, ohne Weiterleitung (alte Lesezeichen geben 404). ASSUMPTION: Eingeschränkte Rollen sehen «Tag» nur mit dem Bereich `tag` (Rezeption ja). Hinweise und offene Zahlungen nur bei «Heute».

@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { closeDb, db } from "../../src/db/client";
 import { bookingRooms, bookings, rooms } from "../../src/db/schema";
 import { confirmBooking, createDirectBooking } from "../../src/services/bookings";
+import { todayView } from "../../src/services/today";
 import { assignRoom, autoAssign, createRoom, dayLists, deleteRoom, FrontdeskError, listMoves, listRooms, moveRoom, planBookings, seedRooms, setRoomActive } from "../../src/services/frontdesk";
 import { generateTasks } from "../../src/services/housekeeping";
 import { addDays, todayIn } from "../../src/domain/dates";
@@ -133,5 +134,24 @@ describe("Zimmerwechsel (SPEC 19.5)", () => {
     await expect(assignRoom(s.hotel.id, a.br.id, r1.id, "t")).rejects.toThrow(/Zimmerwechsel/);
     const plan = (await planBookings(s.hotel.id, inDays(19), 8)).filter((p) => p.bookingId === a.booking.id);
     expect(plan).toHaveLength(3);
+  });
+  it("Tag: Vorschau auf einen anderen Tag zeigt die Listen, Hinweise und Offenes nur für heute", async () => {
+    const s = await setup(1);
+    const today = todayIn(s.hotel.timezone);
+    const a = await book(s, 0, 2);
+    await db().update(bookings).set({ checkin: addDays(today, 3), checkout: addDays(today, 5) }).where(eq(bookings.id, a.booking.id));
+    const opts = { manages: true, inquiries: false, invoicing: false, inboxVisible: false };
+    const later = await todayView(s.hotel, { ...opts, day: addDays(today, 3) });
+    expect(later.day).toBe(addDays(today, 3));
+    expect(later.arrivals.map((x) => x.bookingId)).toEqual([a.booking.id]);
+    expect(later.notices).toEqual([]);
+    expect(later.balances).toBeNull();
+    expect(later.overdue).toBeNull();
+    const now = await todayView(s.hotel, opts);
+    expect(now.day).toBe(today);
+    expect(now.arrivals).toEqual([]);
+    expect(now.balances).toBeNull(); // invoicing aus
+    const mid = await todayView(s.hotel, { ...opts, day: addDays(today, 4) });
+    expect(mid.inHouse.map((x) => x.bookingId)).toEqual([a.booking.id]);
   });
 });

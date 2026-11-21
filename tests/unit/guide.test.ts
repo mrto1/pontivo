@@ -28,8 +28,8 @@ describe("Einarbeitung (PMS-ERSATZ 4.2)", () => {
     expect(guideRole("manager")).toBe("owner");
     expect(guideRole("staff")).toBe("owner");
     expect(guideRole("service")).toBe("service");
-    const without = tasksFor("reception", new Set(["frontdesk", "bookings"]));
-    expect(without.every((t) => ["frontdesk", "bookings"].includes(t.area))).toBe(true);
+    const without = tasksFor("reception", new Set(["home", "bookings"]));
+    expect(without.every((t) => ["home", "bookings"].includes(t.area))).toBe(true);
     expect(without.length).toBeLessThan(GUIDE.reception.length);
   });
   it("Fortschritt", () => {

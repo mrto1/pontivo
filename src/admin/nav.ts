@@ -55,9 +55,9 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
         key: "g-overview", label: "Übersicht", href: base, icon: "home",
         tabs: [
           { key: "home", label: "Tag", href: base },
-          link("frontdesk", "An- & Abreisen"),
           link("housekeeping", "Reinigung"),
           link("inbox", "Posteingang"),
+          link("guests", "Check-in & Meldeschein"),
           { ...link("g-restaurant", "Restaurant", "restaurant"), tabs: [link("restaurant", "Tische"), link("kasse", "Kasse"), link("posclose", "Kassenabschluss", "restaurant/abschluss")] },
         ],
       },
@@ -68,7 +68,7 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
         key: "g-bookings", label: "Buchungen", href: `${base}/bookings`, icon: "bookings",
         tabs: [
           link("bookings", "Buchungen"), link("groups", "Gruppen"), link("resources", "Angebote vor Ort"), link("vouchers", "Gutscheine"),
-          { ...link("g-guests", "Gäste", "guestbook"), tabs: [link("guestbook", "Kartei"), link("guests", "Check-in & Meldeschein"), link("marketing", "Newsletter"), link("feedback", "Bewertungen")] },
+          { ...link("g-guests", "Gäste", "guestbook"), tabs: [link("guestbook", "Kartei"), link("marketing", "Newsletter"), link("feedback", "Bewertungen")] },
         ],
       },
       // Finanzen: Rechnungen, Zahlen, Buchhaltung
