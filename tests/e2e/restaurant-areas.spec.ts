@@ -103,6 +103,9 @@ test("Restaurant-Website: Tisch reservieren, Kartei bei der Reservierung", async
   await page.goto(`/h/${hotel.slug}/de`);
   await expect(page.locator(".sticky-book")).toHaveText("Tisch reservieren");
   const block = page.getByTestId("reserve-block");
+  // Morgen statt heute: am Abend nach 21 Uhr gibt es heute keine freien Zeiten mehr
+  const tomorrow = new Date(Date.now() + 864e5).toLocaleDateString("sv-SE", { timeZone: "Europe/Zurich" });
+  await block.getByLabel("Datum").fill(tomorrow);
   await block.getByLabel("Personen").fill("3");
   await block.getByRole("button", { name: "Freie Zeiten zeigen" }).click();
   await expect(page).toHaveURL(/\/tisch\?date=.*party=3/);
