@@ -296,3 +296,23 @@
   .btn:hover, .btnGhost:hover { transform: translateY(-1px); }
   .btn:active, .btnGhost:active { transform: none; }
 }
+
+/* ---------- Dachmarke und Restaurant-Seite (SPEC 20.9) ---------- */
+.heroSolo { padding: 64px 0 96px; max-width: 760px; }
+.pathLink { display: flex; flex-direction: column; gap: 10px; color: inherit !important; text-decoration: none; transition: border-color .15s, transform .15s; }
+.pathLink:hover { border-color: var(--pv-keep); transform: translateY(-2px); }
+.pathCta { margin-top: auto; font-weight: 700; color: var(--pv-keep); }
+.draftNote { margin: 0 0 8px; padding: 10px 14px; border-radius: 10px; background: color-mix(in srgb, var(--pv-fee) 22%, var(--pv-white)); color: var(--pv-ink); font-size: .95rem; }
+.tableWrap { overflow-x: auto; background: var(--pv-white); border-radius: 16px; box-shadow: 0 1px 0 var(--pv-line); margin-bottom: 16px; }
+.priceTable { width: 100%; border-collapse: collapse; font-size: 1rem; }
+.priceTable th, .priceTable td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--pv-line); vertical-align: top; }
+.priceTable th { font-size: .85rem; color: var(--pv-quiet); font-weight: 700; }
+.priceTable tr:last-child td { border-bottom: 0; }
+.priceTable td:nth-child(2) { white-space: nowrap; font-weight: 600; }
+.headLinks a[aria-current="page"] { font-weight: 700; text-decoration: underline; text-underline-offset: 6px; }
+@media (max-width: 860px) {
+  .heroSolo { padding: 24px 0 56px; }
+  .priceTable td:nth-child(2) { white-space: normal; }
+}
+.modGrid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 860px) { .modGrid2 { grid-template-columns: minmax(0, 1fr); } }

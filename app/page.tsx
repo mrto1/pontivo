@@ -1,53 +1,41 @@
 import type { Metadata } from "next";
-import { feePercentText } from "@/src/domain/fee";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
-import { db } from "@/src/db/client";
-import { hotels } from "@/src/db/schema";
 import { getHotelByHost } from "@/src/services/hotels";
 import { env } from "@/src/env";
-import { PontivoHome } from "@/components/marketing/PontivoHome";
-import { resolveSite } from "@/src/domain/pontivo-site";
-import { getSiteOverrides } from "@/src/services/platform-site";
-import { DEFAULT_PLATFORM_FEE_BPS } from "@/src/domain/fee";
+import { PortalHome } from "@/components/marketing/PortalHome";
+import { feePercentText } from "@/src/domain/fee";
+import { formatChf } from "@/src/domain/money";
+import { DEFAULT_MONTHLY_MINIMUM_RAPPEN } from "@/src/legal/host-terms";
 import { accountLink } from "@/src/services/account-link";
+import { restaurantPublic } from "@/src/services/platform-settings";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const name = env().PLATFORM_NAME;
+  const resto = process.env.STATIC_SITE === "1" ? false : await restaurantPublic();
   return {
-    title: `${name} – Direktbuchung für Hotels`,
-    description: `Website mit Online-Buchung, TWINT und Abgleich mit Booking.com für kleine Hotels in der Schweiz. ${name} kostet ${feePercentText()} % pro Direktbuchung.`,
+    title: resto ? `${name} – Direkt buchen, bestellen, reservieren. Ohne Provision.` : `${name} – Direktbuchung für Schweizer Unterkünfte`,
+    description: resto
+      ? `Website, Direktbuchung, Tischreservation und Online-Bestellung für Schweizer Unterkünfte und Restaurants. ${feePercentText()} % auf das, was über ${name} läuft.`
+      : `Website mit Online-Buchung und TWINT für Schweizer Unterkünfte. ${feePercentText()} % pro Direktbuchung.`,
   };
 }
 
+/** Startseite der Dachmarke (SPEC 20.9). Domain eines Hotels → dessen Website. */
 export default async function Root() {
-  // Domain eines Hotels → dessen Website. Sonst: Website der Plattform.
   const hotel = await getHotelByHost((await headers()).get("host"));
   if (hotel) redirect(`/${hotel.defaultLanguage}`);
   const e = env();
-  // ASSUMPTION: Das Demo-Hotel (Slug DEMO_HOTEL_SLUG) wird als Beispiel verlinkt, wenn es existiert und live ist.
-  const [demo] = await db().select().from(hotels).where(eq(hotels.slug, e.DEMO_HOTEL_SLUG));
-  const list = e.NODE_ENV === "production" || process.env.STATIC_SITE === "1" ? [] : await db().select().from(hotels).orderBy(hotels.name);
+  const st = process.env.STATIC_SITE === "1";
   return (
-    <PontivoHome
-      account={process.env.STATIC_SITE === "1" ? null : await accountLink()}
-      site={resolveSite(await getSiteOverrides(), { name: e.PLATFORM_NAME, fee: DEFAULT_PLATFORM_FEE_BPS / 100, email: e.PLATFORM_CONTACT_EMAIL })}
-      contact={{
-        name: e.PLATFORM_NAME,
-        email: e.PLATFORM_CONTACT_EMAIL,
-        phone: e.PLATFORM_PHONE,
-        staticSite: process.env.STATIC_SITE === "1",
-        demoUrl: demo?.status === "live" ? `/h/${demo.slug}/de` : undefined,
-      }}
-    >
-      {list.length ? (
-        <p>
-          Entwicklung: {list.map((h, i) => <span key={h.id}>{i ? " · " : ""}<a href={`/h/${h.slug}/de`}>{h.name}</a></span>)} · <a href="/mypontivo">Admin</a>
-        </p>
-      ) : null}
-    </PontivoHome>
+    <PortalHome
+      contact={{ name: e.PLATFORM_NAME, email: e.PLATFORM_CONTACT_EMAIL, phone: e.PLATFORM_PHONE, staticSite: st }}
+      account={st ? null : await accountLink()}
+      restaurant={await restaurantPublic()}
+      fee={feePercentText()}
+      minimum={formatChf(DEFAULT_MONTHLY_MINIMUM_RAPPEN).replace(".00", "")}
+    />
   );
 }

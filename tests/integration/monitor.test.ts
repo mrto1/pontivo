@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { eq, like, sql } from "drizzle-orm";
+import { and, eq, isNull, like, sql } from "drizzle-orm";
 import { closeDb, db } from "../../src/db/client";
 import { bookings, emailOutbox, hotels, payments, systemStatus } from "../../src/db/schema";
 import { beat, checkSystem, raiseAlert, runWatchdog } from "../../src/services/monitor";
@@ -54,7 +54,7 @@ describe("Überwachung", () => {
     await stuck();
     expect(await runWatchdog(new Date(), 0.5)).toEqual({ problems: 1, sent: 1 });
     expect(await runWatchdog(new Date(), 0.5)).toEqual({ problems: 1, sent: 0 });
-    const alerts = await db().select().from(emailOutbox).where(eq(emailOutbox.template, "platform_alert"));
+    const alerts = await db().select().from(emailOutbox).where(and(eq(emailOutbox.template, "platform_alert"), isNull(emailOutbox.hotelId))); // nur Alarme der Überwachung (Plattform-Rechnungen melden mit Betrieb)
     expect(alerts).toHaveLength(1);
     expect(alerts[0].toEmail).toBe("alarm@example.ch");
     // behoben → Schlüssel verschwindet → Rückfall meldet wieder

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { restaurantPublic } from "@/src/services/platform-settings";
 import { feePercentText } from "@/src/domain/fee";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -62,11 +63,26 @@ export default async function Register({ searchParams }: { searchParams: Promise
   // Wer angemeldet ist, registriert sich nicht neu: weiterer Betrieb im selben Konto
   if (await currentUserId()) redirect("/mypontivo/neu");
   const sp = await searchParams;
+  const resto = await restaurantPublic();
+  const forRestaurant = sp.art === "restaurant";
   return (
     <PlatformFrame hideSignup>
     <main className="register" style={{ padding: "8px 0 56px" }}>
       <div className="register-grid">
         <section>
+          {forRestaurant ? (<>
+            <h1>Ihr Restaurant online – in 20 Minuten eingerichtet</h1>
+            <p className="muted">Website, Tischreservation, Online-Bestellung mit Abholung und Lieferung und auf Wunsch Kasse, für Restaurants, Cafés und Take-aways in der Schweiz.</p>
+            <ol className="register-steps">
+              <li><strong>Registrieren</strong> – Sie erhalten einen Login-Link per E-Mail.</li>
+              <li><strong>Reservation live</strong> – Öffnungszeiten und Tische angeben, Gäste reservieren sofort über Website, Link oder QR-Code.</li>
+              <li><strong>Speisekarte</strong> – aus Ihrer Website oder einem PDF einlesen, prüfen, fertig.</li>
+              <li><strong>Online-Bestellung</strong> – sobald Stripe Ihre Zahlungen freigibt, mit Probebestellung live schalten.</li>
+            </ol>
+            <div className="card small">
+              <strong>Preis:</strong> mindestens CHF 19 pro Monat (Reservation und Website inklusive), {feePercentText()} % pro Online-Bestellung, Kasse CHF 29 pro Monat. Keine Gebühr pro Gast, keine Einrichtungsgebühr, monatlich kündbar.
+            </div>
+          </>) : (<>
           <h1>Direktbuchung für Ihren Betrieb – in 20 Minuten eingerichtet</h1>
           <p className="muted">Online-Buchung mit TWINT und Kartenzahlung für Hotels, B&amp;Bs, Ferienwohnungen und Chalets in der Schweiz – mit neuer Website oder eingebaut in Ihre bestehende.</p>
           <ol className="register-steps">
@@ -79,14 +95,15 @@ export default async function Register({ searchParams }: { searchParams: Promise
           <div className="card small">
             <strong>Preis, mit oder ohne Website gleich:</strong> {feePercentText()} % pro Direktbuchung, mindestens CHF 19 pro Monat (ab dem ersten vollen Monat nach dem Live-Gang). Liegen die {feePercentText()} % darunter, wird nur die Differenz belastet. Keine Einrichtungsgebühr, monatlich kündbar.
           </div>
+          </>)}
         </section>
         <form action={register} className="card stack">
           <h2 style={{ margin: 0 }}>Registrieren</h2>
           {sp.error ? <p className="notice warn" role="alert">{sp.error}</p> : null}
-          <fieldset className="plain"><legend className="small muted">Was vermieten Sie?</legend>
+          <fieldset className="plain"><legend className="small muted">{forRestaurant || resto ? "Was führen Sie?" : "Was vermieten Sie?"}</legend>
             <div className="type-pick">
-              {/* Restaurant nur über ?art=restaurant (Pilotbetriebe), die öffentlichen Seiten bleiben bis R7 auf Unterkünfte ausgerichtet (Konzept Entscheid 1) */}
-              {PROPERTY_TYPES.filter((t) => t !== "restaurant" || sp.art === "restaurant").map((t, i) => (
+              {/* Restaurant: über ?art=restaurant oder nach Freischaltung der Restaurant-Seite (SPEC 20.9) */}
+              {PROPERTY_TYPES.filter((t) => t !== "restaurant" || sp.art === "restaurant" || resto).map((t, i) => (
                 <label key={t}><input type="radio" name="propertyType" value={t} defaultChecked={sp.art === "restaurant" ? t === "restaurant" : i === 0} required />{PROPERTY_LABEL[t]}</label>
               ))}
             </div>

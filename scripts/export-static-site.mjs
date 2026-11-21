@@ -12,7 +12,7 @@ import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:3000";
 const out = process.argv[3] ?? "out/static-site";
-const pages = [["/", "index.html"], ["/impressum", "impressum.html"], ["/datenschutz", "datenschutz.html"], ["/gastgeber-bedingungen", "gastgeber-bedingungen.html"]];
+const pages = [["/", "index.html"], ["/unterkunft", "unterkunft.html"], ["/restaurant", "restaurant.html"], ["/impressum", "impressum.html"], ["/datenschutz", "datenschutz.html"], ["/gastgeber-bedingungen", "gastgeber-bedingungen.html"]];
 
 const CALC = `<script>
 (function () {
@@ -48,7 +48,8 @@ async function asset(url) {
 const browser = await chromium.launch();
 const page = await browser.newPage();
 for (const [route, file] of pages) {
-  await page.goto(new URL(route, base).toString(), { waitUntil: "networkidle" });
+  const res = await page.goto(new URL(route, base).toString(), { waitUntil: "networkidle" });
+  if (!res || res.status() !== 200) { console.log("übersprungen (nicht öffentlich):", route); continue; } // z. B. Restaurant-Seite vor der Freischaltung
   let html = await page.content();
   // CSS einbetten, Schriften als Dateien
   for (const m of [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"[^>]*>/g)]) {
@@ -65,7 +66,7 @@ for (const [route, file] of pages) {
   html = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, "").replace(/<link[^>]+rel="(preload|modulepreload)"[^>]*>/g, "");
   // Fotos/Icons aus /_next oder /media lokal ablegen
   for (const u of [...new Set([...html.matchAll(/(?:src|href)="(\/(?:_next\/static|media|icon|favicon)[^"]*)"/g)].map((x) => x[1]))]) html = html.split(`"${u}"`).join(`"${await asset(u)}"`);
-  if (file === "index.html") html = html.replace("</body>", `${CALC}</body>`);
+  if (file === "unterkunft.html") html = html.replace("</body>", `${CALC}</body>`); // Rechner steht auf der Seite für Unterkünfte (SPEC 20.9)
   await fs.writeFile(path.join(out, file), html);
   console.log("geschrieben:", file);
 }

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requirePlatformAdmin } from "@/src/auth/guard";
 import { DEFAULT_FAQ, MAX_FAQ, SITE_FIELDS, type SiteField } from "@/src/domain/pontivo-site";
 import { getSiteOverrides, resetSiteOverrides, saveSiteOverrides } from "@/src/services/platform-site";
+import { restaurantPublic, setRestaurantPublic } from "@/src/services/platform-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,13 @@ async function save(f: FormData) {
   redirect("/admin/plattform/website?saved=1");
 }
 
+async function restaurant(f: FormData) {
+  "use server";
+  const admin = await requirePlatformAdmin();
+  await setRestaurantPublic(f.get("on") === "1", `user:${admin.id}`);
+  redirect(`/admin/plattform/website?resto=${f.get("on") === "1" ? "on" : "off"}`);
+}
+
 async function reset() {
   "use server";
   const admin = await requirePlatformAdmin();
@@ -25,7 +33,7 @@ async function reset() {
 export default async function WebsiteEditor({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   await requirePlatformAdmin();
   const sp = await searchParams;
-  const o = await getSiteOverrides();
+  const [o, resto] = await Promise.all([getSiteOverrides(), restaurantPublic()]);
   const groups = [...new Set(SITE_FIELDS.map((x) => x.group))];
   const faq = o?.faq ?? DEFAULT_FAQ;
   const rows = [...faq, ...Array.from({ length: 3 }, () => ({ q: "", a: "" }))].slice(0, MAX_FAQ);
@@ -45,7 +53,14 @@ export default async function WebsiteEditor({ searchParams }: { searchParams: Pr
     <div style={{ maxWidth: 820 }}>
       <p><a href="/" target="_blank">Startseite ansehen ↗</a></p>
       <h1>Texte der Pontivo-Website</h1>
-      <p className="muted">Hier änderst du die Texte der Startseite. Änderungen sind sofort sichtbar. Ein Feld auf den ursprünglichen Text zurückzusetzen heisst: den alten Text wieder eintragen oder das Feld leeren. Platzhalter: <code>{"{name}"}</code> (Plattformname), <code>{"{fee}"}</code> (Gebühr in Prozent), <code>{"{emailTo}"}</code> (« an info@…», leer ohne Adresse). Impressum, Datenschutz und Bedingungen bearbeitest du nicht hier (rechtliche Texte), ebenso die einzelnen Funktionskarten.</p>
+      <section className="card stack" data-testid="restaurant-public">
+        <h2>Seiten</h2>
+        <p className="small">Startseite <a href="/" target="_blank">/</a> (Dachmarke) · Unterkünfte <a href="/unterkunft" target="_blank">/unterkunft</a> (Texte unten) · Restaurants <a href="/restaurant" target="_blank">/restaurant</a>.</p>
+        <p>Restaurant-Seite: {resto ? <strong>öffentlich</strong> : <strong>Entwurf</strong>}{resto ? " – verlinkt auf der Startseite, «Restaurant» bei der Registrierung wählbar." : " – nur für Plattform-Admins sichtbar, nicht verlinkt, für Suchmaschinen gesperrt."}</p>
+        {sp.resto ? <p className="notice">{sp.resto === "on" ? "Restaurant-Seite ist jetzt öffentlich." : "Restaurant-Seite ist wieder ein Entwurf."}</p> : null}
+        <form action={restaurant}><input type="hidden" name="on" value={resto ? "0" : "1"} /><button className={resto ? "btn secondary small" : "btn small"}>{resto ? "Restaurant-Seite ausblenden" : "Restaurant-Seite freischalten"}</button></form>
+      </section>
+      <p className="muted">Hier änderst du die Texte der Seite für Unterkünfte. Änderungen sind sofort sichtbar. Ein Feld auf den ursprünglichen Text zurückzusetzen heisst: den alten Text wieder eintragen oder das Feld leeren. Platzhalter: <code>{"{name}"}</code> (Plattformname), <code>{"{fee}"}</code> (Gebühr in Prozent), <code>{"{emailTo}"}</code> (« an info@…», leer ohne Adresse). Impressum, Datenschutz und Bedingungen bearbeitest du nicht hier (rechtliche Texte), ebenso die einzelnen Funktionskarten.</p>
       {sp.saved ? <p className="notice">Gespeichert.</p> : null}
       {sp.reset ? <p className="notice">Alle Texte stehen wieder auf dem Standard.</p> : null}
       <form action={save} className="stack">
