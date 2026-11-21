@@ -16,7 +16,7 @@ export default async function Guestbook({ params, searchParams }: { params: Prom
   const [rows, tags] = await Promise.all([kartei(hotel.id, q, tag), allTags(hotel.id)]);
   return (
     <div className="stack">
-      <h1>Gäste-Kartei</h1>
+      <h1>Kartei</h1>
       <form method="get" className="inline-form">
         <input name="q" defaultValue={q} placeholder="Name, E-Mail, Tag oder Notiz suchen" />
         {tags.length ? (

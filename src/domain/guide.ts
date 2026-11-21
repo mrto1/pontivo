@@ -14,7 +14,7 @@ export const GUIDE: Record<GuideRole, GuideTask[]> = {
     { key: "o_rooms", area: "rooms", title: "Zimmer und Preise prüfen", hint: "Zimmertypen, Grundpreis und Kapazität: stimmt alles mit der Wirklichkeit?" },
     { key: "o_site", area: "site", title: "Website ansehen", hint: "Texte, Fotos und Farben. So sehen Gäste Ihr Haus." },
     { key: "o_functions", area: "funktionen", title: "Funktionen ein- oder ausschalten", hint: "Nur was Sie brauchen, bleibt im Menü. Ausgeschaltet gehen keine Daten verloren." },
-    { key: "o_team", area: "settings", title: "Team einladen", hint: "Jede Person bekommt eine Rolle: Rezeption, Reinigung, Buchhaltung oder Service sehen nur ihren Bereich." },
+    { key: "o_team", area: "team", title: "Team einladen", hint: "Jede Person bekommt eine Rolle: Rezeption, Reinigung, Buchhaltung oder Service sehen nur ihren Bereich." },
     { key: "o_channex", area: "channex", title: "Kanäle verbinden", hint: "Booking.com, Airbnb und Expedia mit dem Kalender abgleichen." },
     { key: "o_bookings", area: "bookings", title: "Eine Testbuchung durchspielen", hint: "Von der Buchung bis zur bestätigten Mail." },
     { key: "o_invoices", area: "invoices", title: "Eine Rechnung ausstellen", hint: "Rechnungsdaten und MWST einmal mit Ihrem Treuhänder prüfen." },
@@ -33,7 +33,7 @@ export const GUIDE: Record<GuideRole, GuideTask[]> = {
     { key: "h_list", area: "housekeeping", title: "Reinigungsliste öffnen", hint: "Am Handy: die Zimmer des Tages, nach Abreise zuerst." },
     { key: "h_status", area: "housekeeping", title: "Ein Zimmer auf «sauber» setzen", hint: "So sieht die Rezeption sofort, dass es bereit ist." },
     { key: "h_issue", area: "housekeeping", title: "Einen Mangel melden", hint: "Defektes Licht, fehlendes Handtuch: kurze Meldung, die Rezeption sieht sie." },
-    { key: "h_home", area: "mypontivo", title: "Pontivo auf den Startbildschirm legen", hint: "Unter «Mein Konto»: so öffnet sich die Liste mit einem Tipp." },
+    { key: "h_home", area: "mypontivo", title: "Pontivo auf den Startbildschirm legen", hint: "Im Menü hinter dem Profilbild (Profil & Sicherheit): so öffnet sich die Liste mit einem Tipp." },
   ],
   accounting: [
     { key: "a_invoices", area: "invoices", title: "Rechnungen ansehen", hint: "Offene, bezahlte und gutgeschriebene Rechnungen." },
@@ -64,14 +64,14 @@ export const progress = (tasks: GuideTask[], done: ReadonlySet<string>) => ({ do
 
 /** Hilfe je Funktion: ein Satz «So fangen Sie an» (die Beschreibung steht schon im Modul-Register) */
 export const HELP_START: Record<string, string> = {
-  frontdesk: "Öffnen Sie «Heute»: links die Anreisen, rechts die Abreisen. Mit «Einchecken» teilen Sie das Zimmer zu.",
+  frontdesk: "Öffnen Sie «An- & Abreisen»: links die Anreisen, rechts die Abreisen. Mit «Einchecken» teilen Sie das Zimmer zu.",
   housekeeping: "Nach jeder Abreise erscheint ein Reinigungsauftrag. Das Personal öffnet die Liste am Handy und setzt das Zimmer auf «sauber».",
   invoicing: "Öffnen Sie eine Buchung und wählen Sie «Rechnung erstellen». Zahlungen vor Ort buchen Sie in derselben Buchung.",
   debtors: "Legen Sie die Firma einmal an. Bei einer Buchung wählen Sie dann «auf Rechnung», die Zahlungsfrist kommt aus der Firma.",
   resources: "Legen Sie das Angebot mit Zeitfenstern an (z. B. Sauna, 60 Minuten). Buchen Sie es bei einer Buchung, der Preis kommt aufs Zimmer.",
-  pos: "Legen Sie unter «Restaurant → Artikel» Artikel, Tische und mindestens ein Gerät an. Dann öffnen Sie «Kasse» am Tablet.",
+  pos: "Legen Sie unter Einstellungen → Geräte & Kasse → Kassen-Artikel Artikel, Tische und mindestens ein Gerät an. Dann öffnen Sie «Kasse» am Tablet.",
   posbridge: "Erstellen Sie einen Schlüssel und geben Sie ihn Ihrem Kassenanbieter. Dessen Kasse bucht Posten aufs Zimmer.",
-  inbox: "Verbinden Sie Booking.com, Airbnb oder Expedia unter «Vertrieb». Nachrichten erscheinen danach hier.",
+  inbox: "Verbinden Sie Booking.com, Airbnb oder Expedia unter Einstellungen → Kanäle. Nachrichten erscheinen danach hier.",
   owners: "Ordnen Sie jede Wohnung einem Eigentümer zu und setzen Sie Ihre Kommission. Die Monatsabrechnung rechnet Pontivo.",
   marketing: "Schreiben Sie ein Mail und wählen Sie die Empfänger nach Sprache. Es gehen nur Gäste, die zugestimmt haben.",
   vouchers: "Legen Sie Beträge fest, die Gäste online kaufen können. Im Haus lösen Sie den Code bei der Buchung ein.",

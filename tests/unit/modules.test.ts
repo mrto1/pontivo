@@ -14,20 +14,26 @@ describe("Modul-Register", () => {
     const keys = new Set(allPages(adminNav(hotel)).map((i) => i.key));
     for (const m of MODULES) for (const k of m.navKeys) expect(keys.has(k), `${m.key}:${k}`).toBe(true);
   });
-  it("ausgeschaltete Module verschwinden aus dem Menü, Sammelpunkt mit einem Reiter wird einfach", () => {
+  it("ausgeschaltete Module verschwinden aus dem Menü, Gruppe mit einem Reiter wird einfach", () => {
     const off = hiddenNavKeys([{ module: "frontdesk", enabled: false }, { module: "invoicing", enabled: false }]);
     const nav = adminNav(hotel, off);
     const keys = allPages(nav).map((i) => i.key);
-    expect(keys).not.toEqual(expect.arrayContaining(["frontdesk"]));
-    expect(keys).not.toEqual(expect.arrayContaining(["plan"]));
-    expect(keys).not.toEqual(expect.arrayContaining(["invoices"]));
-    const b = nav.primary.find((i) => i.key === "bookings")!;
-    expect(b.tabs?.map((t) => t.key)).toEqual(["bookings", "report"]);
-    expect(nav.primary.find((i) => i.key === "calendar")!.tabs?.map((t) => t.key)).not.toContain("plan");
-    // nur Rechnung aus: Buchungen behält den Reiter Heute (Zimmerplan liegt beim Kalender)
-    const nav2 = adminNav(hotel, hiddenNavKeys([{ module: "invoicing", enabled: false }]));
-    expect(nav2.primary.find((i) => i.key === "bookings")!.tabs?.map((t) => t.key)).toEqual(["bookings", "frontdesk", "report"]);
-    expect(nav2.primary.length).toBeLessThanOrEqual(4);
+    for (const k of ["frontdesk", "plan", "invoices", "dayclose"]) expect(keys).not.toContain(k);
+    const cal = nav.primary.find((i) => i.icon === "calendar")!;
+    // ohne Rezeption (und ohne Preisempfehlung): Kalender ist nur noch Preise & Verfügbarkeit, ohne Reiter
+    expect(cal.tabs).toBeUndefined();
+    expect(cal.key).toBe("calendar");
+    expect(cal.href).toBe("/mypontivo/h1/calendar");
+    // Finanzen ohne Rechnung & Kasse: Debitoren braucht sie ebenfalls; übrig Eigentümer, Statistik, Buchhaltung
+    const fin = nav.primary.find((i) => i.icon === "finance")!;
+    expect(fin.tabs?.map((t) => t.key)).not.toContain("invoices");
+    expect(nav.primary.length).toBeLessThanOrEqual(4);
+  });
+  it("Zahnrad: ausgeschaltete Module verschwinden auch dort, Gruppen ohne Punkte fehlen", () => {
+    const off = hiddenNavKeys([{ module: "terminal", enabled: false }, { module: "access", enabled: false }, { module: "pos", enabled: false }, { module: "posbridge", enabled: false }, { module: "invoicing", enabled: false }]);
+    const keys = allPages(adminNav(hotel, off)).map((i) => i.key);
+    for (const k of ["terminal", "access", "positems", "posbridge"]) expect(keys).not.toContain(k);
+    expect(keys).toContain("funktionen");
   });
   it("Abhängigkeiten werden geprüft", () => {
     expect(switchProblem([], "unbekannt", true)).toMatch(/Unbekannt/);

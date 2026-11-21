@@ -57,7 +57,7 @@ export default async function Housekeeping({ params, searchParams }: { params: P
       <PeriodNav prev={`?day=${addDays(day, -1)}`} next={`?day=${addDays(day, 1)}`} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }}>
         <span className="small muted">{formatDay(day, "de")} · {counts.dirty} schmutzig · {counts.open} offene Mängel</span>
       </PeriodNav>
-      {sorted.length === 0 ? <p className="muted">Noch keine Zimmer. Zimmer legen Sie unter «Zimmer» an.</p> : null}
+      {sorted.length === 0 ? <p className="muted">Noch keine Zimmer. Zimmer legen Sie unter Kalender → Zimmerplan an.</p> : null}
       <div className="stack">
         {sorted.map((r) => (
           <section key={r.roomId} className="card stack" style={{ borderLeft: `6px solid ${r.status === "dirty" ? "#b3261e" : r.status === "inspected" ? "#2f5d50" : "#8a9a8f"}` }}>

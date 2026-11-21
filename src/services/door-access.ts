@@ -70,7 +70,7 @@ export async function issueCodes(hotel: Hotel, bookingId: string, actor: string,
   if (w.until <= now) throw new AccessError("Die Abreise liegt in der Vergangenheit.");
   const roomIds = (await db().select({ r: bookingRooms.roomId }).from(bookingRooms).where(eq(bookingRooms.bookingId, bookingId))).map((x) => x.r).filter((x): x is string => !!x);
   const locks = (await listLocks(hotel.id)).filter((l) => !l.roomId || roomIds.includes(l.roomId));
-  if (!locks.length) throw new AccessError("Keine Schlösser eingerichtet (Menü «Zutritt»).");
+  if (!locks.length) throw new AccessError("Keine Schlösser eingerichtet (Einstellungen → Geräte & Kasse → Zutritt).");
   const have = await db().select().from(doorCodes).where(eq(doorCodes.bookingId, bookingId));
   let created = 0, errors = 0;
   for (const lock of locks) {

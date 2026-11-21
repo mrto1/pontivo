@@ -116,7 +116,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
       <section className="card stack" id="codes">
         <h2>Firmencodes</h2>
         {!debtors ? (
-          <p className="muted small" style={{ margin: 0 }}>Firmencodes gehören zu den Firmenkunden. Schalten Sie unter <a href={`/mypontivo/${hotel.id}/funktionen`}>Mein Betrieb → Einstellungen → Funktionen</a> das Modul «Debitoren» ein, dann legen Sie hier Codes an.</p>
+          <p className="muted small" style={{ margin: 0 }}>Firmencodes gehören zu den Firmenkunden. Schalten Sie unter <a href={`/mypontivo/${hotel.id}/funktionen`}>Einstellungen → Funktionen</a> das Modul «Debitoren» ein, dann legen Sie hier Codes an.</p>
         ) : (
           <>
             <p className="muted small" style={{ margin: 0 }}>Eine Firma bucht mit ihrem Code Ihr günstigeres Firmenpreis-Angebot direkt auf Ihrer Seite. Mit «auf Rechnung» ist die Buchung sofort bestätigt und die Rechnung geht an die Firma (siehe Debitoren). Das Feld «Code» erscheint im Buchungsfenster, sobald es einen aktiven Code gibt.</p>
@@ -165,7 +165,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
                   <div><button className="btn small">Code anlegen</button></div>
                 </form>
               </details>
-            ) : <p className="muted small" style={{ margin: 0 }}>Legen Sie zuerst unter <a href={`/mypontivo/${hotel.id}/invoices/debitoren`}>Buchungen → Debitoren</a> eine Firma an.</p>}
+            ) : <p className="muted small" style={{ margin: 0 }}>Legen Sie zuerst unter <a href={`/mypontivo/${hotel.id}/invoices/debitoren`}>Finanzen → Debitoren</a> eine Firma an.</p>}
           </>
         )}
       </section>

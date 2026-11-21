@@ -18,7 +18,7 @@ const fmtDay = (d: string) => `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4
 // ASSUMPTION: PDF über die Druckfunktion des Browsers (wie bei der Monatsabrechnung), keine serverseitige PDF-Erzeugung.
 export default async function PlatformInvoice({ params }: { params: Promise<{ hotelId: string; chargeId: string }> }) {
   const { hotelId, chargeId } = await params;
-  const { hotel } = await requireHotel(hotelId, "manager");
+  const { hotel } = await requireHotel(hotelId, "owner");
   const [c] = await db().select().from(platformCharges).where(and(eq(platformCharges.id, chargeId), eq(platformCharges.hotelId, hotel.id)));
   if (!c || !c.invoiceNo) notFound();
   const p = platformInfo();

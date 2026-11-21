@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request, ctx: { params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await ctx.params;
   const userId = readSessionValue((await cookies()).get(SESSION_COOKIE)?.value);
-  if (!userId || !atLeast(await roleIn(userId, hotelId), "manager")) return new Response("Not found", { status: 404 });
+  if (!userId || !atLeast(await roleIn(userId, hotelId), "owner")) return new Response("Not found", { status: 404 });
   const limited = await exportLimited(userId, hotelId);
   if (limited) return limited;
   const month = new URL(req.url).searchParams.get("month");

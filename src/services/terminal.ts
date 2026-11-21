@@ -14,7 +14,7 @@ import { bookingBalance, InvoiceError, recordOnsitePayment } from "./invoicing";
 export const TERMINAL_MAX_RAPPEN = 1_000_000;
 
 const needAccount = (hotel: Hotel) => {
-  if (!hotel.stripeAccountId) throw new InvoiceError("Zuerst das Stripe-Konto verbinden (Einstellungen → Zahlungen).");
+  if (!hotel.stripeAccountId) throw new InvoiceError("Zuerst das Stripe-Konto verbinden (Einstellungen → Grunddaten → Zahlungen).");
   return { stripeAccount: hotel.stripeAccountId };
 };
 

@@ -11,6 +11,7 @@ import { todayIn } from "@/src/domain/dates";
 import { enqueueFullSync } from "@/src/integrations/channex/outbox-worker";
 import { pullFeed } from "@/src/integrations/channex/feed";
 import { env } from "@/src/env";
+import { otaCommissionBps, setOtaCommission } from "@/src/services/overview";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,16 @@ async function run(f: FormData, fn: (h: Awaited<ReturnType<typeof requireHotel>>
     msg = `Fehler: ${(e as Error).message}`;
   }
   back(ctx.hotel.id, msg);
+}
+
+async function commissionAction(f: FormData) {
+  "use server";
+  await run(f, async ({ hotel, actor }) => {
+    const pct = Number(String(f.get("pct") ?? "").replace(",", "."));
+    if (!Number.isFinite(pct) || pct < 0 || pct > 30) throw new Error("Provision zwischen 0 und 30 % eintragen");
+    await setOtaCommission(hotel.id, Math.round(pct * 100), actor);
+    return "Provision gespeichert";
+  });
 }
 
 async function createAction(f: FormData) {
@@ -154,6 +165,23 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
         </p>
         {hotel.channexPropertyId ? <p><a className="btn secondary" href={`/mypontivo/${hotel.id}/channex/booking`}>Booking.com verbinden →</a> <a className="btn secondary" href={`/mypontivo/${hotel.id}/channex/airbnb`}>Airbnb verbinden →</a> <a className="btn secondary" href={`/mypontivo/${hotel.id}/channex/expedia`}>Expedia verbinden →</a></p> : null}
       </section>
+
+      {canEdit ? (
+        <section className="card" id="provision">
+          <form action={commissionAction} style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}>
+            {hidden}
+            <div>
+              <label htmlFor="pct">Provision der Buchungsportale in %</label>
+              <input id="pct" name="pct" type="number" min={0} max={30} step={0.5} defaultValue={otaCommissionBps(hotel) / 100} style={{ width: 120 }} />
+            </div>
+            <button className="btn secondary small">Speichern</button>
+          </form>
+          <p className="muted small" style={{ marginBottom: 0 }}>
+            Tragen Sie die Provision ein, die Sie Booking.com &amp; Co. tatsächlich zahlen (steht im Vertrag oder auf der Rechnung).
+            Gerechnet wird auf den Zimmerpreis ohne Kurtaxe. Damit zeigt Finanzen → Statistik, wie viel Sie mit Direktbuchungen sparen.
+          </p>
+        </section>
+      ) : null}
 
       {canEdit && configured ? (
         <section className="card stack">

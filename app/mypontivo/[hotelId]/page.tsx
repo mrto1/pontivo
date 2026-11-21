@@ -2,33 +2,39 @@ import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { isLimitedRole, landingFor } from "@/src/domain/roles";
 import { atLeast } from "@/src/auth/session";
-import { bpsOf, formatChf } from "@/src/domain/money";
-import { overview, PERIOD_LABEL, PERIODS, setOtaCommission, type Period } from "@/src/services/overview";
+import { formatChf } from "@/src/domain/money";
 import { setupOpen } from "@/src/domain/setup";
 import { onboardingSteps, nextOpenStep } from "@/src/services/onboarding";
-import { DirectChart } from "@/components/admin/DirectChart";
+import { moduleRows } from "@/src/services/modules";
+import { isOn } from "@/src/domain/modules";
+import { todayView } from "@/src/services/today";
+import { formatDay } from "@/src/i18n/dict";
+import type { DayRow } from "@/src/services/frontdesk";
 
 export const dynamic = "force-dynamic";
 
-async function saveCommission(f: FormData) {
-  "use server";
-  const c = await requireHotel(String(f.get("hotelId")), "manager");
-  const pct = Number(String(f.get("pct") ?? "").replace(",", "."));
-  if (Number.isFinite(pct) && pct >= 0 && pct <= 30) await setOtaCommission(c.hotel.id, Math.round(pct * 100), c.actor);
-  redirect(`/mypontivo/${c.hotel.id}?period=${String(f.get("period") ?? "month")}`);
+function Rows({ rows, hotelId, empty }: { rows: DayRow[]; hotelId: string; empty: string }) {
+  if (!rows.length) return <p className="muted small" style={{ margin: 0 }}>{empty}</p>;
+  return (
+    <ul className="list">
+      {rows.map((r) => (
+        <li key={r.bookingId}>
+          <a href={`/mypontivo/${hotelId}/bookings/${r.bookingId}`}><strong>{r.guest}</strong></a>
+          <span className="muted small"> · {r.persons} Pers. · {r.rooms.length ? `Zimmer ${r.rooms.join(", ")}` : `${r.typeNames.join(", ")} (nicht zugewiesen)`}</span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
-const chf0 = (r: number) => formatChf(Math.round(r / 100) * 100).replace(/\.00$/, "");
-
-export default async function Overview({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
+/** Startseite «Tag»: nur der heutige Tag. Kennzahlen mit Zeitraum stehen unter Finanzen → Statistik. */
+export default async function Overview({ params }: { params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
-  const sp = await searchParams;
   const { hotel, role } = await requireHotel(hotelId, "staff", "home");
   if (isLimitedRole(role)) redirect(`/mypontivo/${hotel.id}/${landingFor(role)}`);
-  // Zahlen zu Umsatz und Gebühren nur für Inhaber und Geschäftsführung (wie die Abrechnung)
-  if (!atLeast(role, "manager")) redirect(`/mypontivo/${hotel.id}/bookings`);
-  // Einrichtung läuft: Übersicht zeigt die Einrichtungskarte (das Menü bleibt voll, nichts ist gesperrt)
-  if (setupOpen(hotel)) {
+  const manages = atLeast(role, "manager");
+  // Einrichtung läuft: «Tag» zeigt die Einrichtungskarte (das Menü bleibt voll, nichts ist gesperrt)
+  if (manages && setupOpen(hotel)) {
     const steps = await onboardingSteps(hotel);
     const next = nextOpenStep(steps);
     const done = steps.filter((x) => x.done).length;
@@ -57,78 +63,62 @@ export default async function Overview({ params, searchParams }: { params: Promi
       </div>
     );
   }
-  const period: Period = (PERIODS as readonly string[]).includes(sp.period ?? "") ? (sp.period as Period) : "month";
-  const o = await overview(hotel, period);
-  const pct = (o.commissionBps / 100).toLocaleString("de-CH");
-
+  const rows = await moduleRows(hotel.id);
+  const inbox = isOn(rows, "inquiries") || isOn(rows, "inbox");
+  const v = await todayView(hotel, { manages, frontdesk: isOn(rows, "frontdesk"), inquiries: isOn(rows, "inquiries"), invoicing: isOn(rows, "invoicing"), inboxVisible: inbox });
+  const base = `/mypontivo/${hotel.id}`;
+  const noData = !v.notices.length && v.arrivals === null && !v.balances?.length && !v.overdue?.length;
   return (
     <div className="stack">
-      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Mein Betrieb</h1>
-        <nav className="seg" aria-label="Zeitraum">
-          {PERIODS.map((p) => (
-            <a key={p} href={`?period=${p}`} aria-current={p === period ? "true" : undefined}>{PERIOD_LABEL[p]}</a>
+      <h1 style={{ margin: 0 }}>Tag</h1>
+      <p className="muted" style={{ margin: 0 }}>Heute, {formatDay(v.today, "de")}</p>
+
+      {v.notices.length ? (
+        <section className="stack" aria-label="Hinweise">
+          {v.notices.map((n) => (
+            <a key={n.key} href={n.href} className={`notice${n.tone === "warn" ? " warn" : ""}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>{n.text} <strong>→</strong></a>
           ))}
-        </nav>
-      </div>
+        </section>
+      ) : null}
 
-      <section className="card hero-stat">
-        <p className="muted small" style={{ margin: 0 }}>{PERIOD_LABEL[period]}: gespart gegenüber Buchungsportalen</p>
-        <p className="hero-num">{chf0(o.savedRappen)}</p>
-        {o.direct.bookings ? (
-          <p className="muted small" style={{ margin: 0 }}>
-            {o.direct.bookings} Direktbuchung{o.direct.bookings === 1 ? "" : "en"} · {o.direct.nights} Nächte · Zimmerumsatz {formatChf(o.direct.roomsRappen)}.
-            {" "}Bei {pct} % Portal-Provision wären {formatChf(bpsOf(o.direct.roomsRappen, o.commissionBps))} angefallen, die Pontivo-Gebühr betrug {formatChf(o.direct.feeRappen)}.
-          </p>
-        ) : (
-          <p className="muted small" style={{ margin: 0 }}>Noch keine Direktbuchungen in diesem Zeitraum.</p>
-        )}
-      </section>
+      {v.arrivals !== null && v.departures !== null ? (
+        <div className="grid2">
+          <section className="card stack">
+            <h2 style={{ margin: 0 }}>Anreisen heute ({v.arrivals.length})</h2>
+            <Rows rows={v.arrivals} hotelId={hotel.id} empty="Keine Anreisen." />
+          </section>
+          <section className="card stack">
+            <h2 style={{ margin: 0 }}>Abreisen heute ({v.departures.length})</h2>
+            <Rows rows={v.departures} hotelId={hotel.id} empty="Keine Abreisen." />
+          </section>
+          <p className="muted small" style={{ margin: 0, gridColumn: "1 / -1" }}>{v.inHouse} Gäste-Buchungen im Haus. <a href={`${base}/frontdesk`}>Alle An- und Abreisen</a></p>
+        </div>
+      ) : null}
 
-      <div className="tiles">
-        <div className="card tile">
-          <span className="muted small">Direktanteil</span>
-          <strong>{o.directSharePct === null ? "–" : `${o.directSharePct} %`}</strong>
-          <span className="muted small">der Online-Buchungen</span>
-        </div>
-        <div className="card tile">
-          <span className="muted small">Über Portale</span>
-          <strong>{o.portal.bookings}</strong>
-          <span className="muted small">Buchungen · {formatChf(o.portal.roomsRappen)}</span>
-        </div>
-        <div className="card tile">
-          <span className="muted small">Gutscheine verkauft</span>
-          <strong>{o.vouchers.sold}</strong>
-          <span className="muted small">{formatChf(o.vouchers.rappen)}</span>
-        </div>
-        <div className="card tile">
-          <span className="muted small">Anfragen</span>
-          <strong>{o.inquiries}</strong>
-          <span className="muted small"><a href={`/mypontivo/${hotel.id}/inbox?quelle=web`}>ansehen</a></span>
-        </div>
-      </div>
+      {v.balances?.length || v.overdue?.length ? (
+        <section className="card stack">
+          <h2 style={{ margin: 0 }}>Offene Zahlungen</h2>
+          {v.balances?.length ? (
+            <>
+              <h3 style={{ margin: 0 }}>Restzahlungen für laufende und bald beginnende Aufenthalte</h3>
+              <ul className="list">
+                {v.balances.map((b) => <li key={b.bookingId}><a href={`${base}/bookings/${b.bookingId}`}><strong>{b.guest}</strong></a> <span className="muted small">· {b.reference} · Anreise {formatDay(b.checkin, "de")}</span> · {formatChf(b.amountRappen)}</li>)}
+              </ul>
+            </>
+          ) : null}
+          {v.overdue?.length ? (
+            <>
+              <h3 style={{ margin: 0 }}>Überfällige Rechnungen</h3>
+              <ul className="list">
+                {v.overdue.map((i) => <li key={i.id}><strong>{i.number}</strong> <span className="muted small">· {i.payer} · {i.daysOverdue} Tage überfällig</span> · {formatChf(i.openRappen)}</li>)}
+              </ul>
+              <p className="small" style={{ margin: 0 }}><a href={`${base}/invoices`}>Zu den Rechnungen</a></p>
+            </>
+          ) : null}
+        </section>
+      ) : null}
 
-      <section className="card">
-        <h2 style={{ fontSize: "1.15rem" }}>Buchungen pro Monat</h2>
-        <DirectChart data={o.chart} />
-      </section>
-
-      <section className="card">
-        <form action={saveCommission} style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}>
-          <input type="hidden" name="hotelId" value={hotel.id} />
-          <input type="hidden" name="period" value={period} />
-          <div>
-            <label htmlFor="pct">Provision der Buchungsportale in %</label>
-            <input id="pct" name="pct" type="number" min={0} max={30} step={0.5} defaultValue={o.commissionBps / 100} style={{ width: 120 }} />
-          </div>
-          <button className="btn secondary small">Speichern</button>
-        </form>
-        <p className="muted small" style={{ marginBottom: 0 }}>
-          Tragen Sie die Provision ein, die Sie Booking.com &amp; Co. tatsächlich zahlen (steht im Vertrag oder auf der Rechnung).
-          Gerechnet wird auf den Zimmerpreis ohne Kurtaxe. Kartengebühren sind nicht abgezogen, sie fallen bei Portalen oft ebenfalls an.
-          Gezählt werden bestätigte Buchungen im Monat der Bestätigung; stornierte zählen nicht.
-        </p>
-      </section>
+      {noData ? <p className="muted">Heute ist nichts offen.</p> : null}
     </div>
   );
 }

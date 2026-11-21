@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { atLeast, canAccess, isLimitedRole, LANDING, ROLE_AREAS } from "../../src/domain/roles";
-import { adminNav } from "../../src/admin/nav";
+import { adminNav, allPages } from "../../src/admin/nav";
+import { visibleNav } from "../../src/admin/visible-nav";
 
 describe("Rollen (SPEC 17.4)", () => {
   it("volle Rollen wie bisher abgestuft", () => {
@@ -44,7 +45,50 @@ describe("Rollen (SPEC 17.4)", () => {
     const nav = adminNav(hotel);
     const keys = new Set<string>();
     const walk = (items: { key: string; tabs?: { key: string }[] }[]) => items.forEach((i) => { keys.add(i.key); walk(i.tabs ?? []); });
-    walk(nav.primary); walk([nav.account]);
+    walk(nav.primary); walk(nav.settings.tabs ?? []); walk([nav.account]);
     for (const areas of Object.values(ROLE_AREAS)) for (const a of areas) if (a !== "layout" && a !== "mypontivo") expect(keys.has(a), a).toBe(true);
+  });
+});
+
+describe("Zahnrad und Menü je Rolle (SPEC 19.42)", () => {
+  const hotel = { id: "h", slug: "s", primaryDomain: null };
+  const none = new Set<string>();
+
+  it("Zahnrad nur für Inhaber und Manager", () => {
+    expect(visibleNav(hotel, "owner", none).showSettings).toBe(true);
+    expect(visibleNav(hotel, "manager", none).showSettings).toBe(true);
+    for (const r of ["staff", "reception", "housekeeping", "accounting", "service", "custom:Test:calendar"] as const) expect(visibleNav(hotel, r, none).showSettings, r).toBe(false);
+  });
+
+  it("Seite /einstellungen und Abo & Gebühren sind für Unberechtigte gesperrt", () => {
+    // /einstellungen: requireHotel(…, "manager") ohne Bereich
+    for (const r of ["staff", "reception", "housekeeping", "accounting", "service"] as const) expect(canAccess(r, "manager"), r).toBe(false);
+    expect(canAccess("manager", "manager")).toBe(true);
+    // Abo & Gebühren (report, plattform-rechnung): requireHotel(…, "owner")
+    expect(canAccess("manager", "owner")).toBe(false);
+    expect(canAccess("staff", "owner")).toBe(false);
+    expect(canAccess("owner", "owner")).toBe(true);
+    const keys = (r: "owner" | "manager") => allPages(visibleNav(hotel, r, none).nav).map((i) => i.key);
+    expect(keys("owner")).toContain("report");
+    expect(keys("manager")).not.toContain("report");
+  });
+
+  it("Rollen mit einer Seite sehen kein leeres Menü und landen direkt auf ihrer Seite", () => {
+    for (const r of ["reception", "housekeeping", "accounting", "service"] as const) {
+      const { nav } = visibleNav(hotel, r, none);
+      const keys = allPages(nav).map((i) => i.key);
+      expect(nav.primary.length, r).toBeGreaterThan(0);
+      expect(keys, r).toContain(LANDING[r]);
+      expect(keys, r).not.toContain("home"); // «Tag» leitet um und würde einen toten Reiter ergeben
+      expect(keys.every((k) => ROLE_AREAS[r].includes(k) || ["mypontivo", "firstweek", "help", "helpflows", "helpterms"].includes(k)), r).toBe(true);
+      expect(nav.settings.tabs, r).toEqual([]);
+    }
+    // Reinigung: nur ein Hauptpunkt, der direkt zur Reinigung führt
+    const h = visibleNav(hotel, "housekeeping", none).nav;
+    expect(h.primary).toHaveLength(1);
+    expect(h.primary[0].href).toBe("/mypontivo/h/housekeeping");
+    // Service: Restaurant mit Tische und Kasse
+    const s = visibleNav(hotel, "service", new Set(["posclose"])).nav;
+    expect(allPages(s).map((i) => i.key).filter((k) => ["restaurant", "kasse"].includes(k))).toEqual(["restaurant", "kasse"]);
   });
 });

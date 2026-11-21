@@ -16,6 +16,8 @@ export function platformNav(): Nav {
       { ...link("pf-billing", "Abrechnung", "rechnungen"), tabs: [link("pf-billing", "Rechnungen", "rechnungen"), link("pf-vat", "MWST", "mwst")] },
       { ...link("pf-settings", "Plattform", "admins"), tabs: [link("pf-admins", "Plattform-Admins", "admins"), link("pf-site", "Website-Texte", "website"), link("pf-holidays", "Schulferien", "schulferien")] },
     ],
+    // kein Zahnrad in der Plattform-Verwaltung (leerer Platzhalter, wird nie angezeigt)
+    settings: { key: "pf-none", label: "", href: "/admin/plattform/-", tabs: [] },
     account: { key: "pf-account", label: "Zu meinen Betrieben", href: "/mypontivo" },
   };
 }

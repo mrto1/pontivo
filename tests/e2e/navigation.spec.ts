@@ -24,7 +24,13 @@ test("Startseite: Anmelden, angemeldet «Zu <Betrieb>», im Admin myPontivo und 
   await expect(page).toHaveURL(new RegExp(`/mypontivo/${h.hotel.id}`));
   await expect(page.locator(".admin-brand")).toContainText("myPontivo");
   await expect(page.locator(".admin-brand")).toContainText(h.hotel.name);
-  await expect(page.getByRole("link", { name: "Mein Konto" }).first()).toBeVisible();
-  await page.getByRole("link", { name: "Mein Konto" }).first().click();
+  // Oben rechts: Zahnrad (Inhaber) und Profilbild mit Menü «Mein Konto»
+  await expect(page.getByRole("link", { name: "Einstellungen" }).first()).toBeVisible();
+  await page.locator(".avatar-menu summary").click();
+  await page.locator(".avatar-pop").getByRole("link", { name: "Profil & Sicherheit" }).click();
   await expect(page.getByRole("heading", { name: "Mein Konto" })).toBeVisible();
+  // Zahnrad führt auf die Übersicht der drei Gruppen
+  await page.getByRole("link", { name: "Einstellungen" }).first().click();
+  await expect(page).toHaveURL(new RegExp(`/mypontivo/${h.hotel.id}/einstellungen`));
+  for (const g of ["Betrieb", "Verkauf", "Technik"]) await expect(page.locator("h2", { hasText: g })).toBeVisible();
 });

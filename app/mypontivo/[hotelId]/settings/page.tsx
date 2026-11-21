@@ -138,7 +138,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
 
   return (
     <div className="stack">
-      <h1>Einstellungen</h1>
+      <h1>Grunddaten</h1>
       {sp.msg ? <p className="notice">{sp.msg}</p> : null}
       {sp.stripe === "return" ? <p className="notice">Zurück von Stripe. Der Status wird per Webhook aktualisiert – oder „Status neu laden“ klicken.</p> : null}
 

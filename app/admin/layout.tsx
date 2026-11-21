@@ -20,7 +20,7 @@ export default async function PlatformAdminLayout({ children }: { children: Reac
       <header className="admin-head">
         <div className="wrap">
           <a href={PLATFORM_HOME} className="brand admin-brand">myPontivo<span className="muted" style={{ fontWeight: 400 }}> · Plattform</span></a>
-          {user?.isPlatformAdmin ? <AdminNav nav={nav} home={PLATFORM_HOME} userLabel={`${user.email} · Zu meinen Betrieben`} initials={initials(user.name, user.email)} /> : null}
+          {user?.isPlatformAdmin ? <AdminNav nav={nav} home={PLATFORM_HOME} userLabel={`${user.email} · Zu meinen Betrieben`} initials={initials(user.name, user.email)} showSettings={false} /> : null}
         </div>
       </header>
       <main className="wrap admin-main">

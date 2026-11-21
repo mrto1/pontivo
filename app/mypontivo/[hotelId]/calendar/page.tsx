@@ -235,9 +235,9 @@ export default async function Calendar({ params, searchParams }: { params: Promi
           </form>
 
           <aside className="card stack">
-            <h3>Zimmer und Tarife</h3>
+            <h3>Zimmer & Tarife</h3>
             <p className="muted small" style={{ margin: 0 }}>
-              Zimmertypen, Anzahl Zimmer, Fotos, Tarife und Extras ändern oder neu anlegen Sie unter «Mein Betrieb → Zimmer und Tarife». Der Kalender zeigt dann automatisch die neuen Zeilen.
+              Zimmertypen, Anzahl Zimmer, Fotos, Tarife und Extras ändern oder neu anlegen Sie unter «Einstellungen → Zimmer & Tarife». Der Kalender zeigt dann automatisch die neuen Zeilen.
             </p>
             <div><a className="btn secondary" href={`/mypontivo/${hotel.id}/rooms`}>Zimmer anpassen</a></div>
             <p className="muted small">

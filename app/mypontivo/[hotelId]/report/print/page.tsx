@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function PrintReport({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager");
+  const { hotel } = await requireHotel(hotelId, "owner");
   const month = isMonth(sp.month) ? sp.month : todayIn(hotel.timezone).slice(0, 7);
   const r = await monthlyReport(hotel.id, month);
   return (

@@ -65,14 +65,14 @@ export default async function PortalSettingsPage({ params, searchParams }: { par
           <p className="small muted">Frühstück und andere Bezahl-Extras bleiben bei «Upselling»: dort kann der Gast sie direkt online dazubuchen.</p>
         </fieldset>
         <label><input type="checkbox" name="folio" defaultChecked={folioEnabled(p)} /> Rechnung bis jetzt zeigen (Posten aufs Zimmer, z. B. Restaurant, und offener Betrag), während des Aufenthalts</label>
-        <label><input type="checkbox" name="selfCheckout" defaultChecked={selfCheckoutEnabled(p)} /> Gäste können am Abreisetag selbst auschecken (Vermerk in «Heute» und im Posteingang; Zimmer, Schlüssel und offene Posten prüft die Rezeption)</label>
+        <label><input type="checkbox" name="selfCheckout" defaultChecked={selfCheckoutEnabled(p)} /> Gäste können am Abreisetag selbst auschecken (Vermerk unter «An- & Abreisen» und im Posteingang; Zimmer, Schlüssel und offene Posten prüft die Rezeption)</label>
         <label><input type="checkbox" name="doorCode" defaultChecked={doorCodeEnabled(p)} disabled={!access} /> Türcode zeigen ab Anreisetag{access ? ", sobald der Online-Check-in ausgefüllt ist (falls aktiv)" : " (braucht die Funktion «Zutritt (Nuki)»)"}</label>
         <div><button className="btn">Speichern</button></div>
       </form>
 
       <section className="card stack">
         <h2>Tipps und Infos</h2>
-        <p className="small muted">Einträge wie Wanderung, Restaurant, Bergbahn oder Hausregel. Der Gast sieht sie als Liste im Portal, der KI-Chat nutzt dieselben Texte. Der Freitext «Infos für den Aufenthalt» unter «Einrichten» bleibt daneben bestehen.</p>
+        <p className="small muted">Einträge wie Wanderung, Restaurant, Bergbahn oder Hausregel. Der Gast sieht sie als Liste im Portal, der KI-Chat nutzt dieselben Texte. Der Freitext «Infos für den Aufenthalt» (im Einrichtungs-Assistenten) bleibt daneben bestehen.</p>
         {tips.length ? (
           <ul className="list">
             {tips.map((t) => (

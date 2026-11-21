@@ -99,7 +99,7 @@ export default async function Team({ params, searchParams }: { params: Promise<{
 
   return (
     <div className="stack">
-      <h1>Team</h1>
+      <h1>Team & Rollen</h1>
       {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
 
       <section className="card stack" id="personen">

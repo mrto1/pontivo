@@ -42,7 +42,7 @@ export default async function Heute({ params, searchParams }: { params: Promise<
   const base = `/mypontivo/${hotel.id}/frontdesk`;
   return (
     <div className="stack">
-      <h1>{day === today ? "Heute" : formatDay(day, "de")}</h1>
+      <h1>An- & Abreisen{day === today ? "" : ` · ${formatDay(day, "de")}`}</h1>
       <PeriodNav prev={`${base}?day=${addDays(day, -1)}`} next={`${base}?day=${addDays(day, 1)}`} todayHref={base} todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }}>
         <a className="btn secondary small" href={`/mypontivo/${hotel.id}/plan`}>Zimmerplan</a>
       </PeriodNav>

@@ -227,7 +227,7 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
   return (
     <div className="stack">
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Zimmer und Tarife</h1>
+        <h1 style={{ margin: 0 }}>Zimmer & Tarife</h1>
         <a className="btn secondary small" href={`/mypontivo/${hotel.id}/rooms/extras`}>Zusatzleistungen (Hund, Parkplatz, Endreinigung …)</a>
       </div>
       {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") || sp.msg.includes(":") ? "warn" : ""}`}>{sp.msg}</p> : null}

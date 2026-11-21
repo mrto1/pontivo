@@ -247,3 +247,8 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Rechnung bis jetzt zeigt Posten aufs Zimmer, aber keine Zahlung per Karte im Portal für Restposten (die gibt es bisher nur für die Restzahlung der Buchung). Gewünscht: Bezahlen der Zimmerrechnung beim Check-out per Link?
 - FR/IT/NL-Texte des Portals und der Standardwünsche sind maschinell erstellt, Muttersprachler-Prüfung offen.
 - Eigene Wünsche und Tipps sind nur Deutsch/Englisch erfassbar (übrige Sprachen fallen zurück); weitere Sprachen später mit automatischer Übersetzung wie bei der Website?
+
+## Navigation (SPEC 19.42)
+- Das Gästeportal-Einstellungsseite (`gaesteportal`) steht im Auftrag nicht. ASSUMPTION: Zahnrad → Verkauf, neben Gäste-Mails.
+- «Tag» ist für `staff` sichtbar (zuvor nur Manager/Inhaber sahen die Übersicht). ASSUMPTION: Tagesliste ist für Mitarbeitende nützlich und enthält keine Zahlen zu Umsatz.
+- Die Monatsabrechnung («Abo & Gebühren») war für Manager sichtbar, ist jetzt nur Inhaber (Auftrag). Manager verlieren den Zugriff.

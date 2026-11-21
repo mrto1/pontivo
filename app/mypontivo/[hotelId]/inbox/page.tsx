@@ -137,7 +137,7 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
                 </article>
               ))}
             </div>
-          ) : <p className="muted">Noch keine Wünsche. Gäste melden sie auf ihrer Buchungsseite; Sie legen die Wunschliste unter <a href={`/mypontivo/${hotel.id}/gaesteportal`}>Gäste → Gästeportal</a> fest.</p>}
+          ) : <p className="muted">Noch keine Wünsche. Gäste melden sie auf ihrer Buchungsseite; Sie legen die Wunschliste unter <a href={`/mypontivo/${hotel.id}/gaesteportal`}>Einstellungen → Gästeportal</a> fest.</p>}
         </section>
       ) : null}
 

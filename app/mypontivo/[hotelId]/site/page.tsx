@@ -145,7 +145,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
 
   return (
     <div className="stack">
-      <h1>Website und Buchung</h1>
+      <h1>Website & Buchung</h1>
       {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") || sp.msg.startsWith("Logo:") ? "warn" : ""}`}>{sp.msg}</p> : null}
 
       <section className="card stack" id="betriebsart">
@@ -252,7 +252,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
 
       <section className="card stack" id="hotel-photos">
         <h2>Fotos des Hotels</h2>
-        <p className="muted small">Das erste Foto ist das Titelbild und erscheint gross auf der Startseite und der Buchungsseite. Fotos der einzelnen Zimmertypen verwalten Sie unter «Zimmer und Tarife».</p>
+        <p className="muted small">Das erste Foto ist das Titelbild und erscheint gross auf der Startseite und der Buchungsseite. Fotos der einzelnen Zimmertypen verwalten Sie unter «Zimmer & Tarife».</p>
         <PhotoManager hotelId={hotel.id} roomTypeId={null} photos={hotel.content.photos ?? []} canEdit={canEdit} page="site" alt="z. B. Hotel mit Blick auf den See" />
       </section>
 
@@ -272,7 +272,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
         </form>
         <p className="muted small">
           {translationEnabled()
-            ? <>Texte übersetzen Sie im Editor jeder Seite mit «Fehlende Texte übersetzen», Zimmer und Tarife unter <a href={`/mypontivo/${hotel.id}/rooms`}>Zimmer</a>. Noch {translationsLeft(hotel)} automatische Übersetzungen diesen Monat.</>
+            ? <>Texte übersetzen Sie im Editor jeder Seite mit «Fehlende Texte übersetzen», Zimmer & Tarife unter <a href={`/mypontivo/${hotel.id}/rooms`}>Zimmer</a>. Noch {translationsLeft(hotel)} automatische Übersetzungen diesen Monat.</>
             : <>Automatische Übersetzung ist noch nicht eingerichtet; die Felder können Sie im Editor von Hand ausfüllen.</>}
           {" "}AGB und Datenschutz erscheinen auf Französisch, Italienisch und Niederländisch vorerst auf Englisch.
         </p>

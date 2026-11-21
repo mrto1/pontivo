@@ -84,7 +84,7 @@ export default async function Migration({ params, searchParams }: { params: Prom
 
       <section className="card stack">
         <h2>1. Datei vorbereiten</h2>
-        <p>Exportieren Sie die Reservierungen aus Ihrer bisherigen Software als Excel/CSV und bringen Sie sie in das Format unserer Vorlage. Zimmertyp und Tarif müssen genau so heissen wie in Pontivo, legen Sie sie also vorher unter «Zimmer» an.</p>
+        <p>Exportieren Sie die Reservierungen aus Ihrer bisherigen Software als Excel/CSV und bringen Sie sie in das Format unserer Vorlage. Zimmertyp und Tarif müssen genau so heissen wie in Pontivo, legen Sie sie also vorher unter Einstellungen → Zimmer & Tarife an.</p>
         <p><a className="btn secondary" href={`/mypontivo/${hotel.id}/migration/vorlage`}>Vorlage Reservierungen (CSV)</a></p>
         <p className="small muted">Gäste und Gutscheine übernehmen Sie mit denselben Schritten. Die Art der Datei erkennt Pontivo an der Kopfzeile: <strong>Gäste</strong> <code>vorname;nachname;email;telefon;sprache;marketing_einwilligung;einwilligung_am</code> (Einwilligung nur mit «ja» und Datum, sonst nicht übernommen), <strong>Gutscheine mit Restwert</strong> <code>code;betrag;restwert;gueltig_bis;kaeufer;kaeufer_email;empfaenger</code>. Reihenfolge: zuerst Zimmer in Pontivo anlegen, dann Gäste, Gutscheine, Reservierungen. Offene Rechnungen übernehmen wir nicht: Rechnungen der alten Software stellen Sie dort fertig, die Nummernreihe setzen Sie unten fort.</p>
         <details><summary>Spalten der Vorlage</summary>

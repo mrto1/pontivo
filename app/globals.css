@@ -806,7 +806,7 @@ pre { overflow-x: auto; }
 .plat-danger > summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .plat-danger[open] > summary { color: var(--ink); }
 
-/* Viele Reiter (z. B. Übersicht = Mein Betrieb): auf dem Desktop umbrechen statt versteckt wegscrollen */
+/* Viele Reiter (z. B. Übersicht): auf dem Desktop umbrechen statt versteckt wegscrollen */
 @media (min-width: 761px) {
   .section-tabs { flex-wrap: wrap; overflow: visible; }
 }
@@ -854,3 +854,35 @@ pre { overflow-x: auto; }
 
 /* Eingebetteter Stripe-Rahmen: immer volle Breite der Karte (Stripe misst beim Aufbau; ohne das bleibt er je nach Zeitpunkt schmal) */
 .stripe-embed, .stripe-embed > *, .stripe-embed iframe { display: block; width: 100% !important; min-width: 0; max-width: 100%; }
+
+/* Kopfzeile rechts: Zahnrad und Profilbild (Menü) */
+.head-tools { margin-left: auto; display: flex; align-items: center; gap: 4px; position: relative; flex: none; }
+.gear-link { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: var(--muted); text-decoration: none; }
+.gear-link:hover { background: var(--accent-soft); color: var(--ink); }
+.gear-link.active { color: var(--accent); background: var(--accent-soft); }
+.avatar-menu { position: relative; }
+.avatar-menu > summary { list-style: none; cursor: pointer; }
+.avatar-menu > summary::-webkit-details-marker { display: none; }
+.avatar-pop { position: absolute; right: 0; top: 46px; z-index: 40; min-width: 230px; max-width: 86vw; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(0, 0, 0, .18); padding: 12px; display: grid; gap: 2px; }
+.avatar-pop a, .avatar-pop button { display: block; width: 100%; text-align: left; padding: 9px 8px; border-radius: 8px; color: var(--ink); text-decoration: none; background: none; border: 0; font: inherit; cursor: pointer; }
+.avatar-pop a:hover, .avatar-pop button:hover { background: var(--accent-soft); }
+.avatar-pop a.active { font-weight: 600; color: var(--accent); }
+.avatar-pop form { margin: 4px 0 0; padding-top: 4px; border-top: 1px solid var(--line); }
+
+/* Einstellungen (Zahnrad): am Desktop Seitenleiste links mit den drei Gruppen, am Handy nur ein Link zurück zur Übersicht */
+.settings-frame { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 32px; align-items: start; }
+.settings-side { position: sticky; top: 76px; display: grid; gap: 16px; }
+.settings-side h3 { font-family: var(--font); font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 4px; }
+.settings-side a { display: block; padding: 7px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; }
+.settings-side a:hover { background: var(--accent-soft); }
+.settings-side a.active { background: var(--accent-soft); font-weight: 600; color: var(--accent); }
+.settings-back { display: none; }
+.settings-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.settings-grid .card ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+.settings-grid .card li a { display: block; padding: 8px 0; border-top: 1px solid var(--line); color: var(--ink); text-decoration: none; }
+.settings-grid .card li a:hover strong { text-decoration: underline; }
+@media (max-width: 860px) {
+  .settings-frame { display: block; }
+  .settings-side { display: none; }
+  .settings-back { display: inline-block; margin: 0 0 12px; }
+}

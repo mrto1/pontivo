@@ -1,11 +1,12 @@
 import { requireHotel } from "@/src/auth/guard";
 import { hotelsForUser } from "@/src/auth/session";
-import { adminNav } from "@/src/admin/nav";
+import { visibleNav } from "@/src/admin/visible-nav";
 import { hiddenNavKeys } from "@/src/domain/modules";
-import { areasOf, isLimitedRole, roleLabel } from "@/src/domain/roles";
+import { isLimitedRole, roleLabel } from "@/src/domain/roles";
 import { moduleRows } from "@/src/services/modules";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { SectionTabs } from "@/components/admin/SectionTabs";
+import { SettingsFrame } from "@/components/admin/SettingsFrame";
 import { TooltipHost } from "@/components/admin/TooltipHost";
 import { SetupNotices } from "@/components/admin/SetupNotices";
 import { atLeast } from "@/src/auth/session";
@@ -16,14 +17,7 @@ import { parallelBanner, setupBanner, setupOpen, unmetNeeds } from "@/src/domain
 export default async function HotelAdminLayout({ children, params }: { children: React.ReactNode; params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
   const { hotel, user, role } = await requireHotel(hotelId, "staff", "layout");
-  const hidden = hiddenNavKeys(await moduleRows(hotel.id));
-  if (isLimitedRole(role)) {
-    // eingeschränkte Rollen: alles ausblenden, was nicht zu ihren Bereichen gehört
-    const keys = (items: { key: string; tabs?: unknown[] }[]): string[] => items.flatMap((i) => [i.key, ...keys((i.tabs ?? []) as { key: string }[])]);
-    const full = adminNav(hotel);
-    for (const k of [...keys(full.primary), ...keys([full.account])]) if (!areasOf(role).includes(k)) hidden.add(k);
-  }
-  const nav = adminNav(hotel, hidden);
+  const { nav, showSettings } = visibleNav(hotel, role, hiddenNavKeys(await moduleRows(hotel.id)));
   const home = `/mypontivo/${hotel.id}`;
   // Stand der Einrichtung: Chip in der Kopfzeile und Hinweise auf jeder Seite (nur Inhaber und Geschäftsführung)
   const manages = !isLimitedRole(role) && atLeast(role, "manager");
@@ -47,14 +41,13 @@ export default async function HotelAdminLayout({ children, params }: { children:
             </details>
           ) : null}
           {steps ? <a href={`${home}/einrichten`} className="setup-chip" title="Einrichtung fortsetzen">Einrichtung {doneCount} von {steps.length}</a> : null}
-          <AdminNav nav={nav} home={home} userLabel={`${user.email} · ${roleLabel(role)}`} initials={initials(user.name, user.email)} />
+          <AdminNav nav={nav} home={home} userLabel={`${user.email} · ${roleLabel(role)}`} initials={initials(user.name, user.email)} showSettings={showSettings} />
         </div>
       </header>
       <TooltipHost />
       <main className="wrap admin-main">
         <SetupNotices home={home} banner={banner} parallel={parallel} unmet={steps ? unmetNeeds(steps) : []} />
-        <SectionTabs nav={nav} home={home} />
-        {children}
+        <SettingsFrame nav={nav} home={home} tabs={<SectionTabs nav={nav} home={home} />}>{children}</SettingsFrame>
       </main>
     </>
   );

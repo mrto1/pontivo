@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { adminNav, allPages, bestMatch, isActive, sectionFor } from "../../src/admin/nav";
+import { adminNav, allPages, bestMatch, inSettings, isActive, leafKeys, sectionFor, settingsGroups } from "../../src/admin/nav";
+import { hiddenNavKeys } from "../../src/domain/modules";
 import { GET as manifest } from "../../app/mypontivo/manifest.webmanifest/route";
 import { GET as sw } from "../../app/mypontivo/sw.js/route";
 import { GET as icon } from "../../app/mypontivo/pwa-icon/[size]/route";
@@ -7,60 +8,115 @@ import { GET as icon } from "../../app/mypontivo/pwa-icon/[size]/route";
 const hotel = { id: "h1", slug: "demo", primaryDomain: null };
 
 describe("Admin-Menü", () => {
-  it("jede Seite genau einmal; alle Links gehören zum eigenen Hotel", () => {
-    const nav = adminNav(hotel);
+  const nav = adminNav(hotel);
+  const home = "/mypontivo/h1";
+  const group = (label: string) => nav.primary.find((i) => i.label === label)!;
+  const tabKeys = (label: string) => group(label).tabs!.map((t) => t.key);
+
+  it("vier Hauptpunkte, Zahnrad und Profil; jede Seite genau einmal; alle Links gehören zum Hotel", () => {
     const all = allPages(nav);
     const keys = all.map((i) => i.key);
     expect(new Set(keys).size).toBe(keys.length);
     for (const i of all) expect(i.href.startsWith("/mypontivo/h1")).toBe(true);
-    expect(nav.primary.length).toBeLessThanOrEqual(4); // passt in die untere Leiste, kein «Mehr»
-    expect(nav.primary.map((i) => i.label)).toEqual(["Mein Betrieb", "Kalender", "Buchungen", "Gäste"]);
-    expect(keys).toEqual(expect.arrayContaining(["home", "calendar", "plan", "pricing", "channex", "ical", "bookings", "report", "guests", "inbox", "vouchers", "rooms", "site", "api", "team", "settings", "funktionen", "terminal", "access", "posbridge", "migration", "firstweek", "help"]));
+    expect(nav.primary.map((i) => i.label)).toEqual(["Übersicht", "Kalender", "Buchungen", "Finanzen"]);
+    expect(nav.settings.href).toBe("/mypontivo/h1/einstellungen");
+    expect(nav.account.href).toBe("/mypontivo/h1/mypontivo");
     expect(keys).not.toContain("embed");
     expect(keys).not.toContain("inquiries");
+    expect(keys).not.toContain("einrichten");
   });
 
-  it("Kalender, Buchungen und Gäste haben Reiter", () => {
-    const nav = adminNav(hotel);
-    const tabs = (k: string) => nav.primary.find((i) => i.key === k)!.tabs!;
-    expect(tabs("calendar").map((t) => t.key)).toEqual(["calendar", "plan", "pricing", "channex", "ical"]);
-    expect(tabs("bookings").map((t) => t.key)).not.toContain("plan");
-    expect(tabs("guests").map((t) => t.key)).toEqual(["guests", "guestbook", "inbox", "marketing", "vouchers", "feedback", "gaesteportal", "ki-chat", "upsell", "mailtexts"]);
-    expect(tabs("guests")[0].label).toBe("Online-Check-in");
+  it("Seitenschlüssel und Adressen bleiben wie bisher", () => {
+    const byKey = Object.fromEntries(allPages(nav).map((i) => [i.key, i.href.replace("/mypontivo/h1/", "")]));
+    expect(byKey).toMatchObject({
+      frontdesk: "frontdesk", housekeeping: "housekeeping", inbox: "inbox", restaurant: "restaurant", kasse: "kasse", posclose: "restaurant/abschluss", plan: "plan", calendar: "calendar", pricing: "preise",
+      bookings: "bookings", groups: "groups", resources: "resources", vouchers: "vouchers", guestbook: "guestbook", guests: "guests", marketing: "marketing", feedback: "feedback",
+      invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung",
+      settings: "settings", rooms: "rooms", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
+      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posbridge: "posbridge", migration: "migration", report: "report", mypontivo: "mypontivo", firstweek: "erste-woche", help: "hilfe",
+    });
   });
 
-  it("«Mein Betrieb» enthält Reiter mit zweiter Reihe", () => {
-    const nav = adminNav(hotel);
-    const home = "/mypontivo/h1";
-    const overview = nav.primary[0];
-    expect(overview.tabs!.map((t) => t.label)).toEqual(["Übersicht", "Zimmer und Tarife", "Website und Buchung", "Team", "Einstellungen", "Statistik", "Buchhaltung", "Restaurant"]);
-    expect(sectionFor("/mypontivo/h1/rooms", nav, home)?.label).toBe("Mein Betrieb");
-    expect(sectionFor("/mypontivo/h1/site/blocks", nav, home)?.label).toBe("Mein Betrieb");
-    expect(sectionFor("/mypontivo/h1/zutritt", nav, home)?.label).toBe("Mein Betrieb");
-    expect(sectionFor("/mypontivo/h1/channex/booking", nav, home)?.label).toBe("Kalender");
-    expect(sectionFor("/mypontivo/h1/preise", nav, home)?.label).toBe("Kalender");
-    expect(sectionFor("/mypontivo/h1/inbox", nav, home)?.label).toBe("Gäste");
-    expect(sectionFor("/mypontivo/h1/hilfe", nav, home)?.label).toBe("Mein Konto");
-    expect(sectionFor("/mypontivo/h1/mypontivo", nav, home)?.label).toBe("Mein Konto");
-    expect(isActive("/mypontivo/h1/vouchers", nav.primary[3], home)).toBe(true); // Reiter hält den Sammelpunkt aktiv
-    expect(isActive("/mypontivo/h1/zutritt", overview, home)).toBe(true);
-    expect(bestMatch("/mypontivo/h1/invoices/tagesabschluss", nav.primary[2], home)).toBeGreaterThan(bestMatch("/mypontivo/h1/invoices/tagesabschluss", { key: "x", label: "x", href: "/mypontivo/h1/invoices" }, home));
+  it("Reiter der Hauptpunkte", () => {
+    expect(tabKeys("Übersicht")).toEqual(["home", "frontdesk", "housekeeping", "inbox", "g-restaurant"]);
+    expect(group("Übersicht").tabs![0].label).toBe("Tag");
+    expect(group("Übersicht").tabs![4].tabs!.map((t) => t.key)).toEqual(["restaurant", "kasse", "posclose"]);
+    expect(tabKeys("Kalender")).toEqual(["plan", "calendar", "pricing"]);
+    expect(tabKeys("Buchungen")).toEqual(["bookings", "groups", "resources", "vouchers", "g-guests"]);
+    expect(group("Buchungen").tabs![4].tabs!.map((t) => t.key)).toEqual(["guestbook", "guests", "marketing", "feedback"]);
+    expect(tabKeys("Finanzen")).toEqual(["invoices", "dayclose", "debtors", "owners", "g-statistics", "accountingexport"]);
+    expect(group("Finanzen").tabs![4].tabs!.map((t) => t.key)).toEqual(["statistics", "hesta"]);
   });
 
-  it("Das Menü ist immer vollständig: kein «Einrichten»-Punkt, Konto über den Avatar", () => {
-    const nav = adminNav(hotel);
-    expect(allPages(nav).map((i) => i.key)).not.toContain("einrichten");
-    expect(nav.account.href).toBe("/mypontivo/h1/mypontivo");
+  it("Zahnrad: drei Gruppen mit je einem Satz Erklärung", () => {
+    const groups = settingsGroups(nav);
+    expect(groups.map((g) => g.title)).toEqual(["Betrieb", "Verkauf", "Technik"]);
+    expect(groups.map((g) => g.items.map((i) => i.label))).toEqual([
+      ["Grunddaten", "Zimmer & Tarife", "Team & Rollen"],
+      ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "KI-Chat"],
+      ["Funktionen", "Geräte & Kasse", "Datenübernahme", "Abo & Gebühren"],
+    ]);
+    for (const g of groups) { expect(g.lead.length).toBeGreaterThan(10); for (const i of g.items) expect(i.lead, i.label).toBeTruthy(); }
+    expect(nav.settings.tabs!.find((i) => i.label === "Website & Buchung")!.tabs!.map((t) => t.key)).toEqual(["site", "direct", "api"]);
+    expect(nav.settings.tabs!.find((i) => i.label === "Kanäle")!.tabs!.map((t) => t.key)).toEqual(["channex", "ical"]);
+    expect(nav.settings.tabs!.find((i) => i.label === "Geräte & Kasse")!.tabs!.map((t) => t.key)).toEqual(["terminal", "access", "positems", "posbridge"]);
   });
 
-  it("aktive Seite: Übersicht nur exakt, andere auch bei Unterseiten", () => {
-    const nav = adminNav(hotel);
-    const home = "/mypontivo/h1";
-    const [overview, calendar] = nav.primary;
-    expect(isActive("/mypontivo/h1", overview, home)).toBe(true);
-    expect(isActive("/mypontivo/h1/calendar", overview, home)).toBe(false);
-    expect(isActive("/mypontivo/h1/calendar/x", calendar, home)).toBe(true);
-    expect(isActive("/mypontivo/h1/calendarium", calendar, home)).toBe(false);
+  it("Kalender startet mit dem Zimmerplan, wenn die Rezeption an ist, sonst mit Preise & Verfügbarkeit", () => {
+    expect(group("Kalender").href).toBe("/mypontivo/h1/plan");
+    const off = adminNav(hotel, new Set(["plan", "frontdesk"]));
+    const cal = off.primary.find((i) => i.label === "Kalender")!;
+    expect(cal.tabs![0].key).toBe("calendar");
+    expect(cal.href).toBe("/mypontivo/h1/calendar");
+  });
+
+  it("Restaurant-Reiter nur mit eingeschaltetem Modul pos", () => {
+    const withPos = allPages(adminNav(hotel, hiddenNavKeys([{ module: "pos", enabled: true }]))).map((i) => i.key);
+    const without = allPages(adminNav(hotel, hiddenNavKeys([]))).map((i) => i.key);
+    expect(withPos).toEqual(expect.arrayContaining(["restaurant", "kasse", "posclose"]));
+    // pos ist von Haus aus aus
+    expect(without).not.toContain("restaurant");
+    expect(without).not.toContain("kasse");
+    expect(without).not.toContain("posclose");
+  });
+
+  it("Ferienwohnung mit Grundausstattung: Übersicht (nur Tag), Kalender, Buchungen, Finanzen", () => {
+    const off = hiddenNavKeys([{ module: "frontdesk", enabled: false }]);
+    const n = adminNav(hotel, off);
+    expect(n.primary.map((i) => i.label)).toEqual(["Übersicht", "Kalender", "Buchungen", "Finanzen"]);
+    expect(allPages(n).map((i) => i.key)).not.toContain("frontdesk");
+    expect(n.primary[0].href).toBe("/mypontivo/h1");
+  });
+
+  it("Gruppen verschwinden ganz, wenn alle Seiten fehlen; Zahnrad bleibt erreichbar", () => {
+    const all = new Set(leafKeys(nav).filter((k) => !["home"].includes(k)));
+    const n = adminNav(hotel, all);
+    expect(n.primary.map((i) => i.label)).toEqual(["Übersicht"]);
+    expect(n.settings.href).toBe("/mypontivo/h1/einstellungen");
+    expect(n.settings.tabs).toEqual([]);
+  });
+
+  it("Reiter über der Seite und Aktivzustand", () => {
+    expect(sectionFor(`${home}/rooms`, nav, home)).toBeNull(); // Zahnrad-Punkt ohne Unterreiter
+    expect(sectionFor(`${home}/site/blocks`, nav, home)?.label).toBe("Website & Buchung");
+    expect(sectionFor(`${home}/channex/booking`, nav, home)?.label).toBe("Kanäle");
+    expect(sectionFor(`${home}/zutritt`, nav, home)?.label).toBe("Geräte & Kasse");
+    expect(sectionFor(`${home}/preise`, nav, home)?.label).toBe("Kalender");
+    expect(sectionFor(`${home}/inbox`, nav, home)?.label).toBe("Übersicht");
+    expect(sectionFor(`${home}/guestbook`, nav, home)?.label).toBe("Buchungen");
+    expect(sectionFor(`${home}/hilfe`, nav, home)?.label).toBe("Mein Konto");
+    expect(sectionFor(`${home}/einstellungen`, nav, home)).toBeNull();
+    expect(inSettings(`${home}/einstellungen`, nav, home)).toBe(true);
+    expect(inSettings(`${home}/rooms`, nav, home)).toBe(true);
+    expect(inSettings(`${home}/bookings`, nav, home)).toBe(false);
+    // Detailseiten der Plattform-Rechnung gehören zu «Abo & Gebühren»
+    expect(inSettings(`${home}/plattform-rechnung/abc`, nav, home)).toBe(true);
+    expect(isActive(`${home}/vouchers`, group("Buchungen"), home)).toBe(true);
+    expect(isActive(`${home}/calendar/x`, group("Kalender"), home)).toBe(true);
+    expect(isActive(`${home}/calendarium`, group("Kalender"), home)).toBe(false);
+    expect(isActive(home, group("Übersicht"), home)).toBe(true);
+    expect(isActive(`${home}/calendar`, group("Übersicht"), home)).toBe(false);
+    expect(bestMatch(`${home}/invoices/tagesabschluss`, group("Finanzen"), home)).toBeGreaterThan(bestMatch(`${home}/invoices/tagesabschluss`, { key: "x", label: "x", href: `${home}/invoices` }, home));
   });
 });
 
