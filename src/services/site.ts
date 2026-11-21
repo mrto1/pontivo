@@ -31,6 +31,20 @@ export async function navPages(hotelId: string) {
 const newId = () => crypto.randomBytes(6).toString("base64url");
 
 /** Startseite anlegen, falls es sie noch nicht gibt – vorbefüllt mit den bisherigen Texten und dem ersten Hotelfoto */
+/**
+ * Website-Vorlage Restaurant (SPEC 20.7, Konzept 7a): Reservieren, Online bestellen, Öffnungszeiten und Speisekarte aus dem Betrieb, Lage.
+ * Die Bausteine lesen ihre Daten beim Anzeigen; Reservieren und Bestellen bleiben unsichtbar, bis sie eingeschaltet sind.
+ */
+function restaurantTemplate(): Block[] {
+  return [
+    newBlock("reserve", newId()),
+    blockSchema.parse({ id: newId(), type: "order", heading: { de: "Online bestellen", en: "Order online", fr: "Commander en ligne", it: "Ordina online", nl: "Online bestellen" }, intro: { de: "Zum Abholen oder liefern lassen.", en: "For pickup or delivery.", fr: "À emporter ou en livraison.", it: "Da ritirare o con consegna.", nl: "Afhalen of laten bezorgen." } }),
+    blockSchema.parse({ id: newId(), type: "hours", source: "opening", heading: { de: "Öffnungszeiten", en: "Opening hours", fr: "Heures d'ouverture", it: "Orari di apertura", nl: "Openingstijden" } }),
+    blockSchema.parse({ id: newId(), type: "menu", source: "items", heading: { de: "Speisekarte", en: "Menu", fr: "Carte", it: "Menu", nl: "Menukaart" } }),
+    blockSchema.parse({ id: newId(), type: "location", heading: { de: "So finden Sie uns", en: "How to find us", fr: "Nous trouver", it: "Come trovarci", nl: "Zo vindt u ons" }}), // Adresse leer = immer die aktuelle Adresse des Betriebs
+  ];
+}
+
 export async function ensureHomePage(hotel: Hotel, actor: string): Promise<SitePage> {
   const [existing] = await db().select().from(sitePages).where(and(eq(sitePages.hotelId, hotel.id), eq(sitePages.slug, "")));
   if (existing) return existing;
@@ -45,7 +59,7 @@ export async function ensureHomePage(hotel: Hotel, actor: string): Promise<SiteP
       // Restaurant (SPEC 20.2): keine Zimmersuche, stattdessen «Tisch reservieren»
       showSearch: hotel.propertyType !== "restaurant",
     }),
-    newBlock(hotel.propertyType === "restaurant" ? "reserve" : "rooms", newId()),
+    ...(hotel.propertyType === "restaurant" ? restaurantTemplate() : [newBlock("rooms", newId())]),
   ];
   const [p] = await db()
     .insert(sitePages)

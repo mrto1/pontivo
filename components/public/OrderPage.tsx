@@ -9,6 +9,11 @@ import { Shell } from "./Shell";
 import { AutoRefresh } from "./AutoRefresh";
 import { OrderCart } from "./OrderCart";
 import { ClearCart } from "./ClearCart";
+import { and, eq } from "drizzle-orm";
+import { db } from "@/src/db/client";
+import { posReceipts } from "@/src/db/schema";
+import { invoicingSettings } from "@/src/services/invoicing";
+import { formatBps } from "@/src/domain/invoice";
 
 type Sp = Record<string, string | string[] | undefined>;
 const one = (sp: Sp, k: string) => { const v = sp[k]; return Array.isArray(v) ? v[0] : v; };
@@ -49,6 +54,9 @@ export async function OrderStatusPage({ hotel, locale, base, token, sp }: { hote
     return <Shell hotel={hotel} locale={locale} base={base} noBookButton><section style={{ padding: "32px 0" }}><h1>{t.title}</h1><p className="notice warn">–</p></section></Shell>;
   }
   const hm = (d: Date) => formatInTimeZone(d, hotel.timezone, "HH:mm");
+  // Quittung (SPEC 20.8): Bon der Online-Bestellung mit MWST, auch ohne Modul Kasse
+  const [rec] = o.receiptId ? await db().select().from(posReceipts).where(and(eq(posReceipts.id, o.receiptId), eq(posReceipts.hotelId, hotel.id))) : [];
+  const inv = invoicingSettings(hotel);
   const when = o.promisedAt ?? o.requestedAt;
   return (
     <Shell hotel={hotel} locale={locale} base={base} path={`/bestellung/${token}`} noBookButton>
@@ -68,6 +76,13 @@ export async function OrderStatusPage({ hotel, locale, base, token, sp }: { hote
         <p><strong>{t.total} {formatChf(o.totalRappen)}</strong> · {o.payment === "card" ? t.payCard : o.kind === "pickup" ? t.cashPickup : t.cashDelivery}</p>
         {o.kind === "delivery" ? <p className="small">{o.street} {o.houseNo}, {o.postalCode} {o.city}</p> : <p className="small">{hotel.name}{hotel.addressLine ? `, ${hotel.addressLine}` : ""}{hotel.city ? `, ${hotel.postalCode ?? ""} ${hotel.city}` : ""}</p>}
         {hotel.contactPhone ? <p className="small"><a href={`tel:${hotel.contactPhone}`}>{hotel.contactPhone}</a></p> : null}
+        {rec ? (
+          <div className="card small" data-testid="order-receipt">
+            <strong>{t.receipt} {rec.number}</strong> · {formatInTimeZone(rec.paidAt, hotel.timezone, "dd.MM.yyyy HH:mm")}<br />
+            {hotel.legalName ?? hotel.name}{inv.vatLiable && inv.vatNumber ? ` · ${inv.vatNumber}` : ""}
+            {rec.vat.filter((v) => v.bps > 0).map((v) => <div key={v.bps}>{t.vat} {formatBps(v.bps)}: {formatChf(v.vatRappen)} ({formatChf(v.grossRappen)})</div>)}
+          </div>
+        ) : null}
         <p><a href={`${base}/${locale}`}>{t.back}</a> · <a href={`${base}/${locale}/bestellen`}>{t.again}</a></p>
       </section>
     </Shell>

@@ -149,14 +149,15 @@ function blockFromForm(f: FormData, type: BlockType, id: string, alts: Map<strin
     case "inquiry": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro"), kinds: f.getAll("kinds").map(String) };
     case "voucher": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro") };
     case "reserve": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro") };
-    case "menu": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro"), note: l10n(f, "note"), items: rows(f, (k) => {
+    case "order": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro") };
+    case "menu": return { id, type, heading: l10n(f, "heading"), intro: l10n(f, "intro"), note: l10n(f, "note"), source: s(f, "source") === "items" ? "items" : "manual", items: rows(f, (k) => {
       const name = l10n(f, `${k}.name`);
       if (!Object.values(name).some(Boolean)) return null;
       const diet = s(f, `${k}.diet`);
       return { section: l10n(f, `${k}.section`), name, text: l10n(f, `${k}.text`), priceRappen: priceFrom(s(f, `${k}.price`)),
         diet: diet === "vegan" || diet === "vegetarian" ? diet : "", glutenFree: f.get(`${k}.gf`) === "on" };
     }) };
-    case "hours": return { id, type, heading: l10n(f, "heading"), place: s(f, "place") || "restaurant", note: l10n(f, "note"), ...hoursFrom(f) };
+    case "hours": return { id, type, heading: l10n(f, "heading"), place: s(f, "place") || "restaurant", source: s(f, "source") === "opening" ? "opening" : "manual", note: l10n(f, "note"), ...hoursFrom(f) };
   }
 }
 
@@ -457,8 +458,12 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
       return (<>
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
         <LField name="intro" label="Einleitung (optional)" value={b.intro} rows={2} max={1000} langs={langs} />
-        <p className="muted small">Gerichte mit gleicher Rubrik hintereinander erscheinen als ein Abschnitt (z. B. «Vorspeisen», «Hauptgänge»). Preis wie 28.50 oder leer lassen. Nach dem Speichern erscheinen drei neue leere Zeilen.</p>
-        {Items(b.items.length + 3, (i, k) => {
+        <div><label>Gerichte</label><select name="source" defaultValue={b.source} data-testid="menu-source">
+          <option value="items">Aus der Speisekarte (wie Online-Bestellung und Kasse)</option>
+          <option value="manual">Hier von Hand erfassen</option>
+        </select></div>
+        {b.source === "items" ? <p className="muted small">Die Gerichte kommen aus <a href={`/mypontivo/${hotelId}/restaurant/artikel`}>Speisekarte</a> (Rubrik, Name, Beschreibung, Preis, Allergene). Änderungen dort erscheinen sofort auf der Website. Zum Erfassen von Hand oben umstellen und speichern.</p> : <p className="muted small">Gerichte mit gleicher Rubrik hintereinander erscheinen als ein Abschnitt (z. B. «Vorspeisen», «Hauptgänge»). Preis wie 28.50 oder leer lassen. Nach dem Speichern erscheinen drei neue leere Zeilen.</p>}
+        <div hidden={b.source === "items"}>{Items(b.items.length + 3, (i, k) => {
           const it = b.items[i];
           const prevSection = it?.section ?? b.items[b.items.length - 1]?.section;
           return (<>
@@ -475,7 +480,7 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
               <label><input type="checkbox" name={`${k}.gf`} defaultChecked={it?.glutenFree} />glutenfrei</label>
             </div>
           </>);
-        })}
+        })}</div>
         <LField name="note" label="Hinweise unter der Karte" value={b.note} rows={3} max={1000} langs={langs} />
         <p className="muted small">In der Schweiz muss die <strong>Herkunft von Fleisch und Fisch</strong> schriftlich angegeben werden, z. B. «Rind: Schweiz, Lachs: Norwegen (Zucht)». Zu Allergenen genügt der Hinweis «Auskunft über Allergene gibt Ihnen gerne unser Personal». Bitte im Zweifel beim kantonalen Lebensmittelinspektorat nachfragen.</p>
       </>);
@@ -483,7 +488,12 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
       return (<>
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
         <div><label>Öffnungszeiten von</label><select name="place" defaultValue={b.place}>{HOURS_PLACES.map((p) => <option key={p} value={p}>{PLACE_LABEL[p]}</option>)}</select></div>
-        <table className="table small">
+        <div><label>Zeiten</label><select name="source" defaultValue={b.source}>
+          <option value="opening">Aus den Öffnungszeiten der Grunddaten (wie Reservierung und Online-Bestellung)</option>
+          <option value="manual">Hier von Hand erfassen</option>
+        </select></div>
+        {b.source === "opening" ? <p className="muted small">Die Zeiten kommen aus <a href={`/mypontivo/${hotelId}/settings#gastronomie`}>Grunddaten → Öffnungszeiten</a>. Betriebsferien und Hinweis erfassen Sie hier.</p> : null}
+        <table className="table small" hidden={b.source === "opening"}>
           <thead><tr><th>Tag</th><th>1. Zeitfenster</th><th>2. Zeitfenster</th><th>3. Zeitfenster</th></tr></thead>
           <tbody>
             {WEEKDAYS.map((w, i) => (
@@ -516,6 +526,12 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
         <LField name="intro" label="Einleitung" value={b.intro} rows={2} max={1000} langs={langs} />
         <p className="muted small">Zeiten, Plätze und Ein/Aus stellen Sie unter <a href={`/mypontivo/${hotelId}/restaurant/einstellungen#online`}>Tischplan & Reservierung online</a> ein. Ist die Online-Reservierung aus, bleibt der Baustein unsichtbar.</p>
+      </>);
+    case "order":
+      return (<>
+        <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
+        <LField name="intro" label="Einleitung" value={b.intro} rows={2} max={1000} langs={langs} />
+        <p className="muted small">Abholung, Lieferung und Ein/Aus stellen Sie unter <a href={`/mypontivo/${hotelId}/restaurant/bestellung-einstellungen`}>Online-Bestellung & Lieferung</a> ein. Ist sie aus, bleibt der Baustein unsichtbar.</p>
       </>);
     case "voucher":
       return (<>

@@ -77,7 +77,7 @@ describe("Restaurant: Speisekarte, Öffnungszeiten, Tischreservation", () => {
 
     await translatePage(await fresh(h.hotel.id), p.id, "missing", "t");
     const k = await hotelKnowledge(await fresh(h.hotel.id), "en");
-    expect(k.menu[0]).toEqual({ section: "EN Vorspeisen", name: "EN Nüsslisalat", text: "EN mit Ei und Speck", priceChf: "14.50", diet: "", glutenFree: true });
+    expect(k.menu[0]).toEqual({ section: "EN Vorspeisen", name: "EN Nüsslisalat", text: "EN mit Ei und Speck", priceChf: "14.50", diet: "", glutenFree: true, allergens: [] });
     expect(k.hours[0].days[1]).toEqual([]);
     expect(k.hours[0].closures[0].label).toBe("EN Winterpause");
   });

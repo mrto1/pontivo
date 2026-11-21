@@ -59,7 +59,7 @@ describe("R2-Rest (SPEC 20.2)", () => {
     const [hr] = await db().select().from(hotels).where(eq(hotels.id, h.id));
     await db().delete(sitePages).where(and(eq(sitePages.hotelId, h.id), eq(sitePages.slug, "")));
     const p = await ensureHomePage(hr, "t");
-    expect(p.blocks.map((b) => b.type)).toEqual(["hero", "reserve"]);
+    expect(p.blocks.map((b) => b.type)).toEqual(["hero", "reserve", "order", "hours", "menu", "location"]);
     expect((p.blocks[0] as { showSearch: boolean }).showSearch).toBe(false);
   });
 });

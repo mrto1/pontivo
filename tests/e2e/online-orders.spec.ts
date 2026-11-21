@@ -87,6 +87,13 @@ test("Lieferung: Fahrer sieht Adresse und Betrag, fährt los und liefert bar", a
   await card.getByRole("button", { name: "Unterwegs" }).click();
   await page.getByTestId(`delivery-${order.number}`).getByRole("button", { name: "Geliefert, bar erhalten" }).click();
   await expect(page.getByText("Keine offenen Lieferungen.")).toBeVisible();
+  // Tagesabrechnung ohne Modul Kasse (SPEC 20.8)
+  await login(context, baseURL!, h.id, "owner");
+  await page.goto(`/mypontivo/${h.id}/restaurant/online-verkaeufe`);
+  await expect(page.getByTestId("online-sales")).toContainText("CHF 23.00");
+  await expect(page.getByRole("link", { name: "CSV" })).toBeVisible();
+  await page.goto(`/h/${h.slug}/de/bestellung/${order.publicToken}`);
+  await expect(page.getByTestId("order-receipt")).toContainText("Quittung ONL-");
 });
 
 test("Einstellungen: Live-Prüfung nennt Gründe, Liefergebiet anlegen, Speisekarte mit Allergenen", async ({ page, context, baseURL }) => {
@@ -107,4 +114,17 @@ test("Einstellungen: Live-Prüfung nennt Gründe, Liefergebiet anlegen, Speiseka
   await page.getByTestId("items-online").getByLabel("Sesam").check();
   await page.getByTestId("items-online").getByRole("button", { name: "Speichern" }).click();
   await expect(page.getByTestId("items-online")).toContainText("Gluten, Milch (Laktose), Sesam");
+});
+
+test("Restaurant-Website aus der Vorlage: Speisekarte mit Allergenen, Öffnungszeiten, Online bestellen", async ({ page }) => {
+  const { h } = await restaurant();
+  const { ensureHomePage } = await import("../../src/services/site");
+  await ensureHomePage(h, "e2e");
+  await page.goto(`/h/${h.slug}/de`);
+  await expect(page.getByRole("heading", { name: "Speisekarte" })).toBeVisible();
+  await expect(page.locator(".blk-menu")).toContainText("Margherita");
+  await expect(page.locator(".blk-menu")).toContainText("Allergene: Gluten, Milch (Laktose)");
+  await expect(page.getByRole("heading", { name: "Öffnungszeiten" })).toBeVisible();
+  await page.getByTestId("order-block").click();
+  await expect(page).toHaveURL(/\/bestellen$/);
 });

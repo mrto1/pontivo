@@ -145,7 +145,7 @@ export function OrderCart(p: {
         <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px" }} />
         <h2>{t.cart}</h2>
         {p.pickup.on && p.delivery.on ? (
-          <div className="seg" role="radiogroup" aria-label={t.cart}>
+          <div className="kind-seg" role="radiogroup" aria-label={t.cart}>
             <label><input type="radio" name="kindPick" checked={kind === "pickup"} onChange={() => setKind("pickup")} />{t.pickup}</label>
             <label><input type="radio" name="kindPick" checked={kind === "delivery"} onChange={() => setKind("delivery")} />{t.delivery}</label>
           </div>

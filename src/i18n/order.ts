@@ -7,7 +7,7 @@ export type OrdText = {
   street: string; houseNo: string; postalCode: string; city: string; floor: string; bell: string; hint: string; addrSearch: string; swisstopo: string;
   payment: string; payCard: string; cashPickup: string; cashDelivery: string; send: string; pay: string; allergens: string; allergenCall: string; special: string;
   required: string; remove: string; noDelivery: (plz: string) => string; minOrder: (a: string) => string; freeFrom: (a: string) => string; aborted: string;
-  number: string; back: string; again: string; refunded: string; status: Record<string, string>; at: (t: string) => string; deliverAt: (t: string) => string;
+  number: string; receipt: string; vat: string; back: string; again: string; refunded: string; status: Record<string, string>; at: (t: string) => string; deliverAt: (t: string) => string;
 };
 
 export const ORD: Record<Locale, OrdText> = {
@@ -19,7 +19,7 @@ export const ORD: Record<Locale, OrdText> = {
     payment: "Bezahlung", payCard: "Online bezahlen (Karte, TWINT)", cashPickup: "Bar bei Abholung", cashDelivery: "Bar bei Lieferung", send: "Bestellung senden", pay: "Weiter zur Zahlung",
     allergens: "Allergene", allergenCall: "Fragen zu Allergenen: bitte anrufen.", special: "Sonderwunsch", required: "Pflicht", remove: "Entfernen",
     noDelivery: (p) => `Wir liefern leider nicht nach ${p}.`, minOrder: (a) => `Mindestbestellwert ${a}`, freeFrom: (a) => `gratis ab ${a}`, aborted: "Die Zahlung wurde abgebrochen. Ihre Auswahl ist noch da.",
-    number: "Bestellnummer", back: "Zur Website", again: "Neue Bestellung", refunded: "Der bezahlte Betrag wird zurückerstattet.",
+    number: "Bestellnummer", receipt: "Quittung", vat: "MWST", back: "Zur Website", again: "Neue Bestellung", refunded: "Der bezahlte Betrag wird zurückerstattet.",
     status: { pending_payment: "Wir warten auf die Bestätigung Ihrer Zahlung.", new: "Bestellung eingegangen. Das Restaurant bestätigt gleich.", accepted: "Bestätigt.", ready: "Bereit zur Abholung.", out: "Unterwegs zu Ihnen.", completed: "Erledigt. En Guete!", rejected: "Leider abgelehnt.", expired: "Das Restaurant hat nicht rechtzeitig bestätigt; die Bestellung ist storniert.", cancelled: "Storniert.", not_accepted: "Nicht zugestellt." },
     at: (t) => `Abholbereit um ${t}`, deliverAt: (t) => `Lieferung um ca. ${t}`,
   },
@@ -31,7 +31,7 @@ export const ORD: Record<Locale, OrdText> = {
     payment: "Payment", payCard: "Pay online (card, TWINT)", cashPickup: "Cash on pickup", cashDelivery: "Cash on delivery", send: "Send order", pay: "Continue to payment",
     allergens: "Allergens", allergenCall: "Questions about allergens: please call us.", special: "Special request", required: "required", remove: "Remove",
     noDelivery: (p) => `Sorry, we do not deliver to ${p}.`, minOrder: (a) => `Minimum order ${a}`, freeFrom: (a) => `free from ${a}`, aborted: "The payment was cancelled. Your selection is still here.",
-    number: "Order number", back: "To the website", again: "New order", refunded: "The amount paid will be refunded.",
+    number: "Order number", receipt: "Receipt", vat: "VAT", back: "To the website", again: "New order", refunded: "The amount paid will be refunded.",
     status: { pending_payment: "We are waiting for your payment to be confirmed.", new: "Order received. The restaurant will confirm shortly.", accepted: "Confirmed.", ready: "Ready for pickup.", out: "On its way to you.", completed: "Done. Enjoy your meal!", rejected: "Sorry, declined.", expired: "The restaurant did not confirm in time; the order is cancelled.", cancelled: "Cancelled.", not_accepted: "Not delivered." },
     at: (t) => `Ready at ${t}`, deliverAt: (t) => `Delivery at about ${t}`,
   },
@@ -43,7 +43,7 @@ export const ORD: Record<Locale, OrdText> = {
     payment: "Paiement", payCard: "Payer en ligne (carte, TWINT)", cashPickup: "En espèces au retrait", cashDelivery: "En espèces à la livraison", send: "Envoyer la commande", pay: "Continuer vers le paiement",
     allergens: "Allergènes", allergenCall: "Questions sur les allergènes : appelez-nous.", special: "Demande particulière", required: "obligatoire", remove: "Retirer",
     noDelivery: (p) => `Désolés, nous ne livrons pas à ${p}.`, minOrder: (a) => `Commande minimale ${a}`, freeFrom: (a) => `gratuit dès ${a}`, aborted: "Le paiement a été interrompu. Votre sélection est conservée.",
-    number: "Numéro de commande", back: "Vers le site", again: "Nouvelle commande", refunded: "Le montant payé vous sera remboursé.",
+    number: "Numéro de commande", receipt: "Quittance", vat: "TVA", back: "Vers le site", again: "Nouvelle commande", refunded: "Le montant payé vous sera remboursé.",
     status: { pending_payment: "Nous attendons la confirmation de votre paiement.", new: "Commande reçue. Le restaurant confirme dans un instant.", accepted: "Confirmée.", ready: "Prête à emporter.", out: "En route vers vous.", completed: "Terminé. Bon appétit !", rejected: "Malheureusement refusée.", expired: "Le restaurant n'a pas confirmé à temps ; la commande est annulée.", cancelled: "Annulée.", not_accepted: "Non livrée." },
     at: (t) => `Prête à ${t}`, deliverAt: (t) => `Livraison vers ${t}`,
   },
@@ -55,7 +55,7 @@ export const ORD: Record<Locale, OrdText> = {
     payment: "Pagamento", payCard: "Paga online (carta, TWINT)", cashPickup: "Contanti al ritiro", cashDelivery: "Contanti alla consegna", send: "Invia l'ordine", pay: "Continua al pagamento",
     allergens: "Allergeni", allergenCall: "Domande sugli allergeni: chiamateci.", special: "Richiesta speciale", required: "obbligatorio", remove: "Rimuovi",
     noDelivery: (p) => `Purtroppo non consegniamo a ${p}.`, minOrder: (a) => `Ordine minimo ${a}`, freeFrom: (a) => `gratis da ${a}`, aborted: "Il pagamento è stato interrotto. La vostra scelta è ancora qui.",
-    number: "Numero d'ordine", back: "Al sito", again: "Nuovo ordine", refunded: "L'importo pagato vi sarà rimborsato.",
+    number: "Numero d'ordine", receipt: "Ricevuta", vat: "IVA", back: "Al sito", again: "Nuovo ordine", refunded: "L'importo pagato vi sarà rimborsato.",
     status: { pending_payment: "Attendiamo la conferma del pagamento.", new: "Ordine ricevuto. Il ristorante conferma a breve.", accepted: "Confermato.", ready: "Pronto per il ritiro.", out: "In arrivo.", completed: "Fatto. Buon appetito!", rejected: "Purtroppo rifiutato.", expired: "Il ristorante non ha confermato in tempo; l'ordine è annullato.", cancelled: "Annullato.", not_accepted: "Non consegnato." },
     at: (t) => `Pronto alle ${t}`, deliverAt: (t) => `Consegna verso le ${t}`,
   },
@@ -67,7 +67,7 @@ export const ORD: Record<Locale, OrdText> = {
     payment: "Betaling", payCard: "Online betalen (kaart, TWINT)", cashPickup: "Contant bij afhalen", cashDelivery: "Contant bij bezorging", send: "Bestelling versturen", pay: "Verder naar betalen",
     allergens: "Allergenen", allergenCall: "Vragen over allergenen: bel ons.", special: "Speciale wens", required: "verplicht", remove: "Verwijderen",
     noDelivery: (p) => `Helaas bezorgen we niet in ${p}.`, minOrder: (a) => `Minimale bestelling ${a}`, freeFrom: (a) => `gratis vanaf ${a}`, aborted: "De betaling is afgebroken. Uw keuze staat er nog.",
-    number: "Bestelnummer", back: "Naar de website", again: "Nieuwe bestelling", refunded: "Het betaalde bedrag wordt terugbetaald.",
+    number: "Bestelnummer", receipt: "Kassabon", vat: "btw", back: "Naar de website", again: "Nieuwe bestelling", refunded: "Het betaalde bedrag wordt terugbetaald.",
     status: { pending_payment: "We wachten op de bevestiging van uw betaling.", new: "Bestelling ontvangen. Het restaurant bevestigt zo.", accepted: "Bevestigd.", ready: "Klaar om af te halen.", out: "Onderweg naar u.", completed: "Klaar. Eet smakelijk!", rejected: "Helaas geweigerd.", expired: "Het restaurant heeft niet op tijd bevestigd; de bestelling is geannuleerd.", cancelled: "Geannuleerd.", not_accepted: "Niet bezorgd." },
     at: (t) => `Klaar om ${t}`, deliverAt: (t) => `Bezorging rond ${t}`,
   },

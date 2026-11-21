@@ -267,7 +267,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Treuhänder: MWST-Satz der Liefergebühr (Annahme 2,6 % wie die Speisen), Bons bei Online-Zahlung.
 - [x] Grundgebühr (Konzept 7a, Schritt 8 und Abschnitt 6): Entschieden 21.11.2026: **beide Wege anbieten**, Karte (Stripe) oder QR-Rechnung; die Plattformverwaltung erzeugt und versendet Rechnungen und Mahnungen.
 - [ ] Gastgeber-Bedingungen Ziffer 2/3/KI-Chat an die QR-Rechnung angleichen (SPEC 20.6): heute «der hinterlegten Karte belastet» und «hinterlegt der Gastgeber eine Karte». Neu z. B. «per hinterlegter Karte oder per QR-Rechnung (zahlbar innert 30 Tagen)». Rechtstext, darum nicht selbst geändert. Mahnungen setzen bereits 14 Tage Nachfrist (Ziffer 3).
-- [ ] Konzept 6 «Abos jährlich per QR-Rechnung»: heute auch beim Weg QR monatlich (wie Karte). Jahresrechnung im Voraus für Module (Kasse, KI-Chat) gewünscht? Dann mit Rabatt und Kündigung/Rückerstattung regeln.
+- [x] Konzept 6 «Abos jährlich per QR-Rechnung»: entschieden 21.11.2026: **monatlich** (wie Karte), keine Jahresrechnung.
 - [x] Sprache bei der Registrierung: nicht abgefragt, Deutsch, änderbar in den Grunddaten (bestätigt 21.11.2026).
 - [ ] Gastgeber-Bedingungen (Ziffer Gebühren) an Entscheid 10 angleichen: heute «1,9 % des per Karte, TWINT oder Wallet bezahlten Betrags»; neu «auf alles, was über Pontivo hereinkommt, egal wie bezahlt» (z. B. Online-Bestellung bar bei Lieferung, R4) und «keine Gebühr auf Verkäufe vor Ort». Rechtstext, darum nicht selbst geändert.
 - [ ] ASPSMS: Erfolgscode der JSON-API (`StatusCode`) ist in der Doku nicht genannt. ASSUMPTION: «1» = OK; mit Testzugang prüfen. Absender (Originator, alphanumerisch max. 11 Zeichen) festlegen.

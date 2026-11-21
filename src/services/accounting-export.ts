@@ -1,4 +1,5 @@
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { onlineSalesDays } from "./online-sales";
 import { db, rows } from "../db/client";
 import { bookings, hotels, invoiceLines, invoices, onsitePayments, type Hotel } from "../db/schema";
 import { accountOk, ACCOUNT_KEYS, buildJournal, DEFAULT_ACCOUNTS, type AccountMap, type JInvoice, type JPayment, type JRow } from "../domain/accounting-export";
@@ -41,6 +42,13 @@ export async function journalFor(hotel: Hotel, from: string, to: string): Promis
     .where(and(eq(onsitePayments.hotelId, hotel.id), sql`${onsitePayments.receivedOn} BETWEEN ${from}::date AND ${to}::date`));
   const LABEL = { cash: "bar", card: "Karte", twint: "TWINT", bank: "Überweisung", other: "andere" } as const;
   for (const o of onsite) jp.push({ date: o.p.receivedOn, reference: o.ref, label: LABEL[o.p.method], account: o.p.method, amountRappen: o.p.amountRappen });
+  // Online-Verkäufe (SPEC 20.8): je Tag ein Sammelbeleg «ONL-Datum», Ertrag übrige Leistungen je MWST-Satz, Zahlung online (Stripe) bzw. bar
+  for (const d of await onlineSalesDays(hotel, from, to)) {
+    const doc = `ONL-${d.day}`;
+    ji.push({ number: doc, kind: "invoice", issuedOn: d.day, recipient: "Online-Verkäufe", reference: doc, lines: d.vat.map((v) => ({ category: "extra", vatBps: v.bps, amountRappen: v.grossRappen })) });
+    if (d.cardRappen) jp.push({ date: d.day, reference: doc, label: "online", account: "stripe", amountRappen: d.cardRappen });
+    if (d.cashRappen) jp.push({ date: d.day, reference: doc, label: "bar", account: "cash", amountRappen: d.cashRappen });
+  }
   return buildJournal(ji, jp, accountsOf(hotel));
 }
 

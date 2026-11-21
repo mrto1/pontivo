@@ -78,19 +78,24 @@ export const blockSchema = z.discriminatedUnion("type", [
   z.object({ id: z.string(), type: z.literal("voucher"), heading: l10n(200), intro: l10n(1000) }),
   // Tisch reservieren (SPEC 20.2): Datum und Personen, führt zu den freien Zeiten auf /[sprache]/tisch
   z.object({ id: z.string(), type: z.literal("reserve"), heading: l10n(200), intro: l10n(1000) }),
+  // Online bestellen (SPEC 20.7): Knopf zur Online-Bestellung, nur sichtbar, solange sie eingeschaltet ist
+  z.object({ id: z.string(), type: z.literal("order"), heading: l10n(200), intro: l10n(1000) }),
   // Speisekarte: Gerichte mit Rubrik (aufeinanderfolgende gleiche Rubriken werden gruppiert), Preis in Rappen
+  // source «items» (SPEC 20.7): Gerichte kommen aus der Speisekarte (pos_items), dieselbe Karte wie Online-Bestellung und Kasse
   z.object({
-    id: z.string(), type: z.literal("menu"), heading: l10n(200), intro: l10n(1000),
+    id: z.string(), type: z.literal("menu"), heading: l10n(200), intro: l10n(1000), source: z.enum(["manual", "items"]).default("manual"),
     items: z.array(z.object({
       section: l10n(80), name: l10n(160), text: l10n(500),
       priceRappen: z.number().int().min(0).max(1_000_000).nullable().default(null),
       diet: z.enum(["", "vegetarian", "vegan"]).default(""), glutenFree: z.boolean().default(false),
+      allergens: z.array(z.string().max(20)).max(14).default([]),
     })).max(80).default([]),
     note: l10n(1000),
   }),
   // Öffnungszeiten: 7 Tage (Mo–So), je bis 3 Zeitfenster; leer = geschlossen. Betriebsferien mit Datum.
   z.object({
-    id: z.string(), type: z.literal("hours"), heading: l10n(200), place: z.enum(HOURS_PLACES).default("restaurant"),
+    // source «opening» (SPEC 20.7): Zeiten aus den Öffnungszeiten der Grunddaten (gleiche wie Reservierung und Online-Bestellung)
+    id: z.string(), type: z.literal("hours"), heading: l10n(200), place: z.enum(HOURS_PLACES).default("restaurant"), source: z.enum(["manual", "opening"]).default("manual"),
     days: z.array(z.array(z.object({ from: time, to: time })).max(3)).length(7).default([[], [], [], [], [], [], []]),
     closures: z.array(z.object({ from: dayStr, to: dayStr, label: l10n(120) }).refine((c) => c.to >= c.from, "Ferien: Ende vor Beginn")).max(10).default([]),
     note: l10n(1000),
@@ -121,6 +126,7 @@ export const BLOCK_TYPES: { type: BlockType; label: string; hint: string }[] = [
   { type: "tips", label: "Ausflugstipps", hint: "Wanderungen, Ausflüge, Restaurants in der Umgebung" },
   { type: "inquiry", label: "Anfrageformular", hint: "Tischreservation, Gruppen, Seminare, Hochzeiten – kommt per E-Mail und im Admin an" },
   { type: "reserve", label: "Tisch reservieren", hint: "Datum und Personen wählen, freie Zeiten sehen und online reservieren (Funktion Restaurant)" },
+  { type: "order", label: "Online bestellen", hint: "Knopf zur Online-Bestellung (Abholung, Lieferung) – erscheint nur, solange sie eingeschaltet ist" },
   { type: "voucher", label: "Gutscheine", hint: "Gäste kaufen Wertgutscheine online, Sie lösen sie im Admin ein" },
 ];
 

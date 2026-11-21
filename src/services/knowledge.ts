@@ -1,4 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
+import { resolveBlocks } from "./site-data";
+import { ALLERGEN_LABEL, type Allergen } from "../domain/online-order";
 import { db } from "../db/client";
 import { extras, ratePlans, roomTypes, type Hotel } from "../db/schema";
 import { plainText } from "../domain/richtext";
@@ -26,7 +28,7 @@ export type HotelKnowledge = {
   /** Zusatzleistungen (Preis in CHF, Einheit z. B. per_night) */
   extras: { name: string; description: string; priceChf: string; unit: string; mandatory: boolean }[];
   /** Speisekarte (Preise in CHF) */
-  menu: { section: string; name: string; text: string; priceChf: string | null; diet: string; glutenFree: boolean }[];
+  menu: { section: string; name: string; text: string; priceChf: string | null; diet: string; glutenFree: boolean; allergens: string[] }[];
   /** Öffnungszeiten (Restaurant, Rezeption …): Tag 0 = Montag, leere Liste = geschlossen */
   /** Tipps und Infos aus dem Gästeportal (SPEC 19.41), dieselben Texte wie im Portal */
   stayTips: { title: string; text: string }[];
@@ -35,7 +37,7 @@ export type HotelKnowledge = {
 
 export async function hotelKnowledge(hotel: Hotel, lang: Locale): Promise<HotelKnowledge> {
   const pages = (await listPages(hotel.id)).filter((p) => p.published);
-  const blocks: Block[] = pages.flatMap((p) => p.blocks);
+  const blocks: Block[] = await resolveBlocks(hotel, pages.flatMap((p) => p.blocks));
   const rts = await db().select().from(roomTypes).where(and(eq(roomTypes.hotelId, hotel.id), eq(roomTypes.active, true))).orderBy(asc(roomTypes.sortOrder));
   const rps = await db().select().from(ratePlans).where(and(eq(ratePlans.hotelId, hotel.id), eq(ratePlans.active, true)));
   const T = (v: Parameters<typeof tr>[0]) => plainText(tr(v, lang));
@@ -56,7 +58,7 @@ export async function hotelKnowledge(hotel: Hotel, lang: Locale): Promise<HotelK
     facts: blocks.flatMap((b) => (b.type === "facts" ? b.items : [])).map((x) => ({ label: T(x.label), value: T(x.value) })).filter((x) => x.label),
     arrival: blocks.flatMap((b) => (b.type === "location" ? [T(b.body)] : [])).filter(Boolean),
     extras: exs.map((e) => ({ name: T(e.name), description: T(e.description), priceChf: (e.priceRappen / 100).toFixed(2), unit: e.unit, mandatory: e.mandatory })),
-    menu: blocks.flatMap((b) => (b.type === "menu" ? b.items : [])).map((x) => ({ section: T(x.section), name: T(x.name), text: T(x.text), priceChf: x.priceRappen === null ? null : (x.priceRappen / 100).toFixed(2), diet: x.diet, glutenFree: x.glutenFree })).filter((x) => x.name),
+    menu: blocks.flatMap((b) => (b.type === "menu" ? b.items : [])).map((x) => ({ section: T(x.section), name: T(x.name), text: T(x.text), priceChf: x.priceRappen === null ? null : (x.priceRappen / 100).toFixed(2), diet: x.diet, glutenFree: x.glutenFree, allergens: (x.allergens ?? []).map((a) => ALLERGEN_LABEL[a as Allergen]?.[lang] ?? a) })).filter((x) => x.name),
     hours: blocks.flatMap((b) => (b.type === "hours" ? [{ place: b.place, title: T(b.heading), days: b.days, closures: b.closures.map((c) => ({ from: c.from, to: c.to, label: T(c.label) })) }] : [])),
     stayTips: (hotel.content.portal?.tips ?? []).map((x) => ({ title: tr(x.title, lang).trim(), text: tr(x.text, lang).trim() })).filter((x) => x.title),
     labels: blocks.flatMap((b) => (b.type === "labels" ? b.items : [])).map((x) => ({ name: x.name, level: T(x.level), text: T(x.text) })).filter((x) => x.name),

@@ -16,7 +16,7 @@ export const ROLE_LABEL: Record<FullRole | LimitedRole, string> = {
 export const ROLE_AREAS: Record<LimitedRole, readonly string[]> = {
   reception: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "tag", "calendar", "bookings", "plan", "housekeeping", "resources", "reports", "guestbook", "inbox", "vouchers", "invoices", "dayclose", "groups"],
   housekeeping: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "housekeeping"],
-  accounting: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "invoices", "dayclose", "debtors", "owners", "statistics", "hesta", "accountingexport"],
+  accounting: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "invoices", "dayclose", "debtors", "owners", "statistics", "hesta", "accountingexport", "onlinesales"],
   service: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "dininghome", "restaurant", "reservations", "resplan", "waitlist", "kitchen", "kasse", "onlineorders", "driver"],
   driver: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "driver"],
 };
@@ -42,6 +42,7 @@ export const CONFIGURABLE_AREAS: { key: string; label: string; group: string }[]
   { group: "Restaurant", key: "kitchen", label: "Küchenbildschirm" },
   { group: "Restaurant", key: "onlineorders", label: "Online-Bestellungen (Bestellbildschirm)" },
   { group: "Restaurant", key: "driver", label: "Lieferungen (Fahrer)" },
+  { group: "Restaurant", key: "onlinesales", label: "Online-Verkäufe (Tagesabrechnung)" },
   { group: "Kalender", key: "plan", label: "Zimmerplan" },
   { group: "Kalender", key: "calendar", label: "Preise & Verfügbarkeit (ansehen)" },
   { group: "Buchungen", key: "bookings", label: "Buchungen" },
@@ -79,7 +80,7 @@ export const roleLabel = (r: Role): string => (isCustomRole(r) ? parseCustom(r).
 export const LANDING: Record<LimitedRole, string> = { reception: "", housekeeping: "housekeeping", accounting: "invoices", service: "restaurant/heute", driver: "restaurant/fahrer" };
 const LANDING_ORDER = ["tag", "housekeeping", "bookings", "calendar", "invoices", "dininghome", "onlineorders", "driver", "kasse", "restaurant", "reservations", "kitchen", "reports", "inbox", "statistics"];
 /** Bereiche, deren Adresse nicht dem Schlüssel entspricht */
-const AREA_PATH: Record<string, string> = { onlineorders: "restaurant/bestellungen", driver: "restaurant/fahrer", dininghome: "restaurant/heute", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste" };
+const AREA_PATH: Record<string, string> = { onlinesales: "restaurant/online-verkaeufe", onlineorders: "restaurant/bestellungen", driver: "restaurant/fahrer", dininghome: "restaurant/heute", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste" };
 export function landingFor(r: LimitedRole | CustomRole): string {
   if (!isCustomRole(r)) return LANDING[r];
   const areas = parseCustom(r).areas;

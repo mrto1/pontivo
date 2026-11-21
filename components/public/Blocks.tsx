@@ -8,6 +8,9 @@ import { fill } from "@/src/i18n/dict";
 import { voucherSettings, vouchersAvailable } from "@/src/services/vouchers";
 import { tableReservationOnline } from "@/src/services/reservations";
 import { RES } from "@/src/i18n/reservation";
+import { ORD } from "@/src/i18n/order";
+import { ALLERGEN_LABEL, type Allergen } from "@/src/domain/online-order";
+import { onlineOrderingOn } from "@/src/services/online-orders";
 import { formatChf } from "@/src/domain/money";
 import { roomDescription, roomName } from "@/src/domain/i18n-names";
 import { addDays, todayIn } from "@/src/domain/dates";
@@ -302,6 +305,19 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
         );
         break;
       }
+      case "order": {
+        // Online bestellen (SPEC 20.7): nur solange die Online-Bestellung eingeschaltet ist
+        if (!(await onlineOrderingOn(hotel.id))) break;
+        const o = ORD[lang];
+        out.push(
+          <section key={b.id} id={`b-${b.id}`} className="blk blk-order">
+            <Heading text={tr(b.heading, lang) || o.title} />
+            {tr(b.intro, lang) ? <RichText text={tr(b.intro, lang)} /> : null}
+            <p><a className="btn" href={`${base}/${lang}/bestellen`} data-testid="order-block">{o.title}</a></p>
+          </section>,
+        );
+        break;
+      }
       case "voucher": {
         const set = voucherSettings(hotel);
         const ok = vouchersAvailable(hotel);
@@ -340,6 +356,8 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
       }
       case "menu": {
         const items = b.items.filter((it) => tr(it.name, lang));
+        if (b.source === "items" && !items.length) break;
+        const ordering = b.source === "items" && (await onlineOrderingOn(hotel.id));
         out.push(
           <section key={b.id} id={`b-${b.id}`} className="blk blk-menu">
             <Heading text={tr(b.heading, lang)} />
@@ -366,6 +384,7 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
                           ) : null}
                         </p>
                       ) : null}
+                      {it.allergens.length ? <p className="small muted menu-allergens">{ORD[lang].allergens}: {it.allergens.map((a) => ALLERGEN_LABEL[a as Allergen]?.[lang] ?? a).join(", ")}</p> : null}
                     </li>
                   ))}
                 </ul>
@@ -373,6 +392,8 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
             ))}
             {tr(b.note, lang) ? <div className="small muted"><RichText text={tr(b.note, lang)} /></div> : null}
             {items.some((it) => it.priceRappen !== null) ? <p className="small muted">{d.menuPrices}</p> : null}
+            {items.some((it) => it.allergens.length) ? <p className="small muted">{ORD[lang].allergenCall}</p> : null}
+            {ordering ? <p><a className="btn" href={`${base}/${lang}/bestellen`}>{ORD[lang].title}</a></p> : null}
           </section>,
         );
         break;

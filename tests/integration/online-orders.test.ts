@@ -156,3 +156,27 @@ describe("Online-Bestellung (SPEC 20.4)", () => {
     expect(item.hint).toMatch(/online bestellbar/);
   });
 });
+
+describe("Ohne Modul Kasse (SPEC 20.8)", () => {
+  it("Online-Verkäufe je Tag aus den Bons, Buchungsliste mit Sammelbeleg ONL", async () => {
+    const { h, pizza, big, noon } = await setup();
+    const S = await import("../../src/db/schema");
+    await db().insert(S.onlineOrderSettings).values({ hotelId: h.id }).onConflictDoNothing();
+    await db().update(S.onlineOrderSettings).set({ enabled: true, testPassedAt: new Date() }).where(eq(S.onlineOrderSettings.hotelId, h.id));
+    const { order: card } = await createOnlineOrder(h, order(pizza.id, [big.id]), { now: noon });
+    await acceptOrder(h, card.id, 0, "t");
+    const { order: cash } = await createOnlineOrder(h, order(pizza.id, [big.id], { payment: "cash" }), { now: noon });
+    await acceptOrder(h, cash.id, 0, "t");
+    await completeOrder(h, cash.id, "t");
+    const { onlineSalesDays } = await import("../../src/services/online-sales");
+    const day = todayIn(h.timezone);
+    const days = await onlineSalesDays(h, day, day);
+    expect(days).toHaveLength(1);
+    expect(days[0]).toMatchObject({ count: 2, totalRappen: 8800, cardRappen: 4400, cashRappen: 4400 });
+    expect(days[0].feeRappen).toBe(card.feeRappen + cash.feeRappen);
+    const { journalFor } = await import("../../src/services/accounting-export");
+    const j = await journalFor(h, day, day);
+    expect(j.some((x) => x.doc === `ONL-${day}`)).toBe(true);
+    expect(j.filter((x) => x.ref === `ONL-${day}`).length).toBeGreaterThanOrEqual(3);
+  });
+});
