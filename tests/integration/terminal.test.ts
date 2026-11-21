@@ -83,6 +83,32 @@ describe("Stripe Terminal (SPEC 18.4)", () => {
     expect((await bookingBalance(db(), hotel.id, b.id)).openRappen).toBe(0);
   });
 
+  it("Gebührenregel (SPEC 18.4): nur offener Gebührenanteil einer Direktbuchung, Verkauf vor Ort ohne Plattformgebühr", async () => {
+    const { payments } = await import("../../src/db/schema");
+    const calls = fake();
+    const { hotel, b } = await setup();
+    const r = await registerReader(hotel, { registrationCode: "c", label: "Empfang" }, "t");
+    const fee = () => (calls.filter((c) => c.fn === "pi").at(-1)!.args[0] as { application_fee_amount?: number }).application_fee_amount;
+    // Gebühr der Direktbuchung ist online schon erhoben: Abendessen am Terminal ohne Plattformgebühr
+    const paid = (await db().select().from(payments).where(eq(payments.bookingId, b.id))).reduce((a, p) => a + p.applicationFeeRappen, 0);
+    expect(paid).toBe(b.platformFeeRappen);
+    const tp1 = await startTerminalPayment(hotel, b.id, r.id, 5000, "t");
+    expect(fee()).toBeUndefined();
+    expect(tp1.applicationFeeRappen).toBe(0);
+    await cancelTerminalPayment(hotel, tp1.id, "t");
+    // Noch nicht erhobene Gebühr (z. B. Zahlung vor Ort statt online): Terminal holt den offenen Teil
+    await db().update(payments).set({ applicationFeeRappen: 100 }).where(eq(payments.bookingId, b.id));
+    const tp2 = await startTerminalPayment(hotel, b.id, r.id, 5000, "t");
+    expect(fee()).toBe(b.platformFeeRappen - 100);
+    expect(tp2.applicationFeeRappen).toBe(b.platformFeeRappen - 100);
+    await cancelTerminalPayment(hotel, tp2.id, "t");
+    // Buchung, die nicht über Pontivo kam (z. B. Portal, von Hand): nie Plattformgebühr
+    await db().update(bookings).set({ source: "booking_com" }).where(eq(bookings.id, b.id));
+    const tp3 = await startTerminalPayment(hotel, b.id, r.id, 5000, "t");
+    expect(fee()).toBeUndefined();
+    expect(tp3.applicationFeeRappen).toBe(0);
+  });
+
   it("Fremdes Konto im Ereignis wird abgelehnt; Betrag über offen und Leser offline", async () => {
     fake();
     const { hotel, b } = await setup();

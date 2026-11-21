@@ -266,3 +266,4 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Pilotbetrieb (Restaurant/Take-away, idealerweise GloriaFood-Nutzer).
 - [ ] Treuhänder: MWST-Satz der Liefergebühr (Annahme 2,6 % wie die Speisen), Bons bei Online-Zahlung.
 - [ ] Selbst-Onboarding (Konzept 7a, Schritt 8 und Abschnitt 6): Grundgebühr heute per hinterlegter Karte (Stripe); Konzept nennt «Rechnung per QR-Rechnung» bzw. Abos jährlich per QR-Rechnung. Umstellen (für Restaurants oder alle Betriebe)? Bis zum Entscheid bleibt die Karte.
+- [ ] Gastgeber-Bedingungen (Ziffer Gebühren) an Entscheid 10 angleichen: heute «1,9 % des per Karte, TWINT oder Wallet bezahlten Betrags»; neu «auf alles, was über Pontivo hereinkommt, egal wie bezahlt» (z. B. Online-Bestellung bar bei Lieferung, R4) und «keine Gebühr auf Verkäufe vor Ort». Rechtstext, darum nicht selbst geändert.

@@ -1,8 +1,8 @@
-import { and, desc, eq } from "drizzle-orm";
-import { db } from "../db/client";
+import { and, desc, eq, sql } from "drizzle-orm";
+import { db, rows } from "../db/client";
 import { bookings, hotels, terminalPayments, terminalReaders, type Hotel, type TerminalPayment, type TerminalReader } from "../db/schema";
 import { stripe } from "../integrations/stripe/client";
-import { platformFee } from "../domain/pricing";
+import { terminalFee } from "../domain/deposit";
 import { audit } from "./audit";
 import { bookingBalance, InvoiceError, recordOnsitePayment } from "./invoicing";
 
@@ -54,6 +54,14 @@ export async function registerReader(hotel: Hotel, input: { registrationCode: st
   return row;
 }
 
+/** Schon erhobene Plattformgebühr einer Buchung: Online-Zahlungen und erfolgreiche Terminal-Zahlungen */
+export async function feesPaid(bookingId: string): Promise<number> {
+  const [r] = rows<{ f: number }>(await db().execute(sql`
+    SELECT (SELECT coalesce(sum(application_fee_rappen),0) FROM payments WHERE booking_id = ${bookingId} AND status IN ('succeeded','partially_refunded','refunded'))::int
+         + (SELECT coalesce(sum(application_fee_rappen),0) FROM terminal_payments WHERE booking_id = ${bookingId} AND status = 'succeeded')::int AS f`));
+  return r?.f ?? 0;
+}
+
 /** Zahlung am Terminal starten. Ein PaymentIntent je Zahlung; bei Fehler vor dem Gerät wird er storniert. */
 export async function startTerminalPayment(hotel: Hotel, bookingId: string, readerId: string, amountRappen: number, actor: string): Promise<TerminalPayment> {
   const opts = needAccount(hotel);
@@ -66,7 +74,8 @@ export async function startTerminalPayment(hotel: Hotel, bookingId: string, read
   if (amountRappen > open) throw new InvoiceError("Der Betrag ist höher als der offene Betrag.");
   const busy = await db().select().from(terminalPayments).where(and(eq(terminalPayments.readerId, reader.id), eq(terminalPayments.status, "pending")));
   if (busy.length) throw new InvoiceError("Auf diesem Leser läuft noch eine Zahlung. Bitte abschliessen, prüfen oder abbrechen.");
-  const [tp] = await db().insert(terminalPayments).values({ hotelId: hotel.id, bookingId, readerId: reader.id, amountRappen, actor }).returning();
+  const fee = terminalFee(b.source, b.platformFeeRappen, await feesPaid(bookingId), amountRappen);
+  const [tp] = await db().insert(terminalPayments).values({ hotelId: hotel.id, bookingId, readerId: reader.id, amountRappen, applicationFeeRappen: fee, actor }).returning();
   try {
     const pi = await stripe().paymentIntents.create(
       {
@@ -74,8 +83,8 @@ export async function startTerminalPayment(hotel: Hotel, bookingId: string, read
         currency: "chf",
         allowed_payment_method_types: ["card_present"],
         capture_method: "automatic",
-        // ASSUMPTION: application_fee_amount wie bei Online-Zahlungen (Direct Charge); auf den Terminal-Seiten nicht ausdrücklich gezeigt.
-        application_fee_amount: platformFee(amountRappen, hotel.platformFeeBps) || undefined,
+        // Gebührenregel (SPEC 18.4): nur der offene Gebührenanteil einer Direktbuchung; Verkauf vor Ort sonst ohne Plattformgebühr
+        application_fee_amount: fee || undefined,
         metadata: { booking_id: bookingId, hotel_id: hotel.id, terminal_payment_id: tp.id },
       },
       { ...opts, idempotencyKey: `terminal-pi-${tp.id}` },

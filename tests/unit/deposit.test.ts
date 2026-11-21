@@ -31,3 +31,15 @@ describe("Anzahlung berechnen", () => {
     expect(feeShare(0, 0, 0)).toBe(0);
   });
 });
+
+describe("Gebührenregel am Terminal (SPEC 18.4, Entscheid 10)", () => {
+  it("nur Direktbuchung, nur offener Teil, höchstens Betrag − 1", async () => {
+    const { terminalFee } = await import("../../src/domain/deposit");
+    expect(terminalFee("direct", 1000, 0, 5000)).toBe(1000);
+    expect(terminalFee("direct", 1000, 400, 5000)).toBe(600);
+    expect(terminalFee("direct", 1000, 1000, 5000)).toBe(0);
+    expect(terminalFee("direct", 1000, 0, 500)).toBe(499);
+    expect(terminalFee("admin", 1000, 0, 5000)).toBe(0);
+    expect(terminalFee("channex", 1000, 0, 5000)).toBe(0);
+  });
+});

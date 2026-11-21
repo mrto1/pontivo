@@ -29,7 +29,9 @@ export async function startBalancePayment(token: string, now = new Date()): Prom
   const provider = await getPaymentProvider();
   const base = env().APP_BASE_URL;
   const lang = booking.language as "de" | "en" | "fr" | "it" | "nl";
-  const paidFee = rows<{ f: number }>(await db().execute(sql`SELECT coalesce(sum(application_fee_rappen),0)::int AS f FROM payments WHERE booking_id = ${booking.id} AND kind <> 'balance' AND status IN ('succeeded','partially_refunded','refunded')`))[0].f;
+  // schon erhobene Gebühr: Online-Zahlungen (ohne frühere Restzahlungs-Versuche) und Kartenterminal (SPEC 18.4)
+  const paidFee = rows<{ f: number }>(await db().execute(sql`SELECT (SELECT coalesce(sum(application_fee_rappen),0) FROM payments WHERE booking_id = ${booking.id} AND kind <> 'balance' AND status IN ('succeeded','partially_refunded','refunded'))::int
+    + (SELECT coalesce(sum(application_fee_rappen),0) FROM terminal_payments WHERE booking_id = ${booking.id} AND status = 'succeeded')::int AS f`))[0].f;
   const fee = Math.max(0, booking.platformFeeRappen - paidFee);
   // Gleicher Schlüssel innerhalb einer Stunde → gleiche Sitzung; danach eine neue (Stripe-Sitzungen laufen nach 24 h ab)
   const key = `balance-${booking.id}-${Math.floor(now.getTime() / 3_600_000)}`;

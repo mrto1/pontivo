@@ -26,3 +26,14 @@ export function feeShare(totalFee: number, cardTotal: number, part: number): num
   if (cardTotal <= 0) return 0;
   return Math.round((totalFee * part) / cardTotal);
 }
+
+/**
+ * Plattformgebühr einer Kartenzahlung vor Ort (Terminal), Gebührenregel Entscheid 10 / SPEC 18.4:
+ * nur bei Buchungen, die über Pontivo kamen (Direktbuchung), und nur der noch nicht erhobene Teil ihrer Gebühr.
+ * Portal- und von Hand erfasste Buchungen (Verkauf vor Ort) tragen keine Plattformgebühr. Mindestens 1 Rappen bleibt beim Betrieb.
+ */
+export function terminalFee(source: string, bookingFeeRappen: number, alreadyPaidFeeRappen: number, amountRappen: number): number {
+  if (source !== "direct") return 0;
+  const open = Math.max(0, bookingFeeRappen - alreadyPaidFeeRappen);
+  return Math.max(0, Math.min(open, amountRappen - 1));
+}

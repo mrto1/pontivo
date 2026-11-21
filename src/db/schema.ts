@@ -956,6 +956,8 @@ export const terminalPayments = pgTable("terminal_payments", {
   readerId: uuid("reader_id").notNull(),
   paymentIntentId: text("payment_intent_id").unique(),
   amountRappen: integer("amount_rappen").notNull(),
+  /** Plattformgebühr dieser Zahlung (nur offener Anteil einer Direktbuchung, SPEC 18.4) */
+  applicationFeeRappen: integer("application_fee_rappen").notNull().default(0),
   status: text("status").$type<"pending" | "succeeded" | "failed" | "canceled">().notNull().default("pending"),
   failureCode: text("failure_code"),
   onsitePaymentId: uuid("onsite_payment_id"),
