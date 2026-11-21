@@ -1041,3 +1041,18 @@ pre { overflow-x: auto; }
   .area-part { padding: 5px 9px; }
   .area-part:not(.on) .area-text { display: none; }
 }
+
+/* Checkliste «Bereit für den Betrieb» (Gastronomie, Heute): Fortschrittsbalken, runde Punkte wie in den Einrichtungsschritten */
+.ready { padding: 14px 18px; }
+.ready > summary { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.ready:not([open]) > summary { margin-bottom: 0; }
+.ready-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 2px; }
+.ready-list li { display: flex; align-items: flex-start; gap: 12px; padding: 8px 6px; border-radius: 8px; }
+.ready-list li:not(.done):hover { background: var(--accent-soft); }
+.ready-list .dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: inline-grid; place-items: center; font-size: .75rem; flex: none; margin-top: 1px; }
+.ready-list li.done .dot { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.ready-list li.wait .dot { border-color: #b7791f; color: #b7791f; }
+.ready-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; flex: 1; min-width: 0; }
+.ready-text a { color: var(--ink); font-weight: 600; text-decoration: none; }
+.ready-hint { flex-basis: 100%; }
+.ready-go { color: var(--accent); text-decoration: none; margin-left: auto; align-self: center; }

@@ -80,7 +80,12 @@ test("Reines Restaurant: nur Gastronomie, kein Umschalter; Service landet in der
   const check = page.getByTestId("ready-checklist");
   await expect(check).toContainText("Bereit für den Betrieb");
   await expect(check.getByRole("link", { name: "Speisekarte" })).toBeVisible(); // noch offen
-  await expect(check).toContainText("✓ Reservation online");
+  await expect(check.locator("li.done", { hasText: "Reservation online" })).toHaveCount(1);
+  // Tag wechseln wie in der Tagesliste des Hotels
+  await page.getByRole("link", { name: "Folgetag" }).click();
+  await expect(page).toHaveURL(/restaurant\/heute\?day=\d{4}-\d{2}-\d{2}$/);
+  await expect(page.getByRole("heading", { name: "Tagesübersicht" })).toBeVisible();
+  await expect(page.getByTestId("ready-checklist")).toHaveCount(0);
 
   const h2 = await makeHotel();
   await db().insert(hotelModules).values([{ hotelId: h2.hotel.id, module: "restaurant", enabled: true }]).onConflictDoNothing();

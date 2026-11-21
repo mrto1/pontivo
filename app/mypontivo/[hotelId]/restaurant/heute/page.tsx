@@ -4,7 +4,8 @@ import { requireModule, moduleRows } from "@/src/services/modules";
 import { isOn } from "@/src/domain/modules";
 import { listTables, tablesOverview } from "@/src/services/pos";
 import { reservationsOfDay, waitlistOfDay } from "@/src/services/reservations";
-import { todayIn } from "@/src/domain/dates";
+import { addDays, isDay, todayIn } from "@/src/domain/dates";
+import { PeriodNav } from "@/components/admin/PeriodNav";
 import { formatDay } from "@/src/i18n/dict";
 import { formatChf } from "@/src/domain/money";
 import { atLeast, hasArea } from "@/src/domain/roles";
@@ -15,14 +16,18 @@ export const dynamic = "force-dynamic";
 const STATUS = { pending: "Zahlung offen", confirmed: "erwartet", seated: "am Tisch", cancelled: "storniert", noshow: "nicht erschienen" } as const;
 
 /** Tagesübersicht der Gastronomie (SPEC 20.1): Reservierungen von heute, Warteliste, offene Tische, Hinweise */
-export default async function DiningToday({ params }: { params: Promise<{ hotelId: string }> }) {
+export default async function DiningToday({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
+  const sp = await searchParams;
   const { hotel, role } = await requireHotel(hotelId, "staff", "dininghome");
   await requireModule(hotel.id, "restaurant");
   const base = `/mypontivo/${hotel.id}`;
-  const today = todayIn(hotel.timezone);
+  const realToday = todayIn(hotel.timezone);
+  const today = sp.day && isDay(sp.day) ? sp.day : realToday; // Tag wählbar wie in der Tagesliste des Hotels
+  const isToday = today === realToday;
+  const here = `${base}/restaurant/heute`;
   const rows = await moduleRows(hotel.id);
-  const pos = isOn(rows, "pos") && hasArea(role, "restaurant");
+  const pos = isToday && isOn(rows, "pos") && hasArea(role, "restaurant");
   const [list, wait, tables, open] = await Promise.all([
     reservationsOfDay(hotel.id, today), waitlistOfDay(hotel.id, today), listTables(hotel.id),
     pos ? tablesOverview(hotel.id) : Promise.resolve([]),
@@ -35,24 +40,33 @@ export default async function DiningToday({ params }: { params: Promise<{ hotelI
   const openTables = open.filter((t) => t.orders.length);
   const manager = atLeast(role, "manager");
   // Checkliste «Bereit für den Betrieb» (Konzept 7a): jeder offene Schritt mit Link, Wartezeiten mit Hinweis
-  const checklist = manager ? await diningChecklist(hotel) : [];
+  const checklist = manager && isToday ? await diningChecklist(hotel) : [];
   const openItems = checklist.filter((c) => !c.done && c.key !== "domain" && c.key !== "bestellung");
   // Online-Bestellungen (SPEC 20.4/20.5): offene und Bargeld je Fahrer
-  const ordersOn = hasArea(role, "onlineorders") && (await orderSettings(hotel.id)).enabled;
+  const ordersOn = isToday && hasArea(role, "onlineorders") && (await orderSettings(hotel.id)).enabled;
   const [orders, cash] = ordersOn ? await Promise.all([screenOrders(hotel.id), manager ? cashByDriver(hotel) : Promise.resolve([])]) : [null, []];
   return (
     <div className="stack">
-      <h1 style={{ margin: 0 }}>Heute</h1>
-      <p className="muted" style={{ margin: 0 }}>{formatDay(today, "de")}</p>
+      <h1 style={{ margin: 0 }}>{isToday ? "Heute" : "Tagesübersicht"}</h1>
+      <PeriodNav prev={`${here}?day=${addDays(today, -1)}`} next={`${here}?day=${addDays(today, 1)}`} todayHref={here} todayActive={isToday} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: today, param: "day" }} />
+      <p className="muted" style={{ margin: 0 }}>{isToday ? "Heute, " : ""}{formatDay(today, "de")}</p>
       {checklist.length ? (
-        <details className="card stack" open={openItems.length > 0} data-testid="ready-checklist">
-          <summary><strong>Bereit für den Betrieb</strong> <span className="small muted">{checklist.filter((c) => c.done).length} von {checklist.length} erledigt</span></summary>
-          <ul className="list" style={{ marginTop: 8 }}>
+        <details className="card ready" open={openItems.length > 0} data-testid="ready-checklist">
+          <summary>
+            <span><strong>Bereit für den Betrieb</strong></span>
+            <span className="small muted">{checklist.filter((c) => c.done).length} von {checklist.length} erledigt</span>
+          </summary>
+          <div className="wizard-bar" role="progressbar" aria-valuemin={0} aria-valuemax={checklist.length} aria-valuenow={checklist.filter((c) => c.done).length}><span style={{ width: `${(checklist.filter((c) => c.done).length / checklist.length) * 100}%` }} /></div>
+          <ul className="ready-list">
             {checklist.map((c) => (
-              <li key={c.key}>
-                <span aria-hidden="true">{c.done ? "✓" : c.wait ? "⏳" : "○"}</span> {c.done ? c.title : <a href={c.href}>{c.title}</a>}
-                {c.wait ? <span className="badge warn" style={{ marginLeft: 6 }}>in Prüfung</span> : null}
-                {!c.done && c.hint ? <div className="small muted">{c.hint}</div> : null}
+              <li key={c.key} className={c.done ? "done" : c.wait ? "wait" : ""}>
+                <span className="dot" aria-hidden="true">{c.done ? "✓" : c.wait ? "…" : ""}</span>
+                <span className="ready-text">
+                  {c.done ? <span className="muted">{c.title}</span> : <a href={c.href}>{c.title}</a>}
+                  {c.wait ? <span className="badge warn">in Prüfung</span> : null}
+                  {!c.done && c.hint ? <span className="small muted ready-hint">{c.hint}</span> : null}
+                </span>
+                {c.done ? null : <a className="ready-go" href={c.href} aria-hidden="true" tabIndex={-1}>→</a>}
               </li>
             ))}
           </ul>
@@ -66,7 +80,7 @@ export default async function DiningToday({ params }: { params: Promise<{ hotelI
         {wait.length ? <a className="hk-stat" href={`${base}/restaurant/warteliste`}><b>{wait.length}</b> auf der Warteliste</a> : null}
       </div>
       <section className="card stack">
-        <h2 style={{ margin: 0 }}>Reservierungen heute</h2>
+        <h2 style={{ margin: 0 }}>{isToday ? "Reservierungen heute" : "Reservierungen"}</h2>
         {live.length ? (
           <div className="scroll-x"><table className="table" data-testid="dining-today">
             <thead><tr><th>Zeit</th><th>Pers.</th><th>Gast</th><th>Tisch</th><th>Status</th></tr></thead>
