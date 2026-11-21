@@ -941,3 +941,27 @@ pre { overflow-x: auto; }
 .plan-row:hover { border-color: var(--accent); background: var(--accent-soft); }
 .dropzone input[type=file] { width: 100%; padding: 18px; border: 2px dashed var(--field-line); border-radius: 12px; background: transparent; }
 @media (max-width: 640px) { .drawer { width: 100%; } }
+
+/* Reinigung (SPEC 19.45): Zimmerkarten mit Statusfarben. Schmutzig = rot, Sauber = blau, Geprüft = grün */
+.hk { --hk-dirty: var(--danger); --hk-clean: #2b6cb0; --hk-inspected: var(--ok); }
+@media (prefers-color-scheme: dark) { .hk { --hk-clean: #7db7f0; } }
+.hk-summary { display: flex; flex-wrap: wrap; gap: 8px; }
+.hk-stat { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: .9rem; }
+.hk-stat b { font-size: 1.05rem; }
+.hk-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--muted)); flex: none; }
+.hk-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.hk-card { --c: var(--hk-clean); border-top: 5px solid var(--c); padding: 16px; display: grid; gap: 10px; align-content: start; }
+.hk-card.dirty { --c: var(--hk-dirty); }
+.hk-card.inspected { --c: var(--hk-inspected); }
+.hk-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.hk-head h2 { margin: 0; font-size: 1.2rem; }
+.hk-pill { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); }
+.hk-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.hk-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.hk-seg form { display: contents; }
+.hk-seg button { min-height: 46px; border-radius: 10px; border: 2px solid var(--c); background: transparent; color: var(--c); font: inherit; font-weight: 600; cursor: pointer; }
+.hk-seg button:hover:not(:disabled) { background: color-mix(in srgb, var(--c) 14%, transparent); }
+.hk-seg button:disabled { background: var(--c); color: #fff; cursor: default; }
+.hk-seg .s-dirty { --c: var(--hk-dirty); } .hk-seg .s-clean { --c: var(--hk-clean); } .hk-seg .s-inspected { --c: var(--hk-inspected); }
+.hk-seg.ro button { opacity: .5; pointer-events: none; }
+.hk-more summary { cursor: pointer; color: var(--muted); }

@@ -9,7 +9,8 @@ import { formatDay } from "@/src/i18n/dict";
 export const dynamic = "force-dynamic";
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
-const LABEL: Record<CleanStatus, string> = { dirty: "schmutzig", clean: "sauber", inspected: "geprüft" };
+const LABEL: Record<CleanStatus, string> = { dirty: "Schmutzig", clean: "Sauber", inspected: "Geprüft" };
+const LABEL_BTN = LABEL;
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<void>) {
   const c = await requireHotel(s(f, "hotelId"), "staff", "housekeeping");
@@ -50,26 +51,36 @@ export default async function Housekeeping({ params, searchParams }: { params: P
   const sorted = [...rooms].filter((r) => r.active).sort((a, b) => order(a) - order(b) || a.number.localeCompare(b.number, "de", { numeric: true }));
   const counts = { dirty: rooms.filter((r) => r.status === "dirty").length, open: rooms.reduce((a, r) => a + r.issues.length, 0) };
   const hid = (id: string) => (<><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="day" value={day} /><input type="hidden" name="roomId" value={id} /></>);
+  const editable = day === today; // ASSUMPTION: der Status gilt für das Zimmer jetzt, nicht je Tag; an anderen Tagen nur Vorschau/Rückblick
+  const n = (st: CleanStatus) => rooms.filter((r) => r.active && r.status === st).length;
   return (
-    <div className="stack">
+    <div className="stack hk">
       <h1>Reinigung</h1>
       {sp.msg ? <p className="notice warn">{sp.msg}</p> : null}
       <PeriodNav prev={`?day=${addDays(day, -1)}`} next={`?day=${addDays(day, 1)}`} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }}>
-        <span className="small muted">{formatDay(day, "de")} · {counts.dirty} schmutzig · {counts.open} offene Mängel</span>
+        <span className="small muted">{formatDay(day, "de")}</span>
       </PeriodNav>
+      <div className="hk-summary" aria-label="Übersicht">
+        {(["dirty", "clean", "inspected"] as CleanStatus[]).map((x) => (
+          <span key={x} className="hk-stat" style={{ ["--c" as string]: `var(--hk-${x})` }}><span className="hk-dot" /><b>{n(x)}</b> {LABEL[x]}</span>
+        ))}
+        {counts.open ? <span className="hk-stat"><b>{counts.open}</b> offene Mängel</span> : null}
+      </div>
+      {!editable ? <p className="notice small">{day > today ? "Vorschau: Anreisen und Abreisen dieses Tages." : "Rückblick."} Den Reinigungsstatus ändern Sie nur für heute.</p> : null}
       {sorted.length === 0 ? <p className="muted">Noch keine Zimmer. Zimmer legen Sie unter Kalender → Zimmerplan an.</p> : null}
-      <div className="stack">
+      <div className="hk-grid">
         {sorted.map((r) => (
-          <section key={r.roomId} className="card stack" style={{ borderLeft: `6px solid ${r.status === "dirty" ? "#b3261e" : r.status === "inspected" ? "#2f5d50" : "#8a9a8f"}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <h2 style={{ margin: 0 }}>Zimmer {r.number}{r.floor ? <span className="muted small"> · Etage {r.floor}</span> : null}</h2>
-              <span className={`badge ${r.status === "dirty" ? "warn" : ""}`}>{LABEL[r.status]}</span>
+          <section key={r.roomId} className={`card hk-card ${r.status}`}>
+            <div className="hk-head">
+              <h2>Zimmer {r.number}{r.floor ? <span className="muted small"> · Etage {r.floor}</span> : null}</h2>
+              <span className="hk-pill"><span className="hk-dot" />{LABEL[r.status]}</span>
             </div>
-            <p className="small muted" style={{ margin: 0 }}>
-              {r.typeName}
-              {r.departing ? " · Abreise heute" : ""}{r.arriving ? " · Anreise heute" : ""}{r.occupied ? ` · belegt${r.guest ? ` (${r.guest})` : ""}` : ""}
-              {r.task?.kind === "stay" ? " · Zwischenreinigung" : ""}{r.task?.kind === "other" && r.task.note ? ` · ${r.task.note}` : ""}
-            </p>
+            <p className="small muted" style={{ margin: 0 }}>{r.typeName}</p>
+            <div className="hk-tags">
+              {r.departing ? <span className="chip">Abreise</span> : null}{r.arriving ? <span className="chip">Anreise</span> : null}
+              {r.occupied ? <span className="chip">belegt{r.guest ? ` · ${r.guest}` : ""}</span> : null}
+              {r.task?.kind === "stay" ? <span className="chip">Zwischenreinigung</span> : null}{r.task?.kind === "other" && r.task.note ? <span className="chip">{r.task.note}</span> : null}
+            </div>
             {r.issues.map((i) => (
               <form key={i.id} action={fix} className="inline-form">
                 <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="day" value={day} /><input type="hidden" name="issueId" value={i.id} />
@@ -77,12 +88,12 @@ export default async function Housekeeping({ params, searchParams }: { params: P
                 <button className="btn secondary small">Erledigt</button>
               </form>
             ))}
-            <div className="inline-form">
-              {(["dirty", "clean", "inspected"] as CleanStatus[]).filter((x) => x !== r.status).map((x) => (
-                <form key={x} action={status}>{hid(r.roomId)}<input type="hidden" name="to" value={x} /><button className={`btn ${x === "clean" ? "" : "secondary"}`} style={{ minHeight: 44 }}>{x === "clean" ? "Sauber ✓" : x === "inspected" ? "Geprüft ✓✓" : "Schmutzig"}</button></form>
+            <div className={`hk-seg${editable ? "" : " ro"}`} role="group" aria-label={`Status Zimmer ${r.number}`}>
+              {(["dirty", "clean", "inspected"] as CleanStatus[]).map((x) => (
+                <form key={x} action={status}>{hid(r.roomId)}<input type="hidden" name="to" value={x} /><button className={`s-${x}`} disabled={r.status === x} aria-pressed={r.status === x}>{LABEL_BTN[x]}</button></form>
               ))}
             </div>
-            <details>
+            <details className="hk-more">
               <summary className="small">Mangel melden / Auftrag</summary>
               <form action={issue} className="inline-form" style={{ marginTop: 8 }}>{hid(r.roomId)}<input name="text" placeholder="z. B. Glühbirne defekt" maxLength={300} required /><button className="btn secondary small">Melden</button></form>
               <form action={task} className="inline-form" style={{ marginTop: 8 }}>{hid(r.roomId)}<input name="text" placeholder="Extra-Auftrag, z. B. Fenster putzen" maxLength={200} /><button className="btn secondary small">Auftrag</button></form>

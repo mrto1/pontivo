@@ -32,6 +32,15 @@ test("Zimmertyp: Karte öffnet Seitenleiste, Name ändern, Tarif ansehen, Escape
   await expect(page.getByRole("dialog").getByRole("heading", { name: "Neuer Tarif" })).toBeVisible();
 
   await page.waitForLoadState("networkidle");
+  // ungespeicherte Änderung: Esc fragt nach; «Abbrechen» im Dialog lässt die Leiste offen
+  await page.getByRole("dialog").getByRole("link", { name: /^Grunddaten/ }).click();
+  await page.getByRole("dialog").locator("input[name=name]").fill("Nur getippt");
+  let asked = 0;
+  page.once("dialog", (d) => { asked++; void d.dismiss(); });
+  await page.keyboard.press("Escape");
+  await expect.poll(() => asked).toBe(1);
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  page.once("dialog", (d) => { void d.accept(); });
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByRole("link", { name: /Einzelzimmer Süd bearbeiten/ })).toBeVisible();

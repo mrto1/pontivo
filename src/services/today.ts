@@ -34,7 +34,7 @@ export async function todayView(hotel: Hotel, o: { day?: string; manages: boolea
   const base = `/mypontivo/${hotel.id}`;
   const failed = o.manages && hotel.channexEnabled ? (await channexStatus(hotel.id)).failed : 0;
   const noPhoto = o.manages
-    ? (await db().select({ name: roomTypes.name, photos: roomTypes.photos }).from(roomTypes).where(and(eq(roomTypes.hotelId, hotel.id), eq(roomTypes.active, true))).orderBy(asc(roomTypes.sortOrder))).filter((r) => !r.photos.length).map((r) => r.name)
+    ? (await db().select({ id: roomTypes.id, name: roomTypes.name, photos: roomTypes.photos }).from(roomTypes).where(and(eq(roomTypes.hotelId, hotel.id), eq(roomTypes.active, true))).orderBy(asc(roomTypes.sortOrder))).filter((r) => !r.photos.length).map((r) => ({ id: r.id, name: r.name }))
     : [];
   const notices = dayNotices({
     base, manages: o.manages, channexEnabled: hotel.channexEnabled, channexFailed: failed, roomTypesWithoutPhoto: noPhoto,

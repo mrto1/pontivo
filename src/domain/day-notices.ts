@@ -9,7 +9,8 @@ export type DayNoticeInput = {
   manages: boolean;
   channexEnabled: boolean;
   channexFailed: number;
-  roomTypesWithoutPhoto: string[];
+  /** Zimmertypen ohne Foto; der Hinweis führt in den Fotos-Reiter des ersten */
+  roomTypesWithoutPhoto: { id: string; name: string }[];
   openGuestRequests: number;
   openInquiries: number;
   /** Posteingang für Anfragen und Wünsche sichtbar? */
@@ -22,8 +23,8 @@ export function dayNotices(i: DayNoticeInput): DayNotice[] {
     out.push({ key: "channex", tone: "warn", text: `Der Abgleich mit Booking.com & Co. hat ${i.channexFailed} Fehler. Prüfen Sie die Kanäle.`, href: `${i.base}/channex` });
   }
   if (i.manages && i.roomTypesWithoutPhoto.length) {
-    const names = i.roomTypesWithoutPhoto.slice(0, 3).map((n) => `«${n}»`).join(", ") + (i.roomTypesWithoutPhoto.length > 3 ? " …" : "");
-    out.push({ key: "photos", tone: "info", text: `Foto fehlt bei ${names}. Gäste buchen eher mit Bildern.`, href: `${i.base}/rooms` });
+    const names = i.roomTypesWithoutPhoto.slice(0, 3).map((n) => `«${n.name}»`).join(", ") + (i.roomTypesWithoutPhoto.length > 3 ? " …" : "");
+    out.push({ key: "photos", tone: "info", text: `Foto fehlt bei ${names}. Gäste buchen eher mit Bildern.`, href: `${i.base}/rooms?rt=${i.roomTypesWithoutPhoto[0].id}&tab=fotos` });
   }
   if (i.inboxVisible && i.openGuestRequests > 0) {
     out.push({ key: "wishes", tone: "info", text: `${i.openGuestRequests} offene${i.openGuestRequests === 1 ? "r" : ""} Gästewunsch${i.openGuestRequests === 1 ? "" : "e"}.`, href: `${i.base}/inbox?quelle=wuensche` });

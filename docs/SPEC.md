@@ -1047,5 +1047,13 @@ Normaler Weg ist **E-Mail und Passwort** (optional mit 2FA), gleichwertig **Pass
 - **Liste:** jeder Zimmertyp ist eine ganze Karte (Foto, Name, «N Zimmer · bis M Personen», Tarife als Chips, am Rand «Bearbeiten ›»; mit Leserecht «Ansehen ›»). Ein Klick irgendwo auf die Karte öffnet die Seitenleiste. «+ Zimmertyp hinzufügen» steht oben rechts.
 - **Seitenleiste** (rechts, Hintergrund abgedunkelt, auf dem Handy volle Breite) mit Reitern **Grunddaten · Fotos · Tarife (n)**; Zustand nur in der URL (`?rt=<id>&tab=grunddaten|fotos|tarife`, `&plan=<id>|neu`, `?neu=1` für einen neuen Zimmertyp). Speichern lässt die Leiste offen; Abbrechen, Klick auf den Hintergrund, ✕ und Esc schliessen sie (`components/admin/DrawerKeys.tsx`). Fotos-Aktionen und «Tarif anlegen» im Kalender führen in die jeweilige Leiste zurück.
 - **Zusatzleistungen** sind ein eigener Punkt unter Zahnrad → Betrieb (unterhalb von «Zimmer & Tarife», `rooms/extras`), nicht mehr ein Knopf auf der Zimmerseite.
-- Nicht enthalten: Warnung bei ungespeicherten Änderungen.
+- **Ungespeicherte Änderungen:** Wurde in der Leiste etwas getippt, fragt jedes Verlassen (Esc, ✕, Hintergrund, Abbrechen, Reiter, Karte, Seite neu laden) vorher nach; Speichern zählt nicht (`DrawerKeys`).
+- **«Foto fehlt»** auf der Tagesliste führt direkt in den Fotos-Reiter des ersten betroffenen Zimmertyps (`?rt=<id>&tab=fotos`).
 - Abnahme: `tests/e2e/rooms-drawer.spec.ts`, `tests/unit/admin-nav.test.ts`.
+
+### 19.45 Reinigung: Karten und Statusfarben
+- Gleiches Muster wie 19.44: Zimmerkarten im Raster (`.hk-grid`), oben eine Zusammenfassung mit Zählern je Status.
+- **Statusfarben:** Schmutzig = rot, Sauber = blau, Geprüft = grün (Karte mit farbigem Kopfstreifen, Statuspunkt und -schild). Statuswechsel über drei gleich breite Schalter «Schmutzig · Sauber · Geprüft» (kein ✓/✓✓ mehr); der aktuelle Status ist ausgefüllt und gesperrt. Zeichen ausser Farbe: Text im Schild und `aria-pressed`.
+- **Nur heute änderbar:** Der Status gilt für das Zimmer jetzt (nicht je Tag). An anderen Tagen bleibt die Tagesnavigation als Vorschau (Anreisen/Abreisen, Zwischenreinigungen) bzw. Rückblick, die Schalter sind gesperrt.
+- Sortierung: schmutzig, Anreise heute, offene Aufträge, übrige. Mangel melden und Extra-Auftrag bleiben unter «Mangel melden / Auftrag».
+- Abnahme: `tests/e2e/housekeeping-ui.spec.ts`, `tests/integration/housekeeping.test.ts`.
