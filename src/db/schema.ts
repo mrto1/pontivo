@@ -55,6 +55,8 @@ export const hotels = pgTable("hotels", {
   billingCustomerId: text("billing_customer_id"),
   billingPaymentMethodId: text("billing_payment_method_id"),
   billingCardLabel: text("billing_card_label"),
+  /** Grundgebühr per Karte (Stripe) oder QR-Rechnung (SPEC 20.6) */
+  billingMethod: text("billing_method").$type<"card" | "qr">().notNull().default("card"),
   onboarding: jsonb("onboarding").$type<{ startedAt?: string; completedAt?: string; reminders?: number; alertedAt?: string; embeddedAt?: string; modulesChosenAt?: string; previousSoftware?: "none" | "yes"; switchover?: { confirmed?: string[]; oldFuture?: number; switchedAt?: string } }>().notNull().default({}),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
@@ -654,7 +656,15 @@ export const platformCharges = pgTable("platform_charges", {
   /** nicht über Stripe einbehaltene Gebühren (Online-Bestellung bar, SPEC 20.4) und weiterverrechnete Gast-SMS */
   uncollectedFeesRappen: integer("uncollected_fees_rappen").notNull().default(0),
   smsRappen: integer("sms_rappen").notNull().default(0),
-  status: text("status").$type<"none" | "pending" | "succeeded" | "failed">().notNull(),
+  status: text("status").$type<"none" | "pending" | "succeeded" | "failed" | "invoiced">().notNull(),
+  /** Weg der Zahlung (SPEC 20.6): Karte belasten oder QR-Rechnung mit Fälligkeit und Mahnstufen */
+  method: text("method").$type<"card" | "qr">().notNull().default("card"),
+  dueDate: date("due_date", { mode: "string" }),
+  paidAt: ts("paid_at"),
+  paidRef: text("paid_ref"),
+  paidNote: text("paid_note").notNull().default(""),
+  dunningLevel: integer("dunning_level").notNull().default(0),
+  dunnedAt: ts("dunned_at"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   error: text("error"),
   attempts: integer("attempts").notNull().default(0),

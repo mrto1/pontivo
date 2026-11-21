@@ -90,7 +90,7 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
   await page.getByRole("button", { name: "Speichern und weiter" }).click();
 
   // Karte (Fake: sofort hinterlegt)
-  await expect(page.getByRole("heading", { name: "Karte für die Grundgebühr" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Grundgebühr: Karte oder QR-Rechnung" })).toBeVisible();
   await page.getByRole("button", { name: "Karte hinterlegen" }).click();
   await expect(page.getByText("Karte hinterlegt: Testkarte •••• 4242")).toBeVisible();
   await page.getByRole("button", { name: "Weiter" }).click();

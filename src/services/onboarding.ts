@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db, rows } from "../db/client";
 import { hotelMembers, hotelModules, hotels, posItems, posTables, ratePlans, restaurantSettings, roomTypes, sitePages, users, type Hotel } from "../db/schema";
 import { slugify } from "../domain/blocks";
+import { billingReady } from "../domain/platform-invoice";
 import { DEFAULT_MONTHLY_MINIMUM_RAPPEN, HOST_TERMS_VERSION } from "../legal/host-terms";
 import { enqueueEmail } from "../email/enqueue";
 import { requestLoginLink } from "../auth/session";
@@ -145,7 +146,7 @@ export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
     { key: "fotos", title: "Fotos", done: photos > 0, required: true },
     { key: "ankunft", title: "Infos zur Ankunft", done: !!hotel.content.arrivalInfo?.de, required: false },
     { key: "zahlungen", title: "Zahlungen empfangen", done: !problems.some((p) => p.startsWith("Stripe")), required: true },
-    { key: "karte", title: "Karte für die Grundgebühr", done: hotel.monthlyMinimumRappen === 0 || !!hotel.billingPaymentMethodId, required: hotel.monthlyMinimumRappen > 0 },
+    { key: "karte", title: "Grundgebühr: Karte oder QR-Rechnung", done: hotel.monthlyMinimumRappen === 0 || billingReady(hotel), required: hotel.monthlyMinimumRappen > 0 },
     { key: "live", title: "Online gehen", done: hotel.status === "live", required: true },
     // Nur Buchungssystem: Link oder Knopf auf der eigenen Website einbauen
     ...(bookingOnly(hotel) ? [{ key: "einbinden" as const, title: "Auf Website einbauen", done: !!hotel.onboarding.embeddedAt, required: false }] : []),
@@ -169,7 +170,7 @@ async function restaurantSteps(hotel: Hotel): Promise<Step[]> {
     { key: "speisekarte", title: "Speisekarte", done: items.length > 0, required: true },
     { key: "zahlungen", title: "Zahlungen (Stripe)", done: stripeReady(hotel), required: false },
     { key: "funktionen", title: "Weitere Funktionen", done: !!hotel.onboarding.modulesChosenAt, required: false },
-    { key: "karte", title: "Karte für die Grundgebühr", done: hotel.monthlyMinimumRappen === 0 || !!hotel.billingPaymentMethodId, required: hotel.monthlyMinimumRappen > 0 },
+    { key: "karte", title: "Grundgebühr: Karte oder QR-Rechnung", done: hotel.monthlyMinimumRappen === 0 || billingReady(hotel), required: hotel.monthlyMinimumRappen > 0 },
     ...(bookingOnly(hotel) ? [{ key: "einbinden" as const, title: "Auf Website einbauen", done: !!hotel.onboarding.embeddedAt, required: false }] : []),
   ];
 }
@@ -228,7 +229,7 @@ export async function diningChecklist(hotel: Hotel): Promise<CheckItem[]> {
     key: "bestellung", title: "Online-Bestellung (freiwillig)", done: ord.enabled, href: `${base}/restaurant/bestellung-einstellungen`, wait: !ord.enabled && miss.length > 0 && miss.every((m) => m.key === "stripe") && !!hotel.stripeAccountId,
     hint: ord.enabled ? undefined : miss.length ? `Fehlt noch: ${miss.map((m) => m.text).join(" ")}` : "Bereit: jetzt live schalten.",
   });
-  if (resto && hotel.monthlyMinimumRappen > 0) list.push({ key: "karte", title: "Karte für die Grundgebühr", done: !!hotel.billingPaymentMethodId, href: `${base}/einrichten?step=karte` });
+  if (resto && hotel.monthlyMinimumRappen > 0) list.push({ key: "karte", title: "Grundgebühr: Karte oder QR-Rechnung", done: billingReady(hotel), href: `${base}/einrichten?step=karte` });
   list.push({ key: "domain", title: "Eigene Domain (freiwillig)", done: !!hotel.primaryDomain, href: `${base}/site`, hint: hotel.primaryDomain ? undefined : "Später möglich. Nach der Umstellung beim Domain-Anbieter dauert es bis zu 24 Stunden." });
   return list;
 }

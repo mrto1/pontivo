@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { billingReady } from "@/src/domain/platform-invoice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
@@ -158,8 +159,8 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
         <section className="card stack">
           <h2>Einschalten</h2>
           {!isOwner ? <p className="muted small">Nur die Inhaberin oder der Inhaber kann das Modul einschalten.</p> : null}
-          {!hotel.billingPaymentMethodId ? (
-            <p className="notice warn small">Für die Abrechnung brauchen wir eine hinterlegte Karte. Bitte zuerst unter <a href={`/mypontivo/${hotel.id}/zahlungen#karte`}>Einstellungen</a> eine Karte hinterlegen.</p>
+          {!billingReady(hotel) ? (
+            <p className="notice warn small">Für die Abrechnung brauchen wir eine Karte oder die Wahl «QR-Rechnung». Bitte zuerst unter <a href={`/mypontivo/${hotel.id}/zahlungen#karte`}>Zahlungen → Grundgebühr</a> einrichten.</p>
           ) : null}
           {keyMissing ? <p className="notice warn small">Der Chat ist technisch noch nicht eingerichtet (API-Schlüssel fehlt). Bitte beim Betreiber melden. Einschalten ist erst danach möglich.</p> : null}
           {plans.map((p) => (
@@ -170,8 +171,8 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
               <h3>{p.name}: {formatChf(p.priceRappen)} pro Monat</h3>
               {p.includesPricing ? <p className="small">Enthalten: KI-Chat auf Ihrer Website und KI-Preisempfehlung (Vorschläge innerhalb Ihres Preiskorridors, bis zu 5 Tarife pro Berechnung). Schaltet die Preisregeln mit ein.</p> : null}
               <p className="small">{p.includedConversations} Chat-Gespräche pro Monat inklusive.{p.packSize > 0 ? ` Bei Bedarf Zusatzpakete: ${p.packSize} Gespräche für ${formatChf(p.packPriceRappen)}, nur mit Ihrem Monatsbudget.` : ""} Preise ohne MWST. Der erste Monat ist kostenlos, danach monatlich kündbar.</p>
-              <label className="check"><input type="checkbox" name="accept" /> Ich habe Preis und die <a href="/gastgeber-bedingungen" target="_blank">Bedingungen für Gastgeber</a> gelesen und bestätige die monatliche Abrechnung über die hinterlegte Karte.</label>
-              <div><button className="btn" disabled={!isOwner || !hotel.billingPaymentMethodId || keyMissing}>Einschalten</button></div>
+              <label className="check"><input type="checkbox" name="accept" /> Ich habe Preis und die <a href="/gastgeber-bedingungen" target="_blank">Bedingungen für Gastgeber</a> gelesen und bestätige die monatliche Abrechnung ({hotel.billingMethod === "qr" ? "per QR-Rechnung" : "über die hinterlegte Karte"}).</label>
+              <div><button className="btn" disabled={!isOwner || !billingReady(hotel) || keyMissing}>Einschalten</button></div>
             </form>
           ))}
           {!plans.length ? <p className="muted small">Im Moment ist kein Tarif verfügbar.</p> : null}

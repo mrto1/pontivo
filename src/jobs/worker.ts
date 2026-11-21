@@ -28,7 +28,7 @@ import { OutboxState, runOutboxOnce } from "../integrations/channex/outbox-worke
 import { pullFeed } from "../integrations/channex/feed";
 import { enqueueCheckinLinks, purgeExpiredRegistrations } from "../services/guests";
 import { onboardingReminders } from "../services/onboarding";
-import { runMonthlyMinimum } from "../services/billing";
+import { dunningJob, runMonthlyMinimum } from "../services/billing";
 import { sendDuePushes } from "../push/service";
 import { beat, runWatchdog } from "../services/monitor";
 import { reconcilePayments } from "../services/reconcile";
@@ -65,6 +65,7 @@ const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "guests-purge", cron: "30 2 * * *", run: () => purgeExpiredRegistrations() },
   { name: "onboarding-reminders", cron: "20 9 * * *", run: () => onboardingReminders() },
   { name: "billing-minimum", cron: "10 7 * * *", run: () => runMonthlyMinimum() },
+  { name: "billing-dunning", cron: "25 8 * * *", run: () => dunningJob() },
   { name: "ical-sync", cron: "*/15 * * * *", run: () => syncDueFeeds() },
   { name: "accounting-export", cron: "40 8 5 * *", run: () => monthlyAccountingJob() },
   { name: "access", cron: "10 * * * *", run: () => accessJob() },

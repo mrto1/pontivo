@@ -6,12 +6,13 @@ import { getHotelById } from "@/src/services/hotels";
 import { addMember, removeMember, setHotelStatus } from "@/src/services/settings";
 import { requestLoginLink } from "@/src/auth/session";
 import type { Role } from "@/src/domain/roles";
-import { savePlatformVat } from "@/src/services/platform-settings";
-import { retryCharge, processCharges } from "@/src/services/billing";
+import { PlatformSettingsError, savePlatformBilling, savePlatformVat } from "@/src/services/platform-settings";
+import { importPlatformCamt, markChargePaid, remindNow, resendQrInvoice, retryCharge, processCharges } from "@/src/services/billing";
+import { formatChf } from "@/src/domain/money";
 import { importSchoolHolidays } from "@/src/services/holidays";
 
 // Alle Aktionen der Plattform-Verwaltung. Jede Seite schickt in `to` ihren eigenen Pfad mit; danach geht es dorthin zurück.
-const PAGES = ["/admin/plattform/betriebe", "/admin/plattform/benutzer", "/admin/plattform/rechnungen", "/admin/plattform/mwst", "/admin/plattform/admins", "/admin/plattform/schulferien"];
+const PAGES = ["/admin/plattform/betriebe", "/admin/plattform/benutzer", "/admin/plattform/rechnungen", "/admin/plattform/mwst", "/admin/plattform/zahlungsverbindung", "/admin/plattform/admins", "/admin/plattform/schulferien"];
 const target = (f: FormData) => { const t = String(f.get("to") ?? ""); return PAGES.includes(t) ? t : "/admin/plattform"; };
 const go = (to: string, msg: string, key: "done" | "error" = "done"): never => redirect(`${to}?${key}=${encodeURIComponent(msg)}`);
 
@@ -123,4 +124,49 @@ export async function removeUser(f: FormData) {
   if (String(f.get("confirm") ?? "").trim().toLowerCase() !== u.email.toLowerCase()) redirect(`${to}?error=confirm`);
   await deleteUserAccount(id, `user:${admin.id}`);
   go(to, `Benutzer ${u.email} gelöscht`);
+}
+
+// ---------------------------------------------------------------- QR-Rechnungen der Plattform (SPEC 20.6)
+
+export async function saveBilling(f: FormData) {
+  const to = target(f);
+  const admin = await requirePlatformAdmin();
+  try {
+    await savePlatformBilling({ iban: String(f.get("iban") ?? ""), paymentDays: Number(f.get("days") ?? 30) }, `user:${admin.id}`);
+  } catch (e) { if (!(e instanceof PlatformSettingsError)) throw e; go(to, e.message, "error"); }
+  go(to, "Zahlungsverbindung gespeichert: gilt für neue und offene QR-Rechnungen");
+}
+
+export async function invoicePaid(f: FormData) {
+  const to = target(f);
+  const admin = await requirePlatformAdmin();
+  const ok = await markChargePaid(String(f.get("id") ?? ""), { paidOn: String(f.get("paidOn") ?? ""), note: String(f.get("note") ?? "") }, `user:${admin.id}`);
+  go(to, ok ? "Zahlung erfasst" : "Diese Rechnung ist nicht mehr offen", ok ? "done" : "error");
+}
+
+export async function invoiceRemind(f: FormData) {
+  const to = target(f);
+  const admin = await requirePlatformAdmin();
+  const level = await remindNow(String(f.get("id") ?? ""), `user:${admin.id}`);
+  go(to, level ? `Mahnstufe ${level} gesendet` : "Keine weitere Mahnstufe möglich", level ? "done" : "error");
+}
+
+export async function invoiceResend(f: FormData) {
+  const to = target(f);
+  const admin = await requirePlatformAdmin();
+  const ok = await resendQrInvoice(String(f.get("id") ?? ""), `user:${admin.id}`);
+  go(to, ok ? "Rechnung erneut gesendet" : "Diese Rechnung ist nicht mehr offen", ok ? "done" : "error");
+}
+
+export async function camtImport(f: FormData) {
+  const to = target(f);
+  const admin = await requirePlatformAdmin();
+  const file = f.get("file");
+  if (!(file instanceof File) || !file.size) go(to, "Bitte eine camt.054-Datei wählen", "error");
+  if ((file as File).size > 5_000_000) go(to, "Die Datei ist zu gross (höchstens 5 MB)", "error");
+  const r = await importPlatformCamt(await (file as File).text(), `user:${admin.id}`);
+  const parts = [`${r.entries} Gutschriften gelesen`, `${r.matched.length} Rechnungen bezahlt${r.matched.length ? ` (${r.matched.map((m) => m.invoiceNo).join(", ")})` : ""}`];
+  if (r.duplicates) parts.push(`${r.duplicates} schon früher verbucht`);
+  if (r.unmatched.length) parts.push(`nicht zugeordnet: ${r.unmatched.slice(0, 5).map((u) => `${u.bookedOn} ${formatChf(u.amountRappen)} (${u.why})`).join("; ")}`);
+  go(to, parts.join(" · "), r.unmatched.length && !r.matched.length ? "error" : "done");
 }

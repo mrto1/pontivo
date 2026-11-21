@@ -1,4 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
+import { billingReady } from "../domain/platform-invoice";
 import { db, rows } from "../db/client";
 import { aiPlans, hotelModules, type AiPlan, type Hotel } from "../db/schema";
 import { aiBillForMonth, allowedConversations, endOfMonthOf, moduleActiveOn, packsUsed, type AiModuleSettings, type AiMonthBill, type AiTerms } from "../domain/ai-plan";
@@ -39,7 +40,7 @@ export async function enableAiChat(hotel: Hotel, planCode: string, confirmedPric
   if (!plan) throw new AiModuleError("Dieser Tarif ist nicht verfügbar.");
   // Preisbestätigung: das Hotel hat genau den Preis gesehen, den wir jetzt festschreiben
   if (confirmedPriceRappen !== plan.priceRappen) throw new AiModuleError("Der Preis hat sich geändert. Bitte die Seite neu laden und erneut bestätigen.");
-  if (!hotel.billingPaymentMethodId) throw new AiModuleError("Bitte zuerst eine Karte für die Abrechnung hinterlegen (Abrechnung → Karte).");
+  if (!billingReady(hotel)) throw new AiModuleError("Bitte zuerst die Abrechnung einrichten: Karte hinterlegen oder QR-Rechnung wählen (Zahlungen → Grundgebühr).");
   const today = todayIn(hotel.timezone, now);
   await db().transaction(async (tx) => {
     const [cur] = await tx.select().from(hotelModules).where(and(eq(hotelModules.hotelId, hotel.id), eq(hotelModules.module, AI_MODULE))).for("update");

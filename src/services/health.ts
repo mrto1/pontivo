@@ -5,7 +5,7 @@ import { healthOf, type Health, type HealthSignals } from "../domain/health";
 export async function healthSignals(now = new Date()): Promise<Map<string, HealthSignals & { name: string }>> {
   const q = (s: string, p: unknown[] = []) => pool().query(s, p).then((r) => r.rows);
   const [hotels, bk, hz, feeds, cx, act, failed] = await Promise.all([
-    q(`SELECT id, name, status, created_at, live_since, stripe_charges_enabled, billing_payment_method_id, onboarding FROM hotels`),
+    q(`SELECT id, name, status, created_at, live_since, stripe_charges_enabled, billing_payment_method_id, billing_method, onboarding FROM hotels`),
     q(`SELECT hotel_id,
               count(*) FILTER (WHERE confirmed_at >= $1::timestamptz - interval '30 days')::int AS b30,
               count(*) FILTER (WHERE confirmed_at >= $1::timestamptz - interval '60 days' AND confirmed_at < $1::timestamptz - interval '30 days')::int AS bprev
@@ -23,7 +23,7 @@ export async function healthSignals(now = new Date()): Promise<Map<string, Healt
   for (const h of hotels) {
     out.set(h.id, {
       name: h.name, status: h.status, ageDays: days(h.created_at), liveDays: h.live_since ? days(h.live_since) : null,
-      stripeChargesEnabled: h.stripe_charges_enabled, hasCard: !!h.billing_payment_method_id, failedCharges: X.get(h.id)?.n ?? 0,
+      stripeChargesEnabled: h.stripe_charges_enabled, hasCard: !!h.billing_payment_method_id || h.billing_method === "qr", failedCharges: X.get(h.id)?.n ?? 0,
       bookings30: B.get(h.id)?.b30 ?? 0, bookingsPrev30: B.get(h.id)?.bprev ?? 0, horizonDays: H.get(h.id)?.h ?? 0,
       feedErrors: F.get(h.id)?.n ?? 0, channexErrors: C.get(h.id)?.n ?? 0,
       idleDays: A.get(h.id) ? days(A.get(h.id)!.last) : null, onboardingDone: !!h.onboarding?.completedAt,

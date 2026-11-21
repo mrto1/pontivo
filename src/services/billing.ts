@@ -1,7 +1,7 @@
 import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
-import { hotels, platformCharges, type Hotel } from "../db/schema";
-import { todayIn } from "../domain/dates";
+import { hotels, platformCharges, type Hotel, type PlatformCharge } from "../db/schema";
+import { addDays, diffDays, todayIn } from "../domain/dates";
 import { formatChf } from "../domain/money";
 import { getPaymentProvider } from "../payments/provider";
 import { enqueueEmail } from "../email/enqueue";
@@ -10,8 +10,12 @@ import { audit } from "./audit";
 import { aiBillFor, hotelsWithAiModule } from "./ai-module";
 import { monthlyReport } from "./report";
 import { shiftMonth } from "./overview";
-import { billMonth, invoiceNumber, vatApplies, type PlatformVat } from "../domain/platform-invoice";
-import { getPlatformVat } from "./platform-settings";
+import { billMonth, invoiceNumber, REMINDER_DAYS, splitAddress, vatApplies, type PlatformVat } from "../domain/platform-invoice";
+import { getPlatformBilling, getPlatformVat } from "./platform-settings";
+import { DUNNING_LABEL, matchByReference, nextDunningLevel, parseCamt054 } from "../domain/debtors";
+import { isQrIban, qrReference, swissQrPayload } from "../domain/invoice";
+import { platformInfo } from "../legal/texts";
+import { swissQrSvg } from "./invoicing";
 import { orderFeesForMonth } from "./online-orders";
 import { billableSmsCount } from "./sms";
 
@@ -23,6 +27,7 @@ import { billableSmsCount } from "./sms";
 // Betriebe im Entwurf (nie live) zahlen nichts. Höchstens 3 Belastungsversuche im Abstand von 3 Tagen.
 
 export const MAX_ATTEMPTS = 3;
+const fmtDay = (d: string) => `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}`;
 const RETRY_DAYS = 3;
 
 /** Verdiente Plattformgebühr eines Monats: Buchungen (netto nach Rückerstattung, wie Monatsabrechnung) + bezahlte Gutscheine */
@@ -52,6 +57,7 @@ export async function runMonthlyMinimum(now = new Date(), vatOverride?: Platform
   const vat = vatOverride ?? await getPlatformVat(); // vatOverride nur für Tests
   const vatOn = vatApplies(vat, month);
   const today = todayIn("Europe/Zurich", now);
+  const terms = await getPlatformBilling();
   let created = 0;
   for (const h of list) {
     const [exists] = await db().select({ id: platformCharges.id }).from(platformCharges).where(and(eq(platformCharges.hotelId, h.id), eq(platformCharges.month, month)));
@@ -67,13 +73,21 @@ export async function runMonthlyMinimum(now = new Date(), vatOverride?: Platform
     if (!minApplies && aiTotal === 0 && fees === 0 && smsRappen === 0) continue;
     const b = billMonth({ feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, aiRappen: aiTotal, vatBps: vatOn ? vat.bps : 0, uncollectedRappen: orderFees.uncollected, smsRappen });
     const [{ n }] = rows<{ n: number }>(await db().execute(sql`SELECT nextval('platform_invoice_seq')::int AS n`));
+    // Weg der Zahlung (SPEC 20.6): Karte belasten oder QR-Rechnung mit Fälligkeit
+    const qr = h.billingMethod === "qr";
+    const due = qr && b.payRappen > 0 ? addDays(today, terms.paymentDays) : null;
     const ins = await db().insert(platformCharges).values({
       hotelId: h.id, month, feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, chargeRappen: b.payRappen,
-      aiModuleRappen: ai?.moduleRappen ?? 0, aiPacksRappen: ai?.packsRappen ?? 0, uncollectedFeesRappen: orderFees.uncollected, smsRappen, status: b.payRappen > 0 ? "pending" : "none",
+      aiModuleRappen: ai?.moduleRappen ?? 0, aiPacksRappen: ai?.packsRappen ?? 0, uncollectedFeesRappen: orderFees.uncollected, smsRappen,
+      status: b.payRappen > 0 ? (qr ? "invoiced" : "pending") : "none", method: qr ? "qr" : "card", dueDate: due,
       netRappen: b.netRappen, vatBps: vatOn ? vat.bps : 0, vatRappen: b.vatRappen, vatNumber: vatOn ? vat.number : null,
       invoiceNo: invoiceNumber(Number(today.slice(0, 4)), n), invoiceDate: today,
     }).onConflictDoNothing().returning({ id: platformCharges.id });
     created += ins.length;
+    if (ins.length && due) {
+      await enqueueEmail(db(), { hotelId: h.id, template: "host_invoice_qr", to: h.contactEmail, language: "de",
+        data: { month, invoiceNo: invoiceNumber(Number(today.slice(0, 4)), n), invoiceId: ins[0].id, net: formatChf(b.netRappen), vat: b.vatRappen ? formatChf(b.vatRappen) : "", amount: formatChf(b.payRappen), due: fmtDay(due) } });
+    }
     // Nichts von der Karte zu belasten: die Rechnung geht trotzdem per Mail (Gebühren sind schon über Stripe einbehalten)
     if (ins.length && b.payRappen === 0) {
       await enqueueEmail(db(), { hotelId: h.id, template: "host_invoice", to: h.contactEmail, language: "de",
@@ -87,6 +101,7 @@ export async function runMonthlyMinimum(now = new Date(), vatOverride?: Platform
 /** Ausstehende und (nach 3 Tagen) fehlgeschlagene Belastungen ausführen */
 export async function processCharges(now = new Date()): Promise<{ charged: number; failed: number }> {
   const due = await db().select().from(platformCharges).where(and(
+    eq(platformCharges.method, "card"),
     lt(platformCharges.attempts, MAX_ATTEMPTS),
     sql`(${platformCharges.status} = 'pending' OR (${platformCharges.status} = 'failed' AND ${platformCharges.updatedAt} < ${new Date(now.getTime() - RETRY_DAYS * 864e5).toISOString()}::timestamptz))`,
   ));
@@ -166,6 +181,13 @@ export async function listPlatformInvoices(limit = 40) {
     .orderBy(sql`${platformCharges.createdAt} DESC`).limit(limit);
 }
 
+/** Offene QR-Rechnungen aller Betriebe, älteste Fälligkeit zuerst (Plattform-Verwaltung, SPEC 20.6) */
+export async function listOpenQrInvoices() {
+  return db().select({ c: platformCharges, hotelName: hotels.name, hotelStatus: hotels.status }).from(platformCharges)
+    .innerJoin(hotels, eq(hotels.id, platformCharges.hotelId))
+    .where(eq(platformCharges.status, "invoiced")).orderBy(sql`${platformCharges.dueDate} ASC`);
+}
+
 /** Fehlgeschlagene Belastung nochmals versuchen lassen (der Worker belastet beim nächsten Lauf, spätestens nach einer Minute) */
 export async function retryCharge(chargeId: string, actor: string): Promise<boolean> {
   const [c] = await db().select().from(platformCharges).where(eq(platformCharges.id, chargeId));
@@ -175,4 +197,118 @@ export async function retryCharge(chargeId: string, actor: string): Promise<bool
     await audit(tx, { hotelId: c.hotelId, actor, action: "billing.retry", entity: "platform_charge", entityId: chargeId, details: { month: c.month } });
   });
   return true;
+}
+
+// ---------------------------------------------------------------- QR-Rechnung und Mahnwesen (SPEC 20.6)
+
+export class BillingError extends Error {}
+
+/** Zahlungsart der Grundgebühr wählen (Karte oder QR-Rechnung); gilt ab der nächsten Monatsrechnung */
+export async function setBillingMethod(hotel: Hotel, method: "card" | "qr", actor: string) {
+  if (method !== "card" && method !== "qr") throw new BillingError("Zahlungsart ungültig.");
+  await db().transaction(async (tx) => {
+    await tx.update(hotels).set({ billingMethod: method, updatedAt: new Date() }).where(eq(hotels.id, hotel.id));
+    await audit(tx, { hotelId: hotel.id, actor, action: "billing.method", entity: "hotel", entityId: hotel.id, details: { from: hotel.billingMethod, to: method } });
+  });
+}
+
+/** Zahlteil einer Plattform-Rechnung: QR-Inhalt und SVG, oder Grund, warum er fehlt */
+export async function chargeQr(hotel: Hotel, c: PlatformCharge): Promise<{ svg: string; iban: string; reference: string | null; creditor: { name: string; street: string; zip: string; city: string } } | { missing: string } | null> {
+  if (c.method !== "qr" || c.status !== "invoiced" || c.chargeRappen <= 0 || !c.invoiceNo) return null;
+  const { iban } = await getPlatformBilling();
+  const p = platformInfo();
+  const addr = splitAddress(p.address);
+  if (!iban) return { missing: "Die Zahlungsverbindung der Plattform fehlt noch. Bitte wenden Sie sich an " + p.email + "." };
+  if (!addr) return { missing: "Die Adresse der Plattform ist unvollständig." };
+  const reference = isQrIban(iban) ? qrReference(c.invoiceNo) : null;
+  const creditor = { name: p.operator, ...addr };
+  const payload = swissQrPayload({
+    iban, qrReference: reference ?? undefined, creditor: { ...creditor, country: "CH" }, amountRappen: c.chargeRappen,
+    debtor: hotel.postalCode && hotel.city ? { name: hotel.legalName ?? hotel.name, street: hotel.addressLine ?? "", zip: hotel.postalCode, city: hotel.city, country: "CH" } : null,
+    message: `Rechnung ${c.invoiceNo}`,
+  });
+  return { svg: await swissQrSvg(payload), iban, reference, creditor };
+}
+
+/** Zahlung einer QR-Rechnung erfassen (von Hand oder aus der Bankdatei) */
+export async function markChargePaid(chargeId: string, p: { paidOn?: string; note?: string; ref?: string | null }, actor: string): Promise<boolean> {
+  const at = p.paidOn && /^\d{4}-\d{2}-\d{2}$/.test(p.paidOn) ? new Date(`${p.paidOn}T12:00:00Z`) : new Date();
+  return db().transaction(async (tx) => {
+    const [c] = await tx.update(platformCharges).set({ status: "succeeded", paidAt: at, paidRef: p.ref ?? null, paidNote: (p.note ?? "").slice(0, 200), updatedAt: new Date() })
+      .where(and(eq(platformCharges.id, chargeId), eq(platformCharges.status, "invoiced"))).returning();
+    if (!c) return false;
+    await audit(tx, { hotelId: c.hotelId, actor, action: "billing.qr_paid", entity: "platform_charge", entityId: c.id, details: { invoiceNo: c.invoiceNo, amount: c.chargeRappen, ref: p.ref ?? null, note: p.note ?? "" } });
+    return true;
+  });
+}
+
+async function sendReminder(c: PlatformCharge, level: 1 | 2 | 3, actor: string, now: Date) {
+  const [h] = await db().select().from(hotels).where(eq(hotels.id, c.hotelId));
+  const today = todayIn("Europe/Zurich", now);
+  await db().transaction(async (tx) => {
+    const [u] = await tx.update(platformCharges).set({ dunningLevel: level, dunnedAt: now, updatedAt: now })
+      .where(and(eq(platformCharges.id, c.id), eq(platformCharges.status, "invoiced"), lt(platformCharges.dunningLevel, level))).returning({ id: platformCharges.id });
+    if (!u) return;
+    await audit(tx, { hotelId: c.hotelId, actor, action: "billing.reminder", entity: "platform_charge", entityId: c.id, details: { level, invoiceNo: c.invoiceNo } });
+    await enqueueEmail(tx, { hotelId: c.hotelId, template: "host_invoice_reminder", to: h.contactEmail, language: "de",
+      data: { level: DUNNING_LABEL[level], invoiceNo: c.invoiceNo ?? "", invoiceId: c.id, month: c.month, amount: formatChf(c.chargeRappen), due: fmtDay(c.dueDate ?? today), newDue: fmtDay(addDays(today, REMINDER_DAYS)), last: level === 3 ? "1" : "" } });
+    if (level >= 3 && env().PLATFORM_ALERT_EMAIL) {
+      await enqueueEmail(tx, { hotelId: c.hotelId, template: "platform_alert", to: env().PLATFORM_ALERT_EMAIL!, language: "de",
+        data: { subject: `${h.name}: Rechnung ${c.invoiceNo} (${formatChf(c.chargeRappen)}) nach der 2. Mahnung offen`, details: `Fällig seit ${fmtDay(c.dueDate ?? today)}. Plattform-Verwaltung → Rechnungen: Zahlung erfassen oder Betrieb pausieren.` } });
+    }
+  });
+}
+
+/** Job täglich: fällige Zahlungserinnerungen und Mahnungen (5, 20, 35 Tage nach Fälligkeit) */
+export async function dunningJob(now = new Date()): Promise<{ sent: number }> {
+  const today = todayIn("Europe/Zurich", now);
+  const open = await db().select().from(platformCharges).where(and(eq(platformCharges.status, "invoiced"), lt(platformCharges.dueDate, today)));
+  let sent = 0;
+  for (const c of open) {
+    const level = nextDunningLevel(diffDays(c.dueDate!, today), c.dunningLevel);
+    if (!level) continue;
+    await sendReminder(c, level, "system", now);
+    sent++;
+  }
+  return { sent };
+}
+
+/** Plattform-Verwaltung: nächste Mahnstufe sofort senden */
+export async function remindNow(chargeId: string, actor: string, now = new Date()): Promise<number | null> {
+  const [c] = await db().select().from(platformCharges).where(eq(platformCharges.id, chargeId));
+  if (!c || c.status !== "invoiced" || c.dunningLevel >= 3) return null;
+  const level = (c.dunningLevel + 1) as 1 | 2 | 3;
+  await sendReminder(c, level, actor, now);
+  return level;
+}
+
+/** Plattform-Verwaltung: Rechnung erneut per Mail senden */
+export async function resendQrInvoice(chargeId: string, actor: string): Promise<boolean> {
+  const [c] = await db().select().from(platformCharges).where(eq(platformCharges.id, chargeId));
+  if (!c || c.status !== "invoiced" || !c.invoiceNo || !c.dueDate) return false;
+  const [h] = await db().select().from(hotels).where(eq(hotels.id, c.hotelId));
+  await db().transaction(async (tx) => {
+    await enqueueEmail(tx, { hotelId: h.id, template: "host_invoice_qr", to: h.contactEmail, language: "de",
+      data: { month: c.month, invoiceNo: c.invoiceNo!, invoiceId: c.id, net: formatChf(c.netRappen), vat: c.vatRappen ? formatChf(c.vatRappen) : "", amount: formatChf(c.chargeRappen), due: fmtDay(c.dueDate!) } });
+    await audit(tx, { hotelId: h.id, actor, action: "billing.invoice_resent", entity: "platform_charge", entityId: c.id });
+  });
+  return true;
+}
+
+export type PlatformBankResult = { entries: number; matched: { invoiceNo: string; amountRappen: number }[]; unmatched: { bookedOn: string; amountRappen: number; reference: string; why: string }[]; duplicates: number };
+
+/** Bankdatei camt.054 der Plattform: Gutschriften über die QR-Referenz den offenen QR-Rechnungen zuordnen */
+export async function importPlatformCamt(xml: string, actor: string): Promise<PlatformBankResult> {
+  const entries = parseCamt054(xml);
+  const open = await db().select().from(platformCharges).where(eq(platformCharges.status, "invoiced"));
+  const res: PlatformBankResult = { entries: entries.length, matched: [], unmatched: [], duplicates: 0 };
+  for (const e of entries) {
+    const [dup] = await db().select({ id: platformCharges.id }).from(platformCharges).where(eq(platformCharges.paidRef, e.dedupeKey));
+    if (dup) { res.duplicates++; continue; }
+    const c = matchByReference(e.reference, open.map((x) => ({ ...x, number: x.invoiceNo })));
+    if (!c) { res.unmatched.push({ ...e, why: "keine offene Rechnung mit dieser Referenz" }); continue; }
+    if (e.amountRappen < c.chargeRappen) { res.unmatched.push({ ...e, why: `Betrag kleiner als ${formatChf(c.chargeRappen)} (${c.invoiceNo})` }); continue; }
+    if (await markChargePaid(c.id, { paidOn: e.bookedOn, ref: e.dedupeKey, note: "Bankdatei" }, actor)) res.matched.push({ invoiceNo: c.invoiceNo!, amountRappen: e.amountRappen });
+  }
+  return res;
 }

@@ -541,6 +541,22 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
         [`${de ? "Rechnung" : "Invoice"}: ${d.invoiceNo}`, `${de ? "Netto" : "Net"}: ${d.net}`, ...(d.vat ? [`${de ? "MWST" : "VAT"}: ${d.vat}`] : []), `${de ? "Total" : "Total"}: ${d.gross}`],
         { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/plattform-rechnung/${d.invoiceId}`, label: de ? "Rechnung ansehen" : "View invoice" });
     }
+    case "host_invoice_qr": {
+      const d = c.data as Record<string, string>;
+      return wrap(c, l, de ? `${env().PLATFORM_NAME}: Rechnung ${d.invoiceNo} (${d.month})` : `${env().PLATFORM_NAME}: invoice ${d.invoiceNo} (${d.month})`,
+        de ? ["Guten Tag,", `Ihre Rechnung für ${d.month} liegt bereit. Bitte bezahlen Sie ${d.amount} bis ${d.due} mit der QR-Rechnung (Link unten, im E-Banking scannen oder als PDF speichern).`]
+          : ["Hello,", `your invoice for ${d.month} is ready. Please pay ${d.amount} by ${d.due} using the QR bill (link below; scan it in your e-banking or save it as PDF).`],
+        [`${de ? "Rechnung" : "Invoice"}: ${d.invoiceNo}`, `${de ? "Netto" : "Net"}: ${d.net}`, ...(d.vat ? [`${de ? "MWST" : "VAT"}: ${d.vat}`] : []), `${de ? "Zu bezahlen" : "Amount due"}: ${d.amount}`, `${de ? "Fällig" : "Due"}: ${d.due}`],
+        { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/plattform-rechnung/${d.invoiceId}`, label: de ? "QR-Rechnung öffnen" : "Open QR bill" });
+    }
+    case "host_invoice_reminder": {
+      const d = c.data as Record<string, string>;
+      return wrap(c, l, de ? `${env().PLATFORM_NAME}: ${d.level} zu Rechnung ${d.invoiceNo}` : `${env().PLATFORM_NAME}: reminder for invoice ${d.invoiceNo}`,
+        de ? ["Guten Tag,", `die Rechnung ${d.invoiceNo} für ${d.month} über ${d.amount} war am ${d.due} fällig und ist bei uns noch nicht eingegangen. Bitte bezahlen Sie bis ${d.newDue}. Haben Sie bereits bezahlt? Dann betrachten Sie diese Nachricht als gegenstandslos.`, ...(d.last ? ["Das ist die letzte Mahnung. Ohne Zahlung behalten wir uns vor, Ihren Betrieb nach den Bedingungen für Gastgeber zu pausieren."] : [])]
+          : ["Hello,", `invoice ${d.invoiceNo} for ${d.month} of ${d.amount} was due on ${d.due} and has not been received yet. Please pay by ${d.newDue}. If you have already paid, please disregard this message.`],
+        [`${de ? "Stufe" : "Level"}: ${d.level}`, `${de ? "Rechnung" : "Invoice"}: ${d.invoiceNo}`, `${de ? "Betrag" : "Amount"}: ${d.amount}`, `${de ? "Neue Frist" : "New deadline"}: ${d.newDue}`],
+        { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/plattform-rechnung/${d.invoiceId}`, label: de ? "QR-Rechnung öffnen" : "Open QR bill" });
+    }
     case "host_charge_failed": {
       const d = c.data as Record<string, string | boolean>;
       return wrap(c, l, de ? `${env().PLATFORM_NAME}: Zahlung fehlgeschlagen` : `${env().PLATFORM_NAME}: payment failed`,

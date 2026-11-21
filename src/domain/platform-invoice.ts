@@ -65,3 +65,36 @@ export function billMonth(o: { feesRappen: number; minimumRappen: number; aiRapp
 }
 
 export const invoiceNumber = (year: number, seq: number) => `R-${year}-${String(seq).padStart(5, "0")}`;
+
+// ---------------------------------------------------------------- QR-Rechnung der Plattform (SPEC 20.6)
+
+/** Zahlungsverbindung der Plattform: IBAN oder QR-IBAN, Zahlungsfrist in Tagen */
+export type PlatformBilling = { iban: string; paymentDays: number };
+export const DEFAULT_PLATFORM_BILLING: PlatformBilling = { iban: "", paymentDays: 30 };
+
+/** Grundgebühr abrechenbar? Karte hinterlegt oder QR-Rechnung gewählt */
+export const billingReady = (h: { billingMethod: "card" | "qr"; billingPaymentMethodId: string | null }) => h.billingMethod === "qr" || !!h.billingPaymentMethodId;
+
+/** Neue Frist in einer Mahnung (Tage ab Versand) */
+export const REMINDER_DAYS = 14; // Gastgeber-Bedingungen Ziffer 3: vor einer Pause Nachfrist von mindestens 14 Tagen
+
+/** «Konradstrasse 1, 8400 Winterthur» → Strasse, PLZ, Ort (für den Zahlteil); ohne PLZ/Ort null */
+export function splitAddress(raw: string): { street: string; zip: string; city: string } | null {
+  const parts = raw.split(",").map((x) => x.trim()).filter(Boolean);
+  const last = parts.pop() ?? "";
+  const m = /^(?:CH-)?(\d{4})\s+(.+)$/.exec(last);
+  if (!m) return null;
+  return { street: parts.join(", "), zip: m[1], city: m[2] };
+}
+
+/** Status einer Plattform-Rechnung in Worten (Betrieb und Plattform-Verwaltung) */
+export function chargeStatusText(c: { status: string; attempts: number; dueDate: string | null; dunningLevel: number }, today: string): { text: string; warn: boolean } {
+  if (c.status === "succeeded") return { text: "bezahlt", warn: false };
+  if (c.status === "none") return { text: "nichts fällig", warn: false };
+  if (c.status === "pending") return { text: "offen (Karte)", warn: false };
+  if (c.status === "failed") return { text: `fehlgeschlagen (${c.attempts}×)`, warn: true };
+  const due = c.dueDate ? `${c.dueDate.slice(8, 10)}.${c.dueDate.slice(5, 7)}.${c.dueDate.slice(0, 4)}` : "";
+  const level = ["", "Zahlungserinnerung", "1. Mahnung", "2. Mahnung"][c.dunningLevel] ?? "";
+  const overdue = !!c.dueDate && c.dueDate < today;
+  return { text: `${overdue ? "überfällig" : "offen"}, fällig ${due}${level ? ` · ${level}` : ""}`, warn: overdue };
+}

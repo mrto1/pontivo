@@ -17,6 +17,7 @@ const AREAS: { href: string; title: string; text: string }[] = [
   { href: "/admin/plattform/vertrieb", title: "Vertrieb", text: "Leads, Status, nächste Schritte, persönliche Mails." },
   { href: "/admin/plattform/rechnungen", title: "Rechnungen", text: "Monatsrechnungen an die Betriebe, Belastungen." },
   { href: "/admin/plattform/mwst", title: "MWST", text: "MWST-Pflicht der Plattform, Satz und Nummer." },
+  { href: "/admin/plattform/zahlungsverbindung", title: "Zahlungsverbindung", text: "IBAN und Zahlungsfrist für QR-Rechnungen." },
   { href: "/admin/plattform/admins", title: "Plattform-Admins", text: "Wer diese Verwaltung sehen darf." },
   { href: "/admin/plattform/website", title: "Website-Texte", text: "Texte der Pontivo-Startseite." },
   { href: "/admin/plattform/schulferien", title: "Schulferien", text: "Kantonale Ferien für die Preisempfehlung einspielen." },
@@ -29,8 +30,10 @@ export default async function Uebersicht() {
   const live = hotels.filter((h) => h.status === "live").length;
   const attention = hotels.flatMap((h) => { const x = health.get(h.id); return x && x.level !== "green" ? [{ h, x }] : []; });
   const failed = invoices.filter(({ c }) => c.status === "failed");
+  const dunned = invoices.filter(({ c }) => c.status === "invoiced" && c.dunningLevel >= 2);
   const todo: { key: string; level: "red" | "yellow"; text: React.ReactNode }[] = [
     ...failed.map(({ c, hotelName }) => ({ key: `inv${c.id}`, level: "red" as const, text: <><a href="/admin/plattform/rechnungen">Belastung fehlgeschlagen</a>: {hotelName}, {c.month} ({c.attempts}×)</> })),
+    ...dunned.map(({ c, hotelName }) => ({ key: `dun${c.id}`, level: (c.dunningLevel >= 3 ? "red" : "yellow") as "red" | "yellow", text: <><a href="/admin/plattform/rechnungen">QR-Rechnung gemahnt</a>: {hotelName}, {c.invoiceNo} ({c.dunningLevel === 3 ? "2. Mahnung" : "1. Mahnung"})</> })),
     ...attention.map(({ h, x }) => ({ key: `h${h.id}`, level: x.level as "red" | "yellow", text: <><a href="/admin/plattform/betriebe">{h.name}</a>: {HEALTH_LABEL[x.level]}{x.reasons[0] ? ` (${x.reasons[0].text})` : ""}</> })),
     ...(sales.due ? [{ key: "leads", level: "yellow" as const, text: <><a href="/admin/plattform/vertrieb">{sales.due} Lead{sales.due === 1 ? "" : "s"}</a>: nächster Schritt fällig</> }] : []),
     ...(school.length === 0 ? [{ key: "school", level: "yellow" as const, text: <><a href="/admin/plattform/schulferien">Schulferien</a>: noch keine eingespielt (Preisempfehlung ohne Ferienvorschläge)</> }] : []),

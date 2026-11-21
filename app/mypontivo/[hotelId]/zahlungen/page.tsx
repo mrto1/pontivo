@@ -5,7 +5,10 @@ import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { setDeposit } from "@/src/services/settings";
 import { onboardingLink, refreshAccountStatus } from "@/src/integrations/stripe/onboarding";
-import { chargesOf, startCardSetup } from "@/src/services/billing";
+import { BillingError, chargesOf, setBillingMethod, startCardSetup } from "@/src/services/billing";
+import { billingReady, chargeStatusText } from "@/src/domain/platform-invoice";
+import { todayIn } from "@/src/domain/dates";
+import { getPlatformBilling } from "@/src/services/platform-settings";
 import { formatChf } from "@/src/domain/money";
 import { env } from "@/src/env";
 import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
@@ -60,6 +63,13 @@ async function cardSetup(f: FormData) {
   redirect(url);
 }
 
+async function billingMethod(f: FormData) {
+  "use server";
+  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
+  try { await setBillingMethod(hotel, s(f, "method") === "qr" ? "qr" : "card", actor); } catch (e) { if (!(e instanceof BillingError)) throw e; back(hotel.id, e.message); }
+  back(hotel.id, s(f, "method") === "qr" ? "Grundgebühr per QR-Rechnung: gilt ab der nächsten Monatsrechnung." : "Grundgebühr per Karte: gilt ab der nächsten Monatsrechnung.");
+}
+
 async function stripeRefresh(f: FormData) {
   "use server";
   const { hotel } = await requireHotel(s(f, "hotelId"), "owner");
@@ -80,7 +90,7 @@ export default async function Zahlungen({ params, searchParams }: { params: Prom
   const isOwner = atLeast(role, "owner");
   const provider = env().PAYMENT_PROVIDER;
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
-  const charges = await chargesOf(hotel.id);
+  const [charges, terms] = await Promise.all([chargesOf(hotel.id), getPlatformBilling()]);
 
   return (
     <div className="stack">
@@ -137,19 +147,28 @@ export default async function Zahlungen({ params, searchParams }: { params: Prom
 
       {(
         <section className="card stack" id="karte">
-          <h2>Grundgebühr und Karte</h2>
-          {hotel.monthlyMinimumRappen > 0 ? <p className="small">{hotel.platformFeeBps / 100} % pro Direktbuchung, mindestens {formatChf(hotel.monthlyMinimumRappen)} pro Monat. Liegen die {hotel.platformFeeBps / 100} % darunter, wird Anfang des Folgemonats die Differenz der Karte belastet{hotel.liveSince ? "" : " (ab dem ersten vollen Monat nach dem Live-Gang)"}.</p> : <p className="small">Die Karte dient der Abrechnung von Modulen (z. B. KI-Chat) und Gebühren der Plattform.</p>}
+          <h2>Grundgebühr und Abrechnung</h2>
+          {hotel.monthlyMinimumRappen > 0 ? <p className="small">{hotel.platformFeeBps / 100} % pro Direktbuchung, mindestens {formatChf(hotel.monthlyMinimumRappen)} pro Monat. Liegen die {hotel.platformFeeBps / 100} % darunter, verrechnen wir Anfang des Folgemonats die Differenz{hotel.liveSince ? "" : " (ab dem ersten vollen Monat nach dem Live-Gang)"}.</p> : <p className="small">Die Abrechnung betrifft Module (z. B. KI-Chat) und Gebühren der Plattform.</p>}
+          <form action={billingMethod} className="stack" data-testid="billing-method">{hidden}
+            <fieldset><legend className="small">Wie möchten Sie bezahlen?</legend>
+              <label className="opt-row"><input type="radio" name="method" value="card" defaultChecked={hotel.billingMethod !== "qr"} disabled={!isOwner} /> Karte: wird Anfang Monat automatisch belastet</label>
+              <label className="opt-row"><input type="radio" name="method" value="qr" defaultChecked={hotel.billingMethod === "qr"} disabled={!isOwner} /> QR-Rechnung: per Mail, zahlbar innert {terms.paymentDays} Tagen im E-Banking (ohne Stripe)</label>
+            </fieldset>
+            {isOwner ? <div><button className="btn secondary small">Zahlungsart speichern</button></div> : null}
+          </form>
+          {!billingReady(hotel) ? <p className="notice warn small">Noch nicht eingerichtet: Karte hinterlegen oder QR-Rechnung wählen.</p> : null}
           <div className="kv">
-            <span className="muted">Karte</span><span>{hotel.billingCardLabel ?? <span className="badge warn">keine hinterlegt</span>}</span>
+            <span className="muted">Zahlungsart</span><span>{hotel.billingMethod === "qr" ? "QR-Rechnung" : "Karte"}</span>
+            <span className="muted">Karte</span><span>{hotel.billingCardLabel ?? (hotel.billingMethod === "qr" ? "–" : <span className="badge warn">keine hinterlegt</span>)}</span>
             <span className="muted">Bedingungen</span><span><a href="/gastgeber-bedingungen" target="_blank">Version {hotel.hostTermsVersion ?? "–"}</a>{hotel.hostTermsAcceptedAt ? `, akzeptiert am ${hotel.hostTermsAcceptedAt.toISOString().slice(0, 10)}` : ""}</span>
           </div>
-          {isOwner ? <form action={cardSetup}>{hidden}<button className="btn secondary">{hotel.billingCardLabel ? "Andere Karte hinterlegen" : "Karte hinterlegen"}</button></form> : null}
+          {isOwner && hotel.billingMethod !== "qr" ? <form action={cardSetup}>{hidden}<button className="btn secondary">{hotel.billingCardLabel ? "Andere Karte hinterlegen" : "Karte hinterlegen"}</button></form> : null}
           {charges.length ? (
             <table className="table small">
-              <thead><tr><th>Monat</th><th>Gebühr</th><th>Minimum</th><th>KI-Chat</th><th>MWST</th><th>Belastet</th><th>Status</th><th>Rechnung</th></tr></thead>
+              <thead><tr><th>Monat</th><th>Gebühr</th><th>Minimum</th><th>KI-Chat</th><th>MWST</th><th>Betrag</th><th>Status</th><th>Rechnung</th></tr></thead>
               <tbody>{charges.map((c) => (
                 <tr key={c.id}><td>{c.month}</td><td>{formatChf(c.feesRappen)}</td><td>{formatChf(c.minimumRappen)}</td><td>{formatChf(c.aiModuleRappen + c.aiPacksRappen)}</td><td>{c.vatRappen ? formatChf(c.vatRappen) : "–"}</td><td>{formatChf(c.chargeRappen)}</td>
-                  <td>{c.status === "succeeded" ? "bezahlt" : c.status === "none" ? "nichts fällig" : c.status === "pending" ? "offen" : <span className="badge warn">fehlgeschlagen ({c.attempts}×)</span>}</td>
+                  <td>{((st) => (st.warn ? <span className="badge warn">{st.text}</span> : st.text))(chargeStatusText(c, todayIn(hotel.timezone)))}</td>
                   <td>{c.invoiceNo ? <a href={`/mypontivo/${hotel.id}/plattform-rechnung/${c.id}`} target="_blank">{c.invoiceNo}</a> : "–"}</td></tr>
               ))}</tbody>
             </table>

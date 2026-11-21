@@ -57,3 +57,19 @@ describe("Plattformrechnung mit Online-Bestellungen (SPEC 20.4)", () => {
     expect(low.payRappen).toBe(1400 + 500);
   });
 });
+
+describe("QR-Rechnung der Plattform (SPEC 20.6)", () => {
+  it("Adresse für den Zahlteil zerlegen", async () => {
+    const { splitAddress } = await import("../../src/domain/platform-invoice");
+    expect(splitAddress("Konradstrasse 1, 8400 Winterthur")).toEqual({ street: "Konradstrasse 1", zip: "8400", city: "Winterthur" });
+    expect(splitAddress("c/o Muster, Weg 2, CH-3000 Bern")).toEqual({ street: "c/o Muster, Weg 2", zip: "3000", city: "Bern" });
+    expect(splitAddress("[Adresse]")).toBeNull();
+  });
+  it("Status in Worten und abrechenbar", async () => {
+    const { billingReady, chargeStatusText } = await import("../../src/domain/platform-invoice");
+    expect(billingReady({ billingMethod: "qr", billingPaymentMethodId: null })).toBe(true);
+    expect(billingReady({ billingMethod: "card", billingPaymentMethodId: null })).toBe(false);
+    expect(chargeStatusText({ status: "invoiced", attempts: 0, dueDate: "2026-12-31", dunningLevel: 0 }, "2026-12-01")).toEqual({ text: "offen, fällig 31.12.2026", warn: false });
+    expect(chargeStatusText({ status: "invoiced", attempts: 0, dueDate: "2026-12-01", dunningLevel: 2 }, "2026-12-30")).toEqual({ text: "überfällig, fällig 01.12.2026 · 1. Mahnung", warn: true });
+  });
+});

@@ -16,10 +16,10 @@ export const LIMITS = {
 export type Gate = { ok: true } | { ok: false; reason: string };
 
 /** Erst nach Abo: Karte hinterlegt und Gastgeber-Bedingungen akzeptiert; KI muss eingerichtet sein */
-export function setupImportGate(h: { billingPaymentMethodId: string | null; hostTermsAcceptedAt: Date | null }, aiConfigured: boolean): Gate {
+export function setupImportGate(h: { billingPaymentMethodId: string | null; billingMethod?: "card" | "qr"; hostTermsAcceptedAt: Date | null }, aiConfigured: boolean): Gate {
   if (!aiConfigured) return { ok: false, reason: "Die KI-Einrichtung ist auf dieser Plattform nicht eingeschaltet." };
   if (!h.hostTermsAcceptedAt) return { ok: false, reason: "Bitte zuerst die Bedingungen für Gastgeber akzeptieren." };
-  if (!h.billingPaymentMethodId) return { ok: false, reason: "Die KI-Einrichtung gibt es nach dem Abschluss des Abos: bitte zuerst eine Karte für die Abrechnung hinterlegen (Abrechnung → Karte)." };
+  if (!h.billingPaymentMethodId && h.billingMethod !== "qr") return { ok: false, reason: "Die KI-Einrichtung gibt es nach dem Abschluss des Abos: bitte zuerst die Abrechnung einrichten (Zahlungen → Grundgebühr: Karte oder QR-Rechnung)." };
   return { ok: true };
 }
 

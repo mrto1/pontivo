@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { platformSettings } from "../db/schema";
-import { DEFAULT_PLATFORM_VAT, cleanPlatformVat, type PlatformVat } from "../domain/platform-invoice";
+import { DEFAULT_PLATFORM_BILLING, DEFAULT_PLATFORM_VAT, cleanPlatformVat, type PlatformBilling, type PlatformVat } from "../domain/platform-invoice";
+import { cleanIban, isSwissIban } from "../domain/invoice";
 import { env } from "../env";
 import { audit } from "./audit";
 
@@ -24,6 +25,30 @@ export async function savePlatformVat(input: { liableFrom?: string | null; bps?:
   await db().transaction(async (tx) => {
     await tx.insert(platformSettings).values({ key: VAT_KEY, value: v, updatedBy: actor }).onConflictDoUpdate({ target: platformSettings.key, set: { value: v, updatedAt: new Date(), updatedBy: actor } });
     await audit(tx, { hotelId: null, actor, action: "platform.vat_changed", entity: "platform_settings", entityId: VAT_KEY, details: { from: old, to: v } });
+  });
+  return v;
+}
+
+const BILLING_KEY = "billing";
+
+/** Zahlungsverbindung der Plattform für QR-Rechnungen (SPEC 20.6) */
+export async function getPlatformBilling(): Promise<PlatformBilling> {
+  const [r] = await db().select().from(platformSettings).where(eq(platformSettings.key, BILLING_KEY));
+  const v = ((r?.value && typeof r.value === "object" ? r.value : {}) as Partial<PlatformBilling>);
+  return { iban: typeof v.iban === "string" ? v.iban : DEFAULT_PLATFORM_BILLING.iban, paymentDays: typeof v.paymentDays === "number" ? v.paymentDays : DEFAULT_PLATFORM_BILLING.paymentDays };
+}
+
+export class PlatformSettingsError extends Error {}
+
+export async function savePlatformBilling(input: { iban: string; paymentDays: number }, actor: string): Promise<PlatformBilling> {
+  const iban = cleanIban(input.iban);
+  if (iban && !isSwissIban(iban)) throw new PlatformSettingsError("IBAN ungültig: Schweizer oder liechtensteinische IBAN (CH/LI, 21 Zeichen) mit gültiger Prüfziffer.");
+  if (!Number.isInteger(input.paymentDays) || input.paymentDays < 5 || input.paymentDays > 90) throw new PlatformSettingsError("Zahlungsfrist: 5 bis 90 Tage.");
+  const v: PlatformBilling = { iban, paymentDays: input.paymentDays };
+  const old = await getPlatformBilling();
+  await db().transaction(async (tx) => {
+    await tx.insert(platformSettings).values({ key: BILLING_KEY, value: v, updatedBy: actor }).onConflictDoUpdate({ target: platformSettings.key, set: { value: v, updatedAt: new Date(), updatedBy: actor } });
+    await audit(tx, { hotelId: null, actor, action: "platform.billing_changed", entity: "platform_settings", entityId: BILLING_KEY, details: { from: old, to: v } });
   });
   return v;
 }

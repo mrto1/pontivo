@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { feePercentText } from "@/src/domain/fee";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
+import { billingReady } from "@/src/domain/platform-invoice";
 import { atLeast } from "@/src/auth/session";
 import {
   addUnit, bookingOnly, CANCEL_TEMPLATES, chooseModules, detectEmbed, goLiveFromWizard, markEmbedded, isWholeUnit, nextOpenStep, onboardingSteps, OnboardingError, PROPERTY_LABEL,
@@ -22,7 +23,7 @@ import { listRooms, MAX_PHOTOS, RoomError } from "@/src/services/rooms";
 import { PhotoGrid } from "@/components/admin/PhotoGrid";
 import { photoAction } from "../photo-actions";
 import { listExtras } from "@/src/services/extras";
-import { startCardSetup } from "@/src/services/billing";
+import { setBillingMethod, startCardSetup } from "@/src/services/billing";
 import { onboardingLink, refreshAccountStatus } from "@/src/integrations/stripe/onboarding";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { todayIn } from "@/src/domain/dates";
@@ -181,6 +182,11 @@ async function cardStart(f: FormData) {
     redirect(`/mypontivo/${hotel.id}/einrichten?step=karte&error=${encodeURIComponent((e as Error).message)}`);
   }
   redirect(url);
+}
+
+async function chooseQr(f: FormData) {
+  "use server";
+  await step(f, ({ hotel, actor }) => setBillingMethod(hotel, "qr", actor), "owner");
 }
 
 async function embedCheck(f: FormData) {
@@ -527,11 +533,20 @@ export default async function Wizard({ params, searchParams }: { params: Promise
     case "karte":
       body = (
         <div className="stack">
-          <p>{formatChf(hotel.monthlyMinimumRappen)} pro Monat ist die Mindestgebühr. Die {feePercentText(hotel.platformFeeBps)} % pro Direktbuchung werden damit verrechnet: Liegen sie in einem Monat darunter, belasten wir Anfang des Folgemonats nur die Differenz. Die Mindestgebühr gilt ab dem ersten vollen Monat nach dem Live-Gang.</p>
-          <p>Die Karte wird bei Stripe gespeichert, wir sehen nur Kartentyp und die letzten vier Ziffern. Jetzt wird nichts belastet.</p>
-          {hotel.billingCardLabel ? <p className="notice">✓ Hinterlegt: {hotel.billingCardLabel}</p> : null}
-          {isOwner ? <form action={cardStart}>{H}<button className="btn">{hotel.billingCardLabel ? "Andere Karte hinterlegen" : "Karte hinterlegen"}</button></form> : <p className="small muted">Die Karte hinterlegt die Inhaberin bzw. der Inhaber.</p>}
-          {hotel.billingCardLabel && next ? <form action={skip}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value={next} /><button className="btn secondary">Weiter</button></form> : null}
+          <p>{formatChf(hotel.monthlyMinimumRappen)} pro Monat ist die Mindestgebühr. Die {feePercentText(hotel.platformFeeBps)} % pro Direktbuchung werden damit verrechnet: Liegen sie in einem Monat darunter, verrechnen wir Anfang des Folgemonats nur die Differenz. Die Mindestgebühr gilt ab dem ersten vollen Monat nach dem Live-Gang.</p>
+          <p>Sie haben zwei Wege, beide ohne Zusatzkosten:</p>
+          <ul className="list">
+            <li><strong>Karte</strong>: wird Anfang Monat automatisch belastet. Die Karte wird bei Stripe gespeichert, wir sehen nur Kartentyp und die letzten vier Ziffern. Jetzt wird nichts belastet.</li>
+            <li><strong>QR-Rechnung</strong>: kommt Anfang Monat per Mail, Sie bezahlen sie im E-Banking. Geht sofort, ohne auf Stripe zu warten.</li>
+          </ul>
+          {hotel.billingMethod === "qr" ? <p className="notice" data-testid="billing-qr-chosen">✓ Gewählt: QR-Rechnung</p> : hotel.billingCardLabel ? <p className="notice">✓ Hinterlegt: {hotel.billingCardLabel}</p> : null}
+          {isOwner ? (
+            <div className="inline-form">
+              {hotel.billingMethod !== "qr" || !hotel.billingCardLabel ? <form action={cardStart}>{H}<button className={hotel.billingMethod === "qr" ? "btn secondary" : "btn"}>{hotel.billingCardLabel ? "Andere Karte hinterlegen" : "Karte hinterlegen"}</button></form> : null}
+              {hotel.billingMethod !== "qr" ? <form action={chooseQr}>{H}<input type="hidden" name="step" value="karte" /><button className="btn secondary">Per QR-Rechnung bezahlen</button></form> : null}
+            </div>
+          ) : <p className="small muted">Die Zahlungsart wählt die Inhaberin bzw. der Inhaber.</p>}
+          {billingReady(hotel) && next ? <form action={skip}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value={next} /><button className="btn secondary">Weiter</button></form> : null}
         </div>
       );
       break;

@@ -365,7 +365,12 @@ export function qrPayloadFor(hotel: Hotel, invoice: Invoice, openRappen: number,
 
 /** QR-Code mit Schweizer Kreuz in der Mitte (7 mm von 46 mm), als SVG */
 async function qrSvgFor(hotel: Hotel, invoice: Invoice, open: number, set: InvoicingSettings): Promise<string> {
-  const svg = await QRCode.toString(qrPayloadFor(hotel, invoice, open, set), { type: "svg", errorCorrectionLevel: "M", margin: 0 });
+  return swissQrSvg(qrPayloadFor(hotel, invoice, open, set));
+}
+
+/** QR-Code der QR-Rechnung mit Schweizer Kreuz, als SVG (auch für die Rechnungen der Plattform, SPEC 20.6) */
+export async function swissQrSvg(payload: string): Promise<string> {
+  const svg = await QRCode.toString(payload, { type: "svg", errorCorrectionLevel: "M", margin: 0 });
   const vb = /viewBox="0 0 (\d+) (\d+)"/.exec(svg);
   const size = vb ? Number(vb[1]) : 0;
   if (!size) return svg;

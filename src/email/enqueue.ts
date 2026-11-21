@@ -5,7 +5,7 @@ export type TemplateName =
   | "host_welcome"
   | "host_onboarding_reminder"
   | "host_live"
-  | "host_minimum_charged" | "host_invoice"
+  | "host_minimum_charged" | "host_invoice" | "host_invoice_qr" | "host_invoice_reminder"
   | "host_charge_failed"
   | "platform_onboarding_alert"
   | "voucher_purchased"
