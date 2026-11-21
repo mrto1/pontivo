@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { openStore, type Store } from "./store";
+import { checkChoice, type GroupDef } from "../../src/domain/pos-options";
 import { afterPay, checkPay, isOpen, lineFor, mergeServer, openTotal, type CatalogItem, type LocalOrder } from "../../src/domain/pos-local";
 import { METHODS, METHOD_LABEL, receiptNumber, type Method } from "../../src/domain/pos";
 import { nextBonNo, type SyncOp, type SyncResult } from "../../src/domain/pos-offline";
@@ -144,13 +145,20 @@ export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiabl
     await enqueue({ kind: "order", id: o.id, tableId, label: o.label, at: Date.now() });
     setCur(o.id); setLabel(""); setPaySel({});
   }
-  async function addItem(item: CatalogItem) {
+  const [choosing, setChoosing] = useState<CatalogItem | null>(null);
+  const [chosen, setChosen] = useState<string[]>([]);
+  const [noteTxt, setNoteTxt] = useState("");
+  function tap(i: CatalogItem) { if (i.groups?.length) { setChoosing(i); setChosen([]); setNoteTxt(""); } else void addItem(i); }
+  function toggleOpt(g: GroupDef, id: string) {
+    setChosen((c) => c.includes(id) ? c.filter((x) => x !== id) : g.maxChoices === 1 ? [...c.filter((x) => !g.options.some((o) => o.id === x)), id] : [...c, id]);
+  }
+  async function addItem(item: CatalogItem, optionIds: string[] = [], note = "") {
     if (!order) return;
-    const l = lineFor(item, qty, mode, uuid(), cat!.vatLiable);
+    const l = lineFor(item, qty, mode, uuid(), cat!.vatLiable, optionIds, note);
     const fresh = (await store.current!.get<LocalOrder>("orders", order.id)) ?? order; // immer vom gespeicherten Stand ausgehen
     await save({ ...fresh, lines: [...fresh.lines, l] });
-    await enqueue({ kind: "lines", id: uuid(), orderId: order.id, at: Date.now(), lines: [{ id: l.id, itemId: item.id, quantity: l.quantity, mode: l.mode, description: l.description, unitPriceRappen: l.unitPriceRappen, vatBps: l.vatBps }] });
-    setQty(1);
+    await enqueue({ kind: "lines", id: uuid(), orderId: order.id, at: Date.now(), lines: [{ id: l.id, itemId: item.id, quantity: l.quantity, mode: l.mode, description: l.description, unitPriceRappen: l.unitPriceRappen, vatBps: l.vatBps, options: l.options, note: l.note }] });
+    setQty(1); setChoosing(null); setChosen([]); setNoteTxt("");
   }
   async function payNow() {
     if (!cur || !code) return;
@@ -222,9 +230,24 @@ export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiabl
           <div className="card stack">
             <div><label htmlFor="mode">Art</label> <select id="mode" value={mode} onChange={(e) => setMode(e.target.value as "dine_in" | "takeaway")}><option value="dine_in">Im Haus</option><option value="takeaway">Take-away</option></select>
               {" "}<label htmlFor="qty">Menge</label> <input id="qty" type="number" min={1} max={99} value={qty} onChange={(e) => setQty(Math.max(1, Math.min(99, Number(e.target.value) || 1)))} style={{ width: 70 }} /></div>
+            {choosing ? (
+              <div className="card stack" data-testid="options-step">
+                <strong>{choosing.name}</strong>
+                {(choosing.groups ?? []).map((g) => (
+                  <fieldset key={g.id} className="stack"><legend><strong>{g.name}</strong> <span className="small muted">{g.required ? "Pflicht" : "optional"}{g.maxChoices > 1 ? ` · bis zu ${g.maxChoices}` : ""}</span></legend>
+                    {g.options.map((o) => <label key={o.id} className="opt-row"><input type={g.maxChoices === 1 ? "radio" : "checkbox"} name={g.id} checked={chosen.includes(o.id)} onChange={() => toggleOpt(g, o.id)} /> {o.name}{o.priceRappen ? ` (+${formatChf(o.priceRappen)})` : ""}</label>)}
+                  </fieldset>
+                ))}
+                <div><label htmlFor="optnote">Sonderwunsch</label><input id="optnote" value={noteTxt} maxLength={120} onChange={(e) => setNoteTxt(e.target.value)} placeholder="z. B. ohne Zwiebeln" /></div>
+                <div>
+                  <button className="btn" onClick={() => { const bad = checkChoice(choosing.groups ?? [], chosen); if (bad) setMsg(bad); else void addItem(choosing, chosen, noteTxt); }}>Hinzufügen</button>{" "}
+                  <button className="btn secondary" onClick={() => setChoosing(null)}>Abbrechen</button>
+                </div>
+              </div>
+            ) : null}
             {byCategory.map(([c, list]) => (
               <div key={c}><strong className="small muted">{c}</strong><div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
-                {list.map((i) => <button key={i.id} className="btn secondary" onClick={() => addItem(i)}>{i.name} {formatChf(i.priceRappen)}</button>)}
+                {list.map((i) => <button key={i.id} className="btn secondary" onClick={() => tap(i)}>{i.name} {formatChf(i.priceRappen)}</button>)}
               </div></div>
             ))}
           </div>

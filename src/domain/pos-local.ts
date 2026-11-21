@@ -1,19 +1,21 @@
+import { composeLine, type ChosenOption, type GroupDef } from "./pos-options";
 import { METHODS, selectionTotal, type Method, type Selection } from "./pos";
 
 /**
  * Lokaler Stand der Offline-Kasse (Browser): Bestellungen mit Zeilen und noch offenen Mengen. Reine Funktionen, damit sie testbar sind.
  * Der Server bleibt massgebend; das Gerät rechnet mit denselben Regeln (Preise und Sätze wie dem Gast gezeigt).
  */
-export type LocalLine = { id: string; itemId: string | null; description: string; quantity: number; unitPriceRappen: number; vatBps: number; mode: "dine_in" | "takeaway"; openQuantity: number };
+export type LocalLine = { id: string; itemId: string | null; description: string; quantity: number; unitPriceRappen: number; vatBps: number; mode: "dine_in" | "takeaway"; openQuantity: number; options?: ChosenOption[]; note?: string };
 export type LocalOrder = { id: string; tableId: string | null; label: string; lines: LocalLine[]; receipts: { number: string; totalRappen: number }[] };
-export type CatalogItem = { id: string; category: string | null; name: string; priceRappen: number; vatDineInBps: number; vatTakeawayBps: number; dailySpecial: boolean };
+export type CatalogItem = { id: string; category: string | null; name: string; priceRappen: number; vatDineInBps: number; vatTakeawayBps: number; dailySpecial: boolean; groups?: GroupDef[] };
 
 export const openTotal = (o: LocalOrder) => o.lines.reduce((a, l) => a + l.openQuantity * l.unitPriceRappen, 0);
 export const isOpen = (o: LocalOrder) => o.lines.some((l) => l.openQuantity > 0);
 
 /** Satz einer Zeile aus dem Artikel; nicht MWST-pflichtige Betriebe: 0 */
-export function lineFor(item: CatalogItem, quantity: number, mode: "dine_in" | "takeaway", id: string, vatLiable: boolean): LocalLine {
-  return { id, itemId: item.id, description: item.name, quantity, unitPriceRappen: item.priceRappen, vatBps: vatLiable ? (mode === "takeaway" ? item.vatTakeawayBps : item.vatDineInBps) : 0, mode, openQuantity: quantity };
+export function lineFor(item: CatalogItem, quantity: number, mode: "dine_in" | "takeaway", id: string, vatLiable: boolean, optionIds: string[] = [], note = ""): LocalLine {
+  const c = composeLine(item, item.groups ?? [], optionIds, note);
+  return { id, itemId: item.id, description: c.description, options: c.options, note: c.note, quantity, unitPriceRappen: c.unitPriceRappen, vatBps: vatLiable ? (mode === "takeaway" ? item.vatTakeawayBps : item.vatDineInBps) : 0, mode, openQuantity: quantity };
 }
 
 /** Auswahl prüfen und Total berechnen; Fehlertext oder Summe */

@@ -2,10 +2,11 @@ import { Notice } from "@/components/admin/Notice";
 import { notFound, redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
-import { PosError, addDiscount, addLines, listItems, orderView, pay, reverseLine, reverseReceipt, webDevice } from "@/src/services/pos";
+import { PosError, addDiscount, addLines, groupsOfItem, listItems, orderView, pay, reverseLine, reverseReceipt, webDevice } from "@/src/services/pos";
 import { METHODS, METHOD_LABEL, selectionTotal, type Method } from "@/src/domain/pos";
 import { atLeast } from "@/src/domain/roles";
 import { formatChf } from "@/src/domain/money";
+import { db } from "@/src/db/client";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -21,9 +22,17 @@ async function add(f: FormData) {
   "use server";
   const c = await guard(f);
   const o = s(f, "orderId");
+  const itemId = s(f, "itemId"), quantity = Number(s(f, "quantity") || 1), mode = s(f, "mode") === "takeaway" ? "takeaway" : "dine_in";
+  // Hat der Artikel Optionen und wurden noch keine gewählt, erst die Auswahl zeigen (SPEC 19.49)
+  if (s(f, "step") !== "options" && (await groupsOfItem(db(), c.hotel.id, itemId)).length)
+    redirect(`/mypontivo/${c.hotel.id}/restaurant/bestellung/${o}?artikel=${encodeURIComponent(itemId)}&menge=${quantity}&art=${mode}&note=${encodeURIComponent(s(f, "note"))}`);
   try {
-    await addLines(c.hotel, o, [{ itemId: s(f, "itemId"), quantity: Number(s(f, "quantity") || 1), mode: s(f, "mode") === "takeaway" ? "takeaway" : "dine_in" }], c.actor);
-  } catch (e) { if (!(e instanceof PosError)) throw e; back(c.hotel.id, o, `Nicht hinzugefügt: ${e.message}`); }
+    await addLines(c.hotel, o, [{ itemId, quantity, mode, optionIds: f.getAll("opt").map(String), note: s(f, "note") }], c.actor);
+  } catch (e) {
+    if (!(e instanceof PosError)) throw e;
+    if (s(f, "step") === "options") redirect(`/mypontivo/${c.hotel.id}/restaurant/bestellung/${o}?artikel=${encodeURIComponent(itemId)}&menge=${quantity}&art=${mode}&note=${encodeURIComponent(s(f, "note"))}&msg=${encodeURIComponent(`Nicht hinzugefügt: ${e.message}`)}`);
+    back(c.hotel.id, o, `Nicht hinzugefügt: ${e.message}`);
+  }
   redirect(`/mypontivo/${c.hotel.id}/restaurant/bestellung/${o}`);
 }
 async function payAction(f: FormData) {
@@ -82,17 +91,37 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   if (!v) notFound();
   const items = (await listItems(hotel.id, true));
   const manager = atLeast(role, "manager");
+  const pick = sp.artikel ? items.find((i) => i.id === sp.artikel) : undefined;
+  const pickGroups = pick ? await groupsOfItem(db(), hotel.id, pick.id) : [];
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   const O = <input type="hidden" name="orderId" value={orderId} />;
   return (
     <div className="stack">
       <h1>Bestellung {v.order.label || ""}</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
+      {pick && pickGroups.length ? (
+        <form key={`${pick.id}-${sp.msg ?? ""}-${sp.note ?? ""}`} action={add} className="card stack" data-testid="options-step">
+          {H}{O}<input type="hidden" name="step" value="options" /><input type="hidden" name="itemId" value={pick.id} />
+          <input type="hidden" name="quantity" value={Math.max(1, Number(sp.menge) || 1)} /><input type="hidden" name="mode" value={sp.art === "takeaway" ? "takeaway" : "dine_in"} />
+          <h2>{pick.name}</h2>
+          {pickGroups.map((g) => (
+            <fieldset key={g.id} className="stack">
+              <legend><strong>{g.name}</strong> <span className="small muted">{g.required ? "Pflicht" : "optional"}{g.maxChoices > 1 ? ` · bis zu ${g.maxChoices}` : ""}</span></legend>
+              {g.options.map((o) => (
+                <label key={o.id} className="opt-row"><input type={g.maxChoices === 1 ? "radio" : "checkbox"} name="opt" value={o.id} /> {o.name}{o.priceRappen ? ` (+${formatChf(o.priceRappen)})` : ""}</label>
+              ))}
+            </fieldset>
+          ))}
+          <div><label htmlFor="note">Sonderwunsch</label><input id="note" name="note" defaultValue={sp.note ?? ""} maxLength={120} placeholder="z. B. ohne Zwiebeln" /></div>
+          <div><button className="btn">Hinzufügen</button></div>
+        </form>
+      ) : null}
       <form action={add} className="card stack">
         {H}{O}
         <div><label htmlFor="itemId">Artikel</label>
           <select id="itemId" name="itemId" required>{items.map((i) => <option key={i.id} value={i.id}>{i.category ? `${i.category}: ` : ""}{i.name} ({formatChf(i.priceRappen)})</option>)}</select></div>
         <div><label htmlFor="quantity">Menge</label><input id="quantity" name="quantity" type="number" min={1} defaultValue={1} /></div>
+        <div><label htmlFor="mainnote">Sonderwunsch (optional)</label><input id="mainnote" name="note" maxLength={120} placeholder="z. B. ohne Zwiebeln" /></div>
         <div><label htmlFor="mode">Art</label><select id="mode" name="mode"><option value="dine_in">Im Haus</option><option value="takeaway">Take-away</option></select></div>
         <div><button className="btn">Hinzufügen</button></div>
       </form>

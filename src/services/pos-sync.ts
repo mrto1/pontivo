@@ -3,7 +3,7 @@ import { db, rows } from "../db/client";
 import { posDevices, posOrders, type Hotel } from "../db/schema";
 import { todayIn } from "../domain/dates";
 import type { SyncOp, SyncResult } from "../domain/pos-offline";
-import { PosError, addLines, listItems, listTables, openOrder, orderView, pay } from "./pos";
+import { PosError, addLines, catalogGroups, listItems, listTables, openOrder, orderView, pay } from "./pos";
 import { audit } from "./audit";
 
 /** Offline-Kasse: Daten zum Mitnehmen und Übertragung der lokal gesammelten Vorgänge (SPEC 19.16). Jede Abfrage nach hotel_id. */
@@ -56,9 +56,10 @@ export async function bootstrap(hotel: Hotel, key: string, code?: string) {
   const dev = await claim(hotel.id, code, key);
   await db().update(posDevices).set({ lastSeenAt: new Date() }).where(eq(posDevices.id, dev.id));
   const [items, tables, guests, orders] = await Promise.all([listItems(hotel.id, true), listTables(hotel.id), guestsInHouse(hotel), openOrders(hotel.id)]);
+  const groups = await catalogGroups(hotel.id, items.map((i) => i.id));
   return {
     devices: list, device: { code: dev.code, lastBon: dev.lastBon }, today: todayIn(hotel.timezone),
-    items: items.map((i) => ({ id: i.id, category: i.category, name: i.name, priceRappen: i.priceRappen, vatDineInBps: i.vatDineInBps, vatTakeawayBps: i.vatTakeawayBps, dailySpecial: i.dailySpecial })),
+    items: items.map((i) => ({ id: i.id, category: i.category, name: i.name, priceRappen: i.priceRappen, vatDineInBps: i.vatDineInBps, vatTakeawayBps: i.vatTakeawayBps, dailySpecial: i.dailySpecial, groups: groups.get(i.id) ?? [] })),
     tables: tables.map((t) => ({ id: t.id, name: t.name })), guests, orders,
   };
 }
@@ -71,7 +72,7 @@ export async function syncOps(hotel: Hotel, key: string, code: string, pending: 
     try {
       const at = new Date(op.at);
       if (op.kind === "order") await openOrder(hotel.id, { id: op.id, tableId: op.tableId, deviceId: dev.id, label: op.label, deviceAt: at }, actor);
-      else if (op.kind === "lines") await addLines(hotel, op.orderId, op.lines.map((l) => ({ id: l.id, itemId: l.itemId, quantity: l.quantity, mode: l.mode, deviceAt: at, snapshot: { description: l.description, unitPriceRappen: l.unitPriceRappen, vatBps: l.vatBps } })), actor);
+      else if (op.kind === "lines") await addLines(hotel, op.orderId, op.lines.map((l) => ({ id: l.id, itemId: l.itemId, quantity: l.quantity, mode: l.mode, deviceAt: at, snapshot: { description: l.description, unitPriceRappen: l.unitPriceRappen, vatBps: l.vatBps }, optionsSnapshot: l.options, note: l.note })), actor);
       else await pay(hotel, { orderId: op.orderId, deviceId: dev.id, selection: op.selection, payments: op.payments, tipRappen: op.tipRappen, bookingReference: op.bookingReference, receiptId: op.receiptId, bonNo: op.bonNo, deviceAt: at, lenientRoom: true }, actor);
       results.push({ id: op.id, ok: true });
     } catch (e) {

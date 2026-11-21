@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
 import {
-  bookings, folioItems, posDayCloses, posDevices, posItems, posOrderLines, posOrders, posPayments, posReceipts, posTables,
+  bookings, folioItems, posDayCloses, posDevices, posItemGroups, posItems, posOptionGroups, posOptions, posOrderLines, posOrders, posPayments, posReceipts, posTables,
   type Hotel, type PosDevice, type PosItem, type PosOrder, type PosOrderLine, type PosReceipt, type PosTable, type PosReceiptItem,
 } from "../db/schema";
 import { todayIn } from "../domain/dates";
@@ -10,6 +10,7 @@ import {
   type DayReport, type Line, type Method, type Selection,
 } from "../domain/pos";
 import { GENESIS_HASH, hashReceipt, verifyChain } from "../domain/pos-chain";
+import { checkChoice, composeLine, NOTE_MAX, type ChosenOption, type GroupDef } from "../domain/pos-options";
 import { audit } from "./audit";
 import { invoicingSettings } from "./invoicing";
 
@@ -90,6 +91,85 @@ export async function importTables(hotelId: string, names: string[], actor: stri
   });
 }
 
+// ---------------------------------------------------------------- Optionen, Sonderwünsche, Menüs (SPEC 19.49)
+
+/** Gruppen mit Optionen, die für einen Artikel gelten (nur aktive), in der Reihenfolge der Zuordnung */
+export async function groupsOfItem(ex: Ex, hotelId: string, itemId: string): Promise<GroupDef[]> {
+  const links = await ex.select({ g: posOptionGroups }).from(posItemGroups).innerJoin(posOptionGroups, eq(posOptionGroups.id, posItemGroups.groupId))
+    .where(and(eq(posItemGroups.hotelId, hotelId), eq(posItemGroups.itemId, itemId), eq(posOptionGroups.active, true))).orderBy(asc(posItemGroups.sortOrder), asc(posOptionGroups.sortOrder), asc(posOptionGroups.name));
+  if (!links.length) return [];
+  const opts = await ex.select().from(posOptions).where(and(eq(posOptions.hotelId, hotelId), inArray(posOptions.groupId, links.map((l) => l.g.id)), eq(posOptions.active, true))).orderBy(asc(posOptions.sortOrder), asc(posOptions.name));
+  return links.map(({ g }) => ({ id: g.id, name: g.name, required: g.required, maxChoices: g.maxChoices, options: opts.filter((o) => o.groupId === g.id).map((o) => ({ id: o.id, name: o.name, priceRappen: o.priceRappen })) }));
+}
+
+/** Alle Gruppen eines Betriebs mit Optionen und zugeordneten Artikeln (Einrichtung) */
+export async function listOptionGroups(hotelId: string) {
+  const groups = await db().select().from(posOptionGroups).where(eq(posOptionGroups.hotelId, hotelId)).orderBy(asc(posOptionGroups.sortOrder), asc(posOptionGroups.name));
+  const opts = await db().select().from(posOptions).where(eq(posOptions.hotelId, hotelId)).orderBy(asc(posOptions.sortOrder), asc(posOptions.name));
+  const links = await db().select().from(posItemGroups).where(eq(posItemGroups.hotelId, hotelId));
+  return groups.map((g) => ({ ...g, options: opts.filter((o) => o.groupId === g.id), itemIds: links.filter((l) => l.groupId === g.id).map((l) => l.itemId) }));
+}
+
+/** Katalog für die Offline-Kasse: je Artikel seine Gruppen (nur aktive Artikel) */
+export async function catalogGroups(hotelId: string, itemIds: string[]): Promise<Map<string, GroupDef[]>> {
+  const out = new Map<string, GroupDef[]>();
+  if (!itemIds.length) return out;
+  const all = await listOptionGroups(hotelId);
+  for (const id of itemIds) {
+    const gs = all.filter((g) => g.active && g.itemIds.includes(id)).map((g) => ({ id: g.id, name: g.name, required: g.required, maxChoices: g.maxChoices, options: g.options.filter((o) => o.active).map((o) => ({ id: o.id, name: o.name, priceRappen: o.priceRappen })) }));
+    if (gs.length) out.set(id, gs);
+  }
+  return out;
+}
+
+export async function saveOptionGroup(hotelId: string, id: string | null, i: { name: string; required: boolean; maxChoices: number; active?: boolean }, actor: string) {
+  const name = clean(i.name, 60);
+  if (!name) throw new PosError("Der Name fehlt.");
+  if (!Number.isInteger(i.maxChoices) || i.maxChoices < 1 || i.maxChoices > 20) throw new PosError("Höchstens zu wählen: 1 bis 20.");
+  const v = { name, required: i.required, maxChoices: i.maxChoices, active: i.active ?? true };
+  try {
+    const [g] = id
+      ? await db().update(posOptionGroups).set(v).where(and(eq(posOptionGroups.id, id), eq(posOptionGroups.hotelId, hotelId))).returning()
+      : await db().insert(posOptionGroups).values({ ...v, hotelId, sortOrder: (await db().select({ id: posOptionGroups.id }).from(posOptionGroups).where(eq(posOptionGroups.hotelId, hotelId))).length }).returning();
+    if (!g) throw new PosError("Gruppe nicht gefunden.");
+    await audit(db(), { hotelId, actor, action: id ? "pos.group_update" : "pos.group_create", entity: "pos_option_group", entityId: g.id });
+    return g;
+  } catch (e) {
+    if ((e as { code?: string }).code === "23505" || /unique/i.test((e as Error).message)) throw new PosError("Diese Gruppe gibt es schon.");
+    throw e;
+  }
+}
+
+export async function saveOption(hotelId: string, groupId: string, i: { name: string; priceRappen: number }, actor: string) {
+  const name = clean(i.name, 60);
+  if (!name) throw new PosError("Der Name fehlt.");
+  if (!Number.isInteger(i.priceRappen) || i.priceRappen < 0 || i.priceRappen > 1_000_000) throw new PosError("Aufpreis ungültig.");
+  const [g] = await db().select({ id: posOptionGroups.id }).from(posOptionGroups).where(and(eq(posOptionGroups.id, groupId), eq(posOptionGroups.hotelId, hotelId)));
+  if (!g) throw new PosError("Gruppe nicht gefunden.");
+  const [o] = await db().insert(posOptions).values({ hotelId, groupId, name, priceRappen: i.priceRappen, sortOrder: (await db().select({ id: posOptions.id }).from(posOptions).where(eq(posOptions.groupId, groupId))).length }).onConflictDoNothing().returning();
+  if (!o) throw new PosError("Diese Option gibt es in der Gruppe schon.");
+  await audit(db(), { hotelId, actor, action: "pos.option_create", entity: "pos_option", entityId: o.id });
+  return o;
+}
+
+export async function setOptionActive(hotelId: string, optionId: string, active: boolean, actor: string) {
+  const [o] = await db().update(posOptions).set({ active }).where(and(eq(posOptions.id, optionId), eq(posOptions.hotelId, hotelId))).returning();
+  if (!o) throw new PosError("Option nicht gefunden.");
+  await audit(db(), { hotelId, actor, action: "pos.option_update", entity: "pos_option", entityId: o.id, details: { active } });
+}
+
+/** Artikel einer Gruppe zuordnen (ersetzt die bisherige Zuordnung der Gruppe) */
+export async function setGroupItems(hotelId: string, groupId: string, itemIds: string[], actor: string) {
+  await db().transaction(async (tx) => {
+    const [g] = await tx.select({ id: posOptionGroups.id }).from(posOptionGroups).where(and(eq(posOptionGroups.id, groupId), eq(posOptionGroups.hotelId, hotelId)));
+    if (!g) throw new PosError("Gruppe nicht gefunden.");
+    const valid = itemIds.length ? (await tx.select({ id: posItems.id }).from(posItems).where(and(eq(posItems.hotelId, hotelId), inArray(posItems.id, itemIds)))).map((x) => x.id) : [];
+    await tx.delete(posItemGroups).where(and(eq(posItemGroups.hotelId, hotelId), eq(posItemGroups.groupId, groupId)));
+    if (valid.length) await tx.insert(posItemGroups).values(valid.map((itemId, n) => ({ hotelId, itemId, groupId, sortOrder: n })));
+    await audit(tx, { hotelId, actor, action: "pos.group_items", entity: "pos_option_group", entityId: groupId, details: { items: valid.length } });
+  });
+}
+
 export const listDevices = (hotelId: string) => db().select().from(posDevices).where(eq(posDevices.hotelId, hotelId)).orderBy(asc(posDevices.code));
 
 /** Gerät (eigener Bon-Nummernkreis). Code 1 bis 6 Zeichen A–Z, 0–9. */
@@ -129,7 +209,13 @@ export async function openOrder(hotelId: string, i: { id?: string; tableId?: str
 }
 
 /** `snapshot`: Preis, Satz und Text, wie sie dem Gast am Gerät galten (Offline-Kasse); sonst gilt der Artikel jetzt. */
-export type LineInput = { id?: string; itemId: string; quantity: number; mode?: "dine_in" | "takeaway"; deviceAt?: Date | null; snapshot?: { description: string; unitPriceRappen: number; vatBps: number } };
+export type LineInput = {
+  id?: string; itemId: string; quantity: number; mode?: "dine_in" | "takeaway"; deviceAt?: Date | null; snapshot?: { description: string; unitPriceRappen: number; vatBps: number };
+  /** gewählte Optionen (Ids) und Sonderwunsch (SPEC 19.49); Text und Preis rechnet der Server, ausser bei einem Offline-Snapshot */
+  optionIds?: string[]; note?: string;
+  /** Offline-Kasse: schon gewählte Optionen (Stand des Geräts); der Server prüft sie dann nicht erneut */
+  optionsSnapshot?: ChosenOption[];
+};
 
 /** Zeilen anhängen (Bestellen und Nachbestellen). Preis und MWST-Satz werden aus dem Artikel übernommen und festgehalten; nicht MWST-pflichtige Betriebe haben Satz 0. */
 export async function addLines(hotel: Hotel, orderId: string, inputs: LineInput[], actor: string): Promise<PosOrderLine[]> {
@@ -146,14 +232,21 @@ export async function addLines(hotel: Hotel, orderId: string, inputs: LineInput[
       const mode = i.mode ?? "dine_in";
       let bps = vatLiable ? (mode === "takeaway" ? it.vatTakeawayBps : it.vatDineInBps) : 0;
       let price = it.priceRappen, text = it.name;
+      const groups = await groupsOfItem(tx, hotel.id, it.id);
+      const optionIds = i.optionIds ?? [];
+      if (i.note && i.note.trim().length > NOTE_MAX) throw new PosError(`Sonderwunsch: höchstens ${NOTE_MAX} Zeichen.`);
+      let comp = composeLine(it, groups, optionIds, i.note ?? "");
+      if (i.snapshot) comp = { ...comp, options: i.optionsSnapshot ?? [], note: (i.note ?? "").trim().slice(0, NOTE_MAX) }; // verkauft ist verkauft: das Gerät hat die Auswahl schon geprüft
+      else { const bad = checkChoice(groups, optionIds); if (bad) throw new PosError(bad); }
+      price = comp.unitPriceRappen; text = comp.description;
       if (i.snapshot) {
         const sn = i.snapshot;
         if (!Number.isInteger(sn.unitPriceRappen) || sn.unitPriceRappen < 0 || sn.unitPriceRappen > 10_000_000) throw new PosError("Preis ungültig.");
         if (!Number.isInteger(sn.vatBps) || sn.vatBps < 0 || sn.vatBps > 2500) throw new PosError("MWST-Satz ungültig.");
-        price = sn.unitPriceRappen; text = clean(sn.description, 120) || it.name; bps = vatLiable ? sn.vatBps : 0;
+        price = sn.unitPriceRappen; text = clean(sn.description, 120) || comp.description; bps = vatLiable ? sn.vatBps : 0;
       }
       const id = i.id ?? crypto.randomUUID();
-      const ins = await tx.insert(posOrderLines).values({ id, hotelId: hotel.id, orderId, itemId: it.id, description: text, quantity: i.quantity, unitPriceRappen: price, vatBps: bps, mode, createdBy: actor, deviceAt: i.deviceAt ?? null }).onConflictDoNothing().returning();
+      const ins = await tx.insert(posOrderLines).values({ id, hotelId: hotel.id, orderId, itemId: it.id, description: text, quantity: i.quantity, unitPriceRappen: price, vatBps: bps, mode, createdBy: actor, deviceAt: i.deviceAt ?? null, options: comp.options.length ? comp.options : null, note: comp.note }).onConflictDoNothing().returning();
       if (ins.length) out.push(ins[0]);
       else {
         const [ex] = await tx.select().from(posOrderLines).where(and(eq(posOrderLines.id, id), eq(posOrderLines.hotelId, hotel.id), eq(posOrderLines.orderId, orderId)));

@@ -1368,6 +1368,35 @@ export const posTables = pgTable("pos_tables", {
 });
 export type PosTable = typeof posTables.$inferSelect;
 
+/** Optionsgruppen, Optionen und Zuordnung zu Artikeln (SPEC 19.49) */
+export const posOptionGroups = pgTable("pos_option_groups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: text("name").notNull(),
+  required: boolean("required").notNull().default(false),
+  maxChoices: integer("max_choices").notNull().default(1),
+  sortOrder: integer("sort_order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type PosOptionGroup = typeof posOptionGroups.$inferSelect;
+export const posOptions = pgTable("pos_options", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  groupId: uuid("group_id").notNull(),
+  name: text("name").notNull(),
+  priceRappen: integer("price_rappen").notNull().default(0),
+  sortOrder: integer("sort_order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+});
+export type PosOption = typeof posOptions.$inferSelect;
+export const posItemGroups = pgTable("pos_item_groups", {
+  hotelId: uuid("hotel_id").notNull(),
+  itemId: uuid("item_id").notNull(),
+  groupId: uuid("group_id").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
 export const posDevices = pgTable("pos_devices", {
   id: uuid("id").primaryKey().defaultRandom(),
   hotelId: uuid("hotel_id").notNull(),
@@ -1408,6 +1437,9 @@ export const posOrderLines = pgTable("pos_order_lines", {
   createdBy: text("created_by").notNull(),
   createdAt: ts("created_at").notNull().defaultNow(),
   deviceAt: ts("device_at"),
+  /** gewählte Optionen (SPEC 19.49), nur beim Einfügen gesetzt */
+  options: jsonb("options").$type<{ group: string; name: string; priceRappen: number }[] | null>(),
+  note: text("note").notNull().default(""),
 });
 export type PosOrderLine = typeof posOrderLines.$inferSelect;
 

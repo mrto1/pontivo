@@ -2,7 +2,8 @@ import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
-import { PosError, importItems, importTables, listItems, listTables, saveItem, saveTable } from "@/src/services/pos";
+import { PosError, importItems, importTables, listItems, listOptionGroups, listTables, saveItem, saveOption, saveOptionGroup, saveTable, setGroupItems, setOptionActive } from "@/src/services/pos";
+import { FormSwitch } from "@/components/admin/FormSwitch";
 import { formatChf } from "@/src/domain/money";
 import { parsePosItems, parsePosTables } from "@/src/domain/pos-import";
 
@@ -37,6 +38,33 @@ async function table(f: FormData) {
   try { await saveTable(c.hotel.id, s(f, "name"), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht angelegt: ${e.message}`); }
   here(c.hotel.id, "Tisch angelegt.");
 }
+async function group(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  try { await saveOptionGroup(c.hotel.id, s(f, "id") || null, { name: s(f, "name"), required: f.get("required") === "on", maxChoices: Number(s(f, "maxChoices") || 1) }, c.actor); }
+  catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Gruppe nicht gespeichert: ${e.message}`); }
+  here(c.hotel.id, "Gruppe gespeichert.");
+}
+async function option(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  try { await saveOption(c.hotel.id, s(f, "groupId"), { name: s(f, "name"), priceRappen: s(f, "price") ? Math.round(Number(s(f, "price").replace(",", ".")) * 100) : 0 }, c.actor); }
+  catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Option nicht gespeichert: ${e.message}`); }
+  here(c.hotel.id, "Option gespeichert.");
+}
+async function optionToggle(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  try { await setOptionActive(c.hotel.id, s(f, "id"), s(f, "active") === "1", c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, e.message); }
+  here(c.hotel.id, "Gespeichert.");
+}
+async function groupItems(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  try { await setGroupItems(c.hotel.id, s(f, "groupId"), f.getAll("itemId").map(String), c.actor); }
+  catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, e.message); }
+  here(c.hotel.id, "Zuordnung gespeichert.");
+}
 async function csvImport(f: FormData) {
   "use server";
   const c = await guard(f);
@@ -59,7 +87,7 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
   const sp = await searchParams;
   const { hotel } = await requireHotel(hotelId, "manager");
   await requireModule(hotel.id, "pos");
-  const [items, tables] = await Promise.all([listItems(hotel.id), listTables(hotel.id)]);
+  const [items, tables, groups] = await Promise.all([listItems(hotel.id), listTables(hotel.id), listOptionGroups(hotel.id)]);
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   return (
     <div className="stack">
@@ -83,6 +111,34 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
           {items.map((i) => <tr key={i.id}><td>{i.category ? `${i.category}: ` : ""}{i.name}{i.dailySpecial ? " ★" : ""}{i.active ? "" : " (aus)"}</td><td>{formatChf(i.priceRappen)}</td><td>{(i.vatDineInBps / 100).toFixed(1)} %</td><td>{(i.vatTakeawayBps / 100).toFixed(1)} %</td>
             <td><form action={toggle}>{H}<input type="hidden" name="id" value={i.id} /><button className="btn secondary small">{i.active ? "Ausblenden" : "Einblenden"}</button></form></td></tr>)}
         </tbody></table> : <p className="muted">Noch kein Artikel.</p>}
+      </section>
+      <section className="card stack" id="optionen" data-testid="option-groups">
+        <h2>Optionen und Menüs</h2>
+        <p className="small muted">Garstufe, Beilage, «ohne Zwiebeln» oder ein Menü aus Vorspeise, Hauptgang und Dessert: Legen Sie eine Gruppe an (z. B. «Garstufe», Pflicht, eine Wahl), fügen Sie Optionen mit Aufpreis hinzu und ordnen Sie die Gruppe Artikeln zu. Ein Menü ist ein Artikel mit Pflichtgruppen.</p>
+        {groups.map((g) => (
+          <div key={g.id} className="card stack">
+            <h3>{g.name} <span className="small muted">{g.required ? "Pflicht" : "optional"} · höchstens {g.maxChoices}</span></h3>
+            <ul>{g.options.map((o) => (
+              <li key={o.id}>{o.name}{o.priceRappen ? ` (+${formatChf(o.priceRappen)})` : ""}{o.active ? "" : " (aus)"}
+                <form action={optionToggle} style={{ display: "inline" }}>{H}<input type="hidden" name="id" value={o.id} /><input type="hidden" name="active" value={o.active ? "0" : "1"} /> <button className="btn secondary small">{o.active ? "Ausblenden" : "Einblenden"}</button></form></li>
+            ))}</ul>
+            <form action={option} className="inline-form">{H}<input type="hidden" name="groupId" value={g.id} />
+              <div><label htmlFor={`on-${g.id}`}>Neue Option</label><input id={`on-${g.id}`} name="name" required maxLength={60} /></div>
+              <div><label htmlFor={`op-${g.id}`}>Aufpreis CHF</label><input id={`op-${g.id}`} name="price" inputMode="decimal" placeholder="0" /></div>
+              <button className="btn secondary">Hinzufügen</button></form>
+            <form action={groupItems} className="stack">{H}<input type="hidden" name="groupId" value={g.id} />
+              <strong className="small">Gilt für</strong>
+              <div className="opt-grid">{items.map((i) => <label key={i.id} className="opt-row"><input type="checkbox" name="itemId" value={i.id} defaultChecked={g.itemIds.includes(i.id)} /> {i.name}</label>)}</div>
+              <div><button className="btn secondary small">Zuordnung speichern</button></div></form>
+          </div>
+        ))}
+        <form action={group} className="stack">{H}
+          <h3>Neue Gruppe</h3>
+          <div><label htmlFor="gname">Name</label><input id="gname" name="name" required maxLength={60} placeholder="Garstufe, Beilage, Menü-Vorspeise …" /></div>
+          <div><label htmlFor="gmax">Höchstens wählbar</label><input id="gmax" name="maxChoices" type="number" min={1} max={20} defaultValue={1} /></div>
+          <FormSwitch name="required" defaultOn={false} label="Auswahl ist Pflicht" />
+          <div><button className="btn">Gruppe anlegen</button></div>
+        </form>
       </section>
       <form action={table} className="card stack">{H}<h2>Tische ({tables.length})</h2><p className="small muted">{tables.map((t) => t.name).join(", ")}</p><div><label>Neuer Tisch</label><input name="name" required maxLength={30} /></div><div><button className="btn secondary">Anlegen</button></div></form>
       <form action={csvImport} className="card stack">{H}

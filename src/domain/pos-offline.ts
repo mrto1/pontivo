@@ -13,6 +13,7 @@ export const linesOp = z.object({
   lines: z.array(z.object({
     id: uuid, itemId: uuid, quantity: z.number().int().min(1).max(99), mode: z.enum(["dine_in", "takeaway"]),
     description: z.string().min(1).max(120), unitPriceRappen: z.number().int().min(0).max(10_000_000), vatBps: z.number().int().min(0).max(2500),
+    options: z.array(z.object({ group: z.string().max(60), name: z.string().max(60), priceRappen: z.number().int().min(0).max(1_000_000) })).max(30).optional(), note: z.string().max(120).optional(),
   })).min(1).max(50),
 });
 export const payOp = z.object({

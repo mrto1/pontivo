@@ -1082,3 +1082,15 @@ Normaler Weg ist **E-Mail und Passwort** (optional mit 2FA), gleichwertig **Pass
 - **Restaurant** (Einstellungen → Verkauf, `restaurant/artikel`, Modul `pos`): Artikel, Tische, Import. **Kassen-Geräte** (Einstellungen → Technik → Geräte & Kasse, `restaurant/geraete`): Gerätecodes und Freigabe, Bon-Nummernkreise.
 - **CSV-Import** (Manager): Artikel (`kategorie;name;preis;mwst_haus;mwst_takeaway;tagesangebot`, leere MWST = 8,1 % / 2,6 %) und Tische (`name`), `;` oder `,`, höchstens 500 Zeilen und 1 MB. Alles oder nichts: bei einem Fehler wird nichts gespeichert und die Zeile genannt; Gleiches (Kategorie und Name bzw. Tischname) wird übersprungen. Vorlagen unter `restaurant/vorlage?kind=items|tables`; Protokoll `pos.items_import`, `pos.tables_import` (`src/domain/pos-import.ts`, `src/services/pos.ts`).
 - Abnahme: `tests/unit/pos-import.test.ts`, `tests/unit/admin-nav.test.ts`, `tests/e2e/reports.spec.ts`.
+
+### 19.49 Restaurant ausbauen (Etappen)
+Auftrag des Betreibers: Optionen und Sonderwünsche je Artikel, Menüs/Kombis, Küchenanbindung, grafischer Tischplan mit Reservierungen (intern und online für Gäste), KI-Speisekarte. Etappen: **A** Optionen/Menüs (hier), **B** Küchenbildschirm im Browser, **C** Tischplan und Reservierungen, **D** KI-Speisekarte (Restaurant-Seite, nicht Datenübernahme).
+
+**Etappe A: Optionen, Sonderwünsche, Menüs und Kombis**
+- **Optionsgruppen** (`pos_option_groups`: Name, Pflicht, Mehrfachwahl mit `max_choices`) mit **Optionen** (`pos_options`: Name, Aufpreis in Rappen, aktiv). Eine Gruppe kann mehreren Artikeln zugeordnet werden (`pos_item_groups`), z. B. «Garstufe» für alle Steaks.
+- **Menüs und Kombis** sind kein eigener Typ: ein Artikel mit Pflicht-Gruppen ohne Aufpreis (z. B. «Vorspeise: Suppe / Salat», «Hauptgang: …»). Der Artikelpreis ist der Menüpreis, Aufpreise einzelner Optionen kommen dazu.
+- **Sonderwunsch:** freier Text je Zeile («ohne Zwiebeln», höchstens 120 Zeichen).
+- **Bestellzeile:** `description` enthält Artikel, gewählte Optionen und Sonderwunsch («Entrecôte · medium · ohne Zwiebeln»), `unit_price_rappen` = Artikelpreis + Aufpreise; so erscheinen sie unverändert auf Bon und Zimmerrechnung. Zusätzlich `options` (jsonb, `[{group,name,priceRappen}]`) und `note` für Küche und Auswertung (Spalten nur beim Einfügen gesetzt, Bestellzeilen bleiben unveränderbar).
+- **Prüfung auf dem Server** (`src/domain/pos-options.ts`): Optionen müssen zu den Gruppen des Artikels gehören, Pflicht-Gruppen brauchen mindestens eine Wahl, Einzelwahl höchstens eine, Mehrfachwahl höchstens `max_choices`. Ohne Angaben bei Pflicht-Gruppen: «Bitte wählen: …». Offline (Snapshot) gilt der Preis, wie ihn das Gerät zeigte; die Optionen werden geprüft, der Betrag nicht neu gerechnet.
+- **Oberfläche:** Restaurant (Einstellungen → Verkauf): Karte «Optionen und Menüs» (Gruppen, Optionen, Zuordnung zu Artikeln). Bestellung: Artikel mit Gruppen führen in einen Auswahlschritt (`?artikel=<id>`), Sonderwunsch auch bei Artikeln ohne Gruppen. Offline-Kasse: gleiche Auswahl auf dem Gerät.
+- Nicht in Etappe A: Optionen in CSV-Import, Mengenregeln je Option, Zutaten/Allergene.
