@@ -44,6 +44,8 @@ export const GUIDE: Record<GuideRole, GuideTask[]> = {
     { key: "a_owners", area: "owners", title: "Eigentümerabrechnung (falls Sie Wohnungen verwalten)", hint: "Monatsabrechnung je Eigentümer mit Ihrer Kommission." },
   ],
   service: [
+    { key: "s_today", area: "dininghome", title: "Tagesübersicht lesen", hint: "Reservierungen von heute, wer noch kommt, wer am Tisch sitzt." },
+    { key: "s_res", area: "reservations", title: "Eine Reservierung erfassen", hint: "Zeit, Personen, Name; Tisch wählen oder automatisch zuteilen." },
     { key: "s_kasse", area: "kasse", title: "Kasse öffnen und Gerät wählen", hint: "Einmal mit Internet, danach geht es auch ohne." },
     { key: "s_order", area: "kasse", title: "Eine Bestellung am Tisch aufnehmen", hint: "Tisch eröffnen, Artikel antippen, im Haus oder Take-away." },
     { key: "s_split", area: "kasse", title: "Getrennt bezahlen üben", hint: "Bei «Jetzt» die Menge je Posten wählen, dann kassieren." },
@@ -69,7 +71,8 @@ export const HELP_START: Record<string, string> = {
   invoicing: "Öffnen Sie eine Buchung und wählen Sie «Rechnung erstellen». Zahlungen vor Ort buchen Sie in derselben Buchung.",
   debtors: "Legen Sie die Firma einmal an. Bei einer Buchung wählen Sie dann «auf Rechnung», die Zahlungsfrist kommt aus der Firma.",
   resources: "Legen Sie das Angebot mit Zeitfenstern an (z. B. Sauna, 60 Minuten). Buchen Sie es bei einer Buchung, der Preis kommt aufs Zimmer.",
-  pos: "Legen Sie unter Einstellungen → Verkauf → Restaurant Artikel, Tische und mindestens ein Gerät an. Dann öffnen Sie «Kasse» am Tablet.",
+  restaurant: "Legen Sie unter Einstellungen → Verkauf die Speisekarte und unter «Tischplan & Reservierung online» Ihre Tische an. Danach erscheint oben der Bereich Gastronomie.",
+  pos: "Braucht die Funktion «Restaurant». Legen Sie unter Einstellungen → Technik → Geräte & Kasse mindestens ein Kassen-Gerät an. Dann öffnen Sie «Kasse» am Tablet.",
   posbridge: "Erstellen Sie einen Schlüssel und geben Sie ihn Ihrem Kassenanbieter. Dessen Kasse bucht Posten aufs Zimmer.",
   inbox: "Verbinden Sie Booking.com, Airbnb oder Expedia unter Einstellungen → Kanäle. Nachrichten erscheinen danach hier.",
   owners: "Ordnen Sie jede Wohnung einem Eigentümer zu und setzen Sie Ihre Kommission. Die Monatsabrechnung rechnet Pontivo.",

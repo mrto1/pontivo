@@ -1,4 +1,7 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { reservationsOfDay } from "@/src/services/reservations";
+import { todayIn } from "@/src/domain/dates";
 import { PeriodNav } from "@/components/admin/PeriodNav";
 import { requireHotel } from "@/src/auth/guard";
 import { hasArea, isLimitedRole, landingFor, seesDay } from "@/src/domain/roles";
@@ -9,6 +12,7 @@ import { setupOpen } from "@/src/domain/setup";
 import { onboardingSteps, nextOpenStep } from "@/src/services/onboarding";
 import { moduleRows } from "@/src/services/modules";
 import { isOn } from "@/src/domain/modules";
+import { DINING_LABEL } from "@/src/admin/nav";
 import { todayView } from "@/src/services/today";
 import { formatDay } from "@/src/i18n/dict";
 import type { DayRow } from "@/src/services/frontdesk";
@@ -60,8 +64,14 @@ function List({ title, rows, hotelId, empty, reg, day }: { title: string; rows: 
 export default async function Overview({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "home");
+  const { hotel, role, user } = await requireHotel(hotelId, "staff", "home");
   if (isLimitedRole(role) && !seesDay(role)) redirect(`/mypontivo/${hotel.id}/${landingFor(role)}`);
+  // Zwei Bereiche (SPEC 20.1): reines Restaurant immer, sonst im zuletzt gewählten Bereich Gastronomie zur Tagesübersicht
+  const rows0 = await moduleRows(hotel.id);
+  if (isOn(rows0, "restaurant") && hasArea(role, "dininghome")) {
+    const area = (await cookies()).get(`pv_area_${user.id.slice(0, 8)}`)?.value;
+    if (hotel.propertyType === "restaurant" || (area === "dining" && !sp.day)) redirect(`/mypontivo/${hotel.id}/restaurant/heute`);
+  }
   const manages = atLeast(role, "manager");
   // Einrichtung läuft: «Tag» zeigt die Einrichtungskarte (das Menü bleibt voll, nichts ist gesperrt)
   if (manages && setupOpen(hotel)) {
@@ -103,6 +113,11 @@ export default async function Overview({ params, searchParams }: { params: Promi
   const base = `/mypontivo/${hotel.id}`;
   // Meldeschein-Stand je Anreise, nur wenn die Funktion «Online-Check-in & Meldeschein» an ist
   const reg = isOn(rows, "guests") ? new Map((await checkinStatus(hotel.id, v.day)).map((a) => [a.bookingId, { registered: a.registered, verified: a.verified }])) : undefined;
+  // Hinweis auf den Bereich Gastronomie (SPEC 20.1)
+  const dining = isOn(rows, "restaurant") && hasArea(role, "dininghome") ? await (async () => {
+    const live = (await reservationsOfDay(hotel.id, todayIn(hotel.timezone))).filter((r) => r.status === "confirmed" || r.status === "seated");
+    return { label: DINING_LABEL[hotel.diningLabel]?.de ?? "Restaurant", n: live.length, guests: live.reduce((a, r) => a + r.party, 0) };
+  })() : null;
   const noData = isToday && !v.notices.length && !v.arrivals.length && !v.departures.length && !v.inHouse.length && !v.balances?.length && !v.overdue?.length;
   return (
     <div className="stack">
@@ -111,6 +126,7 @@ export default async function Overview({ params, searchParams }: { params: Promi
         {showPlan ? <a className="btn secondary small" href={`${base}/plan`}>Zimmerplan</a> : null}
       </PeriodNav>
       <p className="muted" style={{ margin: 0 }}>{isToday ? "Heute, " : ""}{formatDay(v.day, "de")}</p>
+      {dining ? <a className="notice" href={`${base}/restaurant/heute`} style={{ display: "block", textDecoration: "none", color: "inherit" }} data-testid="dining-hint">{dining.label} heute: {dining.n} Reservierungen, {dining.guests} Gäste <strong>→</strong></a> : null}
 
       {v.notices.length ? (
         <section className="stack" aria-label="Hinweise">

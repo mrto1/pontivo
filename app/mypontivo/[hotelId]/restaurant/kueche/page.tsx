@@ -11,7 +11,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 async function done(f: FormData) {
   "use server";
   const c = await requireHotel(s(f, "hotelId"), "staff", "kitchen");
-  await requireModule(c.hotel.id, "pos");
+  await requireModule(c.hotel.id, "restaurant");
   const st = s(f, "station") === "bar" ? "bar" : "kitchen";
   try { await markDone(c.hotel.id, f.getAll("lineId").map(String), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; }
   redirect(`/mypontivo/${c.hotel.id}/restaurant/kueche?station=${st}`);
@@ -22,7 +22,7 @@ export default async function KitchenPage({ params, searchParams }: { params: Pr
   const { hotelId } = await params;
   const sp = await searchParams;
   const { hotel } = await requireHotel(hotelId, "staff", "kitchen");
-  await requireModule(hotel.id, "pos");
+  await requireModule(hotel.id, "restaurant");
   const station: Station = sp.station === "bar" ? "bar" : "kitchen";
   const tickets = await openTickets(hotel.id, station);
   const now = Date.now();

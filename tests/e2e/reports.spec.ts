@@ -37,26 +37,26 @@ test("Berichte: Karten je Funktion, Monat blättern, Profilbild direkt", async (
 /** Restaurant (SPEC 19.48): Kassen-Artikel liegt im Zahnrad (Menü bleibt Einstellungen); CSV-Import von Artikeln und Tischen */
 test("Restaurant: Zahnrad-Menü bleibt, CSV-Import Artikel und Tische", async ({ page, context, baseURL }) => {
   const h = await makeHotel();
-  await db().insert(hotelModules).values([{ hotelId: h.hotel.id, module: "invoicing", enabled: true }, { hotelId: h.hotel.id, module: "pos", enabled: true }]).onConflictDoNothing();
+  await db().insert(hotelModules).values([{ hotelId: h.hotel.id, module: "invoicing", enabled: true }, { hotelId: h.hotel.id, module: "restaurant", enabled: true }, { hotelId: h.hotel.id, module: "pos", enabled: true }]).onConflictDoNothing();
   const email = `pos-${Math.random().toString(36).slice(2, 8)}@example.ch`;
   await addMember(h.hotel.id, email, "owner", "e2e");
   const [u] = await db().select().from(users).where(eq(users.email, email));
   await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
 
   await page.goto(`/mypontivo/${h.hotel.id}/restaurant/artikel`);
-  await expect(page.getByRole("heading", { name: "Restaurant: Artikel und Tische" })).toBeVisible();
-  await expect(page.locator(".settings-side")).toBeVisible(); // Zahnrad-Rahmen, nicht das Menü von «Heute»
+  await expect(page.getByRole("heading", { name: "Speisekarte", exact: true })).toBeVisible();
+  await expect(page.locator(".settings-side")).toBeVisible(); // Zahnrad-Rahmen, nicht das Menü «Bestellungen»
   await expect(page.locator(".admin-nav a.active")).toHaveCount(0);
 
-  await page.locator("#kind").selectOption("items");
   await page.locator("#file").setInputFiles({ name: "artikel.csv", mimeType: "text/csv", buffer: Buffer.from("name;preis;kategorie\nKaffee;4.80;Getränke\nRösti;21.50;Essen\n") });
   await page.getByRole("button", { name: "Importieren" }).click();
   await expect(page.getByText("2 Artikel importiert")).toBeVisible();
   await page.locator("#file").setInputFiles({ name: "artikel.csv", mimeType: "text/csv", buffer: Buffer.from("name;preis\nTee;abc\n") });
   await page.getByRole("button", { name: "Importieren" }).click();
   await expect(page.getByText("Nicht importiert")).toBeVisible();
-  await page.locator("#kind").selectOption("tables");
-  await page.locator("#file").setInputFiles({ name: "tische.csv", mimeType: "text/csv", buffer: Buffer.from("name\n1\n2\n") });
+  // Tische importiert die Seite «Tischplan & Reservierung online» (SPEC 20.1)
+  await page.goto(`/mypontivo/${h.hotel.id}/restaurant/einstellungen`);
+  await page.locator("#tfile").setInputFiles({ name: "tische.csv", mimeType: "text/csv", buffer: Buffer.from("name\n1\n2\n") });
   await page.getByRole("button", { name: "Importieren" }).click();
   await expect(page.getByText("2 Tische importiert")).toBeVisible();
 });

@@ -7,7 +7,32 @@ export type ResSettings = {
   onlineEnabled: boolean; windows: Window[]; durationMin: number; maxParty: number; capacity: number; leadHours: number; horizonDays: number;
   /** Anzahlung je Person in Rappen (0 = keine), gilt ab `depositFromParty` Personen; kostenlose Stornierung bis `cancelHours` vor Beginn */
   depositPerPersonRappen: number; depositFromParty: number; cancelHours: number; reminderHours: number; autoAssign: boolean;
+  /** Öffnungszeiten je Wochentag (0 = Sonntag), null/fehlend = keine Einschränkung (SPEC 20.1) */
+  openingHours?: OpeningHours | null;
 };
+export type OpeningHours = Record<string, Window[]>;
+
+/** Wochentag eines Tages (0 = Sonntag) */
+const weekdayOf = (day: string) => new Date(`${day}T00:00:00Z`).getUTCDay();
+
+/** Ist der Betrieb zu dieser Zeit offen? Beginn im Zeitraum [von, bis). Ohne Öffnungszeiten immer. */
+export function openAt(h: OpeningHours | null | undefined, day: string, time: string): boolean {
+  if (!h) return true;
+  return (h[String(weekdayOf(day))] ?? []).some((w) => toMin(time) >= toMin(w.from) && toMin(time) < toMin(w.to));
+}
+
+/** Öffnungszeiten prüfen: je Tag höchstens 3 Zeiträume, gültige Zeiten, von vor bis, ohne Überschneidung. Fehlertext oder null. */
+export function checkOpeningHours(h: OpeningHours): string | null {
+  const days = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+  for (const [k, ws] of Object.entries(h)) {
+    if (!/^[0-6]$/.test(k)) return "Wochentag ungültig.";
+    if (!ws.length) continue;
+    if (ws.length > 3) return `${days[Number(k)]}: höchstens 3 Zeiträume.`;
+    const bad = checkWindows(ws);
+    if (bad) return `${days[Number(k)]}: ${bad}`;
+  }
+  return null;
+}
 export type ResLite = { id?: string; time: string; party: number; tableId: string | null; status: string; createdAt?: Date };
 /** Nicht bezahlte Online-Reservierung hält Plätze nur so lange (Stripe-Zahlungsseite läuft nach 30 Minuten ab) */
 export const PENDING_MINUTES = 35;
@@ -62,7 +87,7 @@ export function onlineSlots(s: ResSettings, day: string, party: number, existing
   if (!s.onlineEnabled || party < 1 || party > s.maxParty || daysAhead < 0 || daysAhead > s.horizonDays) return [];
   return slotTimes(s.windows).map((time) => {
     const early = daysAhead === 0 && toMin(time) < now.minutes + s.leadHours * 60;
-    return { time, ok: !early && coversAt(existing, time, s.durationMin) + party <= s.capacity };
+    return { time, ok: !early && openAt(s.openingHours, day, time) && coversAt(existing, time, s.durationMin) + party <= s.capacity };
   });
 }
 
@@ -80,3 +105,17 @@ export function suggestTable(tables: { id: string; seats: number }[], existing: 
   const fit = tables.filter((t) => t.seats >= party && tableFree(existing, t.id, time, dur, ignoreId)).sort((a, b) => a.seats - b.seats);
   return fit[0]?.id ?? null;
 }
+
+/** Zeiträume aus Text «11:30-14:00, 17:30-22:00» (leer = Ruhetag); null bei unlesbarer Eingabe */
+export function parseHoursText(t: string): Window[] | null {
+  const parts = t.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
+  const out: Window[] = [];
+  for (const p of parts) {
+    const m = /^(\d{1,2})[:.](\d{2})\s*[-–]\s*(\d{1,2})[:.](\d{2})$/.exec(p);
+    if (!m) return null;
+    out.push({ from: `${m[1].padStart(2, "0")}:${m[2]}`, to: `${m[3].padStart(2, "0")}:${m[4]}` });
+  }
+  return out;
+}
+export const hoursText = (ws: Window[] | undefined) => (ws ?? []).map((w) => `${w.from}–${w.to}`).join(", ");
+export const WEEKDAYS_DE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];

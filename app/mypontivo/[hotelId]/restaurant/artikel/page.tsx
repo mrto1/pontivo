@@ -2,15 +2,14 @@ import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
-import { PosError, importItems, importTables, listItems, listOptionGroups, listTables, saveItem, saveOption, saveOptionGroup, saveTable, saveTableDetails, saveTablePlan, setGroupItems, setOptionActive } from "@/src/services/pos";
+import { PosError, importItems, listItems, listOptionGroups, saveItem, saveOption, saveOptionGroup, setGroupItems, setOptionActive } from "@/src/services/pos";
 import { FormSwitch } from "@/components/admin/FormSwitch";
-import { FloorPlan } from "@/components/admin/FloorPlan";
 import { env } from "@/src/env";
 import { LIMITS, setupImportGate } from "@/src/domain/setup-import";
 import { priceToRappen, type MenuDraft } from "@/src/domain/menu-import";
 import { SetupImportError, adoptMenu, discardImport, getImport, importMenuFromPdf, importMenuFromUrl, importsThisMonth, setupImportEnabled } from "@/src/services/setup-import";
 import { formatChf } from "@/src/domain/money";
-import { parsePosItems, parsePosTables } from "@/src/domain/pos-import";
+import { parsePosItems } from "@/src/domain/pos-import";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -19,7 +18,7 @@ const bps = (v: string) => Math.round(Number(v.replace(",", ".")) * 100);
 
 async function guard(f: FormData) {
   const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "pos");
+  await requireModule(c.hotel.id, "restaurant");
   return c;
 }
 async function item(f: FormData) {
@@ -45,12 +44,6 @@ async function toggle(f: FormData) {
   const it = (await listItems(c.hotel.id)).find((i) => i.id === s(f, "id"));
   if (it) await saveItem(c.hotel.id, it.id, { ...it, category: it.category ?? "", active: !it.active }, c.actor);
   here(c.hotel.id, it?.active ? "Ausgeblendet." : "Eingeblendet.");
-}
-async function table(f: FormData) {
-  "use server";
-  const c = await guard(f);
-  try { await saveTable(c.hotel.id, s(f, "name"), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht angelegt: ${e.message}`); }
-  here(c.hotel.id, "Tisch angelegt.");
 }
 async function group(f: FormData) {
   "use server";
@@ -78,23 +71,6 @@ async function groupItems(f: FormData) {
   try { await setGroupItems(c.hotel.id, s(f, "groupId"), f.getAll("itemId").map(String), c.actor); }
   catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, e.message); }
   here(c.hotel.id, "Zuordnung gespeichert.");
-}
-async function tableDetails(f: FormData) {
-  "use server";
-  const c = await guard(f);
-  try { await saveTableDetails(c.hotel.id, s(f, "id"), { seats: Number(s(f, "seats")), shape: s(f, "shape") === "round" ? "round" : "square" }, c.actor); }
-  catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
-  here(c.hotel.id, "Tisch gespeichert.");
-}
-async function planSave(f: FormData) {
-  "use server";
-  const c = await guard(f);
-  try {
-    const raw = JSON.parse(s(f, "positions")) as { id: string; x: number | null; y: number | null }[];
-    if (!Array.isArray(raw)) throw new PosError("Plan ungültig.");
-    await saveTablePlan(c.hotel.id, raw.map((p) => ({ id: String(p.id), x: p.x === null ? null : Number(p.x), y: p.y === null ? null : Number(p.y) })), c.actor);
-  } catch (e) { if (!(e instanceof PosError) && !(e instanceof SyntaxError)) throw e; here(c.hotel.id, "Plan nicht gespeichert."); }
-  here(c.hotel.id, "Tischplan gespeichert.");
 }
 const kiBack = (h: string, q: string): never => redirect(`/mypontivo/${h}/restaurant/artikel?${q}#ki`);
 async function kiRun(f: FormData, fn: (c: Awaited<ReturnType<typeof guard>>) => Promise<string>) {
@@ -138,22 +114,21 @@ async function csvImport(f: FormData) {
   if (!(file instanceof File) || !file.size) return here(c.hotel.id, "Nicht importiert: Bitte eine CSV-Datei wählen.");
   if (file.size > 1_000_000) return here(c.hotel.id, "Nicht importiert: Die Datei ist zu gross (höchstens 1 MB).");
   const text = await file.text();
-  const tables = s(f, "kind") === "tables";
-  const r = tables ? parsePosTables(text) : parsePosItems(text);
+  const r = parsePosItems(text);
   if (r.problems.length) {
     const first = r.problems.slice(0, 3).map((p) => `Zeile ${p.row}: ${p.message}`).join(" ");
     return here(c.hotel.id, `Nicht importiert (${r.problems.length} Fehler, es wurde nichts gespeichert). ${first}${r.problems.length > 3 ? " …" : ""}`);
   }
-  const res = tables ? await importTables(c.hotel.id, (r as ReturnType<typeof parsePosTables>).names, c.actor) : await importItems(c.hotel.id, (r as ReturnType<typeof parsePosItems>).rows, c.actor);
-  here(c.hotel.id, `${res.created} ${tables ? "Tische" : "Artikel"} importiert${res.skipped ? `, ${res.skipped} übersprungen (gab es schon)` : ""}.`);
+  const res = await importItems(c.hotel.id, r.rows, c.actor);
+  here(c.hotel.id, `${res.created} Artikel importiert${res.skipped ? `, ${res.skipped} übersprungen (gab es schon)` : ""}.`);
 }
 
 export default async function PosItemsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
   const { hotel } = await requireHotel(hotelId, "manager");
-  await requireModule(hotel.id, "pos");
-  const [items, tables, groups] = await Promise.all([listItems(hotel.id), listTables(hotel.id), listOptionGroups(hotel.id)]);
+  await requireModule(hotel.id, "restaurant");
+  const [items, groups] = await Promise.all([listItems(hotel.id), listOptionGroups(hotel.id)]);
   const gate = setupImportGate(hotel, setupImportEnabled());
   const runsLeft = Math.max(0, env().SETUP_RUNS_PER_MONTH - (await importsThisMonth(hotel.id, new Date(), "menu")));
   const open = sp.draft ? await getImport(hotel.id, sp.draft) : null;
@@ -161,7 +136,7 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   return (
     <div className="stack">
-      <h1>Restaurant: Artikel und Tische</h1>
+      <h1>Speisekarte</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <form action={item} className="card stack">
         {H}
@@ -212,23 +187,6 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
           <div><button className="btn">Gruppe anlegen</button></div>
         </form>
       </section>
-      <form action={table} className="card stack">{H}<h2>Tische ({tables.length})</h2><div><label htmlFor="tname">Neuer Tisch</label><input id="tname" name="name" required maxLength={30} /></div><div><button className="btn secondary">Anlegen</button></div></form>
-      {tables.length ? (
-        <section className="card stack" id="tischplan" data-testid="table-plan">
-          <h2>Tischplan</h2>
-          <p className="small muted">Plätze und Form je Tisch festlegen, dann die Tische im Plan an ihren Ort ziehen. Der Plan erscheint bei «Restaurant» mit dem aktuellen Zustand (frei, offen, reserviert).</p>
-          <div className="stack">
-            {tables.map((t) => (
-              <form key={t.id} action={tableDetails} className="inline-form">{H}<input type="hidden" name="id" value={t.id} />
-                <strong style={{ minWidth: 90 }}>{t.name}</strong>
-                <label htmlFor={`seats-${t.id}`} className="small">Plätze</label><input id={`seats-${t.id}`} name="seats" type="number" min={1} max={50} defaultValue={t.seats} style={{ width: 70 }} />
-                <label htmlFor={`shape-${t.id}`} className="small">Form</label><select id={`shape-${t.id}`} name="shape" defaultValue={t.shape}><option value="square">eckig</option><option value="round">rund</option></select>
-                <button className="btn secondary small">Speichern</button></form>
-            ))}
-          </div>
-          <FloorPlan tables={tables.map((t) => ({ id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY }))} editable action={planSave} hotelId={hotel.id} />
-        </section>
-      ) : null}
       <section className="card stack" id="ki" data-testid="menu-ki">
         <h2>Speisekarte mit KI einlesen</h2>
         <p className="small muted">Die KI liest Ihre Speisekarte (Website oder PDF) und macht daraus einen <strong>Entwurf</strong> der Artikel mit Preisen. Sie prüfen und ändern ihn, erst dann wird übernommen. Die MWST-Sätze setzt die KI nicht: es gelten die Standardsätze, die Sie danach prüfen.</p>
@@ -259,13 +217,12 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
       </section>
       <form action={csvImport} className="card stack">{H}
         <h2>Per CSV importieren</h2>
-        <p className="small muted">Speisekarte oder Tischliste aus Excel oder Ihrer bisherigen Kasse übernehmen. Alles oder nichts: Bei einem Fehler wird nichts gespeichert und die Zeile genannt. Was es schon gibt (gleicher Name), wird übersprungen.</p>
+        <p className="small muted">Speisekarte aus Excel oder Ihrer bisherigen Kasse übernehmen. Alles oder nichts: Bei einem Fehler wird nichts gespeichert und die Zeile genannt. Was es schon gibt (gleicher Name), wird übersprungen.</p>
         <div className="inline-form">
-          <div><label htmlFor="kind">Was</label><select id="kind" name="kind"><option value="items">Artikel</option><option value="tables">Tische</option></select></div>
           <div><label htmlFor="file">CSV-Datei</label><input id="file" name="file" type="file" accept=".csv,text/csv" required /></div>
           <button className="btn">Importieren</button>
         </div>
-        <p className="small"><a href={`/mypontivo/${hotel.id}/restaurant/vorlage?kind=items`}>Vorlage Artikel (CSV)</a> · <a href={`/mypontivo/${hotel.id}/restaurant/vorlage?kind=tables`}>Vorlage Tische (CSV)</a></p>
+        <p className="small"><a href={`/mypontivo/${hotel.id}/restaurant/vorlage?kind=items`}>Vorlage Artikel (CSV)</a></p>
       </form>
     </div>
   );

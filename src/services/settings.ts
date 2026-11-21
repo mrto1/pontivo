@@ -90,15 +90,17 @@ export async function confirmTouristTax(
 /** Voraussetzungen, damit ein Hotel live gehen darf */
 export async function goLiveProblems(hotel: Hotel): Promise<string[]> {
   const problems: string[] = [];
-  if (env().PAYMENT_PROVIDER === "stripe" && !(hotel.stripeAccountId && hotel.stripeChargesEnabled)) {
+  // Reines Restaurant (SPEC 20.1): keine Kurtaxe; online bezahlt wird nur Anzahlung/Bestellung, die prüfen Stripe selbst
+  const restaurant = hotel.propertyType === "restaurant";
+  if (!restaurant && env().PAYMENT_PROVIDER === "stripe" && !(hotel.stripeAccountId && hotel.stripeChargesEnabled)) {
     problems.push("Stripe-Konto ist noch nicht freigeschaltet (charges_enabled).");
   }
   // Mindestens ein Inhaber muss seine E-Mail-Adresse über den Anmelde-Link bestätigt haben
   const owners = await db().select({ at: users.emailVerifiedAt }).from(hotelMembers).innerJoin(users, eq(users.id, hotelMembers.userId))
     .where(and(eq(hotelMembers.hotelId, hotel.id), eq(hotelMembers.role, "owner")));
   if (!owners.some((o) => o.at)) problems.push("Die E-Mail-Adresse des Inhabers ist noch nicht bestätigt (einmal über den Login-Link aus der E-Mail anmelden).");
-  const rule = await taxRuleFor(hotel, todayIn(hotel.timezone));
-  if (!rule || (rule.status === "needs_confirmation") || (rule.adultRappen === null)) {
+  const rule = restaurant ? null : await taxRuleFor(hotel, todayIn(hotel.timezone));
+  if (!restaurant && (!rule || (rule.status === "needs_confirmation") || (rule.adultRappen === null))) {
     problems.push("Kurtaxe-Satz für die Gemeinde ist nicht bestätigt.");
   }
   return problems;
@@ -143,4 +145,12 @@ export async function setDeposit(hotel: Hotel, input: z.infer<typeof depositSche
     await tx.update(hotels).set({ depositBps: v.percent * 100, balanceDueDays: v.dueDays, updatedAt: new Date() }).where(eq(hotels.id, hotel.id));
     await audit(tx, { hotelId: hotel.id, actor, action: "hotel.deposit", entity: "hotel", entityId: hotel.id, details: { percent: v.percent, dueDays: v.dueDays } });
   });
+}
+
+/** Bezeichnung des Bereichs Gastronomie (SPEC 20.1, feste Liste) */
+export async function setDiningLabel(hotel: Hotel, label: string, actor: string) {
+  const allowed = ["restaurant", "cafe", "bar", "beiz", "takeaway", "kitchen"] as const;
+  if (!(allowed as readonly string[]).includes(label)) throw new Error("Bezeichnung ungültig.");
+  await db().update(hotels).set({ diningLabel: label as (typeof allowed)[number], updatedAt: new Date() }).where(eq(hotels.id, hotel.id));
+  await audit(db(), { hotelId: hotel.id, actor, action: "hotel.dining_label", entity: "hotel", entityId: hotel.id, details: { label } });
 }

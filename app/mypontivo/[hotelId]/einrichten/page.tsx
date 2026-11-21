@@ -7,9 +7,12 @@ import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import {
   addUnit, bookingOnly, CANCEL_TEMPLATES, chooseModules, detectEmbed, goLiveFromWizard, markEmbedded, isWholeUnit, nextOpenStep, onboardingSteps, OnboardingError, PROPERTY_LABEL,
-  setArrivalInfo, setGuestInfo, unitWord, updateBasics, type StepKey,
+  isRestaurant, quickTables, setArrivalInfo, setGuestInfo, unitWord, updateBasics, type StepKey,
 } from "@/src/services/onboarding";
-import { CHOICES } from "@/src/domain/module-choice";
+import { CHOICES, RESTAURANT_CHOICES } from "@/src/domain/module-choice";
+import { WEEKDAYS_DE, hoursText, parseHoursText } from "@/src/domain/reservations";
+import { getSettings, saveOpeningHours, saveSettings } from "@/src/services/reservations";
+import { listItems, listTables, PosError } from "@/src/services/pos";
 import { isOn } from "@/src/domain/modules";
 import { moduleRows } from "@/src/services/modules";
 import { setPreviousSoftware } from "@/src/services/migration";
@@ -36,7 +39,7 @@ const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
 function errText(e: unknown): string {
   if (e instanceof ZodError) return e.issues.map((i) => i.message).join(" · ");
-  if (e instanceof OnboardingError || e instanceof RoomError) return e.message;
+  if (e instanceof OnboardingError || e instanceof RoomError || e instanceof PosError) return e.message;
   if (e instanceof Error && /Betrag|Gemeinde|Wert|Stripe|Kurtaxe/.test(e.message)) return e.message;
   throw e;
 }
@@ -64,9 +67,42 @@ async function saveBasics(f: FormData) {
   }, actor));
 }
 
+/** Restaurant (SPEC 20.1): Angaben ohne Check-in/out, dazu Öffnungszeiten (leer = Ruhetag; alles leer = keine Einschränkung) */
+async function saveRestaurantBasics(f: FormData) {
+  "use server";
+  await step(f, async ({ hotel, actor }) => {
+    await updateBasics(hotel, { name: s(f, "name"), addressLine: s(f, "addressLine"), postalCode: s(f, "postalCode"), city: s(f, "city"), contactPhone: s(f, "phone"), checkinTime: hotel.checkinTime.slice(0, 5), checkoutTime: hotel.checkoutTime.slice(0, 5), intro: s(f, "intro") }, actor);
+    const hours: Record<string, { from: string; to: string }[]> = {};
+    for (let d = 0; d < 7; d++) {
+      const w = parseHoursText(s(f, `h${d}`));
+      if (!w) throw new OnboardingError(`${WEEKDAYS_DE[d]}: bitte so schreiben: 11:30-14:00, 17:30-22:00 (leer = Ruhetag).`);
+      hours[String(d)] = w;
+    }
+    await saveOpeningHours(hotel.id, Object.values(hours).some((w) => w.length) ? hours : null, actor);
+  });
+}
+
+async function saveTablesStep(f: FormData) {
+  "use server";
+  await step(f, async ({ hotel, actor }) => { await quickTables(hotel, Number(s(f, "count")), Number(s(f, "seats")), actor); });
+}
+
+async function saveOnlineStep(f: FormData) {
+  "use server";
+  await step(f, async ({ hotel, actor }) => {
+    const cur = await getSettings(hotel.id);
+    const windows = [1, 2].flatMap((n) => (s(f, `from${n}`) && s(f, `to${n}`) ? [{ from: s(f, `from${n}`), to: s(f, `to${n}`) }] : []));
+    await saveSettings(hotel.id, { ...cur, onlineEnabled: true, windows, capacity: Number(s(f, "capacity") || cur.capacity), maxParty: Number(s(f, "maxParty") || cur.maxParty) }, actor);
+  });
+}
+
 async function saveModules(f: FormData) {
   "use server";
-  await step(f, ({ hotel, actor }) => chooseModules(hotel, Object.fromEntries(CHOICES.flatMap((c) => c.modules.map((m) => [m, f.get(`c_${c.key}`) === "1"]))), actor));
+  await step(f, async ({ hotel, actor }) => {
+    const shown = isRestaurant(hotel.propertyType) ? CHOICES.filter((c) => RESTAURANT_CHOICES.includes(c.key)) : CHOICES;
+    // Reines Restaurant: das Modul «restaurant» bleibt an
+    await chooseModules(hotel, { ...Object.fromEntries(shown.flatMap((c) => c.modules.map((m) => [m, f.get(`c_${c.key}`) === "1"]))), ...(isRestaurant(hotel.propertyType) ? { restaurant: true } : {}) }, actor);
+  });
 }
 
 async function saveUmstieg(f: FormData) {
@@ -183,9 +219,33 @@ export default async function Wizard({ params, searchParams }: { params: Promise
     <form action={skip} style={{ display: "inline" }}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value={next} /><button className="btn secondary">Später</button></form>
   ) : null;
 
+  const resto = isRestaurant(hotel.propertyType);
   let body: React.ReactNode = null;
   switch (current) {
     case "betrieb":
+      if (resto) {
+        const cfg = await getSettings(hotel.id);
+        body = (
+          <form action={saveRestaurantBasics} className="stack">{H}
+            <div><label htmlFor="name">Name des Betriebs (so erscheint er auf der Website)</label><input id="name" name="name" defaultValue={hotel.name} required /></div>
+            <div className="form-grid">
+              <div style={{ gridColumn: "1 / -1" }}><label htmlFor="addressLine">Strasse und Nr.</label><input id="addressLine" name="addressLine" defaultValue={hotel.addressLine ?? ""} required autoComplete="street-address" /></div>
+              <div><label htmlFor="postalCode">PLZ</label><input id="postalCode" name="postalCode" defaultValue={hotel.postalCode ?? ""} required inputMode="numeric" maxLength={4} /></div>
+              <div><label htmlFor="city">Ort</label><input id="city" name="city" defaultValue={hotel.city ?? ""} required /></div>
+              <div><label htmlFor="phone">Telefon für Gäste (optional)</label><input id="phone" name="phone" defaultValue={hotel.contactPhone ?? ""} type="tel" /></div>
+            </div>
+            <fieldset className="plain"><legend><strong>Öffnungszeiten</strong> <span className="small muted">z. B. 11:30-14:00, 17:30-22:00; leer = Ruhetag. Alles leer = ohne Einschränkung.</span></legend>
+              <div className="form-grid">
+                {[1, 2, 3, 4, 5, 6, 0].map((i) => <div key={i}><label htmlFor={`h${i}`}>{WEEKDAYS_DE[i]}</label><input id={`h${i}`} name={`h${i}`} defaultValue={hoursText(cfg.openingHours?.[String(i)])} placeholder="11:30-14:00, 17:30-22:00" /></div>)}
+              </div>
+            </fieldset>
+            <div><label htmlFor="intro">Kurzbeschreibung für die Startseite (1–3 Sätze)</label>
+              <textarea id="intro" name="intro" rows={3} maxLength={1000} defaultValue={hotel.content.de?.intro ?? ""} placeholder="z. B. Gemütliche Beiz mit Gartenterrasse, saisonale Küche aus der Region." /></div>
+            <div><button className="btn">Speichern und weiter</button></div>
+          </form>
+        );
+        break;
+      }
       body = (
         <form action={saveBasics} className="stack">{H}
           <div><label htmlFor="name">Name des Betriebs (so erscheint er auf der Website)</label><input id="name" name="name" defaultValue={hotel.name} required /></div>
@@ -210,13 +270,70 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       body = (
         <form action={saveModules} className="stack">{H}
           <p className="muted" style={{ margin: 0 }}>Kreuzen Sie an, was auf Sie zutrifft. Alles andere bleibt ausgeblendet und lässt sich jederzeit unter «Funktionen» ändern.</p>
-          {CHOICES.map((c) => (
+          {(resto ? CHOICES.filter((c) => RESTAURANT_CHOICES.includes(c.key)) : CHOICES).map((c) => (
             <label key={c.key} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
               <input type="checkbox" name={`c_${c.key}`} value="1" defaultChecked={c.modules.every((m) => isOn(rows, m))} style={{ width: "auto", marginTop: 4 }} />
               <span>{c.question}</span>
             </label>
           ))}
           <div><button className="btn">Speichern und weiter</button></div>
+        </form>
+      );
+      break;
+    }
+    case "tische": {
+      const tables = await listTables(hotel.id);
+      body = (
+        <div className="stack">
+          {tables.length ? <p className="notice">✓ {tables.length} Tische mit zusammen {tables.reduce((a, t) => a + t.seats, 0)} Plätzen. Plätze, Form und Lage im Plan ändern Sie unter <a href={`/mypontivo/${hotel.id}/restaurant/einstellungen`}>Tischplan & Reservierung online</a>.</p> : null}
+          <form action={saveTablesStep} className="stack">{H}
+            {tables.length ? <input type="hidden" name="stay" value="1" /> : null}
+            <p className="muted" style={{ margin: 0 }}>Für den Anfang genügt die Zahl der Tische. Sie heissen «Tisch 1», «Tisch 2» …; Namen, Plätze und Lage passen Sie später im Tischplan an.</p>
+            <div className="form-grid">
+              <div><label htmlFor="count">Anzahl Tische</label><input id="count" name="count" type="number" min={1} max={100} defaultValue={tables.length ? 1 : 10} required /></div>
+              <div><label htmlFor="seats">Plätze je Tisch</label><input id="seats" name="seats" type="number" min={1} max={50} defaultValue={4} required /></div>
+            </div>
+            <div><button className="btn">{tables.length ? "Weitere anlegen" : "Speichern und weiter"}</button></div>
+          </form>
+          {tables.length && next ? <form action={skip}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value={next} /><button className="btn">Weiter</button></form> : null}
+        </div>
+      );
+      break;
+    }
+    case "speisekarte": {
+      const items = await listItems(hotel.id, true);
+      body = (
+        <div className="stack">
+          {items.length ? <p className="notice">✓ {items.length} Artikel auf der Speisekarte.</p> : null}
+          <p>Ihre Speisekarte brauchen Website, Reservierung und später Online-Bestellung und Kasse. Drei Wege:</p>
+          <ul className="list">
+            <li><a href={`/mypontivo/${hotel.id}/restaurant/artikel#ki`}><strong>Mit KI einlesen</strong></a>: Adresse Ihrer bisherigen Speisekarte oder PDF; Sie prüfen den Entwurf vor der Übernahme.</li>
+            <li><a href={`/mypontivo/${hotel.id}/restaurant/artikel`}><strong>CSV-Datei</strong></a> aus Excel oder Ihrer bisherigen Kasse.</li>
+            <li><a href={`/mypontivo/${hotel.id}/restaurant/artikel`}><strong>Von Hand</strong></a>, Artikel für Artikel.</li>
+          </ul>
+          {items.length && next ? <form action={skip}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value={next} /><button className="btn">Weiter</button></form> : skipBtn}
+        </div>
+      );
+      break;
+    }
+    case "reservierung": {
+      const cfg = await getSettings(hotel.id);
+      const seats = (await listTables(hotel.id)).reduce((a, t) => a + t.seats, 0);
+      body = (
+        <form action={saveOnlineStep} className="stack">{H}
+          <p>Gäste reservieren auf Ihrer Website selbst und bekommen eine Bestätigung mit Storno-Link. Sie sehen alles unter Reservierungen.</p>
+          <p className="small muted" style={{ margin: 0 }}>Zeitfenster, in denen ein Tisch beginnen kann (im Raster von 30 Minuten):</p>
+          <div className="form-grid">
+            {[1, 2].map((n) => { const w = cfg.windows[n - 1]; return (
+              <div key={n} className="inline-form"><label htmlFor={`from${n}`}>{n === 1 ? "Mittag" : "Abend"} von</label><input id={`from${n}`} name={`from${n}`} type="time" defaultValue={w?.from ?? ""} /><label htmlFor={`to${n}`}>bis</label><input id={`to${n}`} name={`to${n}`} type="time" defaultValue={w?.to ?? ""} /></div>
+            ); })}
+          </div>
+          <div className="form-grid">
+            <div><label htmlFor="capacity">Plätze online (gleichzeitig)</label><input id="capacity" name="capacity" type="number" min={1} max={1000} defaultValue={cfg.onlineEnabled ? cfg.capacity : Math.max(1, seats || cfg.capacity)} /></div>
+            <div><label htmlFor="maxParty">Grösste Gruppe online</label><input id="maxParty" name="maxParty" type="number" min={1} max={50} defaultValue={cfg.maxParty} /></div>
+          </div>
+          <p className="small muted">Anzahlung, Erinnerung, Warteliste und Vorlauf stellen Sie später unter <a href={`/mypontivo/${hotel.id}/restaurant/einstellungen#online`}>Tischplan & Reservierung online</a> ein.</p>
+          <div style={{ display: "flex", gap: 8 }}><button className="btn">Einschalten und weiter</button>{skipBtn}</div>
         </form>
       );
       break;
@@ -334,8 +451,8 @@ export default async function Wizard({ params, searchParams }: { params: Promise
               <div><button className="btn">Hochladen</button></div>
             </form>
           ) : null}
-          <p className="small muted">Fotos pro {whole ? unit : "Zimmer"} sortieren und ersetzen unter <a href={`/mypontivo/${hotel.id}/rooms`}>Zimmer</a>.</p>
-          {steps.find((x) => x.key === "fotos")!.done ? <form action={skip}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value="ankunft" /><button className="btn">Weiter</button></form> : null}
+          {resto ? null : <p className="small muted">Fotos pro {whole ? unit : "Zimmer"} sortieren und ersetzen unter <a href={`/mypontivo/${hotel.id}/rooms`}>Zimmer</a>.</p>}
+          {steps.find((x) => x.key === "fotos")!.done && next ? <form action={skip}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value={next} /><button className="btn">Weiter</button></form> : resto ? skipBtn : null}
         </div>
       );
       break;

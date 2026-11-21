@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { adminNav, allPages } from "../../src/admin/nav";
+import { allPagesBoth } from "../../src/admin/nav";
 import { FLOWS, TERMS, TERM_GROUPS, WAYFINDING, flowsFor } from "../../src/domain/help-content";
 
-const keys = new Set(allPages(adminNav({ id: "h", slug: "s", primaryDomain: null })).map((p) => p.key));
+const keys = new Set(allPagesBoth({ id: "h", slug: "s", primaryDomain: null }).map((p) => p.key));
 
 describe("Schulungsunterlagen (Hilfe)", () => {
   it("jeder Verweis zeigt auf einen echten Menüpunkt", () => {

@@ -85,8 +85,9 @@ export default async function Register({ searchParams }: { searchParams: Promise
           {sp.error ? <p className="notice warn" role="alert">{sp.error}</p> : null}
           <fieldset className="plain"><legend className="small muted">Was vermieten Sie?</legend>
             <div className="type-pick">
-              {PROPERTY_TYPES.map((t, i) => (
-                <label key={t}><input type="radio" name="propertyType" value={t} defaultChecked={i === 0} required />{PROPERTY_LABEL[t]}</label>
+              {/* Restaurant nur über ?art=restaurant (Pilotbetriebe), die öffentlichen Seiten bleiben bis R7 auf Unterkünfte ausgerichtet (Konzept Entscheid 1) */}
+              {PROPERTY_TYPES.filter((t) => t !== "restaurant" || sp.art === "restaurant").map((t, i) => (
+                <label key={t}><input type="radio" name="propertyType" value={t} defaultChecked={sp.art === "restaurant" ? t === "restaurant" : i === 0} required />{PROPERTY_LABEL[t]}</label>
               ))}
             </div>
           </fieldset>

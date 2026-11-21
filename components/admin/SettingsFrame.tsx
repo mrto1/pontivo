@@ -1,14 +1,16 @@
 "use client";
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { useAreaNav } from "./AreaContext";
 import { inSettings, isActive, settingsGroups, type Nav } from "@/src/admin/nav";
 
 /**
  * Rahmen für die Seiten des Zahnrads: am Desktop links die Seitenleiste mit den drei Gruppen, am Handy ein Link zurück zur Übersicht.
  * Alle anderen Seiten bleiben unverändert (nur `tabs` und `children`). Unterreiter (`tabs`) stehen über der Seite.
  */
-export function SettingsFrame({ nav, home, tabs, children }: { nav: Nav; home: string; tabs: ReactNode; children: ReactNode }) {
+export function SettingsFrame({ nav: navIn, home, tabs, children }: { nav: Nav; home: string; tabs: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
+  const nav = useAreaNav(navIn);
   if (!inSettings(pathname, nav, home)) return <>{tabs}{children}</>;
   const onOverview = pathname === nav.settings.href;
   return (

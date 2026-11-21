@@ -10,7 +10,7 @@ import { makeHotel } from "../helpers";
 /** Optionen und Sonderwünsche (SPEC 19.49): Gruppe anlegen, Artikel zuordnen, bestellen mit Pflichtwahl und Sonderwunsch */
 test("Restaurant: Garstufe als Pflichtgruppe, Bestellung mit Sonderwunsch", async ({ page, context, baseURL }) => {
   const h = await makeHotel();
-  await db().insert(hotelModules).values([{ hotelId: h.hotel.id, module: "invoicing", enabled: true }, { hotelId: h.hotel.id, module: "pos", enabled: true }]).onConflictDoNothing();
+  await db().insert(hotelModules).values([{ hotelId: h.hotel.id, module: "invoicing", enabled: true }, { hotelId: h.hotel.id, module: "restaurant", enabled: true }, { hotelId: h.hotel.id, module: "pos", enabled: true }]).onConflictDoNothing();
   const email = `opt-${Math.random().toString(36).slice(2, 8)}@example.ch`;
   await addMember(h.hotel.id, email, "owner", "e2e");
   const [u] = await db().select().from(users).where(eq(users.email, email));
@@ -50,7 +50,7 @@ test("Restaurant: Garstufe als Pflichtgruppe, Bestellung mit Sonderwunsch", asyn
 /** Küchenbildschirm (SPEC 19.49 Etappe B) */
 test("Küche: Posten erscheint, antippen meldet fertig", async ({ page, context, baseURL }) => {
   const h = await makeHotel();
-  await db().insert(hotelModules).values([{ hotelId: h.hotel.id, module: "invoicing", enabled: true }, { hotelId: h.hotel.id, module: "pos", enabled: true }]).onConflictDoNothing();
+  await db().insert(hotelModules).values([{ hotelId: h.hotel.id, module: "invoicing", enabled: true }, { hotelId: h.hotel.id, module: "restaurant", enabled: true }, { hotelId: h.hotel.id, module: "pos", enabled: true }]).onConflictDoNothing();
   const email = `kds-${Math.random().toString(36).slice(2, 8)}@example.ch`;
   await addMember(h.hotel.id, email, "owner", "e2e");
   const [u] = await db().select().from(users).where(eq(users.email, email));
@@ -69,7 +69,7 @@ test("Küche: Posten erscheint, antippen meldet fertig", async ({ page, context,
 /** Tischplan und Reservierung (SPEC 19.49 Etappe C): Gast reserviert online, Personal sieht es, Gast storniert */
 test("Reservierung: online buchen, Liste, Storno per Link; Plan zeigt Tisch", async ({ page, context, baseURL }) => {
   const h = await makeHotel();
-  await db().insert(hotelModules).values([{ hotelId: h.hotel.id, module: "invoicing", enabled: true }, { hotelId: h.hotel.id, module: "pos", enabled: true }]).onConflictDoNothing();
+  await db().insert(hotelModules).values([{ hotelId: h.hotel.id, module: "invoicing", enabled: true }, { hotelId: h.hotel.id, module: "restaurant", enabled: true }, { hotelId: h.hotel.id, module: "pos", enabled: true }]).onConflictDoNothing();
   const email = `res-${Math.random().toString(36).slice(2, 8)}@example.ch`;
   await addMember(h.hotel.id, email, "owner", "e2e");
   const [u] = await db().select().from(users).where(eq(users.email, email));

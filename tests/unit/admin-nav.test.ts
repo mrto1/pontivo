@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminNav, allPages, bestMatch, inSettings, isActive, isActiveIn, leafKeys, sectionFor, settingsGroups } from "../../src/admin/nav";
+import { adminNav, allPages, allPagesBoth, areaOfPath, bestMatch, inSettings, isActive, isActiveIn, leafKeys, sectionFor, settingsGroups } from "../../src/admin/nav";
 import { hiddenNavKeys } from "../../src/domain/modules";
 import { GET as manifest } from "../../app/mypontivo/manifest.webmanifest/route";
 import { GET as sw } from "../../app/mypontivo/sw.js/route";
@@ -27,20 +27,19 @@ describe("Admin-Menü", () => {
   });
 
   it("Seitenschlüssel und Adressen bleiben wie bisher", () => {
-    const byKey = Object.fromEntries(allPages(nav).map((i) => [i.key, i.href.replace("/mypontivo/h1/", "")]));
+    const byKey = Object.fromEntries(allPagesBoth(hotel).map((i) => [i.key, i.href.replace("/mypontivo/h1/", "")]));
     expect(byKey).toMatchObject({
       home: "/mypontivo/h1", housekeeping: "housekeeping", inbox: "inbox", restaurant: "restaurant", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", kasse: "kasse", posclose: "restaurant/abschluss", plan: "plan", calendar: "calendar", pricing: "preise",
       bookings: "bookings", groups: "groups", resources: "resources", vouchers: "vouchers", guestbook: "guestbook", marketing: "marketing", feedback: "feedback",
       invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung", reports: "berichte",
       settings: "settings", rooms: "rooms", extras: "rooms/extras", payments: "zahlungen", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
-      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posdevices: "restaurant/geraete", posbridge: "posbridge", migration: "migration", report: "report", mypontivo: "mypontivo", firstweek: "erste-woche", help: "hilfe",
+      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posdevices: "restaurant/geraete", posbridge: "posbridge", dininghome: "restaurant/heute", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste", ressettings: "restaurant/einstellungen", migration: "migration", report: "report", mypontivo: "mypontivo", firstweek: "erste-woche", help: "hilfe",
     });
   });
 
   it("Reiter der Hauptpunkte", () => {
-    expect(tabKeys("Heute")).toEqual(["home", "inbox", "housekeeping", "g-restaurant"]);
+    expect(tabKeys("Heute")).toEqual(["home", "inbox", "housekeeping"]); // Restaurant ist ein eigener Bereich (SPEC 20.1)
     expect(group("Heute").tabs![0].label).toBe("Tagesliste");
-    expect(group("Heute").tabs![3].tabs!.map((t) => t.key)).toEqual(["restaurant", "kasse", "reservations", "kitchen", "posclose"]);
     expect(tabKeys("Kalender")).toEqual(["plan", "calendar", "pricing"]);
     expect(tabKeys("Buchungen")).toEqual(["bookings", "groups", "resources", "vouchers", "g-guests"]);
     expect(group("Buchungen").tabs![4].tabs!.map((t) => t.key)).toEqual(["guestbook", "marketing", "feedback"]);
@@ -53,7 +52,7 @@ describe("Admin-Menü", () => {
     expect(groups.map((g) => g.title)).toEqual(["Betrieb", "Verkauf", "Technik"]);
     expect(groups.map((g) => g.items.map((i) => i.label))).toEqual([
       ["Grunddaten", "Zahlungsmethoden", "Zimmer & Tarife", "Zusatzleistungen", "Team & Rollen"],
-      ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "Restaurant", "KI-Chat"],
+      ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "Speisekarte", "Tischplan & Reservierung online", "KI-Chat"],
       ["Funktionen", "Geräte & Kasse", "Datenübernahme", "Abo & Gebühren"],
     ]);
     for (const g of groups) { expect(g.lead.length).toBeGreaterThan(10); for (const i of g.items) expect(i.lead, i.label).toBeTruthy(); }
@@ -70,14 +69,47 @@ describe("Admin-Menü", () => {
     expect(cal.href).toBe("/mypontivo/h1/calendar");
   });
 
-  it("Restaurant-Reiter nur mit eingeschaltetem Modul pos", () => {
-    const withPos = allPages(adminNav(hotel, hiddenNavKeys([{ module: "pos", enabled: true }]))).map((i) => i.key);
-    const without = allPages(adminNav(hotel, hiddenNavKeys([]))).map((i) => i.key);
-    expect(withPos).toEqual(expect.arrayContaining(["restaurant", "kasse", "posclose"]));
-    // pos ist von Haus aus aus
-    expect(without).not.toContain("restaurant");
-    expect(without).not.toContain("kasse");
-    expect(without).not.toContain("posclose");
+  it("Gastronomie: Reservierung, Speisekarte, Küche mit Modul restaurant; Tische, Kasse, Abschluss nur mit pos (SPEC 20.1)", () => {
+    const dining = (rows: { module: string; enabled: boolean }[]) => allPages(adminNav(hotel, hiddenNavKeys(rows), { area: "dining" })).map((i) => i.key);
+    const onlyRes = dining([{ module: "restaurant", enabled: true }]);
+    expect(onlyRes).toEqual(expect.arrayContaining(["dininghome", "reservations", "resplan", "waitlist", "kitchen", "positems", "ressettings"]));
+    expect(onlyRes).not.toContain("kasse");
+    expect(onlyRes).not.toContain("restaurant");
+    expect(onlyRes).not.toContain("posclose");
+    expect(dining([{ module: "restaurant", enabled: true }, { module: "pos", enabled: true }])).toEqual(expect.arrayContaining(["restaurant", "kasse", "posclose", "posdevices"]));
+    // beides ist von Haus aus aus
+    const none = dining([]);
+    for (const k of ["dininghome", "reservations", "kasse", "positems"]) expect(none).not.toContain(k);
+  });
+
+  it("Restaurant-Baum: vier Hauptpunkte; reines Restaurant ohne Unterkunftspunkte im Zahnrad (SPEC 20.1)", () => {
+    const d = adminNav(hotel, new Set(), { area: "dining", kind: "restaurant" });
+    expect(d.primary.map((i) => i.label)).toEqual(["Heute", "Reservierungen", "Bestellungen", "Finanzen"]);
+    expect(d.primary.map((i) => i.tabs!.map((t) => t.key))).toEqual([
+      ["dininghome", "inbox"], ["reservations", "resplan", "waitlist"], ["restaurant", "kasse", "kitchen"], ["posclose", "invoices", "vouchers", "accountingexport"],
+    ]);
+    const keys = allPages(d).map((i) => i.key);
+    for (const k of ["rooms", "extras", "channex", "ical", "gaesteportal", "upsell", "direct", "api", "access", "migration", "plan", "calendar", "housekeeping"]) expect(keys).not.toContain(k);
+    expect(keys).toEqual(expect.arrayContaining(["settings", "payments", "team", "site", "positems", "ressettings", "mailtexts", "ki-chat", "terminal", "posdevices", "posbridge", "report"]));
+    expect(d.settings.tabs!.find((i) => i.key === "site")!.label).toBe("Website");
+  });
+
+  it("Bereich aus der Adresse: Gastronomie-Seiten legen ihn fest, geteilte Seiten nicht (SPEC 20.1)", () => {
+    const home = "/mypontivo/h1";
+    const navs = { lodging: adminNav(hotel), dining: adminNav(hotel, new Set(), { area: "dining" }) };
+    expect(areaOfPath(`${home}/restaurant/reservierungen`, navs, home)).toBe("dining");
+    expect(areaOfPath(`${home}/restaurant/abschluss`, navs, home)).toBe("dining");
+    expect(areaOfPath(`${home}/kasse`, navs, home)).toBe("dining");
+    expect(areaOfPath(`${home}/bookings/x`, navs, home)).toBe("lodging");
+    expect(areaOfPath(home, navs, home)).toBe("lodging");
+    for (const p of ["inbox", "invoices", "vouchers", "einstellungen", "settings", "mypontivo"]) expect(areaOfPath(`${home}/${p}`, navs, home)).toBeNull();
+    expect(areaOfPath(`${home}/restaurant/artikel`, navs, home)).toBe("dining"); // Speisekarte gehört zur Gastronomie
+    // Nur der genaueste Hauptpunkt leuchtet: Kassenabschluss → Finanzen, nicht Bestellungen
+    const d = navs.dining;
+    const active = d.primary.filter((i) => isActiveIn(`${home}/restaurant/abschluss`, d, i, home)).map((i) => i.label);
+    expect(active).toEqual(["Finanzen"]);
+    expect(sectionFor(`${home}/restaurant/abschluss`, d, home)?.label).toBe("Finanzen");
+    expect(sectionFor(`${home}/restaurant/tischplan`, d, home)?.label).toBe("Reservierungen");
   });
 
   it("Ferienwohnung mit Grundausstattung: Heute (nur Tagesliste und Posteingang), Kalender, Buchungen, Finanzen", () => {
@@ -144,14 +176,15 @@ describe("PWA", () => {
     expect((await icon(new Request("http://x"), { params: Promise.resolve({ size: "7" }) })).status).toBe(404);
   });
 
-  it("Zahnrad-Seite unter einer Adresse von «Heute» bleibt im Zahnrad (Kassen-Artikel)", () => {
-    const nav = adminNav(hotel);
+  it("Zahnrad-Seite unter einer Adresse von «Bestellungen» bleibt im Zahnrad (Speisekarte)", () => {
+    const nav = adminNav(hotel, new Set(), { area: "dining" });
     const p = "/mypontivo/h1/restaurant/artikel";
     expect(inSettings(p, nav, "/mypontivo/h1")).toBe(true);
     expect(isActiveIn(p, nav, nav.primary[0], "/mypontivo/h1")).toBe(false);
-    expect(sectionFor(p, nav, "/mypontivo/h1")?.key).not.toBe("g-overview");
-    // Tische unter Heute bleiben Heute
+    expect(sectionFor(p, nav, "/mypontivo/h1")?.key).not.toBe("g-dining-orders");
+    expect(isActiveIn(p, nav, nav.primary[2], "/mypontivo/h1")).toBe(false);
+    // Tische bleiben unter Bestellungen
     expect(inSettings("/mypontivo/h1/restaurant", nav, "/mypontivo/h1")).toBe(false);
-    expect(isActiveIn("/mypontivo/h1/restaurant", nav, nav.primary[0], "/mypontivo/h1")).toBe(true);
+    expect(isActiveIn("/mypontivo/h1/restaurant", nav, nav.primary[2], "/mypontivo/h1")).toBe(true);
   });
 });

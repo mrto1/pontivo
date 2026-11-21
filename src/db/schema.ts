@@ -44,7 +44,9 @@ export const hotels = pgTable("hotels", {
   status: text("status").notNull().default("draft"),
   content: jsonb("content").$type<HotelContent>().notNull().default({}),
   /** Objektart (Migration 0011): steuert Texte und Schritte im Einrichtungs-Assistenten */
-  propertyType: text("property_type").$type<"hotel" | "bnb" | "apartment" | "chalet" | "group_house">().notNull().default("hotel"),
+  propertyType: text("property_type").$type<"hotel" | "bnb" | "apartment" | "chalet" | "group_house" | "restaurant">().notNull().default("hotel"),
+  /** Bezeichnung des Bereichs Gastronomie im Umschalter (SPEC 20.1), feste Liste */
+  diningLabel: text("dining_label").$type<"restaurant" | "cafe" | "bar" | "beiz" | "takeaway" | "kitchen">().notNull().default("restaurant"),
   /** Mindestgebühr pro Monat (0 = keine); Differenz zur Plattformgebühr wird monatlich der Karte belastet */
   monthlyMinimumRappen: integer("monthly_minimum_rappen").notNull().default(0),
   hostTermsVersion: text("host_terms_version"),
@@ -1746,6 +1748,8 @@ export const restaurantSettings = pgTable("restaurant_settings", {
   cancelHours: integer("cancel_hours").notNull().default(24),
   reminderHours: integer("reminder_hours").notNull().default(24),
   autoAssign: boolean("auto_assign").notNull().default(true),
+  /** Öffnungszeiten je Wochentag (0 = Sonntag), null = keine Einschränkung (SPEC 20.1) */
+  openingHours: jsonb("opening_hours").$type<Record<string, { from: string; to: string }[]> | null>(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
 export type RestaurantSettings = typeof restaurantSettings.$inferSelect;

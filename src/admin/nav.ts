@@ -19,6 +19,14 @@ export type NavItem = {
   match?: string[];
 };
 export type Nav = { primary: NavItem[]; settings: NavItem; account: NavItem };
+/** Bereiche eines Betriebs (SPEC 20.1): Unterkunft und Gastronomie. Fest in Hilfe, Support und Code. */
+export type Area = "lodging" | "dining";
+/** Art des Betriebs für die Navigation: Unterkunft (mit oder ohne Gastronomie) oder reines Restaurant */
+export type NavKind = "hotel" | "restaurant";
+export type HotelRef = { id: string; slug: string; primaryDomain: string | null };
+
+/** Punkte, die es nur für Unterkünfte gibt; reine Restaurants sehen sie nicht (Zahnrad) */
+export const LODGING_ONLY = ["rooms", "extras", "channex", "ical", "gaesteportal", "upsell", "direct", "api", "access", "migration"] as const;
 
 /** Gruppen des Zahnrads (Reihenfolge und Erklärung) */
 export const SETTINGS_GROUPS: { title: string; lead: string }[] = [
@@ -28,8 +36,9 @@ export const SETTINGS_GROUPS: { title: string; lead: string }[] = [
 ];
 
 /** `hidden`: Menüpunkte ausgeschalteter Module (src/domain/modules.ts) oder nicht erlaubter Bereiche. Gruppen ohne Reiter verschwinden; hat eine Gruppe nur noch einen Reiter, bleibt sie ein einfacher Punkt. Sonst führt der Punkt zum ersten übrigen Reiter. */
-export function adminNav(hotel: { id: string; slug: string; primaryDomain: string | null }, hidden: ReadonlySet<string> = new Set()): Nav {
-  const nav = baseNav(hotel);
+export function adminNav(hotel: HotelRef, hiddenIn: ReadonlySet<string> = new Set(), opts: { area?: Area; kind?: NavKind } = {}): Nav {
+  const nav = baseNav(hotel, opts.area ?? (opts.kind === "restaurant" ? "dining" : "lodging"));
+  const hidden = opts.kind === "restaurant" ? new Set([...hiddenIn, ...LODGING_ONLY]) : hiddenIn;
   if (!hidden.size) return nav;
   const prune = (i: NavItem): NavItem | null => {
     if (hidden.has(i.key)) return null;
@@ -39,17 +48,24 @@ export function adminNav(hotel: { id: string; slug: string; primaryDomain: strin
     if (tabs.length === 1) return { ...i, key: tabs[0].key, href: tabs[0].href, tabs: tabs[0].tabs };
     return { ...i, href: tabs[0].href, tabs };
   };
-  const list = (items: NavItem[]) => items.flatMap((i) => prune(i) ?? []);
+  const list = (items: NavItem[]) => items.flatMap((i) => prune(i) ?? []).map((i) => (opts.kind === "restaurant" && i.key === "site" ? { ...i, label: "Website" } : i));
   // Zahnrad: die Seite /einstellungen bleibt das Ziel, nur die Punkte darunter werden gefiltert
   return { primary: list(nav.primary), settings: { ...nav.settings, tabs: list(nav.settings.tabs ?? []) }, account: prune(nav.account) ?? nav.account };
 }
 
-function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null }): Nav {
+function baseNav(hotel: HotelRef, area: Area): Nav {
   const base = `/mypontivo/${hotel.id}`;
   const link = (key: string, label: string, path = key, extra: Partial<NavItem> = {}): NavItem => ({ key, label, href: `${base}/${path}`, ...extra });
   const set = (group: string, item: NavItem, lead: string): NavItem => ({ ...item, group, lead });
+  // Restaurant-Baum (SPEC 20.1, Navigation Teil B): gleiche Seiten und Schlüssel, eigene vier Hauptpunkte
+  const dining: NavItem[] = [
+    { key: "g-dining-today", label: "Heute", href: `${base}/restaurant/heute`, icon: "home", tabs: [link("dininghome", "Tagesübersicht", "restaurant/heute"), link("inbox", "Posteingang")] },
+    { key: "g-dining-res", label: "Reservierungen", href: `${base}/restaurant/reservierungen`, icon: "bookings", tabs: [link("reservations", "Liste", "restaurant/reservierungen"), link("resplan", "Tischplan", "restaurant/tischplan"), link("waitlist", "Warteliste", "restaurant/warteliste")] },
+    { key: "g-dining-orders", label: "Bestellungen", href: `${base}/restaurant`, icon: "orders", tabs: [link("restaurant", "Tische"), link("kasse", "Kasse"), link("kitchen", "Küche", "restaurant/kueche")] },
+    { key: "g-dining-finance", label: "Finanzen", href: `${base}/restaurant/abschluss`, icon: "finance", tabs: [link("posclose", "Kassenabschluss", "restaurant/abschluss"), link("invoices", "Rechnungen"), link("vouchers", "Gutscheine"), link("accountingexport", "Buchhaltung", "buchhaltung")] },
+  ];
   return {
-    primary: [
+    primary: area === "dining" ? dining : [
       // Heute: der laufende Tagesbetrieb
       {
         key: "g-overview", label: "Heute", href: base, icon: "home",
@@ -57,7 +73,6 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
           { key: "home", label: "Tagesliste", href: base },
           link("inbox", "Posteingang"),
           link("housekeeping", "Reinigung"),
-          { ...link("g-restaurant", "Restaurant", "restaurant"), tabs: [link("restaurant", "Tische"), link("kasse", "Kasse"), link("reservations", "Reservierungen", "restaurant/reservierungen"), link("kitchen", "Küche", "restaurant/kueche"), link("posclose", "Kassenabschluss", "restaurant/abschluss")] },
         ],
       },
       // Kalender: Zeitraster je Zimmertyp. Erster Reiter ist der Zimmerplan, solange die Rezeption (Modul frontdesk) an ist
@@ -95,10 +110,11 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
         set("Verkauf", link("mailtexts", "Gäste-Mails", "mail-texte"), "Eigene Sätze in Bestätigung, Vor-der-Anreise- und Nachher-Mail."),
         set("Verkauf", link("gaesteportal", "Gästeportal"), "Wünsche, Tipps, Türcode und Check-out auf der Buchungsseite des Gastes."),
         set("Verkauf", link("upsell", "Upselling"), "Extras wie Frühstück, die Gäste online dazubuchen."),
-        set("Verkauf", link("positems", "Restaurant", "restaurant/artikel"), "Speisekarte (Artikel) und Tische der Restaurantkasse, Import per CSV."),
+        set("Verkauf", link("positems", "Speisekarte", "restaurant/artikel"), "Artikel mit Preisen, Optionen und Menüs, KI-Speisekarte und Import per CSV."),
+        set("Verkauf", link("ressettings", "Tischplan & Reservierung online", "restaurant/einstellungen"), "Tische und Plätze, Tischplan, Zeiten und Regeln für die Online-Reservierung."),
         set("Verkauf", link("ki-chat", "KI-Chat"), "Der digitale Assistent auf Website und Buchungsseite."),
         set("Technik", link("funktionen", "Funktionen"), "Nur was Sie brauchen, bleibt im Menü."),
-        set("Technik", { ...link("g-devices", "Geräte & Kasse", "terminal"), tabs: [link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt"), link("posdevices", "Kassen-Geräte", "restaurant/geraete"), link("posbridge", "Kassen-Schnittstelle")] }, "Kartenleser, Türschlösser, Artikel der Restaurantkasse und Schnittstelle zu Ihrer Kasse."),
+        set("Technik", { ...link("g-devices", "Geräte & Kasse", "terminal"), tabs: [link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt"), link("posdevices", "Kassen-Geräte", "restaurant/geraete"), link("posbridge", "Kassen-Schnittstelle")] }, "Kartenleser, Türschlösser, Kassen-Geräte und Schnittstelle zu Ihrer Kasse."),
         set("Technik", link("migration", "Datenübernahme"), "Buchungen und Gäste aus Ihrer bisherigen Software übernehmen."),
         set("Technik", link("report", "Abo & Gebühren", "report", { match: [`${base}/plattform-rechnung`] }), "Monatsabrechnung, Plattformgebühren und Rechnungen von Pontivo (nur Inhaber)."),
       ],
@@ -113,6 +129,12 @@ export function allPages(nav: Nav): NavItem[] {
   return [...nav.primary, nav.settings, nav.account].flatMap(leaves).filter((i) => !i.external);
 }
 const leaves = (i: NavItem): NavItem[] => (i.tabs ? i.tabs.flatMap(leaves) : [i]);
+
+/** Alle Seiten beider Bereiche (Unterkunft und Gastronomie), jede einmal: für Prüfungen «ist ein echter Menüpunkt» */
+export function allPagesBoth(hotel: HotelRef, hidden: ReadonlySet<string> = new Set()): NavItem[] {
+  const seen = new Set<string>();
+  return [...allPages(adminNav(hotel, hidden, { area: "lodging" })), ...allPages(adminNav(hotel, hidden, { area: "dining" }))].filter((i) => !seen.has(i.key) && !!seen.add(i.key));
+}
 
 /** Schlüssel aller Blätter eines Menüs (Gruppen haben keine eigenen Seiten) */
 export const leafKeys = (nav: Nav): string[] => allPages(nav).map((i) => i.key);
@@ -144,13 +166,39 @@ export const inSettings = (pathname: string, nav: Nav, home: string): boolean =>
   return s > 0 && s >= Math.max(0, bestMatch(pathname, nav.account, home), ...nav.primary.map((i) => bestMatch(pathname, i, home)));
 };
 
-/** Aktiv im Menü oben: ein Hauptpunkt oder «Mein Konto» ist nicht aktiv, wenn die Seite zum Zahnrad gehört */
-export const isActiveIn = (pathname: string, nav: Nav, item: NavItem, home: string): boolean =>
-  isActive(pathname, item, home) && (item.key === nav.settings.key || !inSettings(pathname, nav, home));
+/**
+ * Aktiv im Menü oben: nur der Punkt mit dem genauesten Treffer (Hauptpunkte, Zahnrad, Konto). So leuchtet bei «restaurant/abschluss»
+ * nur «Finanzen», obwohl «Bestellungen → Tische» (restaurant) eine Adresse davor liegt, und bei einer Zahnrad-Seite kein Hauptpunkt.
+ */
+export const isActiveIn = (pathname: string, nav: Nav, item: NavItem, home: string): boolean => {
+  const own = bestMatch(pathname, item, home);
+  if (!own) return false;
+  return own >= Math.max(...[...nav.primary, nav.account, nav.settings].map((i) => bestMatch(pathname, i, home)));
+};
 
 /** Der Sammelpunkt, zu dem die aktuelle Seite gehört (für die Reiter über der Seite). Im Zahnrad ist es der Punkt mit Unterreitern (z. B. Website & Buchung). */
 export function sectionFor(pathname: string, nav: Nav, home: string): NavItem | null {
-  const own = inSettings(pathname, nav, home) ? undefined : [...nav.primary, nav.account].find((i) => i.tabs && isActive(pathname, i, home));
+  const own = inSettings(pathname, nav, home) ? undefined : [...nav.primary, nav.account].filter((i) => i.tabs && isActiveIn(pathname, nav, i, home))[0];
   if (own) return own;
   return (nav.settings.tabs ?? []).find((i) => i.tabs && isActive(pathname, i, home)) ?? null;
 }
+
+/** Bereich einer Seite: steht sie nur in einem Baum (genauerer Treffer), legt sie den Bereich fest; sonst null (geteilte Seite, Zahnrad, Konto) */
+export function areaOfPath(pathname: string, navs: { lodging: Nav | null; dining: Nav | null }, home: string): Area | null {
+  const score = (n: Nav | null) => (n ? Math.max(0, ...n.primary.map((i) => bestMatch(pathname, i, home))) : 0);
+  const l = score(navs.lodging), d = score(navs.dining);
+  return d > l ? "dining" : l > d ? "lodging" : null;
+}
+
+/** Bezeichnungen im Umschalter: links die Betriebsart, rechts die gewählte Gastro-Bezeichnung (feste Liste) */
+export const LODGING_LABEL: Record<string, string> = { hotel: "Hotel", bnb: "B&B", apartment: "Ferienwohnung", chalet: "Chalet", group_house: "Gruppenhaus", restaurant: "Restaurant" };
+export const DINING_LABELS = ["restaurant", "cafe", "bar", "beiz", "takeaway", "kitchen"] as const;
+export type DiningLabel = (typeof DINING_LABELS)[number];
+export const DINING_LABEL: Record<DiningLabel, { de: string; en: string; fr: string; it: string }> = {
+  restaurant: { de: "Restaurant", en: "Restaurant", fr: "Restaurant", it: "Ristorante" },
+  cafe: { de: "Café", en: "Café", fr: "Café", it: "Caffè" },
+  bar: { de: "Bar", en: "Bar", fr: "Bar", it: "Bar" },
+  beiz: { de: "Beiz", en: "Pub", fr: "Bistrot", it: "Osteria" },
+  takeaway: { de: "Take-away", en: "Take-away", fr: "À l'emporter", it: "Da asporto" },
+  kitchen: { de: "Küche", en: "Kitchen", fr: "Cuisine", it: "Cucina" },
+};

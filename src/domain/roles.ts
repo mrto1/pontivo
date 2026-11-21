@@ -17,7 +17,7 @@ export const ROLE_AREAS: Record<LimitedRole, readonly string[]> = {
   reception: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "tag", "calendar", "bookings", "plan", "housekeeping", "resources", "reports", "guestbook", "inbox", "vouchers", "invoices", "dayclose", "groups"],
   housekeeping: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "housekeeping"],
   accounting: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "invoices", "dayclose", "debtors", "owners", "statistics", "hesta", "accountingexport"],
-  service: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "restaurant", "reservations", "kitchen", "kasse"],
+  service: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "dininghome", "restaurant", "reservations", "resplan", "waitlist", "kitchen", "kasse"],
 };
 
 /** Standardrollen, die ein Betrieb in Name und Seiten anpassen kann (Inhaber, Manager und Mitarbeitende sind abgestuft und bleiben fest) */
@@ -32,10 +32,13 @@ export const CONFIGURABLE_AREAS: { key: string; label: string; group: string }[]
   { group: "Heute", key: "tag", label: "Tagesliste (An- & Abreisen)" },
   { group: "Heute", key: "housekeeping", label: "Reinigung" },
   { group: "Heute", key: "inbox", label: "Posteingang" },
-  { group: "Heute", key: "restaurant", label: "Restaurant (Tische)" },
-  { group: "Heute", key: "reservations", label: "Tischreservierungen" },
-  { group: "Heute", key: "kitchen", label: "Küchenbildschirm" },
-  { group: "Heute", key: "kasse", label: "Kasse" },
+  { group: "Restaurant", key: "dininghome", label: "Tagesübersicht" },
+  { group: "Restaurant", key: "reservations", label: "Reservierungen" },
+  { group: "Restaurant", key: "resplan", label: "Tischplan" },
+  { group: "Restaurant", key: "waitlist", label: "Warteliste" },
+  { group: "Restaurant", key: "restaurant", label: "Tische" },
+  { group: "Restaurant", key: "kasse", label: "Kasse" },
+  { group: "Restaurant", key: "kitchen", label: "Küchenbildschirm" },
   { group: "Kalender", key: "plan", label: "Zimmerplan" },
   { group: "Kalender", key: "calendar", label: "Preise & Verfügbarkeit (ansehen)" },
   { group: "Buchungen", key: "bookings", label: "Buchungen" },
@@ -70,14 +73,17 @@ export const roleAllowsArea = (r: LimitedRole | CustomRole, area: string) => are
 export const roleLabel = (r: Role): string => (isCustomRole(r) ? parseCustom(r).name : ROLE_LABEL[r as FullRole | LimitedRole] ?? r);
 
 /** Erste Seite nach dem Anmelden für eingeschränkte Rollen */
-export const LANDING: Record<LimitedRole, string> = { reception: "", housekeeping: "housekeeping", accounting: "invoices", service: "kasse" };
-const LANDING_ORDER = ["tag", "housekeeping", "bookings", "calendar", "invoices", "kasse", "restaurant", "reports", "inbox", "statistics"];
+export const LANDING: Record<LimitedRole, string> = { reception: "", housekeeping: "housekeeping", accounting: "invoices", service: "restaurant/heute" };
+const LANDING_ORDER = ["tag", "housekeeping", "bookings", "calendar", "invoices", "dininghome", "kasse", "restaurant", "reservations", "kitchen", "reports", "inbox", "statistics"];
+/** Bereiche, deren Adresse nicht dem Schlüssel entspricht */
+const AREA_PATH: Record<string, string> = { dininghome: "restaurant/heute", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste" };
 export function landingFor(r: LimitedRole | CustomRole): string {
   if (!isCustomRole(r)) return LANDING[r];
   const areas = parseCustom(r).areas;
   const first = LANDING_ORDER.find((a) => areas.includes(a));
   if (first === "tag") return "";
-  return first ?? areas.find((a) => !(BASE_AREAS as readonly string[]).includes(a)) ?? "mypontivo";
+  if (first) return AREA_PATH[first] ?? first;
+  return areas.find((a) => !(BASE_AREAS as readonly string[]).includes(a)) ?? "mypontivo";
 }
 
 const RANK: Record<FullRole, number> = { staff: 1, manager: 2, owner: 3 };

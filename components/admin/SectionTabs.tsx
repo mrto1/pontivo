@@ -1,5 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
+import { useAreaNav } from "./AreaContext";
 import { bestMatch, sectionFor, type Nav, type NavItem } from "@/src/admin/nav";
 
 /** Eine Reihe Reiter. Nur der am genauesten passende ist aktiv (sonst leuchten «Rechnungen» und «Rechnungen/Tagesabschluss» zugleich). */
@@ -17,8 +18,9 @@ function Row({ tabs, pathname, home, label, sub }: { tabs: NavItem[]; pathname: 
 }
 
 /** Reiter über der Seite für zusammengelegte Menüpunkte (z. B. Gäste | Kartei | Posteingang), bei Bedarf mit zweiter Reihe */
-export function SectionTabs({ nav, home }: { nav: Nav; home: string }) {
+export function SectionTabs({ nav: navIn, home }: { nav: Nav; home: string }) {
   const pathname = usePathname();
+  const nav = useAreaNav(navIn);
   const section = sectionFor(pathname, nav, home);
   if (!section?.tabs) return null;
   const scores = section.tabs.map((t) => bestMatch(pathname, t, home));

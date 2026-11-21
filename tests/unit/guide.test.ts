@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { GUIDE, HELP_START, guideRole, progress, tasksFor } from "../../src/domain/guide";
 import { ROLE_AREAS, type LimitedRole } from "../../src/domain/roles";
 import { MODULES } from "../../src/domain/modules";
-import { adminNav, allPages } from "../../src/admin/nav";
+import { allPagesBoth } from "../../src/admin/nav";
 
-const nav = allPages(adminNav({ id: "h", slug: "s", primaryDomain: null }));
+const nav = allPagesBoth({ id: "h", slug: "s", primaryDomain: null });
 const keys = new Set([...nav.map((p) => p.key), "mypontivo"]);
 
 describe("Einarbeitung (PMS-ERSATZ 4.2)", () => {

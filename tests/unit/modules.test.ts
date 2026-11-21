@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { hiddenNavKeys, isOn, MODULES, switchProblem } from "../../src/domain/modules";
-import { adminNav, allPages } from "../../src/admin/nav";
+import { adminNav, allPages, allPagesBoth } from "../../src/admin/nav";
 
 const hotel = { id: "h1", slug: "demo", primaryDomain: null };
 
@@ -11,7 +11,7 @@ describe("Modul-Register", () => {
     expect(isOn([], "gibt-es-nicht")).toBe(false);
   });
   it("jeder Menüschlüssel der Module existiert im Menü", () => {
-    const keys = new Set(allPages(adminNav(hotel)).map((i) => i.key));
+    const keys = new Set(allPagesBoth(hotel).map((i) => i.key));
     for (const m of MODULES) for (const k of m.navKeys) expect(keys.has(k), `${m.key}:${k}`).toBe(true);
   });
   it("ausgeschaltete Module verschwinden aus dem Menü, Gruppe mit einem Reiter wird einfach", () => {

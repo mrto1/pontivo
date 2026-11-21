@@ -1120,3 +1120,46 @@ Auftrag des Betreibers: Optionen und Sonderwünsche je Artikel, Menüs/Kombis, K
 - Quelle: Adresse der Speisekarte (bis 5 Seiten derselben Domain mit passenden Stichwörtern wie speisekarte, menu, getränke) oder PDF (bis 4 MB, 12 Seiten). Gleiche **Kostenbremsen** wie die KI-Einrichtung (SPEC 19.36): nur nach Abo (Karte und Gastgeber-Bedingungen), Monatslimit **je Zweck** getrennt (`setup_imports.purpose` = hotel oder menu; Hotel-Läufe blockieren die Speisekarte nicht), Tageslimit über alle, begrenzte Textmenge, begrenzte Antwort (6000 Tokens), nicht erreichbare Quelle verbraucht keinen Lauf. Der gelesene Text wird nicht gespeichert.
 - Ergebnis ist ein **Entwurf** (`{items:[{category,name,description,price}]}`, höchstens 150 Artikel; nur Artikel mit Preis grösser 0, doppelte entfernt). Der Betrieb sieht eine Tabelle, kann Häkchen wegnehmen und Kategorie, Name und Preis ändern, dann «Ausgewählte übernehmen»: Anlage über denselben Weg wie der CSV-Import (`importItems`, Artikel mit gleichem Namen und gleicher Kategorie werden übersprungen), **Standard-MWST-Sätze** (8,1 % im Haus, 2,6 % Take-away; die KI setzt keine Sätze), Station Küche. Der Entwurf lässt sich verwerfen; nach Übernahme werden die Entwurfsdaten gelöscht; doppelt übernehmen geht nicht.
 - Nicht in Etappe D: Optionen/Menüs und Allergene aus der Karte lesen, mehrsprachige Karten, Bilder der Gerichte.
+
+## 20. Restaurant als eigene Betriebsart (Konzept: Projekt `claude/Restaurant-Konzept.md`, Navigation: `claude/Navigation.md` Teil B)
+Massgebend sind die Entscheide vom 21.11.2026 (Konzept Abschnitt 2). Offene Punkte stehen in `QUESTIONS.md` («Restaurant»). Anzahlung für Tischreservationen bleibt **gebührenfrei** (Entscheid Betreiber 21.11.2026).
+
+### 20.1 R1: Betriebsart, Modul-Zuschnitt, Navigation mit zwei Bereichen
+**Module.**
+- Neu `restaurant` («Restaurant: Reservierung, Speisekarte, Küche», ohne Aufpreis, Standard aus, **braucht nicht** `invoicing`): Reservierungen inkl. Online, Warteliste, Erinnerung, Anzahlung; Tischplan; Speisekarte/Artikel mit Optionen, KI-Speisekarte, CSV-Import; Küchenbildschirm; Tagesübersicht; später Online-Bestellung (R3/R4).
+- `pos` wird «Kasse» (CHF 29/Monat, Standard aus, braucht `restaurant` und `invoicing`): Tische/Bestellen am Tisch, Kasse (auch offline), Getrennt-Zahlen, Kassenabschluss, Kassen-Geräte, «aufs Zimmer».
+- Migration: jeder Betrieb mit `pos` an bekommt `restaurant` an (Zeile in `hotel_modules`).
+- Seiten prüfen das passende Modul: `restaurant` für Reservierungen, Tischplan, Warteliste, Tagesübersicht, Küche, Speisekarte (Artikel, Optionen, KI, CSV, Vorlage), Tischplan & Reservierung online; `pos` für Tische, Bestellung, Kasse (inkl. Offline-API), Kassenabschluss, Kassen-Geräte, Export.
+- Preis: der Betrag von `pos` ist Teil des Abos (Abo & Gebühren); die Abrechnung des Aufpreises ist nicht Teil von R1 (Anzeige «CHF 29/Monat» in der Beschreibung).
+
+**Betriebsart.** `hotels.property_type` erlaubt zusätzlich `restaurant` («Restaurant / Café / Take-away»). «Weiteren Betrieb anlegen» bietet sie an; die öffentliche Registrierung nur mit `/registrieren?art=restaurant` (ASSUMPTION: Pilotbetriebe; pontivo.ch bleibt bis R7 auf Unterkünfte ausgerichtet, Konzept Entscheid 1). Start-Funktionen: `restaurant` an, `frontdesk`, `housekeeping`, `statistics`, `guests`, `groups` aus; Rest nach Standard. Kurtaxe, Zimmer und Channex gibt es für Restaurants nicht: Go-live-Prüfung ohne Kurtaxe/Zimmer/Preise, Grunddaten ohne Check-in/out und Kurtaxe.
+
+**Gastro-Bezeichnung und Öffnungszeiten.** Neues Feld `hotels.dining_label` (feste Liste: `restaurant` Vorgabe, `cafe`, `bar`, `beiz`, `takeaway`, `kitchen`; Anzeige Restaurant, Café, Bar, Beiz, Take-away, Küche; mit EN/FR/IT). `restaurant_settings.opening_hours` (je Wochentag 0–6 bis zu drei Zeiträume `von–bis`; `null` = keine Einschränkung): Online-Reservierung bietet nur Zeiten an Tagen mit Öffnungszeit und innerhalb eines Zeitraums an (Ruhetage). Beides unter Grunddaten (bei Modul `restaurant`).
+
+**Zwei Bereiche.** Bereiche heissen fest **Unterkunft** (`lodging`) und **Gastronomie** (`dining`).
+| Betrieb | Navigation | Umschalter |
+| --- | --- | --- |
+| ohne Modul `restaurant` | Hotel-Baum (Teil A, ohne Reiter «Restaurant» unter Heute) | nein |
+| `property_type = 'restaurant'` | Restaurant-Baum | nein |
+| Unterkunft mit Modul `restaurant` | beide | ja, wenn die Person in beiden Bereichen mindestens einen Hauptpunkt sieht |
+
+Restaurant-Baum (Schlüssel und Adressen der bestehenden Seiten bleiben):
+```
+Heute           Tagesübersicht (dininghome, restaurant/heute) · Posteingang (inbox)
+Reservierungen  Liste (reservations) · Tischplan (resplan, restaurant/tischplan) · Warteliste (waitlist, restaurant/warteliste)
+Bestellungen    Tische (restaurant) · Kasse (kasse) · Küche (kitchen)
+Finanzen        Kassenabschluss (posclose) · Rechnungen (invoices) · Gutscheine (vouchers) · Buchhaltung (accountingexport)
+Zahnrad         Betrieb: Grunddaten · Zahlungsmethoden · Team & Rollen
+                Verkauf: Website · Speisekarte (positems, restaurant/artikel) · Tischplan & Reservierung online (ressettings, restaurant/einstellungen) · Gäste-Mails · KI-Chat
+                Technik: Funktionen · Geräte & Kasse (Kartenterminal, Kassen-Geräte, Kassen-Schnittstelle) · Abo & Gebühren
+```
+- Ein Zahnrad für beide Bereiche: bei Unterkunft mit Gastronomie stehen die Punkte beider nebeneinander; reine Restaurants sehen keine Unterkunftspunkte (Zimmer & Tarife, Zusatzleistungen, Kanäle, Gästeportal, Upselling, Direktbuchung, Schnittstelle, Zutritt, Datenübernahme).
+- ASSUMPTION: «Statistik» und «Tagesabrechnung Online» im Restaurant-Finanzen folgen mit R8 (die heutige Statistik ist zimmerbezogen).
+- **Umschalter** in der Kopfzeile direkt nach dem Betriebsnamen, zweiteilig mit Symbolen Bett/Besteck; links Betriebsart (Hotel, B&B, Ferienwohnung, Chalet, Gruppenhaus), rechts die Gastro-Bezeichnung; am Handy nur Symbole, der aktive Teil mit Text. Farbakzent je Bereich (Linie unter der Kopfzeile). Punkt mit Zahl auf dem inaktiven Teil Gastronomie: Online-Reservierungen, die heute eingegangen sind (später auch neue Online-Bestellungen).
+- **Bereich bestimmen:** Seiten, die nur in einem Baum stehen, legen den Bereich fest (so wechseln Links aus Mails und Push-Meldungen automatisch); geteilte Seiten (Posteingang, Rechnungen, Gutscheine, Zahnrad, Profil) bleiben im zuletzt gewählten Bereich. Letzter Bereich in einem Cookie je Person (`pv_area_<user>`), damit z. B. das Tablet im Restaurant im Restaurant öffnet. Die Startseite `/mypontivo/<id>` leitet im Bereich Gastronomie (und bei reinen Restaurants immer) auf die Tagesübersicht um.
+- **Rollen:** «Service» bekommt `dininghome`, `resplan`, `waitlist` dazu, landet auf der Tagesübersicht und sieht keinen Umschalter (hat keinen Hauptpunkt der Unterkunft). Eigene Rollen können die neuen Seiten wählen.
+- **Hinweis in der Tagesliste** der Unterkunft (bei Modul `restaurant`): «Restaurant heute: N Reservierungen, M Gäste» mit Link in die Tagesübersicht.
+- **Tagesübersicht (Gastronomie):** Reservierungen von heute nach Zeit (Gäste gesamt, noch erwartet, am Tisch), Warteliste heute, offene Tische mit Betrag (nur mit `pos`), Hinweise (keine Artikel, keine Tische, Online-Reservierung aus).
+- **Seiten umgehängt:** Tischplan-Editor, Tische anlegen und Einstellungen der Online-Reservierung ziehen von «Restaurant» (Artikel) bzw. der Reservierungsliste auf die neue Zahnrad-Seite «Tischplan & Reservierung online»; die Warteliste bekommt eine eigene Seite; der Tischplan mit Reservierungszustand eine eigene Seite unter Reservierungen (ohne Kasse: frei/reserviert).
+
+**Einrichtungsassistent für Restaurants** (gleiche Seite `einrichten`, eigene Schritte): Angaben zum Betrieb inkl. Öffnungszeiten · Was brauchen Sie? (Kasse ja/nein, Restaurantkasse eigener Anbieter) · Tische und Plätze · Speisekarte (KI, CSV oder von Hand; erledigt ab 1 Artikel) · Reservierung online (freiwillig) · Zahlungen empfangen (freiwillig) · Karte für die Grundgebühr · Online gehen. Willkommensmail ohne Zimmer/Kurtaxe.

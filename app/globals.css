@@ -1012,3 +1012,16 @@ pre { overflow-x: auto; }
 .plan-table.free { border-color: #2e7d32; }
 .plan-table.busy { border-color: #b3261e; background: rgba(179, 38, 30, .08); }
 .plan-table.soon { border-color: #b26a00; background: rgba(178, 106, 0, .08); }
+
+/* Zwei Bereiche: Umschalter Unterkunft | Gastronomie (SPEC 20.1) */
+.area-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; gap: 2px; flex: none; background: var(--surface); }
+.area-part { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: var(--muted); font: inherit; font-size: .88rem; padding: 5px 12px; border-radius: 999px; cursor: pointer; position: relative; white-space: nowrap; }
+.area-part.on { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.area-part:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.area-badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: #fff; font-size: .7rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.area-dining .admin-head { box-shadow: inset 0 -3px 0 #b5651d; }
+.area-lodging .admin-head { box-shadow: inset 0 -3px 0 var(--accent); }
+@media (max-width: 760px) {
+  .area-part { padding: 5px 9px; }
+  .area-part:not(.on) .area-text { display: none; }
+}

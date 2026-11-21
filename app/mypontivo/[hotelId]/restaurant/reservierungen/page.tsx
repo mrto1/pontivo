@@ -1,25 +1,23 @@
 import { Notice } from "@/components/admin/Notice";
 import { PeriodNav } from "@/components/admin/PeriodNav";
-import { FormSwitch } from "@/components/admin/FormSwitch";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { PosError, listTables } from "@/src/services/pos";
-import { assignTable, autoAssignDay, createReservation, getSettings, reservationsOfDay, saveSettings, setReservationStatus, waitlistOfDay } from "@/src/services/reservations";
+import { assignTable, autoAssignDay, createReservation, getSettings, reservationsOfDay, setReservationStatus, waitlistOfDay } from "@/src/services/reservations";
 import { addDays, isDay, todayIn } from "@/src/domain/dates";
 import { coversAt } from "@/src/domain/reservations";
 import { formatDay } from "@/src/i18n/dict";
 import { formatChf } from "@/src/domain/money";
-import { atLeast } from "@/src/domain/roles";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const here = (h: string, day: string, msg: string) => redirect(`/mypontivo/${h}/restaurant/reservierungen?day=${day}&msg=${encodeURIComponent(msg)}`);
 const STATUS = { pending: "Zahlung offen", confirmed: "bestätigt", seated: "am Tisch", cancelled: "storniert", noshow: "nicht erschienen" } as const;
 
-async function guard(f: FormData, manager = false) {
-  const c = manager ? await requireHotel(s(f, "hotelId"), "manager") : await requireHotel(s(f, "hotelId"), "staff", "reservations");
-  await requireModule(c.hotel.id, "pos");
+async function guard(f: FormData) {
+  const c = await requireHotel(s(f, "hotelId"), "staff", "reservations");
+  await requireModule(c.hotel.id, "restaurant");
   return c;
 }
 async function create(f: FormData) {
@@ -50,22 +48,13 @@ async function autoAssign(f: FormData) {
   const n = await autoAssignDay(c.hotel.id, s(f, "day"), c.actor);
   here(c.hotel.id, s(f, "day"), n ? `${n} Reservierungen einem Tisch zugeteilt.` : "Nichts zuzuteilen: alle haben einen Tisch oder es passt keiner.");
 }
-async function settings(f: FormData) {
-  "use server";
-  const c = await guard(f, true);
-  const windows = [1, 2].flatMap((n) => (s(f, `from${n}`) && s(f, `to${n}`) ? [{ from: s(f, `from${n}`), to: s(f, `to${n}`) }] : []));
-  try {
-    await saveSettings(c.hotel.id, { onlineEnabled: f.get("onlineEnabled") === "on", windows, durationMin: Number(s(f, "durationMin")), depositPerPersonRappen: Math.round(Number((s(f, "deposit") || "0").replace(",", ".")) * 100), depositFromParty: Number(s(f, "depositFromParty") || 1), cancelHours: Number(s(f, "cancelHours") || 0), reminderHours: Number(s(f, "reminderHours") || 0), autoAssign: f.get("autoAssign") === "on", maxParty: Number(s(f, "maxParty")), capacity: Number(s(f, "capacity")), leadHours: Number(s(f, "leadHours")), horizonDays: Number(s(f, "horizonDays")) }, c.actor);
-  } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, s(f, "day"), `Einstellungen nicht gespeichert: ${e.message}`); }
-  here(c.hotel.id, s(f, "day"), "Einstellungen gespeichert.");
-}
 
 /** Tischreservierungen (SPEC 19.49 Etappe C): Liste je Tag, Tisch zuweisen, Status, neue Reservierung, Online-Einstellungen */
 export default async function ReservationsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "reservations");
-  await requireModule(hotel.id, "pos");
+  const { hotel } = await requireHotel(hotelId, "staff", "reservations");
+  await requireModule(hotel.id, "restaurant");
   const today = todayIn(hotel.timezone);
   const day = sp.day && isDay(sp.day) ? sp.day : today;
   const [list, tables, cfg, wait] = await Promise.all([reservationsOfDay(hotel.id, day), listTables(hotel.id), getSettings(hotel.id), waitlistOfDay(hotel.id, day)]);
@@ -73,10 +62,8 @@ export default async function ReservationsPage({ params, searchParams }: { param
   const live = list.filter((r) => r.status === "confirmed" || r.status === "seated");
   const guests = live.reduce((a, r) => a + r.party, 0);
   const peak = Math.max(0, ...live.map((r) => coversAt(list, r.time, cfg.durationMin)));
-  const manager = atLeast(role, "manager");
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   const D = <input type="hidden" name="day" value={day} />;
-  const publicUrl = `/h/${hotel.slug}/${hotel.defaultLanguage}/tisch`;
   return (
     <div className="stack">
       <h1>Tischreservierungen</h1>
@@ -106,12 +93,7 @@ export default async function ReservationsPage({ params, searchParams }: { param
       {live.some((r) => !r.tableId) && tables.length ? (
         <form action={autoAssign}>{H}{D}<button className="btn secondary">Offene automatisch einem Tisch zuteilen</button></form>
       ) : null}
-      {wait.length ? (
-        <section className="card" data-testid="waitlist">
-          <h2>Warteliste</h2>
-          <ul>{wait.map((w) => <li key={w.id}>{w.name} · {w.party} Pers. · {w.email}{w.notifiedAt ? " (benachrichtigt)" : ""}</li>)}</ul>
-        </section>
-      ) : null}
+      {wait.length ? <p className="small"><a href={`/mypontivo/${hotel.id}/restaurant/warteliste?day=${day}`}>Warteliste an diesem Tag: {wait.length}</a></p> : null}
       <form action={create} className="card stack">
         {H}{D}
         <h2>Neue Reservierung</h2>
@@ -128,35 +110,6 @@ export default async function ReservationsPage({ params, searchParams }: { param
         <div><label htmlFor="note">Notiz</label><input id="note" name="note" maxLength={300} placeholder="Kinderstuhl, Geburtstag …" /></div>
         <div><button className="btn">Speichern</button></div>
       </form>
-      {manager ? (
-        <form action={settings} className="card stack" id="online">
-          {H}{D}
-          <h2>Online-Reservierung für Gäste</h2>
-          <FormSwitch name="onlineEnabled" defaultOn={cfg.onlineEnabled} label="Gäste können online reservieren" hint={<>Formular unter <a href={publicUrl}>{publicUrl}</a> (auf Ihrer Hotel-Website verlinken).</>} />
-          <p className="small muted">Zeitfenster, in denen Gäste einen Tisch beginnen können (im Raster von 30 Minuten):</p>
-          <div className="inline-form">
-            {[1, 2].map((n) => { const w = cfg.windows[n - 1]; return (
-              <div key={n} className="inline-form"><label htmlFor={`from${n}`}>Fenster {n} von</label><input id={`from${n}`} name={`from${n}`} type="time" defaultValue={w?.from ?? ""} /><label htmlFor={`to${n}`}>bis</label><input id={`to${n}`} name={`to${n}`} type="time" defaultValue={w?.to ?? ""} /></div>
-            ); })}
-          </div>
-          <div className="inline-form">
-            <div><label htmlFor="durationMin">Dauer (Min.)</label><input id="durationMin" name="durationMin" type="number" min={30} max={480} defaultValue={cfg.durationMin} style={{ width: 90 }} /></div>
-            <div><label htmlFor="capacity">Plätze online</label><input id="capacity" name="capacity" type="number" min={1} max={1000} defaultValue={cfg.capacity} style={{ width: 90 }} /></div>
-            <div><label htmlFor="maxParty">Grösste Gruppe</label><input id="maxParty" name="maxParty" type="number" min={1} max={50} defaultValue={cfg.maxParty} style={{ width: 90 }} /></div>
-            <div><label htmlFor="leadHours">Vorlauf (Std.)</label><input id="leadHours" name="leadHours" type="number" min={0} max={168} defaultValue={cfg.leadHours} style={{ width: 90 }} /></div>
-            <div><label htmlFor="horizonDays">Vorschau (Tage)</label><input id="horizonDays" name="horizonDays" type="number" min={1} max={365} defaultValue={cfg.horizonDays} style={{ width: 90 }} /></div>
-          </div>
-          <FormSwitch name="autoAssign" defaultOn={cfg.autoAssign} label="Tisch automatisch zuteilen" hint="Der kleinste freie Tisch mit genug Plätzen. Kein Zusammenstellen mehrerer Tische." />
-          <div className="inline-form">
-            <div><label htmlFor="deposit">Anzahlung je Person CHF (0 = keine)</label><input id="deposit" name="deposit" inputMode="decimal" defaultValue={(cfg.depositPerPersonRappen / 100).toString()} style={{ width: 90 }} /></div>
-            <div><label htmlFor="depositFromParty">ab Personen</label><input id="depositFromParty" name="depositFromParty" type="number" min={1} max={50} defaultValue={cfg.depositFromParty} style={{ width: 90 }} /></div>
-            <div><label htmlFor="cancelHours">Gratis stornieren bis (Std. vorher)</label><input id="cancelHours" name="cancelHours" type="number" min={0} max={168} defaultValue={cfg.cancelHours} style={{ width: 90 }} /></div>
-            <div><label htmlFor="reminderHours">Erinnerung (Std. vorher, 0 = aus)</label><input id="reminderHours" name="reminderHours" type="number" min={0} max={72} defaultValue={cfg.reminderHours} style={{ width: 90 }} /></div>
-          </div>
-          <p className="small muted">Die Anzahlung wird online über Stripe bezahlt (Ihr verbundenes Konto, keine Plattformgebühr) und bei rechtzeitiger Stornierung zurückerstattet. Storniert der Betrieb, kommt sie immer zurück; bei «nicht erschienen» bleibt sie. Den bezahlten Betrag ziehen Sie bei der Rechnung ab.</p>
-          <div><button className="btn">Speichern</button></div>
-        </form>
-      ) : null}
     </div>
   );
 }

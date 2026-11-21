@@ -3,7 +3,7 @@ import { applyModules } from "./modules";
 import { startModules } from "../domain/module-choice";
 import { z } from "zod";
 import { db, rows } from "../db/client";
-import { hotelMembers, hotelModules, hotels, ratePlans, roomTypes, sitePages, users, type Hotel } from "../db/schema";
+import { hotelMembers, hotelModules, hotels, posItems, posTables, ratePlans, restaurantSettings, roomTypes, sitePages, users, type Hotel } from "../db/schema";
 import { slugify } from "../domain/blocks";
 import { DEFAULT_MONTHLY_MINIMUM_RAPPEN, HOST_TERMS_VERSION } from "../legal/host-terms";
 import { enqueueEmail } from "../email/enqueue";
@@ -22,11 +22,13 @@ import { ensureHomePage } from "./site";
  * einrichtet, sieht den Schritt im Assistenten ebenfalls als erledigt.
  */
 
-export const PROPERTY_TYPES = ["hotel", "bnb", "apartment", "chalet", "group_house"] as const;
+export const PROPERTY_TYPES = ["hotel", "bnb", "apartment", "chalet", "group_house", "restaurant"] as const;
 export type PropertyType = (typeof PROPERTY_TYPES)[number];
 export const PROPERTY_LABEL: Record<PropertyType, string> = {
-  hotel: "Hotel / Gasthof", bnb: "Bed & Breakfast", apartment: "Ferienwohnung", chalet: "Chalet / Ferienhaus", group_house: "Gruppenhaus / Berghütte",
+  hotel: "Hotel / Gasthof", bnb: "Bed & Breakfast", apartment: "Ferienwohnung", chalet: "Chalet / Ferienhaus", group_house: "Gruppenhaus / Berghütte", restaurant: "Restaurant / Café / Take-away",
 };
+/** Reines Restaurant ohne Zimmer (SPEC 20.1) */
+export const isRestaurant = (t: string) => t === "restaurant";
 /** Ganze Einheit vermieten (eine Wohnung, ein Haus) statt einzelner Zimmer */
 export const isWholeUnit = (t: string) => t === "apartment" || t === "chalet" || t === "group_house";
 export const unitWord = (t: string) => (t === "apartment" ? "Wohnung" : t === "chalet" ? "Haus" : t === "group_house" ? "Unterkunft" : "Zimmer");
@@ -105,7 +107,7 @@ export async function registerHost(input: RegisterInput, now = new Date(), opts:
       .onConflictDoUpdate({ target: users.email, set: { name: sql`coalesce(${users.name}, ${v.contactName})` } }).returning();
     await tx.insert(hotelMembers).values({ hotelId: h.id, userId: u.id, role: "owner" }).onConflictDoNothing();
     // Startprofil als feste Einträge: Funktionen sind von Anfang an schaltbar (Wizard «Was brauchen Sie?», Funktionen-Seite)
-    await tx.insert(hotelModules).values(Object.entries(startModules(isWholeUnit(v.propertyType))).map(([module, enabled]) => ({ hotelId: h.id, module, enabled })));
+    await tx.insert(hotelModules).values(Object.entries(startModules(isWholeUnit(v.propertyType), isRestaurant(v.propertyType))).map(([module, enabled]) => ({ hotelId: h.id, module, enabled })));
     await audit(tx, { hotelId: h.id, actor: `user:${u.id}`, action: "host.register", entity: "hotel", entityId: h.id, details: { propertyType: v.propertyType, terms: HOST_TERMS_VERSION } });
     return h;
   });
@@ -124,10 +126,11 @@ export async function chooseModules(hotel: Hotel, wanted: Record<string, boolean
 }
 
 
-export type StepKey = "betrieb" | "funktionen" | "umstieg" | "kurtaxe" | "unterkunft" | "fotos" | "ankunft" | "zahlungen" | "karte" | "live" | "einbinden";
+export type StepKey = "betrieb" | "funktionen" | "umstieg" | "kurtaxe" | "unterkunft" | "fotos" | "ankunft" | "zahlungen" | "karte" | "live" | "einbinden" | "tische" | "speisekarte" | "reservierung";
 export type Step = { key: StepKey; title: string; done: boolean; required: boolean };
 
 export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
+  if (isRestaurant(hotel.propertyType)) return restaurantSteps(hotel);
   const rts = await db().select().from(roomTypes).where(and(eq(roomTypes.hotelId, hotel.id), eq(roomTypes.active, true)));
   const rps = await db().select().from(ratePlans).where(and(eq(ratePlans.hotelId, hotel.id), eq(ratePlans.active, true)));
   const problems = await goLiveProblems(hotel);
@@ -145,6 +148,28 @@ export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
     { key: "karte", title: "Karte für die Grundgebühr", done: hotel.monthlyMinimumRappen === 0 || !!hotel.billingPaymentMethodId, required: hotel.monthlyMinimumRappen > 0 },
     { key: "live", title: "Online gehen", done: hotel.status === "live", required: true },
     // Nur Buchungssystem: Link oder Knopf auf der eigenen Website einbauen
+    ...(bookingOnly(hotel) ? [{ key: "einbinden" as const, title: "Auf Website einbauen", done: !!hotel.onboarding.embeddedAt, required: false }] : []),
+  ];
+}
+
+/** Schritte für reine Restaurants (SPEC 20.1): ohne Zimmer, Kurtaxe und Ankunft */
+async function restaurantSteps(hotel: Hotel): Promise<Step[]> {
+  const [tables, items, cfg] = await Promise.all([
+    db().select({ id: posTables.id }).from(posTables).where(and(eq(posTables.hotelId, hotel.id), eq(posTables.active, true))),
+    db().select({ id: posItems.id }).from(posItems).where(and(eq(posItems.hotelId, hotel.id), eq(posItems.active, true))),
+    db().select().from(restaurantSettings).where(eq(restaurantSettings.hotelId, hotel.id)),
+  ]);
+  const photos = hotel.content.photos?.length ?? 0;
+  return [
+    { key: "betrieb", title: "Angaben und Öffnungszeiten", done: !!(hotel.addressLine && hotel.postalCode && hotel.city), required: true },
+    { key: "funktionen", title: "Was brauchen Sie?", done: !!hotel.onboarding.modulesChosenAt, required: true },
+    { key: "tische", title: "Tische und Plätze", done: tables.length > 0, required: true },
+    { key: "speisekarte", title: "Speisekarte", done: items.length > 0, required: true },
+    { key: "reservierung", title: "Reservierung online", done: !!cfg[0]?.onlineEnabled, required: false },
+    { key: "fotos", title: "Fotos", done: photos > 0, required: false },
+    { key: "zahlungen", title: "Zahlungen empfangen", done: !!(hotel.stripeAccountId && hotel.stripeChargesEnabled) || env().PAYMENT_PROVIDER !== "stripe", required: false },
+    { key: "karte", title: "Karte für die Grundgebühr", done: hotel.monthlyMinimumRappen === 0 || !!hotel.billingPaymentMethodId, required: hotel.monthlyMinimumRappen > 0 },
+    { key: "live", title: "Online gehen", done: hotel.status === "live", required: true },
     ...(bookingOnly(hotel) ? [{ key: "einbinden" as const, title: "Auf Website einbauen", done: !!hotel.onboarding.embeddedAt, required: false }] : []),
   ];
 }
@@ -321,6 +346,18 @@ export const basicsSchema = z.object({
   checkoutTime: z.string().regex(/^\d{2}:\d{2}$/, "Check-out-Zeit"),
   intro: z.string().trim().max(1000).default(""),
 });
+
+/** Restaurant im Assistenten: N Tische mit gleich vielen Plätzen anlegen («Tisch 1» …), bestehende Namen werden übersprungen */
+export async function quickTables(hotel: Hotel, count: number, seats: number, actor: string): Promise<number> {
+  if (!Number.isInteger(count) || count < 1 || count > 100) throw new OnboardingError("Anzahl Tische: 1 bis 100.");
+  if (!Number.isInteger(seats) || seats < 1 || seats > 50) throw new OnboardingError("Plätze je Tisch: 1 bis 50.");
+  const have = new Set((await db().select({ name: posTables.name }).from(posTables).where(eq(posTables.hotelId, hotel.id))).map((t) => t.name));
+  const n0 = have.size;
+  const values = Array.from({ length: count }, (_, i) => `Tisch ${i + 1}`).filter((name) => !have.has(name)).map((name, i) => ({ hotelId: hotel.id, name, seats, sortOrder: n0 + i }));
+  if (values.length) await db().insert(posTables).values(values).onConflictDoNothing();
+  await audit(db(), { hotelId: hotel.id, actor, action: "pos.tables_quick", entity: "hotel", entityId: hotel.id, details: { count: values.length, seats } });
+  return values.length;
+}
 
 export async function updateBasics(hotel: Hotel, input: z.input<typeof basicsSchema>, actor: string) {
   const v = basicsSchema.parse(input);

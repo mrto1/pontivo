@@ -12,7 +12,7 @@ export type Term = { term: string; meaning: string; inPontivo: string; area?: st
 const FRONT: GuideRole[] = ["owner", "reception"];
 
 export const WAYFINDING: Wayfinding[] = [
-  { area: "home", title: "Heute (erster Reiter «Tagesliste»)", what: "Der Tag auf einen Blick: Anreisen, Abreisen und Gäste im Haus, mit Pfeilen und Datumsfeld auch für andere Tage (Vorschau). Für heute zusätzlich Hinweise mit Direktlink zur passenden Einstellung und offene Zahlungen. Daneben als Reiter Posteingang, Reinigung und Restaurant. Mit dem Online-Check-in steht bei jeder Anreise der Stand des Meldescheins.", notThis: "Kennzahlen mit Zeitraum (Belegung, gesparte Provision) stehen unter Finanzen → Statistik." },
+  { area: "home", title: "Heute (erster Reiter «Tagesliste»)", what: "Der Tag auf einen Blick: Anreisen, Abreisen und Gäste im Haus, mit Pfeilen und Datumsfeld auch für andere Tage (Vorschau). Für heute zusätzlich Hinweise mit Direktlink zur passenden Einstellung und offene Zahlungen. Daneben als Reiter Posteingang und Reinigung. Mit Restaurant steht dort ein Hinweis auf die Reservierungen von heute. Mit dem Online-Check-in steht bei jeder Anreise der Stand des Meldescheins.", notThis: "Kennzahlen mit Zeitraum (Belegung, gesparte Provision) stehen unter Finanzen → Statistik." },
   { area: "calendar", title: "Kalender", what: "Das Zeitraster je Zimmertyp: wie viele Zimmer sind frei, was kostet die Nacht, wo gelten Regeln (Mindestaufenthalt, Stopp). Hier ändern Sie Preise und sperren Zimmer. Erster Reiter ist der Zimmerplan (mit Rezeption), dazu Preisempfehlung.", notThis: "Einzelne Gäste und Zahlungen sehen Sie hier nicht, das sind Vorgänge unter «Buchungen». Booking.com & Co. verbinden Sie unter Einstellungen → Kanäle." },
   { area: "plan", title: "Zimmerplan (erster Reiter im Kalender)", what: "Welches Zimmer ist an welchem Tag mit welchem Gast belegt. Hier teilen Sie konkrete Zimmernummern zu und wechseln Zimmer." },
   { area: "bookings", title: "Buchungen", what: "Alle Vorgänge: Gast, Zeitraum, Zahlung, Storno. Neue Buchung von Hand (Telefon, Walk-in), No-Show, Rückerstattung. Dazu Gruppen, Angebote vor Ort, Gutscheine und Gäste (Kartei, Newsletter, Bewertungen).", notThis: "Preise und Verfügbarkeit ändern Sie im Kalender, Rechnungen stehen unter Finanzen." },
@@ -22,6 +22,7 @@ export const WAYFINDING: Wayfinding[] = [
   { area: "rooms", title: "Zimmer & Tarife (Zahnrad → Betrieb)", what: "Zimmertypen, Anzahl Zimmer, Fotos, Tarife (z. B. mit Frühstück, nicht stornierbar) und Zusatzleistungen. Ein Zimmertyp ohne Tarif ist nicht buchbar." },
   { area: "site", title: "Website & Buchung (Einstellungen → Verkauf)", what: "Wie Gäste Sie finden und buchen: eigene Pontivo-Website oder nur der Buchungsknopf auf Ihrer bisherigen Seite. Layout, Schrift, Logo, Sprachen." },
   { area: "team", title: "Team & Rollen (Einstellungen → Betrieb)", what: "Wer Zugang hat und was jede Rolle sehen darf. Eigene Rollen mit Häkchen pro Seite." },
+  { area: "dininghome", title: "Bereich Gastronomie (Besteck-Symbol oben)", what: "Betriebe mit Unterkunft und Restaurant haben oben neben dem Namen einen Umschalter: links die Unterkunft (Bett), rechts die Gastronomie (Besteck), beschriftet z. B. «Hotel | Restaurant». In der Gastronomie heissen die Hauptpunkte Heute (Tagesübersicht), Reservierungen (Liste, Tischplan, Warteliste), Bestellungen (Tische, Kasse, Küche) und Finanzen. Ein reines Restaurant sieht nur diesen Bereich.", notThis: "Speisekarte und Tischplan einrichten Sie im Zahnrad unter Verkauf." },
   { area: "mypontivo", title: "Profilbild (oben rechts)", what: "Ihr Konto: Passwort, Passkey, Authenticator, Mitteilungen auf dem Handy, App installieren. Im Menü dahinter auch Erste Woche, diese Hilfe und Abmelden." },
 ];
 
@@ -71,6 +72,12 @@ export const FLOWS: Flow[] = [
     key: "f_clean", title: "Zimmer reinigen und melden", roles: ["owner", "housekeeping", "reception"], area: "housekeeping",
     goal: "Nach der Abreise weiss die Rezeption sofort, welches Zimmer bereit ist.",
     steps: ["Reinigung am Handy öffnen: die Zimmer des Tages, nach Abreise zuerst.", "Ist ein Zimmer gereinigt, auf «sauber» setzen.", "Mangel entdeckt (Lampe defekt, Handtuch fehlt)? «Mangel melden» mit kurzem Text, die Rezeption sieht es."],
+  },
+  {
+    key: "f_reserve", title: "Einen Tisch reservieren", roles: ["owner", "service"], area: "reservations",
+    goal: "Reservierung am Telefon erfassen und dem Gast einen Tisch geben.",
+    steps: ["Oben in den Bereich Gastronomie wechseln (Besteck-Symbol), dann «Reservierungen».", "Zeit, Personen und Name eintragen; mit E-Mail bekommt der Gast eine Bestätigung.", "Tisch wählen oder «Offene automatisch einem Tisch zuteilen»; im Tischplan sehen Sie, was frei ist."],
+    tip: "Online-Reservierungen kommen von selbst dazu. Ist der Tag voll, tragen sich Gäste auf die Warteliste ein.",
   },
   {
     key: "f_order", title: "Am Tisch bestellen und kassieren", roles: ["owner", "service"], area: "kasse",

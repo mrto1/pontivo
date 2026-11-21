@@ -51,7 +51,7 @@ describe("Funktionswahl", () => {
     const hotel = { ...startModules(false), housekeeping: true, access: true };
     expect(resolveModules(hotel, { frontdesk: false })).toEqual({ frontdesk: false, housekeeping: false, access: false });
     expect(resolveModules(hotel, { frontdesk: false, housekeeping: true })).toEqual({}); // housekeeping gewünscht: frontdesk bleibt an
-    expect(resolveModules(base, { pos: true })).toEqual({ pos: true }); // invoicing läuft schon
-    expect(resolveModules({ ...base, invoicing: false }, { pos: true })).toEqual({ pos: true, invoicing: true });
+    expect(resolveModules(base, { pos: true })).toEqual({ pos: true, restaurant: true }); // invoicing läuft schon, Kasse braucht Restaurant (SPEC 20.1)
+    expect(resolveModules({ ...base, invoicing: false }, { pos: true })).toEqual({ pos: true, invoicing: true, restaurant: true });
   });
 });

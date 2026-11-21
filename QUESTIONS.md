@@ -258,3 +258,10 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Passwort-Regeln: ASSUMPTION mindestens 8 Zeichen (damit «testtest» für Testkonten geht), keine weiteren Regeln, kein Abgleich mit Leak-Listen.
 - Passwort ist freiwillig; wer keins hat, meldet sich weiter per Passkey oder E-Mail-Link an. Ein Zwang (Pflicht beim nächsten Login) und Passwort-Zurücksetzen durch die Plattform-Verwaltung sind nicht gebaut.
 - Das Passwort ersetzt nicht die Bestätigung der E-Mail-Adresse (`email_verified_at` wird nur durch einen eingelösten Link gesetzt).
+
+## Restaurant (Restaurant-Konzept 21.11.2026, Abschnitt 9)
+- [x] Gebührenregel (Entscheid 10): Anzahlung für Tischreservationen bleibt **gebührenfrei** (Entscheid Betreiber 21.11.2026).
+- [ ] Adresssuche geo.admin.ch (R4): aktuelle Fair-Use-Grenzen vor dem Bau prüfen; bei absehbar mehr Last vorab info@geo.admin.ch kontaktieren.
+- [ ] SMS-Anbieter und Weiterverrechnung der SMS-Kosten (R3/R4: Alarm bei nicht angenommener Bestellung, Herzschlag-Ausfall, «bereit»/«unterwegs» an den Gast). Betreiber 21.11.2026: «je nach Pricing» → Preisvergleich vorlegen (vor R3). Bis zum Entscheid: Mail und Push, SMS-Stelle vorbereitet.
+- [ ] Pilotbetrieb (Restaurant/Take-away, idealerweise GloriaFood-Nutzer).
+- [ ] Treuhänder: MWST-Satz der Liefergebühr (Annahme 2,6 % wie die Speisen), Bons bei Online-Zahlung.

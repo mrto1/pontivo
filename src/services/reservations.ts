@@ -4,7 +4,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { db, rows } from "../db/client";
 import { posReservations, posTables, posWaitlist, restaurantSettings, type Hotel, type PosReservation } from "../db/schema";
 import { addDays, diffDays, isDay, todayIn, zonedToUtc } from "../domain/dates";
-import { TIME_RE, checkWindows, coversAt, depositFor, onlineSlots, refundable, suggestTable, tableFree, type ResSettings, type Slot, PENDING_MINUTES } from "../domain/reservations";
+import { TIME_RE, checkOpeningHours, checkWindows, coversAt, depositFor, onlineSlots, refundable, suggestTable, tableFree, type ResSettings, type Slot, PENDING_MINUTES } from "../domain/reservations";
 import { enqueueEmail } from "../email/enqueue";
 import { env } from "../env";
 import { getPaymentProvider } from "../payments/provider";
@@ -44,6 +44,23 @@ export async function saveSettings(hotelId: string, s: ResSettings, actor: strin
     await tx.insert(restaurantSettings).values({ hotelId, ...s }).onConflictDoUpdate({ target: restaurantSettings.hotelId, set: { ...s, updatedAt: new Date() } });
     await audit(tx, { hotelId, actor, action: "restaurant.settings", entity: "restaurant_settings", entityId: hotelId });
   });
+}
+
+/** Öffnungszeiten speichern (Grunddaten, SPEC 20.1); null = keine Einschränkung */
+export async function saveOpeningHours(hotelId: string, h: Record<string, { from: string; to: string }[]> | null, actor: string) {
+  if (h) { const bad = checkOpeningHours(h); if (bad) throw new PosError(bad); }
+  await db().transaction(async (tx) => {
+    const cur = await getSettings(hotelId);
+    await tx.insert(restaurantSettings).values({ hotelId, ...cur, openingHours: h }).onConflictDoUpdate({ target: restaurantSettings.hotelId, set: { openingHours: h, updatedAt: new Date() } });
+    await audit(tx, { hotelId, actor, action: "restaurant.opening_hours", entity: "restaurant_settings", entityId: hotelId });
+  });
+}
+
+/** Online-Reservierungen, die heute eingegangen sind (Punkt am Umschalter, SPEC 20.1) */
+export async function onlineReservationsToday(hotel: Hotel): Promise<number> {
+  const start = zonedToUtc(todayIn(hotel.timezone), "00:00", hotel.timezone);
+  const [r] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM pos_reservations WHERE hotel_id = ${hotel.id} AND source = 'online' AND status IN ('confirmed','pending') AND created_at >= ${start}`));
+  return r?.n ?? 0;
 }
 
 export const reservationsOfDay = (hotelId: string, day: string) =>

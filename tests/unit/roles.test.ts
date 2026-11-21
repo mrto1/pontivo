@@ -20,7 +20,7 @@ describe("Rollen (SPEC 17.4)", () => {
       expect(canAccess(r, "manager", "layout")).toBe(false);
       expect(canAccess(r, "staff", "settings")).toBe(false);
       expect(canAccess(r, "staff", "layout")).toBe(true);
-      expect(ROLE_AREAS[r]).toContain(LANDING[r] === "" ? "tag" : LANDING[r]); // "" = Tag
+      expect(ROLE_AREAS[r]).toContain(LANDING[r] === "" ? "tag" : LANDING[r] === "restaurant/heute" ? "dininghome" : LANDING[r]); // "" = Tag
     }
   });
 
@@ -42,10 +42,9 @@ describe("Rollen (SPEC 17.4)", () => {
 
   it("alle Bereiche der Rollen sind echte Menüpunkte (oder Rahmen)", () => {
     const hotel = { id: "h", slug: "s", primaryDomain: null };
-    const nav = adminNav(hotel);
     const keys = new Set<string>();
     const walk = (items: { key: string; tabs?: { key: string }[] }[]) => items.forEach((i) => { keys.add(i.key); walk(i.tabs ?? []); });
-    walk(nav.primary); walk(nav.settings.tabs ?? []); walk([nav.account]);
+    for (const nav of [adminNav(hotel), adminNav(hotel, new Set(), { area: "dining" })]) { walk(nav.primary); walk(nav.settings.tabs ?? []); walk([nav.account]); }
     for (const areas of Object.values(ROLE_AREAS)) for (const a of areas) if (a !== "layout" && a !== "mypontivo" && a !== "tag") expect(keys.has(a), a).toBe(true);
   });
 });
@@ -78,7 +77,7 @@ describe("Zahnrad und Menü je Rolle (SPEC 19.42)", () => {
       const { nav } = visibleNav(hotel, r, none);
       const keys = allPages(nav).map((i) => i.key);
       expect(nav.primary.length, r).toBeGreaterThan(0);
-      expect(keys, r).toContain(LANDING[r] === "" ? "home" : LANDING[r]);
+      expect(keys, r).toContain(LANDING[r] === "" ? "home" : LANDING[r] === "restaurant/heute" ? "dininghome" : LANDING[r]);
       // «Tag» sehen nur Rollen mit Bereich «tag»; für die anderen leitet die Seite um und ein Reiter wäre tot
       expect(keys.includes("home"), r).toBe(ROLE_AREAS[r].includes("tag"));
       expect(keys.every((k) => ROLE_AREAS[r].includes(k) || ["mypontivo", "firstweek", "help", "helpflows", "helpterms"].includes(k)), r).toBe(true);
@@ -94,5 +93,26 @@ describe("Zahnrad und Menü je Rolle (SPEC 19.42)", () => {
     // Service: Restaurant mit Tische und Kasse
     const s = visibleNav(hotel, "service", new Set(["posclose"])).nav;
     expect(allPages(s).map((i) => i.key).filter((k) => ["restaurant", "kasse"].includes(k))).toEqual(["restaurant", "kasse"]);
+  });
+
+  it("Umschalter (SPEC 20.1): nur Unterkunft mit Gastronomie und nur, wer beide Bereiche sieht", () => {
+    const on = new Set<string>(); // keine ausgeblendeten Module = restaurant an
+    const off = new Set(["dininghome", "reservations", "resplan", "waitlist", "kitchen", "positems", "ressettings", "restaurant", "kasse", "posdevices", "posclose"]);
+    expect(visibleNav(hotel, "owner", on).showSwitch).toBe(true);
+    expect(visibleNav(hotel, "owner", off).showSwitch).toBe(false);
+    expect(visibleNav(hotel, "owner", off).navs.dining).toBeNull();
+    // Service sieht nur die Gastronomie: kein Umschalter, Menü des Restaurants
+    const sv = visibleNav(hotel, "service", on);
+    expect(sv.showSwitch).toBe(false);
+    expect(sv.nav.primary.map((i) => i.label)).toEqual(["Heute", "Reservierungen", "Bestellungen"]);
+    expect(visibleNav(hotel, "reception", on).showSwitch).toBe(false);
+    // Reines Restaurant: nur der Restaurant-Baum, ohne Umschalter
+    const r = visibleNav({ ...hotel, propertyType: "restaurant" }, "owner", on);
+    expect(r.showSwitch).toBe(false);
+    expect(r.navs.lodging).toBeNull();
+    expect(r.nav.primary.map((i) => i.label)).toEqual(["Heute", "Reservierungen", "Bestellungen", "Finanzen"]);
+    // gewählter Bereich wird übernommen
+    expect(visibleNav(hotel, "owner", on, "dining").nav.primary[1].label).toBe("Reservierungen");
+    expect(visibleNav(hotel, "owner", on, "lodging").nav.primary[1].label).toBe("Kalender");
   });
 });

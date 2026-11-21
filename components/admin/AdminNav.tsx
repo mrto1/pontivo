@@ -1,6 +1,7 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { isActive, isActiveIn, type Nav, type NavItem } from "@/src/admin/nav";
+import { isActiveIn, type Nav, type NavItem } from "@/src/admin/nav";
+import { useAreaNav } from "./AreaContext";
 
 /**
  * Menü: Desktop = vier Hauptpunkte in der Kopfzeile, Handy = feste Leiste unten (höchstens 4 Punkte, alles Weitere sind Reiter). Menüinhalt kommt aus src/admin/nav.ts.
@@ -16,6 +17,7 @@ const TAB_ICONS: Record<string, string> = {
   guests: "M9 11a3 3 0 100-6 3 3 0 000 6z M3 20a6 6 0 0112 0 M17 8a3 3 0 010 6 M21 20a5 5 0 00-4-4.9",
   guestbook: "M9 11a3 3 0 100-6 3 3 0 000 6z M3 20a6 6 0 0112 0 M17 8a3 3 0 010 6 M21 20a5 5 0 00-4-4.9",
   finance: "M4 20V4 M4 20h16 M8 16v-4 M12 16V8 M16 16v-6",
+  orders: "M7 3v8 M5 3v5a2 2 0 004 0V3 M7 11v10 M17 3c-2 2-2 6 0 8v10 M17 3v18",
   gear: "M12 15a3 3 0 100-6 3 3 0 000 6z M19 12a7 7 0 00-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 00-2-1.2L14.2 3h-4l-.4 2.7a7 7 0 00-2 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 005 12a7 7 0 00.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 002 1.2l.4 2.7h4l.4-2.7a7 7 0 002-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z",
   more: "M5 12h.01 M12 12h.01 M19 12h.01",
   "pf-home": "M4 11l8-7 8 7 M6 10v10h12V10 M10 20v-5h4v5",
@@ -32,8 +34,9 @@ function TabIcon({ name }: { name: string }) {
   );
 }
 
-export function AdminNav({ nav, home, userLabel, initials, showSettings }: { nav: Nav; home: string; userLabel: string; initials: string; showSettings: boolean }) {
+export function AdminNav({ nav: navIn, home, userLabel, initials, showSettings }: { nav: Nav; home: string; userLabel: string; initials: string; showSettings: boolean }) {
   const pathname = usePathname();
+  const nav = useAreaNav(navIn);
   const myActive = isActiveIn(pathname, nav, nav.account, home);
   const gearActive = showSettings && isActiveIn(pathname, nav, nav.settings, home);
   const a = (i: NavItem) => (isActiveIn(pathname, nav, i, home) ? "active" : undefined);
