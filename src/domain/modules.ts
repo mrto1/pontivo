@@ -37,6 +37,7 @@ export const MODULES: ModuleDef[] = [
   { key: "feedback", label: "Bewertungen", description: "Nach dem Aufenthalt fragen die Gäste, wie es war. Zufriedene Gäste bekommen den Link zu Ihrer Bewertungsseite, unzufriedene schreiben Ihnen direkt. Gesendet wird mit der Nachher-Mail.", deps: [], defaultOn: false, navKeys: ["feedback"] },
   { key: "pricing_rules", label: "Preisempfehlung", description: "Schlägt Preise nach Ihren Regeln vor (Auslastung, Last Minute, Wochentag, Ereignisse), mit Mindest- und Höchstpreis. Sie bestätigen; auf Wunsch wird innerhalb Ihres Preiskorridors automatisch übernommen.", deps: [], defaultOn: false, navKeys: ["pricing"] },
   { key: "vouchers", label: "Gutscheine", description: "Gutscheine online verkaufen und im Haus einlösen.", deps: [], defaultOn: true, navKeys: ["vouchers"] },
+  { key: "guests", label: "Online-Check-in & Meldeschein", description: "Gäste füllen den Meldeschein vor der Anreise online aus (Link per E-Mail 7 Tage vorher, bei späterer Buchung sofort, auch bei Portal-Buchungen mit bekannter Adresse). In der Tagesliste sehen Sie je Anreise den Stand und bestätigen am Empfang nur noch, dass Sie den Ausweis gesehen haben. Dazu Kurtaxe-Liste und Gästeregister unter Finanzen → Berichte. Aufbewahrung und Unterschrift richten sich nach dem Kanton des Betriebs; Daten werden verschlüsselt gespeichert und automatisch gelöscht.", deps: [], defaultOn: false, navKeys: [] },
   { key: "inquiries", label: "Anfragen", description: "Anfragen von der Website und aus dem Chat (z. B. Gruppen, Sonderwünsche).", deps: [], defaultOn: true, navKeys: [] },
 ];
 
@@ -45,7 +46,7 @@ export const MODULE_KEYS = MODULES.map((m) => m.key);
 /** Gruppierung der Seite «Funktionen» (jedes Modul genau in einer Gruppe, geprüft in tests/unit/modules.test.ts) */
 export const MODULE_GROUPS: { title: string; lead: string; keys: string[] }[] = [
   { title: "Rezeption und Betrieb", lead: "Für Häuser mit Personal. Ferienwohnungen lassen das meiste aus.", keys: ["frontdesk", "housekeeping", "groups", "resources", "access", "owners"] },
-  { title: "Gäste und Kommunikation", lead: "Wie Sie mit Gästen in Kontakt bleiben.", keys: ["guestnotes", "inquiries", "inbox", "marketing", "feedback", "mailtexts"] },
+  { title: "Gäste und Kommunikation", lead: "Wie Sie mit Gästen in Kontakt bleiben.", keys: ["guests", "guestnotes", "inquiries", "inbox", "marketing", "feedback", "mailtexts"] },
   { title: "Rechnung, Kasse und Zahlen", lead: "Rechnungen, Zahlungen vor Ort und Auswertungen.", keys: ["invoicing", "debtors", "accountingexport", "statistics", "terminal", "pos"] },
   { title: "Verkauf und Schnittstellen", lead: "Preise, Gutscheine und Anbindung an Ihre Website und Kasse.", keys: ["pricing_rules", "vouchers", "api", "posbridge"] },
 ];

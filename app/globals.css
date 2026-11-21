@@ -965,3 +965,11 @@ pre { overflow-x: auto; }
 .hk-seg .s-dirty { --c: var(--hk-dirty); } .hk-seg .s-clean { --c: var(--hk-clean); } .hk-seg .s-inspected { --c: var(--hk-inspected); }
 .hk-seg.ro button { opacity: .5; pointer-events: none; }
 .hk-more summary { cursor: pointer; color: var(--muted); }
+
+/* Berichte (SPEC 19.46): einheitliche Export-Karten */
+.report-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.export-card2 { display: grid; gap: 10px; align-content: start; }
+.export-card2 h2 { margin: 0; font-size: 1.1rem; }
+.export-card2 p { margin: 0; }
+.export-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.seg .seg-mid { padding: 7px 14px; font-size: .88rem; font-weight: 600; min-width: 9.5em; text-align: center; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }

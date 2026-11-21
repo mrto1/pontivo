@@ -26,8 +26,7 @@ test("Startseite: Anmelden, angemeldet «Zu <Betrieb>», im Admin myPontivo und 
   await expect(page.locator(".admin-brand")).toContainText(h.hotel.name);
   // Oben rechts: Zahnrad (Inhaber) und Profilbild mit Menü «Mein Konto»
   await expect(page.getByRole("link", { name: "Einstellungen" }).first()).toBeVisible();
-  await page.locator(".avatar-menu summary").click();
-  await page.locator(".avatar-pop").getByRole("link", { name: "Profil & Sicherheit" }).click();
+  await page.locator(".avatar-link").click(); // direkt «Mein Konto», kein Untermenü
   await expect(page.getByRole("heading", { name: "Mein Konto" })).toBeVisible();
   // Zahnrad führt auf die Übersicht der drei Gruppen
   await page.getByRole("link", { name: "Einstellungen" }).first().click();

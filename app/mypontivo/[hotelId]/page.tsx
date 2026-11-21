@@ -12,16 +12,27 @@ import { isOn } from "@/src/domain/modules";
 import { todayView } from "@/src/services/today";
 import { formatDay } from "@/src/i18n/dict";
 import type { DayRow } from "@/src/services/frontdesk";
+import { arrivals as checkinStatus, verifyRegistration } from "@/src/services/guests";
 
 export const dynamic = "force-dynamic";
 
-function List({ title, rows, hotelId, empty }: { title: string; rows: DayRow[]; hotelId: string; empty: string }) {
+type Reg = { registered: number; verified: boolean };
+
+/** Ausweis am Empfang gesehen (SPEC 14.4); gehört zur Spalte «Meldeschein» der Anreisen */
+async function verify(f: FormData) {
+  "use server";
+  const c = await requireHotel(String(f.get("hotelId")), "staff", "home");
+  await verifyRegistration(c.hotel.id, String(f.get("bookingId")), c.actor);
+  redirect(`/mypontivo/${c.hotel.id}?day=${String(f.get("day"))}`);
+}
+
+function List({ title, rows, hotelId, empty, reg, day }: { title: string; rows: DayRow[]; hotelId: string; empty: string; reg?: Map<string, Reg>; day?: string }) {
   return (
     <section className="card stack">
       <h2 style={{ margin: 0 }}>{title} ({rows.length})</h2>
       {rows.length ? (
         <div className="scroll-x"><table className="table">
-          <thead><tr><th>Gast</th><th>Personen</th><th>Zimmer</th><th>Aufenthalt</th><th>Buchung</th></tr></thead>
+          <thead><tr><th>Gast</th><th>Personen</th><th>Zimmer</th><th>Aufenthalt</th><th>Buchung</th>{reg ? <th>Meldeschein</th> : null}</tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.bookingId}>
@@ -30,6 +41,12 @@ function List({ title, rows, hotelId, empty }: { title: string; rows: DayRow[]; 
                 <td>{r.rooms.length ? r.rooms.join(", ") : <span className="muted small">{r.typeNames.join(", ")} (nicht zugewiesen)</span>}</td>
                 <td className="small">{formatDay(r.checkin, "de")} – {formatDay(r.checkout, "de")}</td>
                 <td><a href={`/mypontivo/${hotelId}/bookings/${r.bookingId}`}>{r.reference}</a></td>
+                {reg ? (() => {
+                  const g = reg.get(r.bookingId);
+                  if (g?.verified) return <td><span className="badge">Ausweis geprüft</span></td>;
+                  if (g && g.registered > 0) return <td><form action={verify} className="inline-form"><input type="hidden" name="hotelId" value={hotelId} /><input type="hidden" name="bookingId" value={r.bookingId} /><input type="hidden" name="day" value={day ?? ""} /><span className="small">ausgefüllt</span> <button className="btn secondary small">Ausweis gesehen</button></form></td>;
+                  return <td className="muted small">offen</td>;
+                })() : null}
               </tr>
             ))}
           </tbody>
@@ -84,6 +101,8 @@ export default async function Overview({ params, searchParams }: { params: Promi
   const isToday = v.day === v.today;
   const showPlan = isOn(rows, "frontdesk") && hasArea(role, "plan");
   const base = `/mypontivo/${hotel.id}`;
+  // Meldeschein-Stand je Anreise, nur wenn die Funktion «Online-Check-in & Meldeschein» an ist
+  const reg = isOn(rows, "guests") ? new Map((await checkinStatus(hotel.id, v.day)).map((a) => [a.bookingId, { registered: a.registered, verified: a.verified }])) : undefined;
   const noData = isToday && !v.notices.length && !v.arrivals.length && !v.departures.length && !v.inHouse.length && !v.balances?.length && !v.overdue?.length;
   return (
     <div className="stack">
@@ -101,7 +120,7 @@ export default async function Overview({ params, searchParams }: { params: Promi
         </section>
       ) : null}
 
-      <List title={isToday ? "Anreisen heute" : "Anreisen"} rows={v.arrivals} hotelId={hotel.id} empty="Keine Anreisen." />
+      <List title={isToday ? "Anreisen heute" : "Anreisen"} rows={v.arrivals} hotelId={hotel.id} empty="Keine Anreisen." reg={reg} day={v.day} />
       <List title={isToday ? "Abreisen heute" : "Abreisen"} rows={v.departures} hotelId={hotel.id} empty="Keine Abreisen." />
       <List title="Im Haus" rows={v.inHouse} hotelId={hotel.id} empty="Niemand im Haus." />
 

@@ -14,7 +14,7 @@ export const ROLE_LABEL: Record<FullRole | LimitedRole, string> = {
 
 /** Bereiche = Schlüssel der Menüpunkte (src/admin/nav.ts) plus «layout» (Rahmen), «home» (leitet weiter) und «tag» (Reiter «Tag» für eingeschränkte Rollen sichtbar) */
 export const ROLE_AREAS: Record<LimitedRole, readonly string[]> = {
-  reception: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "tag", "calendar", "bookings", "plan", "housekeeping", "resources", "guests", "guestbook", "inbox", "vouchers", "invoices", "dayclose", "groups"],
+  reception: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "tag", "calendar", "bookings", "plan", "housekeeping", "resources", "reports", "guestbook", "inbox", "vouchers", "invoices", "dayclose", "groups"],
   housekeeping: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "housekeeping"],
   accounting: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "invoices", "dayclose", "debtors", "owners", "statistics", "hesta", "accountingexport"],
   service: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "restaurant", "kasse"],
@@ -32,7 +32,6 @@ export const CONFIGURABLE_AREAS: { key: string; label: string; group: string }[]
   { group: "Heute", key: "tag", label: "Tagesliste (An- & Abreisen)" },
   { group: "Heute", key: "housekeeping", label: "Reinigung" },
   { group: "Heute", key: "inbox", label: "Posteingang" },
-  { group: "Heute", key: "guests", label: "Check-in & Meldeschein" },
   { group: "Heute", key: "restaurant", label: "Restaurant (Tische)" },
   { group: "Heute", key: "kasse", label: "Kasse" },
   { group: "Kalender", key: "plan", label: "Zimmerplan" },
@@ -49,11 +48,12 @@ export const CONFIGURABLE_AREAS: { key: string; label: string; group: string }[]
   { group: "Finanzen", key: "owners", label: "Eigentümer" },
   { group: "Finanzen", key: "statistics", label: "Statistik" },
   { group: "Finanzen", key: "hesta", label: "HESTA" },
+  { group: "Finanzen", key: "reports", label: "Berichte (Kurtaxe, Gästeregister, Exporte)" },
   { group: "Finanzen", key: "accountingexport", label: "Buchhaltung" },
 ];
 
-/** Früherer Bereich «frontdesk» (An- & Abreisen) ist in «Tag» aufgegangen */
-const legacyArea = (a: string) => (a === "frontdesk" ? "tag" : a);
+/** Frühere Bereiche: «frontdesk» (An- & Abreisen) ist in «Tag» aufgegangen, «guests» (Check-in & Meldeschein) in «Tag» und «Berichte» */
+const legacyArea = (a: string) => (a === "frontdesk" ? "tag" : a === "guests" ? "reports" : a);
 export const encodeCustomRole = (name: string, areas: readonly string[]): CustomRole =>
   `custom:${encodeURIComponent(name)}:${[...new Set([...BASE_AREAS, ...areas.map(legacyArea)])].join(",")}`;
 /** Sieht die Rolle den Reiter «Tag»? Volle Rollen immer, eingeschränkte nur mit Bereich «tag». */
@@ -69,7 +69,7 @@ export const roleLabel = (r: Role): string => (isCustomRole(r) ? parseCustom(r).
 
 /** Erste Seite nach dem Anmelden für eingeschränkte Rollen */
 export const LANDING: Record<LimitedRole, string> = { reception: "", housekeeping: "housekeeping", accounting: "invoices", service: "kasse" };
-const LANDING_ORDER = ["tag", "housekeeping", "bookings", "calendar", "invoices", "kasse", "restaurant", "guests", "inbox", "statistics"];
+const LANDING_ORDER = ["tag", "housekeeping", "bookings", "calendar", "invoices", "kasse", "restaurant", "reports", "inbox", "statistics"];
 export function landingFor(r: LimitedRole | CustomRole): string {
   if (!isCustomRole(r)) return LANDING[r];
   const areas = parseCustom(r).areas;

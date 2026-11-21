@@ -1057,3 +1057,11 @@ Normaler Weg ist **E-Mail und Passwort** (optional mit 2FA), gleichwertig **Pass
 - **Nur heute änderbar:** Der Status gilt für das Zimmer jetzt (nicht je Tag). An anderen Tagen bleibt die Tagesnavigation als Vorschau (Anreisen/Abreisen, Zwischenreinigungen) bzw. Rückblick, die Schalter sind gesperrt.
 - Sortierung: schmutzig, Anreise heute, offene Aufträge, übrige. Mangel melden und Extra-Auftrag bleiben unter «Mangel melden / Auftrag».
 - Abnahme: `tests/e2e/housekeeping-ui.spec.ts`, `tests/integration/housekeeping.test.ts`.
+
+### 19.46 Meldeschein als Funktion, Berichte
+- **«Online-Check-in & Meldeschein»** ist ein normales Modul `guests` (Einstellungen → Funktionen → Gäste und Kommunikation, Standard aus; Migration 0076 benennt den Rollenbereich `guests` in `reports` um). Die Sonderseite «Check-in» entfällt; die alte Adresse `/guests` leitet auf Berichte.
+- **Tagesliste:** Mit dem Modul zeigt die Liste der Anreisen die Spalte «Meldeschein»: offen · ausgefüllt (mit Knopf «Ausweis gesehen») · Ausweis geprüft.
+- **Berichte** (`/berichte`, Finanzen, Bereich `reports`): alle Exporte als Karten gleichen Aufbaus (`components/admin/ExportCard.tsx`): Titel, Satz, Zeitraum, Knöpfe. Zeitraum als ‹ Monat › (bzw. Quartal/Jahr mit Umschalter, von–bis beim Gästeregister), ohne «Anzeigen»-Knopf. Karten: Buchungsabrechnung (Inhaber), Kurtaxe-Liste (Manager, mit Modul), Gästeregister (mit Modul), HESTA (mit Statistik), Buchhaltung (mit Funktion). Die Seiten Buchhaltung und HESTA bleiben für Kontenzuordnung und Vorschau.
+- **Mein Konto:** das Profilbild öffnet direkt die Seite (Reiter Profil & Sicherheit, Erste Woche, Hilfe; Abmelden dort), kein Untermenü.
+- **Monatswahl Eigentümer:** wie überall `PeriodNav` (‹ Letzter Monat ›, Sprungfeld).
+- Abnahme: `tests/e2e/reports.spec.ts`, `tests/unit/admin-nav.test.ts`, `roles.test.ts`, `help-content.test.ts`.

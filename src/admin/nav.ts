@@ -57,7 +57,6 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
           { key: "home", label: "Tagesliste", href: base },
           link("housekeeping", "Reinigung"),
           link("inbox", "Posteingang"),
-          link("guests", "Check-in"),
           { ...link("g-restaurant", "Restaurant", "restaurant"), tabs: [link("restaurant", "Tische"), link("kasse", "Kasse"), link("posclose", "Kassenabschluss", "restaurant/abschluss")] },
         ],
       },
@@ -77,6 +76,7 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
         tabs: [
           link("invoices", "Rechnungen"), link("dayclose", "Tagesabschluss", "invoices/tagesabschluss"), link("debtors", "Debitoren", "invoices/debitoren"), link("owners", "Eigentümer"),
           { ...link("g-statistics", "Statistik", "statistics"), tabs: [link("statistics", "Statistik"), link("hesta", "HESTA", "statistics/hesta")] },
+          link("reports", "Berichte", "berichte"),
           link("accountingexport", "Buchhaltung", "buchhaltung"),
         ],
       },

@@ -5,6 +5,8 @@ import { OwnerError, addCost, deleteCost, listOwners, ownerStatement, saveOwner,
 import { listRooms } from "@/src/services/rooms";
 import { formatChf } from "@/src/domain/money";
 import { todayIn } from "@/src/domain/dates";
+import { PeriodNav } from "@/components/admin/PeriodNav";
+import { shiftMonth } from "@/src/services/overview";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -72,7 +74,7 @@ export default async function OwnersPage({ params, searchParams }: { params: Pro
       <h1>Eigentümerabrechnung</h1>
       {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
       <p className="muted">Für Verwalter von Ferienwohnungen: Objekte (Zimmertypen) gehören Eigentümern. Umsatz = Übernachtungspreise bestätigter Buchungen, Nächte im Monat (ohne Kurtaxe und Zusatzleistungen).</p>
-      <form className="card"><label htmlFor="month">Monat</label> <input id="month" name="month" type="month" defaultValue={month} /> <button className="btn secondary">Anzeigen</button></form>
+      <PeriodNav prev={`?month=${shiftMonth(month, -1)}`} next={month < todayIn(hotel.timezone).slice(0, 7) ? `?month=${shiftMonth(month, 1)}` : undefined} todayHref="?" todayActive={month === prevMonth(hotel.timezone)} todayLabel="Letzter Monat" prevLabel="Vormonat" nextLabel="Folgemonat" jump={{ kind: "month", value: month, param: "month" }} />
       {stmts.map((x) => (
         <section key={x.owner.id} className="card stack">
           <h2>{x.owner.name} · {month}</h2>
