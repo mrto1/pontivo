@@ -156,14 +156,8 @@ describe("Sicherheits-Kopfzeilen", () => {
 });
 
 describe("Adressen /admin und /plattform", () => {
-  it("alte Adressen /mypontivo und /admin/plattform führen dauerhaft weiter", async () => {
-    const r = await nextConfig.redirects!();
-    const to = (src: string) => r.find((x) => x.source === src)?.destination;
-    expect(to("/mypontivo/:path*")).toBe("/admin/:path*");
-    expect(to("/mypontivo")).toBe("/admin");
-    expect(to("/admin/plattform/:path*")).toBe("/plattform/:path*");
-    expect(r.every((x) => x.permanent === true)).toBe(true);
-    // /admin selbst wird nicht umgeleitet: dort liegt die Hotel-Oberfläche
-    expect(r.some((x) => x.source === "/admin" || x.source === "/admin/:path*")).toBe(false);
+  it("keine Weiterleitungen: /admin ist die Hotel-Oberfläche, /plattform die Plattform-Verwaltung", async () => {
+    // ASSUMPTION: Es gibt noch keine Echtbenutzer, darum keine Umleitung von früheren Adressen.
+    expect(nextConfig.redirects).toBeUndefined();
   });
 });

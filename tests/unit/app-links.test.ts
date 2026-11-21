@@ -8,9 +8,9 @@ describe("App-Links (SPEC 19.23)", () => {
     expect(appleSiteAssociation().applinks.details).toEqual([]);
   });
   it("mit Kennungen: Android Fingerabdrücke und iOS appID", () => {
-    const a = assetLinks("ch.pontivo.mypontivo", "aa:bb, cc:dd");
-    expect(a[0].target).toMatchObject({ namespace: "android_app", package_name: "ch.pontivo.mypontivo", sha256_cert_fingerprints: ["AA:BB", "CC:DD"] });
-    expect(appleSiteAssociation("TEAM123", "ch.pontivo.mypontivo").applinks.details[0]).toMatchObject({ appIDs: ["TEAM123.ch.pontivo.mypontivo"] });
+    const a = assetLinks("ch.pontivo.app", "aa:bb, cc:dd");
+    expect(a[0].target).toMatchObject({ namespace: "android_app", package_name: "ch.pontivo.app", sha256_cert_fingerprints: ["AA:BB", "CC:DD"] });
+    expect(appleSiteAssociation("TEAM123", "ch.pontivo.app").applinks.details[0]).toMatchObject({ appIDs: ["TEAM123.ch.pontivo.app"] });
   });
   it("App-Hülle am User-Agent erkennen", () => {
     expect(isNativeShell("Mozilla/5.0 MyPontivoApp/1.0")).toBe(true);

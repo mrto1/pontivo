@@ -1,3 +1,4 @@
+import { SeenMark } from "@/components/admin/SeenMark";
 import { redirect } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 import { Notice } from "@/components/admin/Notice";
@@ -90,6 +91,7 @@ export default async function OrdersScreenPage({ params, searchParams }: { param
   };
   return (
     <div className="stack">
+      <SeenMark hotelId={hotel.id} kind="orders" />
       <h1>Online-Bestellungen {waiting.length ? <span className="badge danger">{waiting.length} neu</span> : null}</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <OrderScreen waiting={waiting.length} beat={beat.bind(null, hotel.id)} probe={sp.probe === "1"} />

@@ -17,6 +17,8 @@ import { SetupNotices } from "@/components/admin/SetupNotices";
 import { atLeast } from "@/src/auth/session";
 import { onboardingSteps } from "@/src/services/onboarding";
 import { initials } from "@/src/domain/avatar";
+import { badgesFor, SEEN_KINDS, itemKeyFor } from "@/src/domain/unseen";
+import { SEEN_KIND_LIST, unseenCounts } from "@/src/services/unseen";
 import { parallelBanner, setupBanner, setupOpen, unmetNeeds } from "@/src/domain/setup";
 
 export default async function HotelAdminLayout({ children, params }: { children: React.ReactNode; params: Promise<{ hotelId: string }> }) {
@@ -34,6 +36,9 @@ export default async function HotelAdminLayout({ children, params }: { children:
   const banner = manages ? setupBanner(hotel, steps) : null;
   const parallel = manages ? parallelBanner(hotel) : null;
   const doneCount = steps?.filter((x) => x.done).length ?? 0;
+  // Zahlen für Ungesehenes (nur Listen, die im Menü dieser Person stehen)
+  const shown = SEEN_KIND_LIST.filter((k) => itemKeyFor(k, vn.navs[SEEN_KINDS[k].area]) !== null);
+  const badges = badgesFor(await unseenCounts(user.id, hotel.id, shown), vn.navs);
   const others = (await hotelsForUser(user.id)).filter((x) => x.hotel.id !== hotel.id);
   return (
     <AreaProvider navs={vn.navs} initialArea={initialArea} cookieName={cookieName} home={home} marked={vn.showSwitch}>
@@ -49,9 +54,9 @@ export default async function HotelAdminLayout({ children, params }: { children:
               </ul>
             </details>
           ) : null}
-          {vn.showSwitch ? <AreaSwitch lodgingLabel={LODGING_LABEL[hotel.propertyType] ?? "Hotel"} diningLabel={DINING_LABEL[hotel.diningLabel]?.de ?? "Restaurant"} /> : null}
+          {vn.showSwitch ? <AreaSwitch lodgingLabel={LODGING_LABEL[hotel.propertyType] ?? "Hotel"} diningLabel={DINING_LABEL[hotel.diningLabel]?.de ?? "Restaurant"} badges={badges.byArea} /> : null}
           {steps ? <a href={`${home}/einrichten`} className="setup-chip" title="Einrichtung fortsetzen">Einrichtung {doneCount} von {steps.length}</a> : null}
-          <AdminNav nav={nav} home={home} userLabel={`${user.email} · ${roleLabel(role)}`} initials={initials(user.name, user.email)} showSettings={showSettings} />
+          <AdminNav nav={nav} home={home} userLabel={`${user.email} · ${roleLabel(role)}`} initials={initials(user.name, user.email)} showSettings={showSettings} badges={badges.byItem} />
         </div>
       </header>
       <TooltipHost />

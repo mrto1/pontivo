@@ -1,6 +1,7 @@
 "use client";
 import { usePathname } from "next/navigation";
 import { isActiveIn, type Nav, type NavItem } from "@/src/admin/nav";
+import { badgeText } from "@/src/domain/unseen";
 import { useAreaNav } from "./AreaContext";
 
 /**
@@ -34,17 +35,18 @@ function TabIcon({ name }: { name: string }) {
   );
 }
 
-export function AdminNav({ nav: navIn, home, userLabel, initials, showSettings }: { nav: Nav; home: string; userLabel: string; initials: string; showSettings: boolean }) {
+export function AdminNav({ nav: navIn, home, userLabel, initials, showSettings, badges = {} }: { nav: Nav; home: string; userLabel: string; initials: string; showSettings: boolean; badges?: Record<string, number> }) {
   const pathname = usePathname();
   const nav = useAreaNav(navIn);
   const myActive = isActiveIn(pathname, nav, nav.account, home);
   const gearActive = showSettings && isActiveIn(pathname, nav, nav.settings, home);
+  const nb = (i: NavItem) => (badges[i.key] > 0 ? <span className="nav-badge" role="img" aria-label={`${badges[i.key]} neu`}>{badgeText(badges[i.key])}</span> : null);
   const a = (i: NavItem) => (isActiveIn(pathname, nav, i, home) ? "active" : undefined);
 
   return (
     <>
       <nav className="admin-nav" aria-label="Hauptmenü">
-        {nav.primary.map((i) => <a key={i.key} href={i.href} className={a(i)} aria-current={isActiveIn(pathname, nav, i, home) ? "page" : undefined}>{i.label}</a>)}
+        {nav.primary.map((i) => <a key={i.key} href={i.href} className={a(i)} aria-current={isActiveIn(pathname, nav, i, home) ? "page" : undefined}>{i.label}{nb(i)}</a>)}
       </nav>
       <div className="head-tools">
         {showSettings ? (
@@ -57,7 +59,7 @@ export function AdminNav({ nav: navIn, home, userLabel, initials, showSettings }
       </div>
 
       <nav className="tabbar" aria-label="Hauptmenü">
-        {nav.primary.map((i) => <a key={i.key} href={i.href} className={a(i)} aria-current={isActiveIn(pathname, nav, i, home) ? "page" : undefined}><TabIcon name={i.icon ?? i.key} /><span>{i.label}</span></a>)}
+        {nav.primary.map((i) => <a key={i.key} href={i.href} className={a(i)} aria-current={isActiveIn(pathname, nav, i, home) ? "page" : undefined}><span className="tab-icon"><TabIcon name={i.icon ?? i.key} />{nb(i)}</span><span>{i.label}</span></a>)}
       </nav>
     </>
   );

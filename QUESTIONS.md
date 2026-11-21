@@ -181,7 +181,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Website-Schnittstelle: Webhooks, Stornieren über die API, Rückkehr-Adresse nach der Zahlung, Idempotenz-Schlüssel erst bei Bedarf einer Agentur.
 
 ## App myPontivo (SPEC 19.23)
-- Bestätigt (18.11.2026): App-Kennung `ch.pontivo.mypontivo`, Name «myPontivo», Adresse pontivo.ch.
+- Bestätigt (18.11.2026): App-Kennung `ch.pontivo.app`, Name «myPontivo», Adresse pontivo.ch.
 - Konten und Material: Google-Play- und Apple-Developer-Konto, Mac für iOS, Icon/Splash/Screenshots, Datenschutzangaben für die Stores, Testbetrieb mit Zugang für den Apple-Prüfer.
 - Mitteilungen: Firebase-Projekt und APNs-Schlüssel einrichten, dann Versand bauen (FCM HTTP v1, Doku vorher lesen).
 - Passkeys in der Hülle auf echten Geräten testen.
@@ -275,3 +275,5 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Gastgeber-Bedingungen (Ziffer Gebühren) an Entscheid 10 angleichen: heute «1,9 % des per Karte, TWINT oder Wallet bezahlten Betrags»; neu «auf alles, was über Pontivo hereinkommt, egal wie bezahlt» (z. B. Online-Bestellung bar bei Lieferung, R4) und «keine Gebühr auf Verkäufe vor Ort». Rechtstext, darum nicht selbst geändert.
 - [ ] ASPSMS: Erfolgscode der JSON-API (`StatusCode`) ist in der Doku nicht genannt. ASSUMPTION: «1» = OK; mit Testzugang prüfen. Absender (Originator, alphanumerisch max. 11 Zeichen) festlegen.
 - [ ] Allergene im Online-Verkauf (Fernabsatz): Angabe je Artikel durch den Betrieb, Pontivo zeigt sie nur an. Rechtlich prüfen lassen (Konzept Abschnitt 8).
+
+- Zahlen für Ungesehenes (22.11.2026): ASSUMPTION: Ohne gespeicherten Stand (neue Person, neue Art) gilt «jetzt» als zuletzt gesehen, es gibt keine Altlast. «Gesehen» wird beim Öffnen der Liste gesetzt, nicht beim Scrollen. Gästewünsche und Anfragen zählen zusammen als `inbox`. Offen: gemeinsame «offene Aufgaben» je Betrieb, Mitteilungen (Push, E-Mail) aus denselben Zählern mit Voreinstellung je Rolle.

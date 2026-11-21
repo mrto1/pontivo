@@ -5,7 +5,7 @@ import { MODULES } from "../../src/domain/modules";
 import { allPagesBoth } from "../../src/admin/nav";
 
 const nav = allPagesBoth({ id: "h", slug: "s", primaryDomain: null });
-const keys = new Set([...nav.map((p) => p.key), "mypontivo"]);
+const keys = new Set([...nav.map((p) => p.key), "konto"]);
 
 describe("Einarbeitung (PMS-ERSATZ 4.2)", () => {
   it("5 bis 8 Aufgaben je Rolle (Housekeeping kurz), eindeutige Schlüssel", () => {

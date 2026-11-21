@@ -1,3 +1,4 @@
+import { SeenMark } from "@/components/admin/SeenMark";
 import { Notice } from "@/components/admin/Notice";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -102,6 +103,7 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
   const sources = [{ k: "alle", label: "Alle" }, ...(webOn ? [{ k: "web", label: "Website und Chat" }] : []), ...(portalOn ? [{ k: "portal", label: "Portale" }] : []), { k: "wuensche", label: `Gästewünsche${openWishes ? ` (${openWishes})` : ""}` }];
   return (
     <div className="stack">
+      <SeenMark hotelId={hotel.id} kind="inbox" />
       <h1>Posteingang</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <div className="cal-tools">

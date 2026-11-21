@@ -3,10 +3,10 @@ import type { CapacitorConfig } from "@capacitor/cli";
 /**
  * Hülle für die App «myPontivo» (Android APK/AAB und iOS), Anleitung: mobile/README.md, Spezifikation: docs/SPEC.md 19.23.
  * Die App lädt die gehostete Admin-Oberfläche (server.url); es gibt keine zweite Codebasis. Updates der Oberfläche brauchen kein Store-Update.
- * ASSUMPTION: Kennung ch.pontivo.mypontivo und Adresse pontivo.ch; beides vor dem ersten Store-Eintrag bestätigen, danach nie mehr ändern.
+ * ASSUMPTION: Kennung ch.pontivo.app und Adresse pontivo.ch; beides vor dem ersten Store-Eintrag bestätigen, danach nie mehr ändern.
  */
 const config: CapacitorConfig = {
-  appId: "ch.pontivo.mypontivo",
+  appId: "ch.pontivo.app",
   appName: "myPontivo",
   webDir: "www",
   server: {

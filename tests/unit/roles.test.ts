@@ -45,7 +45,7 @@ describe("Rollen (SPEC 17.4)", () => {
     const keys = new Set<string>();
     const walk = (items: { key: string; tabs?: { key: string }[] }[]) => items.forEach((i) => { keys.add(i.key); walk(i.tabs ?? []); });
     for (const nav of [adminNav(hotel), adminNav(hotel, new Set(), { area: "dining" })]) { walk(nav.primary); walk(nav.settings.tabs ?? []); walk([nav.account]); }
-    for (const areas of Object.values(ROLE_AREAS)) for (const a of areas) if (a !== "layout" && a !== "mypontivo" && a !== "tag") expect(keys.has(a), a).toBe(true);
+    for (const areas of Object.values(ROLE_AREAS)) for (const a of areas) if (a !== "layout" && a !== "konto" && a !== "tag") expect(keys.has(a), a).toBe(true);
   });
 });
 
@@ -80,7 +80,7 @@ describe("Zahnrad und Menü je Rolle (SPEC 19.42)", () => {
       expect(keys, r).toContain(LANDING[r] === "" ? "home" : LANDING[r] === "restaurant/heute" ? "dininghome" : LANDING[r]);
       // «Tag» sehen nur Rollen mit Bereich «tag»; für die anderen leitet die Seite um und ein Reiter wäre tot
       expect(keys.includes("home"), r).toBe(ROLE_AREAS[r].includes("tag"));
-      expect(keys.every((k) => ROLE_AREAS[r].includes(k) || ["mypontivo", "firstweek", "help", "helpflows", "helpterms"].includes(k)), r).toBe(true);
+      expect(keys.every((k) => ROLE_AREAS[r].includes(k) || ["konto", "firstweek", "help", "helpflows", "helpterms"].includes(k)), r).toBe(true);
       expect(nav.settings.tabs, r).toEqual([]);
     }
     // Rezeption landet auf der Tagesliste, dem ersten Reiter von «Heute», zusammen mit Reinigung und Posteingang

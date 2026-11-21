@@ -20,7 +20,7 @@ describe("Admin-Menü", () => {
     for (const i of all) expect(i.href.startsWith("/admin/h1")).toBe(true);
     expect(nav.primary.map((i) => i.label)).toEqual(["Heute", "Kalender", "Buchungen", "Finanzen"]);
     expect(nav.settings.href).toBe("/admin/h1/einstellungen");
-    expect(nav.account.href).toBe("/admin/h1/mypontivo");
+    expect(nav.account.href).toBe("/admin/h1/konto");
     expect(keys).not.toContain("embed");
     expect(keys).not.toContain("inquiries");
     expect(keys).not.toContain("einrichten");
@@ -33,7 +33,7 @@ describe("Admin-Menü", () => {
       bookings: "bookings", groups: "groups", resources: "resources", vouchers: "vouchers", guestbook: "guestbook", marketing: "marketing", feedback: "feedback",
       invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung", reports: "berichte",
       settings: "settings", rooms: "rooms", extras: "rooms/extras", payments: "zahlungen", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
-      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posdevices: "restaurant/geraete", posbridge: "posbridge", dininghome: "restaurant/heute", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste", ressettings: "restaurant/einstellungen", migration: "migration", report: "report", mypontivo: "mypontivo", firstweek: "erste-woche", help: "hilfe",
+      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posdevices: "restaurant/geraete", posbridge: "posbridge", dininghome: "restaurant/heute", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste", ressettings: "restaurant/einstellungen", migration: "migration", report: "report", konto: "konto", firstweek: "erste-woche", help: "hilfe",
     });
   });
 
@@ -104,7 +104,7 @@ describe("Admin-Menü", () => {
     expect(areaOfPath(`${home}/kasse`, navs, home)).toBe("dining");
     expect(areaOfPath(`${home}/bookings/x`, navs, home)).toBe("lodging");
     expect(areaOfPath(home, navs, home)).toBe("lodging");
-    for (const p of ["inbox", "invoices", "vouchers", "einstellungen", "settings", "mypontivo"]) expect(areaOfPath(`${home}/${p}`, navs, home)).toBeNull();
+    for (const p of ["inbox", "invoices", "vouchers", "einstellungen", "settings", "konto"]) expect(areaOfPath(`${home}/${p}`, navs, home)).toBeNull();
     expect(areaOfPath(`${home}/restaurant/artikel`, navs, home)).toBe("dining"); // Speisekarte gehört zur Gastronomie
     // Nur der genaueste Hauptpunkt leuchtet: Kassenabschluss → Finanzen, nicht Bestellungen
     const d = navs.dining;

@@ -30,15 +30,6 @@ const nextConfig: NextConfig = {
       { source: "/plattform/:path*", headers: adminHeaders },
     ];
   },
-  // Alte Adressen (E-Mail-Links, Lesezeichen, Push): Hotel-Oberfläche früher /mypontivo, Plattform-Verwaltung früher /admin/plattform.
-  async redirects() {
-    return [
-      { source: "/admin/plattform/:path*", destination: "/plattform/:path*", permanent: true },
-      { source: "/admin/plattform", destination: "/plattform", permanent: true },
-      { source: "/mypontivo/:path*", destination: "/admin/:path*", permanent: true },
-      { source: "/mypontivo", destination: "/admin", permanent: true },
-    ];
-  },
 };
 
 export default nextConfig;

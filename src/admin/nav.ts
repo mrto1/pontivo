@@ -123,7 +123,7 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
       ],
     },
     // Profilbild oben rechts
-    account: { ...link("mypontivo", "Mein Konto"), tabs: [link("mypontivo", "Profil & Sicherheit"), link("firstweek", "Erste Woche", "erste-woche"), { ...link("help", "Hilfe", "hilfe"), tabs: [link("help", "Wegweiser", "hilfe"), link("helpflows", "Abläufe", "hilfe/ablaeufe"), link("helpterms", "Fachbegriffe", "hilfe/begriffe")] }] },
+    account: { ...link("konto", "Mein Konto"), tabs: [link("konto", "Profil & Sicherheit"), link("firstweek", "Erste Woche", "erste-woche"), { ...link("help", "Hilfe", "hilfe"), tabs: [link("help", "Wegweiser", "hilfe"), link("helpflows", "Abläufe", "hilfe/ablaeufe"), link("helpterms", "Fachbegriffe", "hilfe/begriffe")] }] },
   };
 }
 

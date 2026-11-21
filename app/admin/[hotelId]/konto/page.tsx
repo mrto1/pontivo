@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 /** Mein Konto (Teil von myPontivo, dem Admin-Bereich): eigenes Konto, Webseite-Vorschau, App und Mitteilungen, Sicherheit (SPEC 18.10) */
 export default async function MyPontivo({ params }: { params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
-  const { hotel, user, role } = await requireHotel(hotelId, "staff", "mypontivo");
+  const { hotel, user, role } = await requireHotel(hotelId, "staff", "konto");
   const [pks, totp, left] = await Promise.all([listPasskeys(user.id), hasTotp(user.id), recoveryCodesLeft(user.id)]);
   const preview = hotel.primaryDomain ? `//${hotel.primaryDomain}` : `/h/${hotel.slug}/de`;
   return (

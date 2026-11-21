@@ -14,11 +14,11 @@ export const ROLE_LABEL: Record<FullRole | LimitedRole, string> = {
 
 /** Bereiche = Schlüssel der Menüpunkte (src/admin/nav.ts) plus «layout» (Rahmen), «home» (leitet weiter) und «tag» (Reiter «Tag» für eingeschränkte Rollen sichtbar) */
 export const ROLE_AREAS: Record<LimitedRole, readonly string[]> = {
-  reception: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "tag", "calendar", "bookings", "plan", "housekeeping", "resources", "reports", "guestbook", "inbox", "vouchers", "invoices", "dayclose", "groups"],
-  housekeeping: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "housekeeping"],
-  accounting: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "invoices", "dayclose", "debtors", "owners", "statistics", "hesta", "accountingexport", "onlinesales"],
-  service: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "dininghome", "restaurant", "reservations", "resplan", "waitlist", "kitchen", "kasse", "onlineorders", "driver"],
-  driver: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "driver"],
+  reception: ["layout", "home", "konto", "firstweek", "help", "helpflows", "helpterms", "tag", "calendar", "bookings", "plan", "housekeeping", "resources", "reports", "guestbook", "inbox", "vouchers", "invoices", "dayclose", "groups"],
+  housekeeping: ["layout", "home", "konto", "firstweek", "help", "helpflows", "helpterms", "housekeeping"],
+  accounting: ["layout", "home", "konto", "firstweek", "help", "helpflows", "helpterms", "invoices", "dayclose", "debtors", "owners", "statistics", "hesta", "accountingexport", "onlinesales"],
+  service: ["layout", "home", "konto", "firstweek", "help", "helpflows", "helpterms", "dininghome", "restaurant", "reservations", "resplan", "waitlist", "kitchen", "kasse", "onlineorders", "driver"],
+  driver: ["layout", "home", "konto", "firstweek", "help", "helpflows", "helpterms", "driver"],
 };
 
 /** Standardrollen, die ein Betrieb in Name und Seiten anpassen kann (Inhaber, Manager und Mitarbeitende sind abgestuft und bleiben fest) */
@@ -26,7 +26,7 @@ export const EDITABLE_STANDARD_ROLES: readonly LimitedRole[] = ["reception", "ho
 export const isEditableStandardRole = (r: string): r is LimitedRole => (EDITABLE_STANDARD_ROLES as readonly string[]).includes(r);
 
 /** Immer dabei, damit eine eigene Rolle sich anmelden und ihr Konto sehen kann */
-export const BASE_AREAS = ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms"] as const;
+export const BASE_AREAS = ["layout", "home", "konto", "firstweek", "help", "helpflows", "helpterms"] as const;
 
 /** Seiten, die in einer eigenen Rolle angehakt werden können (nur Seiten, die schon für «Mitarbeitende» offen sind) */
 export const CONFIGURABLE_AREAS: { key: string; label: string; group: string }[] = [
@@ -87,7 +87,7 @@ export function landingFor(r: LimitedRole | CustomRole): string {
   const first = LANDING_ORDER.find((a) => areas.includes(a));
   if (first === "tag") return "";
   if (first) return AREA_PATH[first] ?? first;
-  return areas.find((a) => !(BASE_AREAS as readonly string[]).includes(a)) ?? "mypontivo";
+  return areas.find((a) => !(BASE_AREAS as readonly string[]).includes(a)) ?? "konto";
 }
 
 const RANK: Record<FullRole, number> = { staff: 1, manager: 2, owner: 3 };

@@ -30,7 +30,7 @@ test("Passwort-Login: falsches Passwort, richtiges Passwort, Passwort ändern", 
   await expect(page).toHaveURL(new RegExp(`/admin(/${h.hotel.id})?$`));
 
   // Passwort ändern: das alte muss stimmen
-  await page.goto(`/admin/${h.hotel.id}/mypontivo`);
+  await page.goto(`/admin/${h.hotel.id}/konto`);
   await page.waitForLoadState("networkidle");
   await page.fill("#pw-cur", "testtest");
   await page.getByTestId("pw-new").fill("neues-passwort");

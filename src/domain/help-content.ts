@@ -23,7 +23,7 @@ export const WAYFINDING: Wayfinding[] = [
   { area: "site", title: "Website & Buchung (Einstellungen → Verkauf)", what: "Wie Gäste Sie finden und buchen: eigene Pontivo-Website oder nur der Buchungsknopf auf Ihrer bisherigen Seite. Layout, Schrift, Logo, Sprachen." },
   { area: "team", title: "Team & Rollen (Einstellungen → Betrieb)", what: "Wer Zugang hat und was jede Rolle sehen darf. Eigene Rollen mit Häkchen pro Seite." },
   { area: "dininghome", title: "Bereich Gastronomie (Besteck-Symbol oben)", what: "Betriebe mit Unterkunft und Restaurant haben oben neben dem Namen einen Umschalter: links die Unterkunft (Bett), rechts die Gastronomie (Besteck), beschriftet z. B. «Hotel | Restaurant». In der Gastronomie heissen die Hauptpunkte Heute (Tagesübersicht), Reservierungen (Liste, Tischplan, Warteliste), Bestellungen (Tische, Kasse, Küche) und Finanzen. Ein reines Restaurant sieht nur diesen Bereich.", notThis: "Speisekarte und Tischplan einrichten Sie im Zahnrad unter Verkauf." },
-  { area: "mypontivo", title: "Profilbild (oben rechts)", what: "Ihr Konto: Passwort, Passkey, Authenticator, Mitteilungen auf dem Handy, App installieren. Im Menü dahinter auch Erste Woche, diese Hilfe und Abmelden." },
+  { area: "konto", title: "Profilbild (oben rechts)", what: "Ihr Konto: Passwort, Passkey, Authenticator, Mitteilungen auf dem Handy, App installieren. Im Menü dahinter auch Erste Woche, diese Hilfe und Abmelden." },
 ];
 
 export const FLOWS: Flow[] = [

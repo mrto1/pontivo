@@ -1,3 +1,4 @@
+import { SeenMark } from "@/components/admin/SeenMark";
 import { Notice } from "@/components/admin/Notice";
 import { PeriodNav } from "@/components/admin/PeriodNav";
 import { redirect } from "next/navigation";
@@ -90,6 +91,7 @@ export default async function ReservationsPage({ params, searchParams }: { param
   const D = <input type="hidden" name="day" value={day} />;
   return (
     <div className="stack">
+      <SeenMark hotelId={hotel.id} kind="reservations" />
       <h1>Tischreservierungen</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <PeriodNav prev={`?day=${addDays(day, -1)}`} next={`?day=${addDays(day, 1)}`} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }}>

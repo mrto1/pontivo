@@ -1955,3 +1955,11 @@ export const roomLinks = pgTable("room_links", {
   revokedAt: ts("revoked_at"),
 });
 export type RoomLink = typeof roomLinks.$inferSelect;
+
+/** SPEC 20.1: wann eine Person eine Liste zuletzt geöffnet hat (Zahlen für Ungesehenes) */
+export const userSeen = pgTable("user_seen", {
+  userId: uuid("user_id").notNull().references(() => users.id),
+  hotelId: uuid("hotel_id").notNull().references(() => hotels.id),
+  kind: text("kind").$type<"inbox" | "bookings" | "reservations" | "orders">().notNull(),
+  seenAt: ts("seen_at").notNull().defaultNow(),
+}, (t) => [primaryKey({ columns: [t.userId, t.hotelId, t.kind] })]);

@@ -25,7 +25,7 @@ npm i @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios @capacito
 npx cap add android      # erzeugt mobile/android
 npx cap add ios          # nur auf dem Mac, erzeugt mobile/ios
 ```
-Die Kennung `ch.pontivo.mypontivo` und die Adresse stehen in `capacitor.config.ts`. **Beides vor dem ersten Store-Eintrag bestätigen**, die Kennung lässt sich später nicht mehr ändern.
+Die Kennung `ch.pontivo.app` und die Adresse stehen in `capacitor.config.ts`. **Beides vor dem ersten Store-Eintrag bestätigen**, die Kennung lässt sich später nicht mehr ändern.
 
 ## 2. Android (APK für Tests, AAB für den Play Store)
 1. `npx cap sync android`, dann `npx cap open android` (Android Studio).
@@ -33,11 +33,11 @@ Die Kennung `ch.pontivo.mypontivo` und die Adresse stehen in `capacitor.config.t
 3. Test auf dem Handy: Build → «Build APK». Die APK lässt sich direkt installieren (Entwickleroptionen aktivieren).
 4. Store: Build → «Generate Signed Bundle» (AAB). **Den Schlüsselspeicher (`.keystore`) und sein Passwort sicher aufbewahren** (nicht ins Repository, ist in `.gitignore`); ohne ihn gibt es keine Updates. Besser: «Play App Signing» in der Play Console nutzen.
 5. In der Play Console: App anlegen, Datenschutzerklärung (Adresse der Pontivo-Seite), Datensicherheitsangaben, Inhaltseinstufung, Testphase (neue Entwicklerkonten brauchen eine geschlossene Testphase mit mehreren Testern, bevor die Veröffentlichung freigegeben wird; Vorgaben von Google bitte aktuell lesen).
-6. Den SHA-256-Fingerabdruck des Signaturzertifikats (Play Console → App-Integrität) in `.env.production` als `ANDROID_CERT_SHA256` eintragen, `ANDROID_APP_PACKAGE=ch.pontivo.mypontivo`, dann `./deploy.sh`. Prüfung: `https://pontivo.ch/.well-known/assetlinks.json`.
+6. Den SHA-256-Fingerabdruck des Signaturzertifikats (Play Console → App-Integrität) in `.env.production` als `ANDROID_CERT_SHA256` eintragen, `ANDROID_APP_PACKAGE=ch.pontivo.app`, dann `./deploy.sh`. Prüfung: `https://pontivo.ch/.well-known/assetlinks.json`.
 
 ## 3. iOS (auf dem Mac)
 1. `npx cap sync ios`, `npx cap open ios` (Xcode).
-2. Unter «Signing & Capabilities»: Team wählen, Bundle-ID `ch.pontivo.mypontivo`, Capabilities **Push Notifications** und **Associated Domains** (`applinks:pontivo.ch`) hinzufügen.
+2. Unter «Signing & Capabilities»: Team wählen, Bundle-ID `ch.pontivo.app`, Capabilities **Push Notifications** und **Associated Domains** (`applinks:pontivo.ch`) hinzufügen.
 3. In App Store Connect die App anlegen, in Xcode «Product → Archive» und hochladen, über TestFlight testen.
 4. `APPLE_TEAM_ID` und `IOS_BUNDLE_ID` in `.env.production` eintragen, deployen. Prüfung: `https://pontivo.ch/.well-known/apple-app-site-association`.
 5. **Prüfung durch Apple:** Reine Web-Hüllen werden manchmal abgelehnt («Mindestfunktionalität»). Was für die App spricht und im Prüfhinweis stehen sollte: echte Mitteilungen auf dem Gerät, Passkey/Anmeldung, Offline-Tagesliste, Kamera/Datei-Zugriff, wo vorhanden. Eine Demo-Zugangsdaten-Angabe für den Prüfer bereithalten (Testbetrieb mit Rolle Rezeption).
@@ -52,7 +52,7 @@ Die Kennung `ch.pontivo.mypontivo` und die Adresse stehen in `capacitor.config.t
 - Nur bei neuen nativen Funktionen oder Plugin-Updates: `npx cap sync`, Versionsnummer erhöhen (Android `versionCode`, iOS Build-Nummer), neu bauen und einreichen.
 
 ## 6. Mitteilungen (nächster Ausbau, braucht Ihre Konten)
-1. Firebase-Projekt anlegen, Android-App (`ch.pontivo.mypontivo`) registrieren, `google-services.json` nach `mobile/android/app/` legen; iOS-App registrieren, `GoogleService-Info.plist` nach `mobile/ios/App/App/`, APNs-Schlüssel in Firebase hochladen.
+1. Firebase-Projekt anlegen, Android-App (`ch.pontivo.app`) registrieren, `google-services.json` nach `mobile/android/app/` legen; iOS-App registrieren, `GoogleService-Info.plist` nach `mobile/ios/App/App/`, APNs-Schlüssel in Firebase hochladen.
 2. Dienstkonto-Schlüssel für Firebase Cloud Messaging (HTTP v1) erzeugen und als Geheimnis in `.env.production` hinterlegen.
 3. Dann wird der Versand gebaut: Sender neben dem bestehenden Web-Push (`src/push/service.ts`), der an die Tokens aus `native_push_tokens` sendet. **Vorher die aktuelle FCM-Dokumentation lesen** (keine erfundenen Felder); bis dahin erhalten App-Nutzer die Mitteilungen nicht, die Geräte sind aber schon angemeldet.
 
