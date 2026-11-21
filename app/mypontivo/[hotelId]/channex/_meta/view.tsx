@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { channexConfigured } from "@/src/integrations/channex/client";
@@ -39,7 +40,7 @@ export async function MetaChannelView({ hotelId, channel, msg }: { hotelId: stri
     <div className="stack">
       <p className="small"><a href={`/mypontivo/${hotel.id}/channex`}>← Channel-Manager</a></p>
       <h1>{cfg.label} verbinden</h1>
-      {msg ? <p className="notice">{msg}</p> : null}
+      {msg ? <Notice text={msg} /> : null}
       {!channexConfigured() ? <p className="notice warn">Channex ist auf dem Server nicht konfiguriert.</p> : null}
       {!hotel.channexPropertyId ? <p className="notice warn">Zuerst auf der Channex-Seite «In Channex anlegen» ausführen.</p> : null}
 

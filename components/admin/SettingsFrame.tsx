@@ -14,7 +14,6 @@ export function SettingsFrame({ nav, home, tabs, children }: { nav: Nav; home: s
   return (
     <div className="settings-frame">
       <aside className="settings-side" aria-label="Einstellungen">
-        <a href={nav.settings.href} className={onOverview ? "active" : undefined}>Übersicht</a>
         {settingsGroups(nav).map((g) => (
           <div key={g.title}>
             <h3>{g.title}</h3>

@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { requireHotel } from "@/src/auth/guard";
@@ -107,7 +108,7 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
   return (
     <div className="stack">
       <h1>Channel-Manager (Channex)</h1>
-      {sp.msg ? <p className="notice">{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       {!configured ? <p className="notice warn">Channex ist auf dem Server nicht konfiguriert (<code>CHANNEX_API_KEY</code> fehlt).</p> : null}
 
       <section className="card stack">

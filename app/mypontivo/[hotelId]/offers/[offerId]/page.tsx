@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { notFound, redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule, moduleOn } from "@/src/services/modules";
@@ -48,7 +49,7 @@ export default async function OfferAdmin({ params, searchParams }: { params: Pro
     return (
       <div className="stack">
         <h1>Angebot {offer.title} <span className="badge">{OFFER_STATUS_LABEL[offer.status]}</span></h1>
-        {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+        {sp.msg ? <Notice text={sp.msg} /> : null}
         <p className="muted small">Gesendet an {offer.customerEmail}. Der Kunde sieht es unter <code>/o/{offer.publicToken}</code>. {offer.decisionNote ? <>Nachricht des Kunden: «{offer.decisionNote}»</> : null}</p>
         <OfferSheet hotel={hotel} offer={offer} lines={lines} resourceNames={names} />
         <p><a href={`/mypontivo/${hotel.id}/inbox?quelle=web`}>Zurück zu den Anfragen</a></p>
@@ -59,7 +60,7 @@ export default async function OfferAdmin({ params, searchParams }: { params: Pro
   return (
     <div className="stack">
       <h1>Angebot erstellen</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="muted small">Für {offer.customerName} ({offer.customerEmail}). Preise inklusive MWST. Zeilen mit einem Angebot vor Ort (z. B. Seminarraum) reservieren den Raum erst, wenn der Kunde zusagt.</p>
       <form action={save} className="card stack">
         <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={offer.id} />

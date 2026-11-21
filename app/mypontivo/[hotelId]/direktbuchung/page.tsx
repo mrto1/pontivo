@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
@@ -85,7 +86,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
     <div className="stack">
       <h1>Direktbuchung</h1>
       <p className="muted" style={{ margin: 0 }}>Werkzeuge, die mehr Gäste zur Direktbuchung bringen und freie Nächte füllen. Alles ist je Betrieb ein- und ausschaltbar.</p>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
 
       <section className="card stack" id="vorteile">
         <h2>Vorteile bei Direktbuchung</h2>

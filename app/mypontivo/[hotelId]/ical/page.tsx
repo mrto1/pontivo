@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
@@ -79,7 +80,7 @@ export default async function IcalPage({ params, searchParams }: { params: Promi
   return (
     <div className="stack">
       <h1>Kalender-Abgleich (iCal)</h1>
-      {sp.msg ? <p className={`notice ${/^(Nicht|Abruf|Kalender gespeichert)/.test(sp.msg) ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="muted">
         Für Wohnungen und Zimmer ohne Channel-Manager: So vermeiden Sie Doppelbuchungen mit Airbnb, Booking.com, Vrbo und anderen. Der Abgleich ist nicht in Echtzeit, wir holen fremde Kalender etwa alle 15 Minuten ab, andere Plattformen holen unseren oft nur alle paar Stunden. Wenn Sie
         den Channel-Manager nutzen, brauchen Sie das nicht.

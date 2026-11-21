@@ -55,8 +55,8 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
         key: "g-overview", label: "Heute", href: base, icon: "home",
         tabs: [
           { key: "home", label: "Tagesliste", href: base },
-          link("housekeeping", "Reinigung"),
           link("inbox", "Posteingang"),
+          link("housekeeping", "Reinigung"),
           { ...link("g-restaurant", "Restaurant", "restaurant"), tabs: [link("restaurant", "Tische"), link("kasse", "Kasse"), link("posclose", "Kassenabschluss", "restaurant/abschluss")] },
         ],
       },
@@ -85,7 +85,8 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
     settings: {
       key: "einstellungen", label: "Einstellungen", href: `${base}/einstellungen`,
       tabs: [
-        set("Betrieb", link("settings", "Grunddaten"), "Name, Adresse, Zeiten, Kurtaxe, Zahlung und Rechnung."),
+        set("Betrieb", link("settings", "Grunddaten"), "Name, Adresse, Zeiten, Kurtaxe und Status der Online-Buchung."),
+        set("Betrieb", link("payments", "Zahlungsmethoden", "zahlungen"), "Karte und TWINT über Stripe, Anzahlung, Grundgebühr und hinterlegte Karte."),
         set("Betrieb", link("rooms", "Zimmer & Tarife"), "Zimmertypen, Fotos, Preise und Tarife."),
         set("Betrieb", link("extras", "Zusatzleistungen", "rooms/extras"), "Hund, Parkplatz, Endreinigung und weitere Extras zum Zimmer."),
         set("Betrieb", link("team", "Team & Rollen"), "Wer Zugang hat und was jede Person sehen darf."),

@@ -15,14 +15,18 @@ export default async function Einstellungen({ params }: { params: Promise<{ hote
     <div className="stack">
       <h1>Einstellungen</h1>
       <p className="muted">Alles zum Einrichten Ihres Betriebs. Was Sie täglich brauchen, finden Sie oben im Menü.</p>
-      <div className="settings-grid">
+      <div className="set-list">
         {groups.map((g) => (
-          <section key={g.title} className="card">
-            <h2 style={{ margin: 0 }}>{g.title}</h2>
-            <p className="muted small" style={{ margin: "4px 0 0" }}>{g.lead}</p>
-            <ul>
+          <section key={g.title} aria-label={g.title}>
+            <h2 className="set-title">{g.title}</h2>
+            <ul className="set-rows">
               {g.items.map((i) => (
-                <li key={i.key}><a href={i.href}><strong>{i.label}</strong>{i.lead ? <span className="muted small" style={{ display: "block" }}>{i.lead}</span> : null}</a></li>
+                <li key={i.key}>
+                  <a href={i.href}>
+                    <span className="set-text"><strong>{i.label}</strong>{i.lead ? <span className="muted small">{i.lead}</span> : null}</span>
+                    <span className="set-chev" aria-hidden="true">›</span>
+                  </a>
+                </li>
               ))}
             </ul>
           </section>

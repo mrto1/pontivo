@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -32,7 +33,7 @@ export default async function FeedbackAdmin({ params, searchParams }: { params: 
   return (
     <div className="stack">
       <h1>Bewertungen</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="muted">Nach dem Aufenthalt (Nachher-Mail, nur Gäste mit Einwilligung) fragen wir die Gäste nach einer Note. Ab der Mindestnote erhalten sie den Link zu Ihrer Bewertungsseite, darunter geht die Rückmeldung nur an Sie (per E-Mail).</p>
       {atLeast(role, "manager") ? (
         <form action={save} className="card stack">

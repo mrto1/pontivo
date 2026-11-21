@@ -1065,3 +1065,14 @@ Normaler Weg ist **E-Mail und Passwort** (optional mit 2FA), gleichwertig **Pass
 - **Mein Konto:** das Profilbild öffnet direkt die Seite (Reiter Profil & Sicherheit, Erste Woche, Hilfe; Abmelden dort), kein Untermenü.
 - **Monatswahl Eigentümer:** wie überall `PeriodNav` (‹ Letzter Monat ›, Sprungfeld).
 - Abnahme: `tests/e2e/reports.spec.ts`, `tests/unit/admin-nav.test.ts`, `roles.test.ts`, `help-content.test.ts`.
+
+### 19.47 Einstellungen, Zahlungsmethoden, Meldungen
+- **Übersicht** (Zahnrad): gruppierte Liste (Betrieb, Verkauf, Technik), eine Spalte, ganze Zeile antippbar mit › (`.set-list`); funktioniert am Handy wie am Desktop. Die Seitenleiste enthält keinen «Übersicht»-Punkt mehr, das Zahnrad führt dorthin.
+- **Grunddaten:** Betriebsdaten, Kurtaxe, Status der Online-Buchung (Live schalten/Pausieren). Kein Team-Abschnitt mehr (eigene Seite «Team & Rollen»).
+- **Zahlungsmethoden** (`/zahlungen`, unter Grunddaten): Stripe-Konto (Karte, TWINT, eingebettete Zahlung), Anzahlung, Grundgebühr und Karte (frühere Abschnitte der Grunddaten).
+- **Monatsmail** ist ein Modul `monthlymail` unter Funktionen, Standard **aus** (Migration 0077 übernimmt ausdrücklich Eingeschaltete). Ersetzt `content.monthlyMail`.
+- **Schalter:** An/Aus-Zeilen wie unter Funktionen auch in Formularen (`components/admin/FormSwitch.tsx`, speichert mit dem Speichern-Knopf). Gästeportal: Wünsche melden, jeder Standardwunsch, Rechnung zeigen, Selbst-Checkout, Türcode.
+- **Rückmeldungen:** `Notice` (`src/domain/msg-tone.ts`) zeigt Erfolg grün, Fehler und «hat nicht geklappt» rot mit `role=alert`; alle `?msg=`-Seiten nutzen es.
+- **Abstände:** 28 px zwischen Boxen; am Handy genug Platz über der festen Menüleiste.
+- **Heute:** Reiter Tagesliste · Posteingang · Reinigung · Restaurant.
+- Abnahme: `tests/unit/msg-tone.test.ts`, `admin-nav.test.ts`, `tests/integration/monthly-mail.test.ts`.

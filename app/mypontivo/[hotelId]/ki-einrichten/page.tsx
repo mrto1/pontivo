@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { env } from "@/src/env";
@@ -60,7 +61,7 @@ export default async function KiEinrichten({ params, searchParams }: { params: P
   return (
     <div className="stack">
       <h1>Einrichten mit KI</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="muted">Die KI liest Ihre bestehende Website (oder ein PDF, z. B. Hausprospekt) und macht daraus einen <strong>Entwurf</strong>: Zimmer, eine kurze Einleitung und häufige Fragen. Nichts wird ohne Ihre Prüfung übernommen. Preise, Telefonnummern, Links und Codes liest die KI bewusst nicht aus: die tragen Sie selbst ein.</p>
 
       <p className="notice small">Bitte nur Quellen angeben, an denen Sie die Rechte haben (Ihre eigene Website oder eigene Unterlagen). Texte fremder Websites, Portale oder Agenturen können urheberrechtlich geschützt sein, siehe <a href="/gastgeber-bedingungen" target="_blank">Bedingungen für Gastgeber, Ziffer 9</a>.</p>

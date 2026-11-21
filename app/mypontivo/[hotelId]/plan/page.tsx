@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { PeriodNav } from "@/components/admin/PeriodNav";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
@@ -116,7 +117,7 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
         Der Zimmerplan zeigt auf einen Blick, welches Zimmer an welchem Tag von wem belegt ist, und wo noch Zimmer frei sind. Sie teilen jeder Buchung eine Zimmernummer zu (von Hand oder automatisch) und können den Gast bei Bedarf in ein anderes Zimmer umquartieren, ohne dass sich Preis oder Verfügbarkeit ändern.
         Das lohnt sich, sobald Gäste konkrete Zimmer bekommen: Die Reinigungsliste weiss dann, welches Zimmer nach der Abreise zu putzen ist, die Tagesliste, wohin der Gast beim Check-in geht, und Doppelbelegungen sind ausgeschlossen. Ohne Zimmerplan funktioniert das Buchen trotzdem; er ist optional.
       </p>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <PeriodNav prev={`${base}?from=${addDays(from, -7)}`} next={`${base}?from=${addDays(from, 7)}`} todayHref={base} todayActive={from === today} prevLabel="Woche zurück" nextLabel="Woche vor" jump={{ value: from, param: "from" }} />
 
       {rms.length === 0 ? (

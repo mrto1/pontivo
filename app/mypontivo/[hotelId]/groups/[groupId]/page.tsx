@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { notFound, redirect } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { ZodError } from "zod";
@@ -62,7 +63,7 @@ export default async function GroupPage({ params, searchParams }: { params: Prom
   return (
     <div className="stack">
       <h1>{g.name}</h1>
-      {sp.msg ? <p className="notice">{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="small"><a href={`/mypontivo/${hotel.id}/groups`}>← Alle Gruppen</a> · {formatDay(g.arrival, "de")} – {formatDay(g.departure, "de")}
         {g.releaseOn ? ` · Freigabe ${formatDay(g.releaseOn, "de")}` : ""} · {g.status === "active" ? "Block aktiv" : g.status === "released" ? "Block freigegeben" : "abgesagt"}</p>
       {g.company || g.contactName ? <p className="small muted">Rechnung an: {[g.company, g.contactName, g.street, [g.zip, g.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}</p> : null}

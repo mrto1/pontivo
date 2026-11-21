@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { PeriodNav } from "@/components/admin/PeriodNav";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
@@ -56,7 +57,7 @@ export default async function Housekeeping({ params, searchParams }: { params: P
   return (
     <div className="stack hk">
       <h1>Reinigung</h1>
-      {sp.msg ? <p className="notice warn">{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <PeriodNav prev={`?day=${addDays(day, -1)}`} next={`?day=${addDays(day, 1)}`} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }}>
         <span className="small muted">{formatDay(day, "de")}</span>
       </PeriodNav>

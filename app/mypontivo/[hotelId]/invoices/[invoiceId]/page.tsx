@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { notFound, redirect } from "next/navigation";
 import { atLeast } from "@/src/auth/session";
 import { requireHotel } from "@/src/auth/guard";
@@ -78,7 +79,7 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
   return (
     <div className="stack">
       <h1>{isCredit ? "Gutschrift" : "Rechnung"} {inv.number ?? "(Entwurf)"}</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="small">
         <a href={`/mypontivo/${hotel.id}/invoices`}>← Alle Rechnungen</a>
         {inv.bookingId ? <> · <a href={`/mypontivo/${hotel.id}/bookings/${inv.bookingId}#kasse`}>Buchung</a></> : null}

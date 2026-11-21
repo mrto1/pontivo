@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireHotel } from "@/src/auth/guard";
@@ -66,7 +67,7 @@ export default async function Migration({ params, searchParams }: { params: Prom
     <div className="stack">
       <h1>Datenübernahme</h1>
       <p className="muted">Reservierungen aus Ihrer bisherigen Software übernehmen. Zuerst wird die Datei nur geprüft, es wird nichts gespeichert. Erst wenn der Bericht keine Fehler zeigt, können Sie den Import ausführen. Er lässt sich rückgängig machen.</p>
-      {sp.msg ? <p className="notice">{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       {sp.error ? <p className="notice warn" role="alert">{sp.error}</p> : null}
 
       <section className="card stack">

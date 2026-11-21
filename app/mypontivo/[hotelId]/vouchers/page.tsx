@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { feePercentText } from "@/src/domain/fee";
 import { ZodError } from "zod";
@@ -64,7 +65,7 @@ export default async function Vouchers({ params, searchParams }: { params: Promi
   return (
     <div className="stack">
       <h1>Gutscheine</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
 
       <section className="card stack">
         <h2>Einlösen</h2>

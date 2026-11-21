@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { ZodError } from "zod";
@@ -59,7 +60,7 @@ export default async function NewBooking({ params, searchParams }: { params: Pro
       <a href={`/mypontivo/${hotel.id}/bookings`}>← Buchungen</a>
       <h1>Buchung erfassen</h1>
       <p className="muted">Für Buchungen per Telefon, E-Mail oder am Empfang. Der Gast bezahlt vor Ort; Preis und Kurtaxe kommen aus dem Kalender. Die Verfügbarkeit wird sofort an die Buchungsportale gemeldet.</p>
-      {sp.msg ? <p className="notice warn">{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <form action={createAction} className="card stack">
         <input type="hidden" name="hotelId" value={hotel.id} />
         <div>

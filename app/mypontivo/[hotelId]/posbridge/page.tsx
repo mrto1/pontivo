@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -38,7 +39,7 @@ export default async function PosBridgePage({ params, searchParams }: { params: 
   return (
     <div className="stack">
       <h1>Kassen-Schnittstelle</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="muted">Wer seine Restaurantkasse behält, bucht Posten über diese Schnittstelle aufs Zimmer. Die Posten erscheinen in der Hotelrechnung der Buchung.</p>
       {sp.new ? (
         <div className="card stack">

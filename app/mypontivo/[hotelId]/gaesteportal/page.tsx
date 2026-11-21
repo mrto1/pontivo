@@ -1,3 +1,5 @@
+import { FormSwitch } from "@/components/admin/FormSwitch";
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { moduleOn } from "@/src/services/modules";
@@ -51,22 +53,27 @@ export default async function PortalSettingsPage({ params, searchParams }: { par
     <div className="stack">
       <h1>Gästeportal</h1>
       <p className="muted">Die Buchungsseite, die der Gast über den Link in seiner Mail öffnet (kein Login). Hier legen Sie fest, was er dort sieht und tun kann. Die Seite sieht für alle Betriebe gleich aus, Sie ändern nur die Inhalte.</p>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
 
       <form action={save} className="card stack">
         <input type="hidden" name="hotelId" value={hotel.id} />
         <h2>Wünsche und Funktionen</h2>
-        <label><input type="checkbox" name="requests" defaultChecked={requestsEnabled(p)} /> Gäste können Wünsche melden (Antwort im <a href={`/mypontivo/${hotel.id}/inbox?quelle=wuensche`}>Posteingang</a>, mit Mitteilung aufs Handy und per Mail an {hotel.contactEmail})</label>
-        <fieldset className="stack" style={{ border: 0, padding: 0 }}>
-          <legend className="small muted">Wunschliste</legend>
-          {STANDARD_WISHES.map((w) => <label key={w.id}><input type="checkbox" name="wish" value={w.id} defaultChecked={standardOn.has(w.id)} /> {w.label.de}</label>)}
-          <label htmlFor="custom">Eigene Wünsche (eine Zeile je Wunsch; Übersetzung optional mit «Deutsch | Englisch»)</label>
-          <textarea id="custom" name="custom" rows={4} maxLength={1500} defaultValue={customText} placeholder={"Frühstück auf dem Zimmer | Breakfast in the room\nHund mitbringen"} />
-          <p className="small muted">Frühstück und andere Bezahl-Extras bleiben bei «Upselling»: dort kann der Gast sie direkt online dazubuchen.</p>
-        </fieldset>
-        <label><input type="checkbox" name="folio" defaultChecked={folioEnabled(p)} /> Rechnung bis jetzt zeigen (Posten aufs Zimmer, z. B. Restaurant, und offener Betrag), während des Aufenthalts</label>
-        <label><input type="checkbox" name="selfCheckout" defaultChecked={selfCheckoutEnabled(p)} /> Gäste können am Abreisetag selbst auschecken (Vermerk unter «An- & Abreisen» und im Posteingang; Zimmer, Schlüssel und offene Posten prüft die Rezeption)</label>
-        <label><input type="checkbox" name="doorCode" defaultChecked={doorCodeEnabled(p)} disabled={!access} /> Türcode zeigen ab Anreisetag{access ? ", sobald der Online-Check-in ausgefüllt ist (falls aktiv)" : " (braucht die Funktion «Zutritt (Nuki)»)"}</label>
+        <div className="opt-list">
+          <FormSwitch name="requests" defaultOn={requestsEnabled(p)} label="Gäste können Wünsche melden" hint={<>Antwort im <a href={`/mypontivo/${hotel.id}/inbox?quelle=wuensche`}>Posteingang</a>, mit Mitteilung aufs Handy und per Mail an {hotel.contactEmail}.</>} />
+        </div>
+        <h3 style={{ margin: "8px 0 0" }}>Wunschliste</h3>
+        <div className="opt-list">
+          {STANDARD_WISHES.map((w) => <FormSwitch key={w.id} name="wish" value={w.id} defaultOn={standardOn.has(w.id)} label={w.label.de} />)}
+        </div>
+        <label htmlFor="custom">Eigene Wünsche (eine Zeile je Wunsch; Übersetzung optional mit «Deutsch | Englisch»)</label>
+        <textarea id="custom" name="custom" rows={4} maxLength={1500} defaultValue={customText} placeholder={"Frühstück auf dem Zimmer | Breakfast in the room\nHund mitbringen"} />
+        <p className="small muted">Frühstück und andere Bezahl-Extras bleiben bei «Upselling»: dort kann der Gast sie direkt online dazubuchen.</p>
+        <h3 style={{ margin: "8px 0 0" }}>Während des Aufenthalts</h3>
+        <div className="opt-list">
+          <FormSwitch name="folio" defaultOn={folioEnabled(p)} label="Rechnung bis jetzt zeigen" hint="Posten aufs Zimmer (z. B. Restaurant) und offener Betrag." />
+          <FormSwitch name="selfCheckout" defaultOn={selfCheckoutEnabled(p)} label="Selbst auschecken am Abreisetag" hint="Vermerk in der Tagesliste und im Posteingang; Zimmer, Schlüssel und offene Posten prüft die Rezeption." />
+          <FormSwitch name="doorCode" defaultOn={doorCodeEnabled(p)} disabled={!access} label="Türcode zeigen ab Anreisetag" hint={access ? "Sobald der Online-Check-in ausgefüllt ist (falls aktiv)." : "Braucht die Funktion «Zutritt (Nuki)»."} />
+        </div>
         <div><button className="btn">Speichern</button></div>
       </form>
 

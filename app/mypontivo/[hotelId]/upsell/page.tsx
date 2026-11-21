@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
@@ -78,7 +79,7 @@ export default async function Upsell({ params, searchParams }: { params: Promise
   return (
     <div className="stack">
       <h1>Upselling</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
 
       <section className="card stack">
         <h2>Extras per E-Mail verkaufen {active ? <span className="badge" style={{ marginLeft: 8 }}>aktiv</span> : null}</h2>

@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
@@ -146,7 +147,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
   return (
     <div className="stack">
       <h1>Website & Buchung</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") || sp.msg.startsWith("Logo:") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
 
       <section className="card stack" id="betriebsart">
         <h2>Wie nutzen Sie {env().PLATFORM_NAME}?</h2>

@@ -486,7 +486,7 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
       return wrap(c, l, de ? `${env().PLATFORM_NAME}: Zahlung fehlgeschlagen` : `${env().PLATFORM_NAME}: payment failed`,
         de ? ["Guten Tag,", `die Abrechnung für ${d.month} (${d.amount}) konnte nicht von Ihrer Karte abgebucht werden. ${d.last ? "Das war der letzte automatische Versuch." : "Wir versuchen es in drei Tagen erneut."} Bitte hinterlegen Sie im Admin eine gültige Karte.`]
           : ["Hello,", `the statement for ${d.month} (${d.amount}) could not be charged to your card. Please add a valid card in the admin.`],
-        [...(d.invoiceNo ? [`${de ? "Rechnung" : "Invoice"}: ${d.invoiceNo}`] : [])], { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/settings#karte`, label: de ? "Karte erneuern" : "Update card" });
+        [...(d.invoiceNo ? [`${de ? "Rechnung" : "Invoice"}: ${d.invoiceNo}`] : [])], { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/zahlungen#karte`, label: de ? "Karte erneuern" : "Update card" });
     }
     case "platform_onboarding_alert": {
       const d = c.data as Record<string, unknown>;

@@ -10,7 +10,7 @@ export default async function CardReturn({ params, searchParams }: { params: Pro
   const sp = await searchParams;
   const { hotel, actor } = await requireHotel(hotelId, "owner");
   // nur Rücksprung innerhalb des eigenen Admins zulassen
-  const back = sp.back && sp.back.startsWith(`/mypontivo/${hotel.id}/`) && !sp.back.includes("//") ? sp.back : `/mypontivo/${hotel.id}/settings#karte`;
+  const back = sp.back && sp.back.startsWith(`/mypontivo/${hotel.id}/`) && !sp.back.includes("//") ? sp.back : `/mypontivo/${hotel.id}/zahlungen#karte`;
   const sep = back.includes("?") ? "&" : "?";
   let msg: string;
   try {

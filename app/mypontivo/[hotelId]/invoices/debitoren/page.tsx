@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -72,7 +73,7 @@ export default async function Debtors({ params, searchParams }: { params: Promis
   return (
     <div className="stack">
       <h1>Debitoren</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
 
       <section className="card stack">
         <h2>Offene Rechnungen: {formatChf(open.reduce((a, i) => a + i.openRappen, 0))}</h2>

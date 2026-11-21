@@ -32,13 +32,13 @@ describe("Admin-Menü", () => {
       home: "/mypontivo/h1", housekeeping: "housekeeping", inbox: "inbox", restaurant: "restaurant", kasse: "kasse", posclose: "restaurant/abschluss", plan: "plan", calendar: "calendar", pricing: "preise",
       bookings: "bookings", groups: "groups", resources: "resources", vouchers: "vouchers", guestbook: "guestbook", marketing: "marketing", feedback: "feedback",
       invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung", reports: "berichte",
-      settings: "settings", rooms: "rooms", extras: "rooms/extras", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
+      settings: "settings", rooms: "rooms", extras: "rooms/extras", payments: "zahlungen", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
       funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posbridge: "posbridge", migration: "migration", report: "report", mypontivo: "mypontivo", firstweek: "erste-woche", help: "hilfe",
     });
   });
 
   it("Reiter der Hauptpunkte", () => {
-    expect(tabKeys("Heute")).toEqual(["home", "housekeeping", "inbox", "g-restaurant"]);
+    expect(tabKeys("Heute")).toEqual(["home", "inbox", "housekeeping", "g-restaurant"]);
     expect(group("Heute").tabs![0].label).toBe("Tagesliste");
     expect(group("Heute").tabs![3].tabs!.map((t) => t.key)).toEqual(["restaurant", "kasse", "posclose"]);
     expect(tabKeys("Kalender")).toEqual(["plan", "calendar", "pricing"]);
@@ -52,7 +52,7 @@ describe("Admin-Menü", () => {
     const groups = settingsGroups(nav);
     expect(groups.map((g) => g.title)).toEqual(["Betrieb", "Verkauf", "Technik"]);
     expect(groups.map((g) => g.items.map((i) => i.label))).toEqual([
-      ["Grunddaten", "Zimmer & Tarife", "Zusatzleistungen", "Team & Rollen"],
+      ["Grunddaten", "Zahlungsmethoden", "Zimmer & Tarife", "Zusatzleistungen", "Team & Rollen"],
       ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "KI-Chat"],
       ["Funktionen", "Geräte & Kasse", "Datenübernahme", "Abo & Gebühren"],
     ]);

@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -67,7 +68,7 @@ export default async function ResourcesPage({ params, searchParams }: { params: 
   return (
     <div className="stack">
       <h1>Angebote vor Ort</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <form className="card"><label htmlFor="day">Tag</label> <input id="day" name="day" type="date" defaultValue={day} /> <button className="btn secondary">Anzeigen</button></form>
       <section className="card">
         <h2>Gebucht am {day}</h2>

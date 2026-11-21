@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
@@ -39,7 +40,7 @@ export default async function Invoices({ params, searchParams }: { params: Promi
   return (
     <div className="stack">
       <h1>Rechnungen</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="small">
         <a href={`/mypontivo/${hotel.id}/invoices`}>Alle</a> · <a href={`?filter=draft`}>Entwürfe</a> · <a href={`?filter=issued`}>Ausgestellt</a> ·{" "}
         Neue Rechnung: auf der Buchung unter «Rechnung &amp; Kasse».

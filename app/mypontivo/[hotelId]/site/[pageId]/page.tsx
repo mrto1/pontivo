@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { notFound, redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
@@ -554,7 +555,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
         <h1 style={{ margin: 0 }}>{isHome ? "Startseite" : page.title.de || page.title.en}</h1>
         <a href={url} target="_blank">Seite ansehen</a>
       </div>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       {extra.length ? (
         <div className="card lang-bar">
           <div className="lang-tabs" role="navigation" aria-label="Sprache bearbeiten">

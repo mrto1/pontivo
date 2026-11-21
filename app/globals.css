@@ -215,7 +215,7 @@ details > summary::-webkit-details-marker { display: none; }
 .weekdays .chip:hover span { border-color: var(--accent); }
 .weekdays .chip input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .weekdays .chip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
-.stack > * + * { margin-top: 20px; }
+.stack > * + * { margin-top: 28px; }
 .kv { display: grid; grid-template-columns: 180px 1fr; gap: 6px 16px; }
 @media (max-width: 600px) { .kv { grid-template-columns: 1fr; } }
 
@@ -973,3 +973,25 @@ pre { overflow-x: auto; }
 .export-card2 p { margin: 0; }
 .export-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .seg .seg-mid { padding: 7px 14px; font-size: .88rem; font-weight: 600; min-width: 9.5em; text-align: center; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+
+/* Einstellungen, Übersicht (SPEC 19.47): gruppierte Liste, eine Spalte, ganze Zeile antippbar */
+.set-list { display: grid; gap: 28px; max-width: 760px; }
+.set-title { margin: 0 0 8px; font-family: var(--font); font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.set-rows { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.set-rows li + li { border-top: 1px solid var(--line); }
+.set-rows a { display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 56px; color: var(--ink); text-decoration: none; transition: background .12s; }
+.set-rows a:hover, .set-rows a:focus-visible { background: var(--accent-soft); outline: none; }
+.set-text { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.set-text .small { line-height: 1.35; }
+.set-chev { flex: none; font-size: 1.4rem; line-height: 1; color: var(--muted); }
+
+/* Fehler sind rot, nie grün (SPEC 19.47) */
+.notice.error { background: color-mix(in srgb, var(--danger) 12%, var(--surface)); border-left: 4px solid var(--danger); }
+
+/* Handy: genug Platz zwischen Seitenende und fester Menüleiste (die frühere Regel wurde von `.admin-main` weiter oben überschrieben) */
+@media (max-width: 860px) { .admin-main { padding-bottom: calc(120px + env(safe-area-inset-bottom)); } }
+
+/* Schalterzeilen in Formularen (SPEC 19.47) */
+.opt-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); }
+.opt-list { border-bottom: 1px solid var(--line); }
+.opt-row .module-text { flex: 1; min-width: 0; }

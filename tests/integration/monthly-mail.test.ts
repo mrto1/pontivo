@@ -18,6 +18,7 @@ const fresh = async (id: string) => (await db().select().from(hotels).where(eq(h
 async function liveHost() {
   const { hotel } = await registerHost({ propertyType: "hotel", name: `Hotel ${uid()}`, contactName: "Ruth Keller", email: `host-${uid()}@example.ch`, canton: "GR", municipality: `Testdorf-${uid()}`, acceptTerms: true } as never);
   await db().update(hotels).set({ status: "live", liveSince: new Date(Date.now() - 100 * 864e5) }).where(eq(hotels.id, hotel.id));
+  await setMonthlyMail(hotel, true, "t"); // Standard ist aus (SPEC 19.47)
   return fresh(hotel.id);
 }
 async function booking(hotelId: string, o: { total: number; tax?: number; fee: number; status?: string; source?: string }) {

@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
@@ -235,7 +236,6 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
   const open = list.find((x) => x.roomType.id === sp.rt);
   const creating = canEdit && sp.neu === "1" && !open;
   const tab: Tab = TABS.some((t) => t.key === sp.tab) ? (sp.tab as Tab) : "grunddaten";
-  const msgClass = sp.msg ? `notice ${sp.msg.startsWith("Nicht") || sp.msg.includes(":") ? "warn" : ""}` : "";
   const drawerOpen = !!open || creating;
   const at = (t: Tab, plan?: string) => `${base}?rt=${open?.roomType.id}&tab=${t}${plan ? `&plan=${plan}` : ""}`;
   const plan = open && tab === "tarife" && sp.plan ? (sp.plan === "neu" ? "neu" : open.plans.find((p) => p.id === sp.plan) ?? null) : null;
@@ -246,7 +246,7 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
         <h1 style={{ margin: 0 }}>Zimmer & Tarife</h1>
         {canEdit ? <Link className="btn" href={`${base}?neu=1`} scroll={false}>+ Zimmertyp hinzufügen</Link> : null}
       </div>
-      {sp.msg && !drawerOpen ? <p className={msgClass}>{sp.msg}</p> : null}
+      {sp.msg && !drawerOpen ? <Notice text={sp.msg} /> : null}
       {hotel.channexEnabled ? <p className="notice warn small">Neue Zimmertypen oder Tarife zusätzlich auf der Seite «Channex» anlegen bzw. zuordnen, damit sie auch bei Booking.com erscheinen.</p> : null}
 
       {langs.length > 1 && canEdit && translationEnabled() ? (
@@ -291,7 +291,7 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
               </nav>
             ) : null}
             <div className="drawer-body stack">
-              {sp.msg ? <p className={msgClass}>{sp.msg}</p> : null}
+              {sp.msg ? <Notice text={sp.msg} /> : null}
               {creating ? <RoomForm hotelId={hotel.id} canEdit={canEdit} langs={langs} cancelHref={base} nextOrder={list.reduce((m, x) => Math.max(m, x.roomType.sortOrder + 1), 0)} /> : null}
               {open && tab === "grunddaten" ? <RoomForm hotelId={hotel.id} rt={open.roomType} canEdit={canEdit} langs={langs} cancelHref={base} /> : null}
               {open && tab === "fotos" ? <PhotoManager hotelId={hotel.id} roomTypeId={open.roomType.id} photos={open.roomType.photos} canEdit={canEdit} page="rooms" alt="z. B. Doppelzimmer mit Seesicht" /> : null}

@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { feePercentText } from "@/src/domain/fee";
@@ -474,7 +475,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       <section className="card wizard-main">
         <h1 style={{ fontSize: "1.6rem" }}>{steps[idx].title}</h1>
         {sp.error ? <p className="notice warn" role="alert">{sp.error}</p> : null}
-        {sp.msg ? <p className="notice">{sp.msg}</p> : null}
+        {sp.msg ? <Notice text={sp.msg} /> : null}
         {body}
       </section>
     </div>

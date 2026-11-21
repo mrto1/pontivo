@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -34,7 +35,7 @@ export default async function PosClosePage({ params, searchParams }: { params: P
   return (
     <div className="stack">
       <h1>Kassenabschluss {day}</h1>
-      {sp.msg ? <p className={`notice ${/^Nicht/.test(sp.msg) ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <form className="card"><label htmlFor="day">Tag</label> <input id="day" name="day" type="date" defaultValue={day} max={today} /> <button className="btn secondary small">Anzeigen</button></form>
       <section className="card stack">
         <h2>Z-Bericht{closed ? " (abgeschlossen)" : ""}</h2>

@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { requireHotel } from "@/src/auth/guard";
@@ -31,7 +32,7 @@ export default async function Zutritt({ params, searchParams }: { params: Promis
   return (
     <div className="stack">
       <h1>Zutritt (Nuki)</h1>
-      {sp.msg ? <p className="notice">{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="muted">Jede bestätigte Buchung bekommt 3 Tage vor Anreise automatisch einen Keypad-Code für alle Eingangstüren und für das zugewiesene Zimmer, gültig von Check-in bis Check-out. Nach Abreise oder Storno wird der Code gelöscht. Voraussetzung: Nuki Keypad, Nuki Web-Konto und ein API-Token mit dem Recht «smartlock.auth».</p>
       <div className="card stack">
         <h3>1. Nuki-Token</h3>

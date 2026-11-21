@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
-import { auditLog, hotelMembers, hotels, users, type Hotel } from "../db/schema";
+import { auditLog, hotelMembers, hotelModules, hotels, users, type Hotel } from "../db/schema";
 import { addDays, todayIn } from "../domain/dates";
 import { formatChf } from "../domain/money";
 import { changePct, monthLabelDe, summarize, worthSending, type MonthStats } from "../domain/monthly";
@@ -23,12 +23,16 @@ export async function monthStats(hotelId: string, month: string): Promise<MonthS
   };
 }
 
-export const monthlyMailEnabled = (h: Pick<Hotel, "content">) => h.content.monthlyMail !== false;
+/** Monatsmail ist eine Funktion (Einstellungen → Funktionen, Modul `monthlymail`, Standard aus; SPEC 19.47) */
+export async function monthlyMailEnabled(hotelId: string): Promise<boolean> {
+  const [m] = await db().select({ enabled: hotelModules.enabled }).from(hotelModules).where(and(eq(hotelModules.hotelId, hotelId), eq(hotelModules.module, "monthlymail")));
+  return !!m?.enabled;
+}
 
-export async function setMonthlyMail(hotel: Hotel, on: boolean, actor: string) {
+export async function setMonthlyMail(hotel: Pick<Hotel, "id">, on: boolean, actor: string) {
   await db().transaction(async (tx) => {
-    await tx.update(hotels).set({ content: { ...hotel.content, monthlyMail: on }, updatedAt: new Date() }).where(eq(hotels.id, hotel.id));
-    await audit(tx, { hotelId: hotel.id, actor, action: "hotel.monthly_mail", entity: "hotel", entityId: hotel.id, details: { on } });
+    await tx.insert(hotelModules).values({ hotelId: hotel.id, module: "monthlymail", enabled: on }).onConflictDoUpdate({ target: [hotelModules.hotelId, hotelModules.module], set: { enabled: on } });
+    await audit(tx, { hotelId: hotel.id, actor, action: `module.monthlymail.${on ? "on" : "off"}`, entity: "hotel", entityId: hotel.id, details: { on } });
   });
 }
 
@@ -41,7 +45,7 @@ export async function monthlyMailJob(now = new Date()): Promise<{ hotels: number
   const list = await db().select().from(hotels).where(eq(hotels.status, "live"));
   let sentHotels = 0, mails = 0;
   for (const h of list) {
-    if (!monthlyMailEnabled(h)) continue;
+    if (!(await monthlyMailEnabled(h.id))) continue;
     const [done] = await db().select({ id: auditLog.id }).from(auditLog).where(and(eq(auditLog.hotelId, h.id), eq(auditLog.action, "mail.monthly"), sql`${auditLog.details}->>'month' = ${month}`));
     if (done) continue;
     const today = todayIn(h.timezone, now);

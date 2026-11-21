@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { notFound, redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/src/db/client";
@@ -41,7 +42,7 @@ export default async function OfferPage({ params, searchParams }: { params: Prom
   }
   return (
     <main style={{ maxWidth: 860, margin: "0 auto", padding: "24px 16px" }} className="stack">
-      {sp.msg ? <p className={`notice no-print ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} className="no-print" /> : null}
       <OfferSheet hotel={hotel} offer={offer} lines={lines} resourceNames={names} />
       <div className="no-print stack">
         <div><PrintButton label="Als PDF speichern / drucken" /></div>

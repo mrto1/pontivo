@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
@@ -79,7 +80,7 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
   return (
     <div className="stack">
       <h1>KI-Chat</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
 
       <section className="card stack">
         <h2>Ihr digitaler Assistent für Gäste</h2>
@@ -158,7 +159,7 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
           <h2>Einschalten</h2>
           {!isOwner ? <p className="muted small">Nur die Inhaberin oder der Inhaber kann das Modul einschalten.</p> : null}
           {!hotel.billingPaymentMethodId ? (
-            <p className="notice warn small">Für die Abrechnung brauchen wir eine hinterlegte Karte. Bitte zuerst unter <a href={`/mypontivo/${hotel.id}/settings#karte`}>Einstellungen</a> eine Karte hinterlegen.</p>
+            <p className="notice warn small">Für die Abrechnung brauchen wir eine hinterlegte Karte. Bitte zuerst unter <a href={`/mypontivo/${hotel.id}/zahlungen#karte`}>Einstellungen</a> eine Karte hinterlegen.</p>
           ) : null}
           {keyMissing ? <p className="notice warn small">Der Chat ist technisch noch nicht eingerichtet (API-Schlüssel fehlt). Bitte beim Betreiber melden. Einschalten ist erst danach möglich.</p> : null}
           {plans.map((p) => (

@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { Fragment } from "react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -127,7 +128,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
           </details>
         </PeriodNav>
       </div>
-      {sp.msg ? <p className="notice">{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="small muted" style={{ margin: 0 }}>Die Zahl ist die Anzahl <strong>freier Zimmer</strong> je Nacht. Rot = ausgebucht. Fahren Sie über eine Zahl (am Handy: antippen), sehen Sie, wie viele gebucht, gesperrt oder über ein Portal belegt sind.</p>
       <div className="scroll-x">
         <table className="cal">

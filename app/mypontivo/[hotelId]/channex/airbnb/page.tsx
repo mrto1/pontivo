@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
@@ -101,7 +102,7 @@ export default async function AirbnbChannelPage({ params, searchParams }: { para
     <div className="stack">
       <p className="small"><a href={`/mypontivo/${hotel.id}/channex`}>← Channel-Manager</a></p>
       <h1>Airbnb verbinden</h1>
-      {sp.msg ? <p className="notice">{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       {!channexConfigured() ? <p className="notice warn">Channex ist auf dem Server nicht konfiguriert.</p> : null}
       {!hotel.channexPropertyId ? <p className="notice warn">Zuerst auf der Channex-Seite «In Channex anlegen» ausführen.</p> : null}
 

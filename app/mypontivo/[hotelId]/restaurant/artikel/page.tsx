@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -58,7 +59,7 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
   return (
     <div className="stack">
       <h1>Artikel, Tische, Geräte</h1>
-      {sp.msg ? <p className={`notice ${/^Nicht/.test(sp.msg) ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <form action={item} className="card stack">
         {H}
         <h2>Neuer Artikel</h2>

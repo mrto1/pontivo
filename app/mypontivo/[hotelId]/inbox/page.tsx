@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
@@ -102,7 +103,7 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
   return (
     <div className="stack">
       <h1>Posteingang</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <div className="cal-tools">
         {sources.length > 1 ? (
           <div className="seg" role="group" aria-label="Quelle">

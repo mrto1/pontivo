@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -43,7 +44,7 @@ export default async function DayClosePage({ params, searchParams }: { params: P
   return (
     <div className="stack">
       <h1>Tagesabschluss</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <PeriodNav prev={`?day=${addDays(day, -1)}`} next={day < today ? `?day=${addDays(day, 1)}` : undefined} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }} />
       <section className="card stack">
         <h2>{formatDay(day, "de")} {closed ? "· abgeschlossen" : "· offen"}</h2>

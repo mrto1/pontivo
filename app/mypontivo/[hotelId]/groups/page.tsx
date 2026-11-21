@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -35,7 +36,7 @@ export default async function Groups({ params, searchParams }: { params: Promise
   return (
     <div className="stack">
       <h1>Gruppen</h1>
-      {sp.msg ? <p className="notice warn">{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <section className="card">
         {list.length ? (
           <div className="scroll-x"><table className="table">

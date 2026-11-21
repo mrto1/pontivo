@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireHotel } from "@/src/auth/guard";
@@ -31,7 +32,7 @@ export default async function RestaurantPage({ params, searchParams }: { params:
   return (
     <div className="stack">
       <h1>Restaurant</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       {tables.length ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
           {tables.map(({ table, orders }) => (

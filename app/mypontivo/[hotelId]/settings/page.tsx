@@ -1,17 +1,11 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { taxRuleFor } from "@/src/services/hotels";
-import { ZodError } from "zod";
-import { confirmTouristTax, setDeposit, goLiveProblems, setHotelStatus, updateHotelSettings } from "@/src/services/settings";
-import { onboardingLink, refreshAccountStatus } from "@/src/integrations/stripe/onboarding";
-import { chargesOf, startCardSetup } from "@/src/services/billing";
+import { confirmTouristTax, goLiveProblems, setHotelStatus, updateHotelSettings } from "@/src/services/settings";
 import { todayIn } from "@/src/domain/dates";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
-import { env } from "@/src/env";
-import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
-import { setEmbeddedCheckout } from "@/src/services/payment-settings";
-import { monthlyMailEnabled, setMonthlyMail } from "@/src/services/monthly-mail";
 
 export const dynamic = "force-dynamic";
 
@@ -33,18 +27,6 @@ async function saveHotel(f: FormData) {
   back(hotel.id, "Gespeichert");
 }
 
-async function saveDeposit(f: FormData) {
-  "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "manager");
-  try {
-    await setDeposit(hotel, { percent: Number(s(f, "percent")), dueDays: Number(s(f, "dueDays")) }, actor);
-  } catch (e) {
-    if (e instanceof ZodError) back(hotel.id, `Fehler: ${e.issues.map((i) => i.message).join(", ")}`);
-    throw e;
-  }
-  back(hotel.id, "Gespeichert");
-}
-
 async function saveTax(f: FormData) {
   "use server";
   const { hotel, actor } = await requireHotel(s(f, "hotelId"), "manager");
@@ -60,56 +42,6 @@ async function saveTax(f: FormData) {
     back(hotel.id, `Fehler: ${(e as Error).message}`);
   }
   back(hotel.id, "Kurtaxe bestätigt");
-}
-
-async function saveEmbedded(f: FormData) {
-  "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
-  await setEmbeddedCheckout(hotel, s(f, "embedded") === "on", actor);
-  back(hotel.id, "Gespeichert");
-}
-
-async function stripeOnboarding(f: FormData) {
-  "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
-  let url: string;
-  try {
-    url = await onboardingLink(hotel, actor);
-  } catch (e) {
-    back(hotel.id, `Stripe: ${(e as Error).message}`);
-    return;
-  }
-  redirect(url);
-}
-
-async function cardSetup(f: FormData) {
-  "use server";
-  const { hotel } = await requireHotel(s(f, "hotelId"), "owner");
-  let url = "";
-  try {
-    url = await startCardSetup(hotel, `/mypontivo/${hotel.id}/settings`);
-  } catch (e) {
-    back(hotel.id, `Karte: ${(e as Error).message}`);
-  }
-  redirect(url);
-}
-
-async function stripeRefresh(f: FormData) {
-  "use server";
-  const { hotel } = await requireHotel(s(f, "hotelId"), "owner");
-  try {
-    await refreshAccountStatus(hotel);
-  } catch (e) {
-    back(hotel.id, `Stripe: ${(e as Error).message}`);
-  }
-  back(hotel.id, "Stripe-Status aktualisiert");
-}
-
-async function saveMonthlyMail(f: FormData) {
-  "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "manager");
-  await setMonthlyMail(hotel, f.get("monthlyMail") === "on", actor);
-  back(hotel.id, "Gespeichert");
 }
 
 async function changeStatus(f: FormData) {
@@ -132,92 +64,33 @@ export default async function Settings({ params, searchParams }: { params: Promi
   const isOwner = atLeast(role, "owner");
   const rule = await taxRuleFor(hotel, todayIn(hotel.timezone));
   const problems = await goLiveProblems(hotel);
-  const provider = env().PAYMENT_PROVIDER;
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
-  const charges = await chargesOf(hotel.id);
 
   return (
     <div className="stack">
       <h1>Grunddaten</h1>
-      {sp.msg ? <p className="notice">{sp.msg}</p> : null}
-      {sp.stripe === "return" ? <p className="notice">Zurück von Stripe. Der Status wird per Webhook aktualisiert – oder „Status neu laden“ klicken.</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
 
-      <section className="card stack">
-        <h2>Online-Buchung</h2>
-        <p>Status: <span className={`badge ${hotel.status === "live" ? "" : "warn"}`}>{hotel.status}</span> {hotel.primaryDomain ? <span className="muted small">· Domain {hotel.primaryDomain}</span> : null}</p>
-        {problems.length ? <ul className="notice warn">{problems.map((p) => <li key={p}>{p}</li>)}</ul> : null}
-        {isOwner ? (
-          <div className="inline-form">
-            {hotel.status !== "live" ? <form action={changeStatus}>{hidden}<input type="hidden" name="status" value="live" /><button className="btn" disabled={problems.length > 0}>Live schalten</button></form> : null}
-            {hotel.status === "live" ? <form action={changeStatus}>{hidden}<input type="hidden" name="status" value="paused" /><button className="btn secondary">Pausieren</button></form> : null}
-          </div>
-        ) : null}
-      </section>
-
-      <section className="card stack">
-        <h2>Zahlungen (Stripe)</h2>
-        {provider === "fake" ? <p className="notice warn small">Entwicklungsmodus: <code>PAYMENT_PROVIDER=fake</code>. Buchungen werden ohne Zahlung bestätigt.</p> : null}
-        <div className="kv">
-          <span className="muted">Stripe-Konto</span><span>{hotel.stripeAccountId ?? "noch keines"}</span>
-          <span className="muted">Zahlungen möglich</span><span>{hotel.stripeChargesEnabled ? "ja" : "nein"}</span>
-          <span className="muted">TWINT aktiv</span><span>{hotel.stripeTwintActive ? "ja" : "nein"}</span>
-          <span className="muted">Plattformgebühr</span><span>{hotel.platformFeeBps / 100} % pro Direktbuchung</span>
-        </div>
-        {isOwner && provider === "stripe" && env().STRIPE_PUBLISHABLE_KEY ? (
-          <form action={saveEmbedded} className="stack">
-            {hidden}
-            <label className="check"><input type="checkbox" name="embedded" defaultChecked={hotel.content.payment?.embedded === true} /> Zahlung auf Ihrer Website einbetten (der Gast bleibt auf der Seite)</label>
-            <p className="muted small">Die Karteneingabe liegt in einem Rahmen von Stripe, Pontivo sieht keine Kartendaten. Erst nach einer Testbuchung einschalten. Aus: Weiterleitung auf die Stripe-Seite wie bisher.</p>
-            <button className="btn secondary small">Speichern</button>
-          </form>
-        ) : null}
-        {isOwner && provider === "stripe" && !hotel.stripeChargesEnabled && env().STRIPE_PUBLISHABLE_KEY && sp.stripe !== "return" ? (
-          <StripeOnboarding
-            hotelId={hotel.id}
-            publishableKey={env().STRIPE_PUBLISHABLE_KEY!}
-            privacyUrl={`${env().APP_BASE_URL}/datenschutz`}
-            returnTo={`/mypontivo/${hotel.id}/settings?stripe=return`}
-          />
-        ) : null}
-        {isOwner ? (
-          <div className="inline-form">
-            <form action={stripeOnboarding}>{hidden}<button className={!hotel.stripeChargesEnabled && env().STRIPE_PUBLISHABLE_KEY && provider === "stripe" ? "btn secondary small" : "btn"}>{hotel.stripeChargesEnabled || !env().STRIPE_PUBLISHABLE_KEY || provider !== "stripe" ? (hotel.stripeAccountId ? "Stripe-Einrichtung fortsetzen" : "Stripe-Konto einrichten") : "Lieber auf der Stripe-Seite einrichten"}</button></form>
-            {hotel.stripeAccountId ? <form action={stripeRefresh}>{hidden}<button className={!hotel.stripeChargesEnabled && env().STRIPE_PUBLISHABLE_KEY && provider === "stripe" ? "btn secondary small" : "btn secondary"}>Status neu laden</button></form> : null}
-          </div>
-        ) : <p className="muted small">Nur Inhaber können Stripe einrichten.</p>}
-      </section>
-
-      {(
-        <section className="card stack" id="karte">
-          <h2>Grundgebühr und Karte</h2>
-          {hotel.monthlyMinimumRappen > 0 ? <p className="small">{hotel.platformFeeBps / 100} % pro Direktbuchung, mindestens {formatChf(hotel.monthlyMinimumRappen)} pro Monat. Liegen die {hotel.platformFeeBps / 100} % darunter, wird Anfang des Folgemonats die Differenz der Karte belastet{hotel.liveSince ? "" : " (ab dem ersten vollen Monat nach dem Live-Gang)"}.</p> : <p className="small">Die Karte dient der Abrechnung von Modulen (z. B. KI-Chat) und Gebühren der Plattform.</p>}
-          <div className="kv">
-            <span className="muted">Karte</span><span>{hotel.billingCardLabel ?? <span className="badge warn">keine hinterlegt</span>}</span>
-            <span className="muted">Bedingungen</span><span><a href="/gastgeber-bedingungen" target="_blank">Version {hotel.hostTermsVersion ?? "–"}</a>{hotel.hostTermsAcceptedAt ? `, akzeptiert am ${hotel.hostTermsAcceptedAt.toISOString().slice(0, 10)}` : ""}</span>
-          </div>
-          {isOwner ? <form action={cardSetup}>{hidden}<button className="btn secondary">{hotel.billingCardLabel ? "Andere Karte hinterlegen" : "Karte hinterlegen"}</button></form> : null}
-          {charges.length ? (
-            <table className="table small">
-              <thead><tr><th>Monat</th><th>Gebühr</th><th>Minimum</th><th>KI-Chat</th><th>MWST</th><th>Belastet</th><th>Status</th><th>Rechnung</th></tr></thead>
-              <tbody>{charges.map((c) => (
-                <tr key={c.id}><td>{c.month}</td><td>{formatChf(c.feesRappen)}</td><td>{formatChf(c.minimumRappen)}</td><td>{formatChf(c.aiModuleRappen + c.aiPacksRappen)}</td><td>{c.vatRappen ? formatChf(c.vatRappen) : "–"}</td><td>{formatChf(c.chargeRappen)}</td>
-                  <td>{c.status === "succeeded" ? "bezahlt" : c.status === "none" ? "nichts fällig" : c.status === "pending" ? "offen" : <span className="badge warn">fehlgeschlagen ({c.attempts}×)</span>}</td>
-                  <td>{c.invoiceNo ? <a href={`/mypontivo/${hotel.id}/plattform-rechnung/${c.id}`} target="_blank">{c.invoiceNo}</a> : "–"}</td></tr>
-              ))}</tbody>
-            </table>
-          ) : null}
-        </section>
-      )}
-
-      <section className="card stack">
-        <h2>Monatsmail</h2>
-        <p className="small">Am 2. jedes Monats schicken wir den Inhabern eine kurze Auswertung des Vormonats: Direktbuchungen, Umsatz, Gebühr, geschätzte Ersparnis gegenüber Portalprovision und Anreisen der nächsten 30 Tage.</p>
-        <form action={saveMonthlyMail} className="stack">
+      {isManager ? (
+        <form action={saveHotel} className="card stack">
+          <h2>Betriebsdaten</h2>
           {hidden}
-          <label className="check"><input type="checkbox" name="monthlyMail" defaultChecked={monthlyMailEnabled(hotel)} /> Monatsmail senden</label>
-          <div><button className="btn secondary small">Speichern</button></div>
+          <div className="form-grid">
+            <div><label>Name</label><input name="name" defaultValue={hotel.name} required /></div>
+            <div><label>Firma (Rechnungsname)</label><input name="legalName" defaultValue={hotel.legalName ?? ""} /></div>
+            <div><label>Adresse</label><input name="addressLine" defaultValue={hotel.addressLine ?? ""} /></div>
+            <div><label>PLZ</label><input name="postalCode" defaultValue={hotel.postalCode ?? ""} /></div>
+            <div><label>Ort</label><input name="city" defaultValue={hotel.city ?? ""} /></div>
+            <div><label>E-Mail (Buchungen)</label><input name="contactEmail" type="email" defaultValue={hotel.contactEmail} required /></div>
+            <div><label>Telefon</label><input name="contactPhone" defaultValue={hotel.contactPhone ?? ""} /></div>
+            <div><label>Check-in ab</label><input name="checkinTime" type="time" defaultValue={hotel.checkinTime.slice(0, 5)} required /></div>
+            <div><label>Check-out bis</label><input name="checkoutTime" type="time" defaultValue={hotel.checkoutTime.slice(0, 5)} required /></div>
+            <div><label>Standardsprache</label><select name="defaultLanguage" defaultValue={hotel.defaultLanguage}><option value="de">Deutsch</option><option value="en">Englisch</option></select></div>
+          </div>
+          <label className="check"><input type="checkbox" name="taxIncluded" defaultChecked={hotel.touristTaxIncludedInPrice} />Kurtaxe ist im Zimmerpreis inbegriffen</label>
+          <button className="btn">Speichern</button>
         </form>
-      </section>
+      ) : null}
 
       <section className="card stack">
         <h2>Kurtaxe</h2>
@@ -249,46 +122,17 @@ export default async function Settings({ params, searchParams }: { params: Promi
         ) : null}
       </section>
 
-      {isManager ? (
-        <>
-        <form action={saveDeposit} className="card stack">
-          <h2>Anzahlung</h2>
-          {hidden}
-          <p className="small muted">Der Gast zahlt bei der Buchung nur einen Teil, den Rest zahlt er online vor der Anreise (er bekommt dafür eine Mail mit Link). Liegt die Anreise näher als die Fälligkeit des Rests, muss er gleich alles zahlen. 100 % = ganze Summe sofort, wie bisher. Bei einer Stornierung wird höchstens zurückerstattet, was der Gast bezahlt hat, abzüglich der Stornogebühr.</p>
-          <div className="form-grid">
-            <div><label>Anzahlung in Prozent</label><input name="percent" type="number" min={10} max={100} step={1} defaultValue={Math.round(hotel.depositBps / 100)} required /></div>
-            <div><label>Rest fällig (Tage vor Anreise)</label><input name="dueDays" type="number" min={1} max={60} step={1} defaultValue={hotel.balanceDueDays} required /></div>
+      <section className="card stack">
+        <h2>Online-Buchung</h2>
+        <p>Status: <span className={`badge ${hotel.status === "live" ? "" : "warn"}`}>{hotel.status}</span> {hotel.primaryDomain ? <span className="muted small">· Domain {hotel.primaryDomain}</span> : null}</p>
+        {problems.length ? <ul className="notice warn">{problems.map((p) => <li key={p}>{p}</li>)}</ul> : null}
+        {isOwner ? (
+          <div className="inline-form">
+            {hotel.status !== "live" ? <form action={changeStatus}>{hidden}<input type="hidden" name="status" value="live" /><button className="btn" disabled={problems.length > 0}>Live schalten</button></form> : null}
+            {hotel.status === "live" ? <form action={changeStatus}>{hidden}<input type="hidden" name="status" value="paused" /><button className="btn secondary">Pausieren</button></form> : null}
           </div>
-          <button className="btn">Speichern</button>
-        </form>
-
-        <form action={saveHotel} className="card stack">
-          <h2>Betriebsdaten</h2>
-          {hidden}
-          <div className="form-grid">
-            <div><label>Name</label><input name="name" defaultValue={hotel.name} required /></div>
-            <div><label>Firma (Rechnungsname)</label><input name="legalName" defaultValue={hotel.legalName ?? ""} /></div>
-            <div><label>Adresse</label><input name="addressLine" defaultValue={hotel.addressLine ?? ""} /></div>
-            <div><label>PLZ</label><input name="postalCode" defaultValue={hotel.postalCode ?? ""} /></div>
-            <div><label>Ort</label><input name="city" defaultValue={hotel.city ?? ""} /></div>
-            <div><label>E-Mail (Buchungen)</label><input name="contactEmail" type="email" defaultValue={hotel.contactEmail} required /></div>
-            <div><label>Telefon</label><input name="contactPhone" defaultValue={hotel.contactPhone ?? ""} /></div>
-            <div><label>Check-in ab</label><input name="checkinTime" type="time" defaultValue={hotel.checkinTime.slice(0, 5)} required /></div>
-            <div><label>Check-out bis</label><input name="checkoutTime" type="time" defaultValue={hotel.checkoutTime.slice(0, 5)} required /></div>
-            <div><label>Standardsprache</label><select name="defaultLanguage" defaultValue={hotel.defaultLanguage}><option value="de">Deutsch</option><option value="en">Englisch</option></select></div>
-          </div>
-          <label className="check"><input type="checkbox" name="taxIncluded" defaultChecked={hotel.touristTaxIncludedInPrice} />Kurtaxe ist im Zimmerpreis inbegriffen</label>
-          <button className="btn">Speichern</button>
-        </form>
-        </>
-      ) : null}
-
-      {isOwner ? (
-        <section className="card stack">
-          <h2>Team</h2>
-          <p className="muted small" style={{ margin: 0 }}>Wer Zugang hat und welche Seiten jede Rolle sieht, verwalten Sie unter <a href={`/mypontivo/${hotel.id}/team`}>Team</a>.</p>
-        </section>
-      ) : null}
+        ) : null}
+      </section>
     </div>
   );
 }

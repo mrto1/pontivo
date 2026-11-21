@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -48,7 +49,7 @@ export default async function MarketingPage({ params, searchParams }: { params: 
   return (
     <div className="stack">
       <h1>Newsletter</h1>
-      {sp.msg ? <p className={`notice ${sp.msg.startsWith("Nicht") ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="muted">Gesendet wird nur an Gäste, die bei der Buchung dem Newsletter zugestimmt haben. Jede Mail enthält einen Abmeldelink. Aktuell erreichen Sie {count} Gäste{cur ? " mit dieser Auswahl" : " (alle mit Einwilligung)"}.</p>
       <form action={save} className="card stack">
         <h2>{cur ? "Entwurf bearbeiten" : "Neuer Newsletter"}</h2>

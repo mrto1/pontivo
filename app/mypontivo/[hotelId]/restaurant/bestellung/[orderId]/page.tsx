@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { notFound, redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -86,7 +87,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   return (
     <div className="stack">
       <h1>Bestellung {v.order.label || ""}</h1>
-      {sp.msg ? <p className={`notice ${/^(Nicht|Kein)/.test(sp.msg) ? "warn" : ""}`}>{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <form action={add} className="card stack">
         {H}{O}
         <div><label htmlFor="itemId">Artikel</label>

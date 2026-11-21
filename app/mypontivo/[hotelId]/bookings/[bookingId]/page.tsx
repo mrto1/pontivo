@@ -1,3 +1,4 @@
+import { Notice } from "@/components/admin/Notice";
 import { notFound, redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
@@ -109,7 +110,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
     <div className="stack">
       <a href={`/mypontivo/${hotel.id}/bookings`}>← Buchungen</a>
       <h1>Buchung {b.reference}</h1>
-      {sp.msg ? <p className="notice">{sp.msg}</p> : null}
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       {b.overbooked ? <p className="notice warn"><strong>Überbuchung:</strong> Diese Portal-Buchung hat mehr Zimmer belegt als verfügbar sind.</p> : null}
       <div className="card kv">
         <span className="muted">Status</span><span><span className="badge">{b.status}</span></span>
