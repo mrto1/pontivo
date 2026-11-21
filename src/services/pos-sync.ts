@@ -13,7 +13,7 @@ export class DeviceError extends Error {}
 async function claim(hotelId: string, code: string, key: string) {
   const [d] = await db().select().from(posDevices).where(and(eq(posDevices.hotelId, hotelId), eq(posDevices.code, code)));
   if (!d) throw new DeviceError("Gerät nicht gefunden.");
-  if (d.claimedKey && d.claimedKey !== key) throw new DeviceError(`Das Gerät ${code} wird schon von einem anderen Gerät benutzt. Ein Manager kann es unter Einstellungen → Geräte & Kasse → Kassen-Artikel freigeben.`);
+  if (d.claimedKey && d.claimedKey !== key) throw new DeviceError(`Das Gerät ${code} wird schon von einem anderen Gerät benutzt. Ein Manager kann es unter Einstellungen → Technik → Geräte & Kasse → Kassen-Geräte freigeben.`);
   if (!d.claimedKey) {
     const [u] = await db().update(posDevices).set({ claimedKey: key }).where(and(eq(posDevices.id, d.id), isNull(posDevices.claimedKey))).returning();
     if (!u) throw new DeviceError(`Das Gerät ${code} wurde gerade von einem anderen Gerät belegt.`);

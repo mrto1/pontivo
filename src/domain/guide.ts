@@ -69,7 +69,7 @@ export const HELP_START: Record<string, string> = {
   invoicing: "Öffnen Sie eine Buchung und wählen Sie «Rechnung erstellen». Zahlungen vor Ort buchen Sie in derselben Buchung.",
   debtors: "Legen Sie die Firma einmal an. Bei einer Buchung wählen Sie dann «auf Rechnung», die Zahlungsfrist kommt aus der Firma.",
   resources: "Legen Sie das Angebot mit Zeitfenstern an (z. B. Sauna, 60 Minuten). Buchen Sie es bei einer Buchung, der Preis kommt aufs Zimmer.",
-  pos: "Legen Sie unter Einstellungen → Geräte & Kasse → Kassen-Artikel Artikel, Tische und mindestens ein Gerät an. Dann öffnen Sie «Kasse» am Tablet.",
+  pos: "Legen Sie unter Einstellungen → Verkauf → Restaurant Artikel, Tische und mindestens ein Gerät an. Dann öffnen Sie «Kasse» am Tablet.",
   posbridge: "Erstellen Sie einen Schlüssel und geben Sie ihn Ihrem Kassenanbieter. Dessen Kasse bucht Posten aufs Zimmer.",
   inbox: "Verbinden Sie Booking.com, Airbnb oder Expedia unter Einstellungen → Kanäle. Nachrichten erscheinen danach hier.",
   owners: "Ordnen Sie jede Wohnung einem Eigentümer zu und setzen Sie Ihre Kommission. Die Monatsabrechnung rechnet Pontivo.",

@@ -1,6 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { isActive, type Nav, type NavItem } from "@/src/admin/nav";
+import { isActive, isActiveIn, type Nav, type NavItem } from "@/src/admin/nav";
 
 /**
  * Menü: Desktop = vier Hauptpunkte in der Kopfzeile, Handy = feste Leiste unten (höchstens 4 Punkte, alles Weitere sind Reiter). Menüinhalt kommt aus src/admin/nav.ts.
@@ -34,14 +34,14 @@ function TabIcon({ name }: { name: string }) {
 
 export function AdminNav({ nav, home, userLabel, initials, showSettings }: { nav: Nav; home: string; userLabel: string; initials: string; showSettings: boolean }) {
   const pathname = usePathname();
-  const myActive = isActive(pathname, nav.account, home);
-  const gearActive = showSettings && isActive(pathname, nav.settings, home);
-  const a = (i: NavItem) => (isActive(pathname, i, home) ? "active" : undefined);
+  const myActive = isActiveIn(pathname, nav, nav.account, home);
+  const gearActive = showSettings && isActiveIn(pathname, nav, nav.settings, home);
+  const a = (i: NavItem) => (isActiveIn(pathname, nav, i, home) ? "active" : undefined);
 
   return (
     <>
       <nav className="admin-nav" aria-label="Hauptmenü">
-        {nav.primary.map((i) => <a key={i.key} href={i.href} className={a(i)} aria-current={isActive(pathname, i, home) ? "page" : undefined}>{i.label}</a>)}
+        {nav.primary.map((i) => <a key={i.key} href={i.href} className={a(i)} aria-current={isActiveIn(pathname, nav, i, home) ? "page" : undefined}>{i.label}</a>)}
       </nav>
       <div className="head-tools">
         {showSettings ? (
@@ -54,7 +54,7 @@ export function AdminNav({ nav, home, userLabel, initials, showSettings }: { nav
       </div>
 
       <nav className="tabbar" aria-label="Hauptmenü">
-        {nav.primary.map((i) => <a key={i.key} href={i.href} className={a(i)} aria-current={isActive(pathname, i, home) ? "page" : undefined}><TabIcon name={i.icon ?? i.key} /><span>{i.label}</span></a>)}
+        {nav.primary.map((i) => <a key={i.key} href={i.href} className={a(i)} aria-current={isActiveIn(pathname, nav, i, home) ? "page" : undefined}><TabIcon name={i.icon ?? i.key} /><span>{i.label}</span></a>)}
       </nav>
     </>
   );

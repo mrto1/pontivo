@@ -95,9 +95,10 @@ function baseNav(hotel: { id: string; slug: string; primaryDomain: string | null
         set("Verkauf", link("mailtexts", "Gäste-Mails", "mail-texte"), "Eigene Sätze in Bestätigung, Vor-der-Anreise- und Nachher-Mail."),
         set("Verkauf", link("gaesteportal", "Gästeportal"), "Wünsche, Tipps, Türcode und Check-out auf der Buchungsseite des Gastes."),
         set("Verkauf", link("upsell", "Upselling"), "Extras wie Frühstück, die Gäste online dazubuchen."),
+        set("Verkauf", link("positems", "Restaurant", "restaurant/artikel"), "Speisekarte (Artikel) und Tische der Restaurantkasse, Import per CSV."),
         set("Verkauf", link("ki-chat", "KI-Chat"), "Der digitale Assistent auf Website und Buchungsseite."),
         set("Technik", link("funktionen", "Funktionen"), "Nur was Sie brauchen, bleibt im Menü."),
-        set("Technik", { ...link("g-devices", "Geräte & Kasse", "terminal"), tabs: [link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt"), link("positems", "Kassen-Artikel", "restaurant/artikel"), link("posbridge", "Kassen-Schnittstelle")] }, "Kartenleser, Türschlösser, Artikel der Restaurantkasse und Schnittstelle zu Ihrer Kasse."),
+        set("Technik", { ...link("g-devices", "Geräte & Kasse", "terminal"), tabs: [link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt"), link("posdevices", "Kassen-Geräte", "restaurant/geraete"), link("posbridge", "Kassen-Schnittstelle")] }, "Kartenleser, Türschlösser, Artikel der Restaurantkasse und Schnittstelle zu Ihrer Kasse."),
         set("Technik", link("migration", "Datenübernahme"), "Buchungen und Gäste aus Ihrer bisherigen Software übernehmen."),
         set("Technik", link("report", "Abo & Gebühren", "report", { match: [`${base}/plattform-rechnung`] }), "Monatsabrechnung, Plattformgebühren und Rechnungen von Pontivo (nur Inhaber)."),
       ],
@@ -134,12 +135,22 @@ export function isActive(pathname: string, item: NavItem, home: string): boolean
   return bestMatch(pathname, item, home) > 0;
 }
 
-/** Gehört die Seite zum Zahnrad (Übersichtsseite oder einer ihrer Punkte)? */
-export const inSettings = (pathname: string, nav: Nav, home: string): boolean => isActive(pathname, nav.settings, home);
+/**
+ * Gehört die Seite zum Zahnrad (Übersichtsseite oder einer ihrer Punkte)? Gewinnt der genauere Treffer:
+ * «Kassen-Artikel» (restaurant/artikel) liegt im Zahnrad, obwohl «Restaurant» unter Heute eine Adresse davor ist.
+ */
+export const inSettings = (pathname: string, nav: Nav, home: string): boolean => {
+  const s = bestMatch(pathname, nav.settings, home);
+  return s > 0 && s >= Math.max(0, bestMatch(pathname, nav.account, home), ...nav.primary.map((i) => bestMatch(pathname, i, home)));
+};
+
+/** Aktiv im Menü oben: ein Hauptpunkt oder «Mein Konto» ist nicht aktiv, wenn die Seite zum Zahnrad gehört */
+export const isActiveIn = (pathname: string, nav: Nav, item: NavItem, home: string): boolean =>
+  isActive(pathname, item, home) && (item.key === nav.settings.key || !inSettings(pathname, nav, home));
 
 /** Der Sammelpunkt, zu dem die aktuelle Seite gehört (für die Reiter über der Seite). Im Zahnrad ist es der Punkt mit Unterreitern (z. B. Website & Buchung). */
 export function sectionFor(pathname: string, nav: Nav, home: string): NavItem | null {
-  const own = [...nav.primary, nav.account].find((i) => i.tabs && isActive(pathname, i, home));
+  const own = inSettings(pathname, nav, home) ? undefined : [...nav.primary, nav.account].find((i) => i.tabs && isActive(pathname, i, home));
   if (own) return own;
   return (nav.settings.tabs ?? []).find((i) => i.tabs && isActive(pathname, i, home)) ?? null;
 }

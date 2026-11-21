@@ -1076,3 +1076,9 @@ Normaler Weg ist **E-Mail und Passwort** (optional mit 2FA), gleichwertig **Pass
 - **Abstände:** 28 px zwischen Boxen; am Handy genug Platz über der festen Menüleiste.
 - **Heute:** Reiter Tagesliste · Posteingang · Reinigung · Restaurant.
 - Abnahme: `tests/unit/msg-tone.test.ts`, `admin-nav.test.ts`, `tests/integration/monthly-mail.test.ts`.
+
+### 19.48 Restaurant in den Einstellungen, CSV-Import, Menü-Zuordnung
+- **Zuordnung im Menü:** Der genauere Treffer gewinnt (`inSettings`, `isActiveIn`, `sectionFor` in `src/admin/nav.ts`): eine Zahnrad-Seite unter einer Adresse von «Heute» (z. B. `restaurant/artikel` gegenüber `restaurant`) bleibt im Zahnrad und das Menü springt nicht mehr um.
+- **Restaurant** (Einstellungen → Verkauf, `restaurant/artikel`, Modul `pos`): Artikel, Tische, Import. **Kassen-Geräte** (Einstellungen → Technik → Geräte & Kasse, `restaurant/geraete`): Gerätecodes und Freigabe, Bon-Nummernkreise.
+- **CSV-Import** (Manager): Artikel (`kategorie;name;preis;mwst_haus;mwst_takeaway;tagesangebot`, leere MWST = 8,1 % / 2,6 %) und Tische (`name`), `;` oder `,`, höchstens 500 Zeilen und 1 MB. Alles oder nichts: bei einem Fehler wird nichts gespeichert und die Zeile genannt; Gleiches (Kategorie und Name bzw. Tischname) wird übersprungen. Vorlagen unter `restaurant/vorlage?kind=items|tables`; Protokoll `pos.items_import`, `pos.tables_import` (`src/domain/pos-import.ts`, `src/services/pos.ts`).
+- Abnahme: `tests/unit/pos-import.test.ts`, `tests/unit/admin-nav.test.ts`, `tests/e2e/reports.spec.ts`.

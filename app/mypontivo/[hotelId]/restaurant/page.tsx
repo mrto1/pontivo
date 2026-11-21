@@ -43,7 +43,7 @@ export default async function RestaurantPage({ params, searchParams }: { params:
             </div>
           ))}
         </div>
-      ) : <p className="muted">Noch keine Tische. Ein Manager legt sie unter Einstellungen → Geräte & Kasse → Kassen-Artikel an. Bestellungen ohne Tisch gehen trotzdem.</p>}
+      ) : <p className="muted">Noch keine Tische. Ein Manager legt sie unter Einstellungen → Verkauf → Restaurant an. Bestellungen ohne Tisch gehen trotzdem.</p>}
       <form action={open} className="card stack">
         <input type="hidden" name="hotelId" value={hotel.id} />
         <div><label htmlFor="label">Ohne Tisch (z. B. «Bar», «Take-away Meier»)</label><input id="label" name="label" maxLength={60} /></div>

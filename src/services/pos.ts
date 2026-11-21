@@ -56,6 +56,40 @@ export async function saveTable(hotelId: string, name: string, actor: string): P
   return t;
 }
 
+/** CSV-Import Artikel (alles oder nichts, SPEC 19.48): Artikel mit gleichem Namen und gleicher Kategorie gibt es schon und werden übersprungen */
+export async function importItems(hotelId: string, rowsIn: import("../domain/pos-import").PosItemRow[], actor: string): Promise<{ created: number; skipped: number }> {
+  return db().transaction(async (tx) => {
+    const have = await tx.select({ category: posItems.category, name: posItems.name }).from(posItems).where(eq(posItems.hotelId, hotelId));
+    const key = (c: string, n: string) => `${c.toLowerCase()}\u0000${n.toLowerCase()}`;
+    const seen = new Set(have.map((h) => key(h.category, h.name)));
+    let created = 0, skipped = 0;
+    const base = have.length;
+    for (const r of rowsIn) {
+      if (seen.has(key(r.category, r.name))) { skipped++; continue; }
+      seen.add(key(r.category, r.name));
+      await tx.insert(posItems).values({ hotelId, category: r.category, name: r.name, priceRappen: r.priceRappen, vatDineInBps: r.vatDineInBps, vatTakeawayBps: r.vatTakeawayBps, dailySpecial: r.dailySpecial, active: true, sortOrder: base + created });
+      created++;
+    }
+    await audit(tx, { hotelId, actor, action: "pos.items_import", details: { created, skipped } });
+    return { created, skipped };
+  });
+}
+
+/** CSV-Import Tische: vorhandene Namen werden übersprungen */
+export async function importTables(hotelId: string, names: string[], actor: string): Promise<{ created: number; skipped: number }> {
+  return db().transaction(async (tx) => {
+    const have = new Set((await tx.select({ name: posTables.name }).from(posTables).where(eq(posTables.hotelId, hotelId))).map((t) => t.name.toLowerCase()));
+    let created = 0, skipped = 0;
+    for (const n of names) {
+      if (have.has(n.toLowerCase())) { skipped++; continue; }
+      await tx.insert(posTables).values({ hotelId, name: n, sortOrder: have.size + created });
+      created++;
+    }
+    await audit(tx, { hotelId, actor, action: "pos.tables_import", details: { created, skipped } });
+    return { created, skipped };
+  });
+}
+
 export const listDevices = (hotelId: string) => db().select().from(posDevices).where(eq(posDevices.hotelId, hotelId)).orderBy(asc(posDevices.code));
 
 /** Gerät (eigener Bon-Nummernkreis). Code 1 bis 6 Zeichen A–Z, 0–9. */

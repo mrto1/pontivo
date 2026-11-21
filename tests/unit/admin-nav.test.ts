@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminNav, allPages, bestMatch, inSettings, isActive, leafKeys, sectionFor, settingsGroups } from "../../src/admin/nav";
+import { adminNav, allPages, bestMatch, inSettings, isActive, isActiveIn, leafKeys, sectionFor, settingsGroups } from "../../src/admin/nav";
 import { hiddenNavKeys } from "../../src/domain/modules";
 import { GET as manifest } from "../../app/mypontivo/manifest.webmanifest/route";
 import { GET as sw } from "../../app/mypontivo/sw.js/route";
@@ -33,7 +33,7 @@ describe("Admin-Menü", () => {
       bookings: "bookings", groups: "groups", resources: "resources", vouchers: "vouchers", guestbook: "guestbook", marketing: "marketing", feedback: "feedback",
       invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung", reports: "berichte",
       settings: "settings", rooms: "rooms", extras: "rooms/extras", payments: "zahlungen", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
-      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posbridge: "posbridge", migration: "migration", report: "report", mypontivo: "mypontivo", firstweek: "erste-woche", help: "hilfe",
+      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posdevices: "restaurant/geraete", posbridge: "posbridge", migration: "migration", report: "report", mypontivo: "mypontivo", firstweek: "erste-woche", help: "hilfe",
     });
   });
 
@@ -53,13 +53,13 @@ describe("Admin-Menü", () => {
     expect(groups.map((g) => g.title)).toEqual(["Betrieb", "Verkauf", "Technik"]);
     expect(groups.map((g) => g.items.map((i) => i.label))).toEqual([
       ["Grunddaten", "Zahlungsmethoden", "Zimmer & Tarife", "Zusatzleistungen", "Team & Rollen"],
-      ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "KI-Chat"],
+      ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "Restaurant", "KI-Chat"],
       ["Funktionen", "Geräte & Kasse", "Datenübernahme", "Abo & Gebühren"],
     ]);
     for (const g of groups) { expect(g.lead.length).toBeGreaterThan(10); for (const i of g.items) expect(i.lead, i.label).toBeTruthy(); }
     expect(nav.settings.tabs!.find((i) => i.label === "Website & Buchung")!.tabs!.map((t) => t.key)).toEqual(["site", "direct", "api"]);
     expect(nav.settings.tabs!.find((i) => i.label === "Kanäle")!.tabs!.map((t) => t.key)).toEqual(["channex", "ical"]);
-    expect(nav.settings.tabs!.find((i) => i.label === "Geräte & Kasse")!.tabs!.map((t) => t.key)).toEqual(["terminal", "access", "positems", "posbridge"]);
+    expect(nav.settings.tabs!.find((i) => i.label === "Geräte & Kasse")!.tabs!.map((t) => t.key)).toEqual(["terminal", "access", "posdevices", "posbridge"]);
   });
 
   it("Kalender startet mit dem Zimmerplan, wenn die Rezeption an ist, sonst mit Preise & Verfügbarkeit", () => {
@@ -142,5 +142,16 @@ describe("PWA", () => {
     expect(ok.headers.get("Content-Type")).toBe("image/png");
     expect(new Uint8Array(await ok.arrayBuffer()).slice(1, 4)).toEqual(new Uint8Array([0x50, 0x4e, 0x47]));
     expect((await icon(new Request("http://x"), { params: Promise.resolve({ size: "7" }) })).status).toBe(404);
+  });
+
+  it("Zahnrad-Seite unter einer Adresse von «Heute» bleibt im Zahnrad (Kassen-Artikel)", () => {
+    const nav = adminNav(hotel);
+    const p = "/mypontivo/h1/restaurant/artikel";
+    expect(inSettings(p, nav, "/mypontivo/h1")).toBe(true);
+    expect(isActiveIn(p, nav, nav.primary[0], "/mypontivo/h1")).toBe(false);
+    expect(sectionFor(p, nav, "/mypontivo/h1")?.key).not.toBe("g-overview");
+    // Tische unter Heute bleiben Heute
+    expect(inSettings("/mypontivo/h1/restaurant", nav, "/mypontivo/h1")).toBe(false);
+    expect(isActiveIn("/mypontivo/h1/restaurant", nav, nav.primary[0], "/mypontivo/h1")).toBe(true);
   });
 });

@@ -2,8 +2,9 @@ import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
-import { PosError, createDevice, listDevices, listItems, listTables, releaseDevice, saveItem, saveTable } from "@/src/services/pos";
+import { PosError, importItems, importTables, listItems, listTables, saveItem, saveTable } from "@/src/services/pos";
 import { formatChf } from "@/src/domain/money";
+import { parsePosItems, parsePosTables } from "@/src/domain/pos-import";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -36,17 +37,21 @@ async function table(f: FormData) {
   try { await saveTable(c.hotel.id, s(f, "name"), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht angelegt: ${e.message}`); }
   here(c.hotel.id, "Tisch angelegt.");
 }
-async function release(f: FormData) {
+async function csvImport(f: FormData) {
   "use server";
   const c = await guard(f);
-  try { await releaseDevice(c.hotel.id, s(f, "id"), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht freigegeben: ${e.message}`); }
-  here(c.hotel.id, "Gerät freigegeben. Das nächste Tablet kann es wählen.");
-}
-async function device(f: FormData) {
-  "use server";
-  const c = await guard(f);
-  try { await createDevice(c.hotel.id, s(f, "code"), s(f, "label"), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht angelegt: ${e.message}`); }
-  here(c.hotel.id, "Gerät angelegt.");
+  const file = f.get("file");
+  if (!(file instanceof File) || !file.size) return here(c.hotel.id, "Nicht importiert: Bitte eine CSV-Datei wählen.");
+  if (file.size > 1_000_000) return here(c.hotel.id, "Nicht importiert: Die Datei ist zu gross (höchstens 1 MB).");
+  const text = await file.text();
+  const tables = s(f, "kind") === "tables";
+  const r = tables ? parsePosTables(text) : parsePosItems(text);
+  if (r.problems.length) {
+    const first = r.problems.slice(0, 3).map((p) => `Zeile ${p.row}: ${p.message}`).join(" ");
+    return here(c.hotel.id, `Nicht importiert (${r.problems.length} Fehler, es wurde nichts gespeichert). ${first}${r.problems.length > 3 ? " …" : ""}`);
+  }
+  const res = tables ? await importTables(c.hotel.id, (r as ReturnType<typeof parsePosTables>).names, c.actor) : await importItems(c.hotel.id, (r as ReturnType<typeof parsePosItems>).rows, c.actor);
+  here(c.hotel.id, `${res.created} ${tables ? "Tische" : "Artikel"} importiert${res.skipped ? `, ${res.skipped} übersprungen (gab es schon)` : ""}.`);
 }
 
 export default async function PosItemsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
@@ -54,11 +59,11 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
   const sp = await searchParams;
   const { hotel } = await requireHotel(hotelId, "manager");
   await requireModule(hotel.id, "pos");
-  const [items, tables, devices] = await Promise.all([listItems(hotel.id), listTables(hotel.id), listDevices(hotel.id)]);
+  const [items, tables] = await Promise.all([listItems(hotel.id), listTables(hotel.id)]);
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   return (
     <div className="stack">
-      <h1>Artikel, Tische, Geräte</h1>
+      <h1>Restaurant: Artikel und Tische</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <form action={item} className="card stack">
         {H}
@@ -80,8 +85,16 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
         </tbody></table> : <p className="muted">Noch kein Artikel.</p>}
       </section>
       <form action={table} className="card stack">{H}<h2>Tische ({tables.length})</h2><p className="small muted">{tables.map((t) => t.name).join(", ")}</p><div><label>Neuer Tisch</label><input name="name" required maxLength={30} /></div><div><button className="btn secondary">Anlegen</button></div></form>
-      <form action={device} className="card stack">{H}<h2>Geräte</h2><p className="small muted">Jedes Gerät hat einen eigenen, lückenlosen Nummernkreis. Die Weboberfläche nutzt «W1».</p>{devices.length ? <table className="table"><tbody>{devices.map((d) => <tr key={d.id}><td>{d.code} {d.label}</td><td>{d.claimedKey ? "belegt" : "frei"}{d.pendingOps ? `, ${d.pendingOps} offen` : ""}</td><td>{d.claimedKey ? <button className="btn secondary small" formNoValidate formAction={release} name="id" value={d.id}>Freigeben</button> : null}</td></tr>)}</tbody></table> : <p>noch keines</p>}
-        <div><label>Code (A–Z, 0–9, bis 6 Zeichen)</label><input name="code" required maxLength={6} /></div><div><label>Bezeichnung</label><input name="label" maxLength={60} /></div><div><button className="btn secondary">Gerät anlegen</button></div></form>
+      <form action={csvImport} className="card stack">{H}
+        <h2>Per CSV importieren</h2>
+        <p className="small muted">Speisekarte oder Tischliste aus Excel oder Ihrer bisherigen Kasse übernehmen. Alles oder nichts: Bei einem Fehler wird nichts gespeichert und die Zeile genannt. Was es schon gibt (gleicher Name), wird übersprungen.</p>
+        <div className="inline-form">
+          <div><label htmlFor="kind">Was</label><select id="kind" name="kind"><option value="items">Artikel</option><option value="tables">Tische</option></select></div>
+          <div><label htmlFor="file">CSV-Datei</label><input id="file" name="file" type="file" accept=".csv,text/csv" required /></div>
+          <button className="btn">Importieren</button>
+        </div>
+        <p className="small"><a href={`/mypontivo/${hotel.id}/restaurant/vorlage?kind=items`}>Vorlage Artikel (CSV)</a> · <a href={`/mypontivo/${hotel.id}/restaurant/vorlage?kind=tables`}>Vorlage Tische (CSV)</a></p>
+      </form>
     </div>
   );
 }
