@@ -61,7 +61,7 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
   const dining: NavItem[] = [
     { key: "g-dining-today", label: "Heute", href: `${base}/restaurant/heute`, icon: "home", tabs: [link("dininghome", "Tagesübersicht", "restaurant/heute"), link("inbox", "Posteingang")] },
     { key: "g-dining-res", label: "Reservierungen", href: `${base}/restaurant/reservierungen`, icon: "bookings", tabs: [link("reservations", "Liste", "restaurant/reservierungen"), link("resplan", "Tischplan", "restaurant/tischplan"), link("waitlist", "Warteliste", "restaurant/warteliste"), link("guestbook", "Gäste")] },
-    { key: "g-dining-orders", label: "Bestellungen", href: `${base}/restaurant`, icon: "orders", tabs: [link("restaurant", "Tische"), link("kasse", "Kasse"), link("kitchen", "Küche", "restaurant/kueche")] },
+    { key: "g-dining-orders", label: "Bestellungen", href: `${base}/restaurant`, icon: "orders", tabs: [link("onlineorders", "Online", "restaurant/bestellungen"), link("restaurant", "Tische"), link("kasse", "Kasse"), link("kitchen", "Küche", "restaurant/kueche"), link("driver", "Lieferungen", "restaurant/fahrer")] },
     { key: "g-dining-finance", label: "Finanzen", href: `${base}/restaurant/abschluss`, icon: "finance", tabs: [link("posclose", "Kassenabschluss", "restaurant/abschluss"), link("invoices", "Rechnungen"), link("vouchers", "Gutscheine"), link("accountingexport", "Buchhaltung", "buchhaltung")] },
   ];
   return {
@@ -112,6 +112,7 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
         set("Verkauf", link("upsell", "Upselling"), "Extras wie Frühstück, die Gäste online dazubuchen."),
         set("Verkauf", link("positems", "Speisekarte", "restaurant/artikel"), "Artikel mit Preisen, Optionen und Menüs, KI-Speisekarte und Import per CSV."),
         set("Verkauf", link("ressettings", "Tischplan & Reservierung online", "restaurant/einstellungen"), "Tische und Plätze, Tischplan, Zeiten und Regeln für die Online-Reservierung."),
+        set("Verkauf", link("ordersettings", "Online-Bestellung & Lieferung", "restaurant/bestellung-einstellungen"), "Abholung und Lieferung, Zeiten, Liefergebiete, Barzahlung, Probebestellung und Live-Schaltung."),
         set("Verkauf", link("ki-chat", "KI-Chat"), "Der digitale Assistent auf Website und Buchungsseite."),
         set("Technik", link("funktionen", "Funktionen"), "Nur was Sie brauchen, bleibt im Menü."),
         set("Technik", { ...link("g-devices", "Geräte & Kasse", "terminal"), tabs: [link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt"), link("posdevices", "Kassen-Geräte", "restaurant/geraete"), link("posbridge", "Kassen-Schnittstelle")] }, "Kartenleser, Türschlösser, Kassen-Geräte und Schnittstelle zu Ihrer Kasse."),

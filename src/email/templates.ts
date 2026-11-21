@@ -216,6 +216,17 @@ const TR: Record<Locale, TRText> = {
     remSubject: (h) => `Herinnering aan uw tafel – ${h}`, remText: "wij herinneren u aan uw tafelreservering. We kijken uit naar uw komst. Verandert er iets, annuleer dan via de link.", waitSubject: (h) => `Er is een tafel vrijgekomen – ${h}`, waitText: "er is een tafel vrijgekomen op uw gewenste dag. Wie het eerst reserveert, krijgt hem.", waitButton: "Nu reserveren" },
 };
 
+/** Online-Bestellung (SPEC 20.4): Mails an den Gast */
+type OText = { received: (n: string) => string; receivedText: string; accepted: (n: string) => string; acceptedText: (t: string, kind: string) => string; rejected: (n: string) => string; rejectedText: string; refund: string;
+  ready: (n: string) => string; readyText: string; out: (n: string) => string; outText: string; total: string; fee: string; pickup: string; delivery: string; view: string; reason: string };
+const OT: Record<Locale, OText> = {
+  de: { received: (n) => `Bestellung ${n} eingegangen`, receivedText: "vielen Dank für Ihre Bestellung. Sobald das Restaurant sie angenommen hat, bekommen Sie die Zeit bestätigt.", accepted: (n) => `Bestellung ${n} angenommen`, acceptedText: (t, k) => `Ihre Bestellung ist angenommen. ${k === "delivery" ? "Lieferung" : "Abholung"} um ${t} Uhr.`, rejected: (n) => `Bestellung ${n} leider nicht möglich`, rejectedText: "das Restaurant kann Ihre Bestellung leider nicht annehmen.", refund: "Der bezahlte Betrag wird Ihnen vollständig zurückerstattet.", ready: (n) => `Bestellung ${n} ist bereit`, readyText: "Ihre Bestellung ist bereit zur Abholung.", out: (n) => `Bestellung ${n} ist unterwegs`, outText: "Ihre Bestellung ist unterwegs zu Ihnen.", total: "Total", fee: "Liefergebühr", pickup: "Abholung", delivery: "Lieferung", view: "Bestellung ansehen", reason: "Grund" },
+  en: { received: (n) => `Order ${n} received`, receivedText: "thank you for your order. As soon as the restaurant accepts it, we will confirm the time.", accepted: (n) => `Order ${n} accepted`, acceptedText: (t, k) => `Your order has been accepted. ${k === "delivery" ? "Delivery" : "Pick-up"} at ${t}.`, rejected: (n) => `Order ${n} not possible`, rejectedText: "unfortunately the restaurant cannot accept your order.", refund: "The amount paid will be refunded in full.", ready: (n) => `Order ${n} is ready`, readyText: "Your order is ready for pick-up.", out: (n) => `Order ${n} is on its way`, outText: "Your order is on its way to you.", total: "Total", fee: "Delivery fee", pickup: "Pick-up", delivery: "Delivery", view: "View order", reason: "Reason" },
+  fr: { received: (n) => `Commande ${n} reçue`, receivedText: "merci pour votre commande. Dès que le restaurant l'aura acceptée, nous vous confirmerons l'heure.", accepted: (n) => `Commande ${n} acceptée`, acceptedText: (t, k) => `Votre commande est acceptée. ${k === "delivery" ? "Livraison" : "Retrait"} à ${t}.`, rejected: (n) => `Commande ${n} impossible`, rejectedText: "le restaurant ne peut malheureusement pas accepter votre commande.", refund: "Le montant payé vous sera entièrement remboursé.", ready: (n) => `Commande ${n} prête`, readyText: "Votre commande est prête à être retirée.", out: (n) => `Commande ${n} en route`, outText: "Votre commande est en route.", total: "Total", fee: "Frais de livraison", pickup: "Retrait", delivery: "Livraison", view: "Voir la commande", reason: "Motif" },
+  it: { received: (n) => `Ordine ${n} ricevuto`, receivedText: "grazie per l'ordine. Appena il ristorante lo accetta, vi confermiamo l'orario.", accepted: (n) => `Ordine ${n} accettato`, acceptedText: (t, k) => `Il vostro ordine è accettato. ${k === "delivery" ? "Consegna" : "Ritiro"} alle ${t}.`, rejected: (n) => `Ordine ${n} non possibile`, rejectedText: "purtroppo il ristorante non può accettare il vostro ordine.", refund: "L'importo pagato vi sarà rimborsato interamente.", ready: (n) => `Ordine ${n} pronto`, readyText: "Il vostro ordine è pronto per il ritiro.", out: (n) => `Ordine ${n} in consegna`, outText: "Il vostro ordine è in arrivo.", total: "Totale", fee: "Spese di consegna", pickup: "Ritiro", delivery: "Consegna", view: "Vedi l'ordine", reason: "Motivo" },
+  nl: { received: (n) => `Bestelling ${n} ontvangen`, receivedText: "hartelijk dank voor uw bestelling. Zodra het restaurant hem heeft aangenomen, bevestigen wij de tijd.", accepted: (n) => `Bestelling ${n} aangenomen`, acceptedText: (t, k) => `Uw bestelling is aangenomen. ${k === "delivery" ? "Levering" : "Afhalen"} om ${t}.`, rejected: (n) => `Bestelling ${n} niet mogelijk`, rejectedText: "het restaurant kan uw bestelling helaas niet aannemen.", refund: "Het betaalde bedrag wordt volledig terugbetaald.", ready: (n) => `Bestelling ${n} staat klaar`, readyText: "Uw bestelling staat klaar om af te halen.", out: (n) => `Bestelling ${n} is onderweg`, outText: "Uw bestelling is onderweg naar u.", total: "Totaal", fee: "Bezorgkosten", pickup: "Afhalen", delivery: "Levering", view: "Bestelling bekijken", reason: "Reden" },
+};
+
 const KIND_DE: Record<string, string> = { table: "Tisch reservieren", group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
 
 /** Gäste-Mail mit den eigenen Texten des Hotels (SPEC 17.5), sonst die Standardtexte */
@@ -387,6 +398,25 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
       const r = TR[gl];
       return wrap(c, gl, r.waitSubject(c.hotel.name), [m.hi(String(c.data.name ?? "")) + ",", r.waitText], [`${r.day}: ${formatDay(String(c.data.day), gl)}`, `${r.persons}: ${c.data.party}`], { href: String(c.data.url ?? c.baseUrl), label: r.waitButton });
     }
+    case "order_received":
+    case "order_accepted":
+    case "order_rejected":
+    case "order_ready":
+    case "order_out": {
+      const o = OT[gl];
+      const n = String(c.data.number ?? "");
+      const lines = [...((c.data.lines as string[] | undefined) ?? []), ...(Number(c.data.deliveryFee ?? 0) ? [`${o.fee}: ${formatChf(Number(c.data.deliveryFee))}`] : []), `${o.total}: ${formatChf(Number(c.data.total ?? 0))}`];
+      const link = { href: String(c.data.url ?? c.baseUrl), label: o.view };
+      const hello = m.hi(String(c.data.name ?? "")) + ",";
+      if (template === "order_received") return wrap(c, gl, o.received(n), [hello, o.receivedText], lines, link);
+      if (template === "order_accepted") return wrap(c, gl, o.accepted(n), [hello, o.acceptedText(String(c.data.time ?? ""), String(c.data.kind ?? "pickup"))], lines, link);
+      if (template === "order_rejected") return wrap(c, gl, o.rejected(n), [hello, o.rejectedText, ...(c.data.reason ? [`${o.reason}: ${String(c.data.reason)}`] : []), ...(c.data.refunded ? [o.refund] : [])], lines, link);
+      if (template === "order_ready") return wrap(c, gl, o.ready(n), [hello, o.readyText], [], link);
+      return wrap(c, gl, o.out(n), [hello, o.outText], [], link);
+    }
+    case "order_alarm":
+      return wrap(c, l, de ? `Online-Bestellung: bitte handeln${c.data.number ? ` (${c.data.number})` : ""}` : "Online orders: action needed", [String(c.data.text ?? "")], [],
+        { href: `${env().APP_BASE_URL}/mypontivo/${c.hotel.id}/restaurant/bestellungen`, label: de ? "Bestellbildschirm öffnen" : "Open order screen" });
     case "waitlist_available": {
       const dm = D[gl];
       const name = String(c.data.name ?? "").trim();

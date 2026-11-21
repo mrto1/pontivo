@@ -9,6 +9,7 @@ import { formatDay } from "@/src/i18n/dict";
 import { formatChf } from "@/src/domain/money";
 import { atLeast, hasArea } from "@/src/domain/roles";
 import { diningChecklist } from "@/src/services/onboarding";
+import { cashByDriver, orderSettings, screenOrders } from "@/src/services/online-orders";
 
 export const dynamic = "force-dynamic";
 const STATUS = { pending: "Zahlung offen", confirmed: "erwartet", seated: "am Tisch", cancelled: "storniert", noshow: "nicht erschienen" } as const;
@@ -35,7 +36,10 @@ export default async function DiningToday({ params }: { params: Promise<{ hotelI
   const manager = atLeast(role, "manager");
   // Checkliste «Bereit für den Betrieb» (Konzept 7a): jeder offene Schritt mit Link, Wartezeiten mit Hinweis
   const checklist = manager ? await diningChecklist(hotel) : [];
-  const openItems = checklist.filter((c) => !c.done && c.key !== "domain");
+  const openItems = checklist.filter((c) => !c.done && c.key !== "domain" && c.key !== "bestellung");
+  // Online-Bestellungen (SPEC 20.4/20.5): offene und Bargeld je Fahrer
+  const ordersOn = hasArea(role, "onlineorders") && (await orderSettings(hotel.id)).enabled;
+  const [orders, cash] = ordersOn ? await Promise.all([screenOrders(hotel.id), manager ? cashByDriver(hotel) : Promise.resolve([])]) : [null, []];
   return (
     <div className="stack">
       <h1 style={{ margin: 0 }}>Heute</h1>
@@ -73,6 +77,17 @@ export default async function DiningToday({ params }: { params: Promise<{ hotelI
         ) : <p className="muted small" style={{ margin: 0 }}>Keine Reservierungen.</p>}
         <p className="small" style={{ margin: 0 }}><Link href={`${base}/restaurant/reservierungen`}>Alle Reservierungen und neue erfassen →</Link></p>
       </section>
+      {orders ? (
+        <section className="card stack" data-testid="dining-orders">
+          <h2 style={{ margin: 0 }}>Online-Bestellungen</h2>
+          <p style={{ margin: 0 }}>{orders.open.filter((o) => o.status === "new").length ? <span className="badge danger">{orders.open.filter((o) => o.status === "new").length} neu</span> : null} {orders.open.length} offen · {orders.done.filter((o) => o.status === "completed").length} erledigt · <Link href={`${base}/restaurant/bestellungen`}>Bestellbildschirm →</Link></p>
+          {cash.length ? (
+            <table className="table"><caption className="small muted" style={{ textAlign: "left" }}>Bargeld je Fahrer (Lieferungen bar, heute)</caption><tbody>
+              {cash.map((c) => <tr key={c.driver}><td>{c.driver || "ohne Fahrer"}</td><td>{c.n} Lieferungen</td><td>{formatChf(c.total)}</td></tr>)}
+            </tbody></table>
+          ) : null}
+        </section>
+      ) : null}
       {pos ? (
         <section className="card stack">
           <h2 style={{ margin: 0 }}>Offene Tische</h2>

@@ -3,13 +3,13 @@
  * freigegebene Bereiche und sind überall sonst ausgesperrt (sicher als Standard: eine Seite ohne Bereichsangabe ist für sie 404).
  */
 export type FullRole = "owner" | "manager" | "staff";
-export type LimitedRole = "reception" | "housekeeping" | "accounting" | "service";
+export type LimitedRole = "reception" | "housekeeping" | "accounting" | "service" | "driver";
 /** Eigene Rolle eines Betriebs, so aufgelöst: `custom:<Name URL-kodiert>:<Bereiche mit Komma>` (Auflösung in src/auth/session.ts, in der DB steht `custom:<id>`) */
 export type CustomRole = `custom:${string}`;
 export type Role = FullRole | LimitedRole | CustomRole;
 
 export const ROLE_LABEL: Record<FullRole | LimitedRole, string> = {
-  owner: "Inhaber", manager: "Manager", staff: "Mitarbeitende", reception: "Rezeption", housekeeping: "Reinigung", accounting: "Buchhaltung", service: "Service (Restaurant)",
+  owner: "Inhaber", manager: "Manager", staff: "Mitarbeitende", reception: "Rezeption", housekeeping: "Reinigung", accounting: "Buchhaltung", service: "Service (Restaurant)", driver: "Fahrer (Lieferung)",
 };
 
 /** Bereiche = Schlüssel der Menüpunkte (src/admin/nav.ts) plus «layout» (Rahmen), «home» (leitet weiter) und «tag» (Reiter «Tag» für eingeschränkte Rollen sichtbar) */
@@ -17,7 +17,8 @@ export const ROLE_AREAS: Record<LimitedRole, readonly string[]> = {
   reception: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "tag", "calendar", "bookings", "plan", "housekeeping", "resources", "reports", "guestbook", "inbox", "vouchers", "invoices", "dayclose", "groups"],
   housekeeping: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "housekeeping"],
   accounting: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "invoices", "dayclose", "debtors", "owners", "statistics", "hesta", "accountingexport"],
-  service: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "dininghome", "restaurant", "reservations", "resplan", "waitlist", "kitchen", "kasse"],
+  service: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "dininghome", "restaurant", "reservations", "resplan", "waitlist", "kitchen", "kasse", "onlineorders", "driver"],
+  driver: ["layout", "home", "mypontivo", "firstweek", "help", "helpflows", "helpterms", "driver"],
 };
 
 /** Standardrollen, die ein Betrieb in Name und Seiten anpassen kann (Inhaber, Manager und Mitarbeitende sind abgestuft und bleiben fest) */
@@ -39,6 +40,8 @@ export const CONFIGURABLE_AREAS: { key: string; label: string; group: string }[]
   { group: "Restaurant", key: "restaurant", label: "Tische" },
   { group: "Restaurant", key: "kasse", label: "Kasse" },
   { group: "Restaurant", key: "kitchen", label: "Küchenbildschirm" },
+  { group: "Restaurant", key: "onlineorders", label: "Online-Bestellungen (Bestellbildschirm)" },
+  { group: "Restaurant", key: "driver", label: "Lieferungen (Fahrer)" },
   { group: "Kalender", key: "plan", label: "Zimmerplan" },
   { group: "Kalender", key: "calendar", label: "Preise & Verfügbarkeit (ansehen)" },
   { group: "Buchungen", key: "bookings", label: "Buchungen" },
@@ -67,16 +70,16 @@ export const seesDay = (r: Role): boolean => hasArea(r, "tag");
 export const isCustomRole = (r: string | null): r is CustomRole => typeof r === "string" && r.startsWith("custom:") && r.split(":").length === 3;
 const parseCustom = (r: CustomRole) => { const [, name, areas] = r.split(":"); return { name: decodeURIComponent(name), areas: areas.split(",").filter(Boolean) }; };
 
-export const isLimitedRole = (r: Role | null): r is LimitedRole | CustomRole => r === "reception" || r === "housekeeping" || r === "accounting" || r === "service" || isCustomRole(r);
+export const isLimitedRole = (r: Role | null): r is LimitedRole | CustomRole => r === "reception" || r === "housekeeping" || r === "accounting" || r === "service" || r === "driver" || isCustomRole(r);
 export const areasOf = (r: LimitedRole | CustomRole): readonly string[] => (isCustomRole(r) ? parseCustom(r).areas : ROLE_AREAS[r]);
 export const roleAllowsArea = (r: LimitedRole | CustomRole, area: string) => areasOf(r).includes(area);
 export const roleLabel = (r: Role): string => (isCustomRole(r) ? parseCustom(r).name : ROLE_LABEL[r as FullRole | LimitedRole] ?? r);
 
 /** Erste Seite nach dem Anmelden für eingeschränkte Rollen */
-export const LANDING: Record<LimitedRole, string> = { reception: "", housekeeping: "housekeeping", accounting: "invoices", service: "restaurant/heute" };
-const LANDING_ORDER = ["tag", "housekeeping", "bookings", "calendar", "invoices", "dininghome", "kasse", "restaurant", "reservations", "kitchen", "reports", "inbox", "statistics"];
+export const LANDING: Record<LimitedRole, string> = { reception: "", housekeeping: "housekeeping", accounting: "invoices", service: "restaurant/heute", driver: "restaurant/fahrer" };
+const LANDING_ORDER = ["tag", "housekeeping", "bookings", "calendar", "invoices", "dininghome", "onlineorders", "driver", "kasse", "restaurant", "reservations", "kitchen", "reports", "inbox", "statistics"];
 /** Bereiche, deren Adresse nicht dem Schlüssel entspricht */
-const AREA_PATH: Record<string, string> = { dininghome: "restaurant/heute", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste" };
+const AREA_PATH: Record<string, string> = { onlineorders: "restaurant/bestellungen", driver: "restaurant/fahrer", dininghome: "restaurant/heute", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste" };
 export function landingFor(r: LimitedRole | CustomRole): string {
   if (!isCustomRole(r)) return LANDING[r];
   const areas = parseCustom(r).areas;

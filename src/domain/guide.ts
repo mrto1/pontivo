@@ -5,9 +5,9 @@ import type { Role } from "./roles";
  * Jede Aufgabe zeigt auf einen Menüpunkt (`area` = Schlüssel aus src/admin/nav.ts); ist dessen Modul aus, entfällt die Aufgabe.
  */
 export type GuideTask = { key: string; area: string; title: string; hint: string };
-export type GuideRole = "owner" | "reception" | "housekeeping" | "accounting" | "service";
+export type GuideRole = "owner" | "reception" | "housekeeping" | "accounting" | "service" | "driver";
 
-export const GUIDE_ROLE_LABEL: Record<GuideRole, string> = { owner: "Inhaber und Manager", reception: "Rezeption", housekeeping: "Reinigung", accounting: "Buchhaltung", service: "Service (Restaurant)" };
+export const GUIDE_ROLE_LABEL: Record<GuideRole, string> = { owner: "Inhaber und Manager", reception: "Rezeption", housekeeping: "Reinigung", accounting: "Buchhaltung", service: "Service (Restaurant)", driver: "Fahrer (Lieferung)" };
 
 export const GUIDE: Record<GuideRole, GuideTask[]> = {
   owner: [
@@ -43,7 +43,12 @@ export const GUIDE: Record<GuideRole, GuideTask[]> = {
     { key: "a_stats", area: "statistics", title: "Statistik und Monatsabrechnung", hint: "Umsatz nach Monat." },
     { key: "a_owners", area: "owners", title: "Eigentümerabrechnung (falls Sie Wohnungen verwalten)", hint: "Monatsabrechnung je Eigentümer mit Ihrer Kommission." },
   ],
+  driver: [
+    { key: "d_list", area: "driver", title: "Lieferungen am Handy öffnen", hint: "Adresse, Telefon und ob bar bezahlt wird; mit Link zur Navigation." },
+    { key: "d_out", area: "driver", title: "«Unterwegs» und «Geliefert» melden", hint: "Der Gast bekommt Bescheid; bar kassierte Beträge erscheinen in der Tagesübersicht." },
+  ],
   service: [
+    { key: "s_orders", area: "onlineorders", title: "Online-Bestellung annehmen", hint: "Bestellbildschirm offen lassen; neue Bestellungen läuten, bis sie angenommen sind." },
     { key: "s_today", area: "dininghome", title: "Tagesübersicht lesen", hint: "Reservierungen von heute, wer noch kommt, wer am Tisch sitzt." },
     { key: "s_res", area: "reservations", title: "Eine Reservierung erfassen", hint: "Zeit, Personen, Name; Tisch wählen oder automatisch zuteilen." },
     { key: "s_kasse", area: "kasse", title: "Kasse öffnen und Gerät wählen", hint: "Einmal mit Internet, danach geht es auch ohne." },
@@ -56,7 +61,7 @@ export const GUIDE: Record<GuideRole, GuideTask[]> = {
 
 /** Welche Checkliste gehört zur Rolle? Volle Rollen (Inhaber, Manager, Mitarbeitende) lesen die Inhaber-Liste. */
 export function guideRole(role: Role): GuideRole {
-  return role === "reception" || role === "housekeeping" || role === "accounting" || role === "service" ? role : "owner";
+  return role === "reception" || role === "housekeeping" || role === "accounting" || role === "service" || role === "driver" ? role : "owner";
 }
 
 /** Aufgaben der Rolle, die im Menü des Betriebs erreichbar sind (`visibleAreas`) */

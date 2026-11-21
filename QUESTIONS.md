@@ -261,9 +261,12 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 
 ## Restaurant (Restaurant-Konzept 21.11.2026, Abschnitt 9)
 - [x] Gebührenregel (Entscheid 10): Anzahlung für Tischreservationen bleibt **gebührenfrei** (Entscheid Betreiber 21.11.2026).
-- [ ] Adresssuche geo.admin.ch (R4): aktuelle Fair-Use-Grenzen vor dem Bau prüfen; bei absehbar mehr Last vorab info@geo.admin.ch kontaktieren.
-- [ ] SMS-Anbieter und Weiterverrechnung der SMS-Kosten (R3/R4: Alarm bei nicht angenommener Bestellung, Herzschlag-Ausfall, «bereit»/«unterwegs» an den Gast). Betreiber 21.11.2026: «je nach Pricing» → Preisvergleich vorlegen (vor R3). Bis zum Entscheid: Mail und Push, SMS-Stelle vorbereitet.
+- [x] Adresssuche geo.admin.ch (R4): geprüft 21.11.2026: FAQ nennt 20 Anfragen/Minute im 24/7-Mittel als «fair use» (laut geo.admin.ch seit 1.1.2025 verdoppelt, ohne Zahl). Erwartete Last (ca. 5 Anfragen je Lieferbestellung) weit darunter. Bei mehr als ca. 2000 Lieferbestellungen pro Tag vorab info@geo.admin.ch kontaktieren.
+- [x] SMS-Anbieter und Weiterverrechnung der SMS-Kosten (R3/R4: Alarm bei nicht angenommener Bestellung, Herzschlag-Ausfall, «bereit»/«unterwegs» an den Gast). Entschieden 21.11.2026: **ASPSMS**; Alarme an das Restaurant inklusive, SMS an Gäste wählbar und zum Selbstkostenpreis weiterverrechnet.
 - [ ] Pilotbetrieb (Restaurant/Take-away, idealerweise GloriaFood-Nutzer).
 - [ ] Treuhänder: MWST-Satz der Liefergebühr (Annahme 2,6 % wie die Speisen), Bons bei Online-Zahlung.
-- [ ] Selbst-Onboarding (Konzept 7a, Schritt 8 und Abschnitt 6): Grundgebühr heute per hinterlegter Karte (Stripe); Konzept nennt «Rechnung per QR-Rechnung» bzw. Abos jährlich per QR-Rechnung. Umstellen (für Restaurants oder alle Betriebe)? Bis zum Entscheid bleibt die Karte.
+- [x] Grundgebühr (Konzept 7a, Schritt 8 und Abschnitt 6): Entschieden 21.11.2026: **beide Wege anbieten**, Karte (Stripe) oder QR-Rechnung; die Plattformverwaltung erzeugt und versendet Rechnungen und Mahnungen.
+- [x] Sprache bei der Registrierung: nicht abgefragt, Deutsch, änderbar in den Grunddaten (bestätigt 21.11.2026).
 - [ ] Gastgeber-Bedingungen (Ziffer Gebühren) an Entscheid 10 angleichen: heute «1,9 % des per Karte, TWINT oder Wallet bezahlten Betrags»; neu «auf alles, was über Pontivo hereinkommt, egal wie bezahlt» (z. B. Online-Bestellung bar bei Lieferung, R4) und «keine Gebühr auf Verkäufe vor Ort». Rechtstext, darum nicht selbst geändert.
+- [ ] ASPSMS: Erfolgscode der JSON-API (`StatusCode`) ist in der Doku nicht genannt. ASSUMPTION: «1» = OK; mit Testzugang prüfen. Absender (Originator, alphanumerisch max. 11 Zeichen) festlegen.
+- [ ] Allergene im Online-Verkauf (Fernabsatz): Angabe je Artikel durch den Betrieb, Pontivo zeigt sie nur an. Rechtlich prüfen lassen (Konzept Abschnitt 8).

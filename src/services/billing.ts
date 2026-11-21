@@ -12,6 +12,8 @@ import { monthlyReport } from "./report";
 import { shiftMonth } from "./overview";
 import { billMonth, invoiceNumber, vatApplies, type PlatformVat } from "../domain/platform-invoice";
 import { getPlatformVat } from "./platform-settings";
+import { orderFeesForMonth } from "./online-orders";
+import { billableSmsCount } from "./sms";
 
 /**
  * Mindestgebühr (Bedingungen für Gastgeber, Ziffer 2): Plattformgebühr (Standard 1,9 %) pro Direktbuchung/Gutschein, mindestens monthly_minimum_rappen
@@ -58,14 +60,16 @@ export async function runMonthlyMinimum(now = new Date(), vatOverride?: Platform
     const minApplies = h.monthlyMinimumRappen > 0 && !!first && month >= first;
     const ai = aiHotels.has(h.id) ? await aiBillFor(h.id, month) : null;
     const aiTotal = ai?.totalRappen ?? 0;
-    const fees = await feesForMonth(h, month);
-    // Nichts zu verrechnen (kein Minimum, kein KI-Chat, keine Gebühren): keine Rechnung
-    if (!minApplies && aiTotal === 0 && fees === 0) continue;
-    const b = billMonth({ feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, aiRappen: aiTotal, vatBps: vatOn ? vat.bps : 0 });
+    const orderFees = await orderFeesForMonth(h, month);
+    const fees = (await feesForMonth(h, month)) + orderFees.total;
+    const smsRappen = (await billableSmsCount(h.id, month)) * env().SMS_GUEST_PRICE_RAPPEN;
+    // Nichts zu verrechnen (kein Minimum, kein KI-Chat, keine Gebühren, keine SMS): keine Rechnung
+    if (!minApplies && aiTotal === 0 && fees === 0 && smsRappen === 0) continue;
+    const b = billMonth({ feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, aiRappen: aiTotal, vatBps: vatOn ? vat.bps : 0, uncollectedRappen: orderFees.uncollected, smsRappen });
     const [{ n }] = rows<{ n: number }>(await db().execute(sql`SELECT nextval('platform_invoice_seq')::int AS n`));
     const ins = await db().insert(platformCharges).values({
       hotelId: h.id, month, feesRappen: fees, minimumRappen: minApplies ? h.monthlyMinimumRappen : 0, chargeRappen: b.payRappen,
-      aiModuleRappen: ai?.moduleRappen ?? 0, aiPacksRappen: ai?.packsRappen ?? 0, status: b.payRappen > 0 ? "pending" : "none",
+      aiModuleRappen: ai?.moduleRappen ?? 0, aiPacksRappen: ai?.packsRappen ?? 0, uncollectedFeesRappen: orderFees.uncollected, smsRappen, status: b.payRappen > 0 ? "pending" : "none",
       netRappen: b.netRappen, vatBps: vatOn ? vat.bps : 0, vatRappen: b.vatRappen, vatNumber: vatOn ? vat.number : null,
       invoiceNo: invoiceNumber(Number(today.slice(0, 4)), n), invoiceDate: today,
     }).onConflictDoNothing().returning({ id: platformCharges.id });

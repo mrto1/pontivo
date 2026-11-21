@@ -15,6 +15,8 @@ import { CHAT_TEXT } from "@/src/i18n/chat";
 import { ChatWidget } from "./ChatWidget";
 import { RES } from "@/src/i18n/reservation";
 import { tableReservationOnline } from "@/src/services/reservations";
+import { onlineOrderingOn } from "@/src/services/online-orders";
+import { ORD } from "@/src/i18n/order";
 
 /** Rahmen der Hotel-Seiten: Kopf mit Logo, Fusszeile, Erscheinungsbild des Hotels (Farbe, Logo) */
 export async function Shell({ hotel, locale, base, path = "", current, noBookButton, chatToken, children }: { hotel: Hotel; locale: Locale; base: string; path?: string; current?: string; noBookButton?: boolean; chatToken?: string; children: React.ReactNode }) {
@@ -37,6 +39,9 @@ export async function Shell({ hotel, locale, base, path = "", current, noBookBut
   const tableOnline = resto && (await tableReservationOnline(hotel.id));
   const bookHref = resto ? `${base}/${locale}/tisch` : `${base}/${locale}/book?checkin=${addDays(today, 1)}&checkout=${addDays(today, 3)}&adults=2`;
   const showBook = !noBookButton && hotel.status === "live" && (!resto || tableOnline);
+  // Online-Bestellung (SPEC 20.4): eigener fester Knopf «Online bestellen»
+  const orderOn = !noBookButton && hotel.status === "live" && resto && (await onlineOrderingOn(hotel.id));
+  const orderHref = `${base}/${locale}/bestellen`;
   const langs = hotelLocales(hotel);
   const nav = bookingOnly ? [] : pages.filter((p) => p.showInNav && p.slug !== "");
   const imprint = pages.find((p) => p.slug === "impressum");
@@ -68,7 +73,10 @@ export async function Shell({ hotel, locale, base, path = "", current, noBookBut
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldJson(jsonLd) }} />
       <main className="wrap">{children}</main>
       {chat ? <ChatWidget hotel={hotel.slug} locale={chatLocale(hotel, locale)} token={chatToken} text={chat} /> : null}
-      {showBook ? <a className="sticky-book btn" href={bookHref}>{resto ? RES[locale].title : d.bookNow}</a> : null}
+      {showBook && orderOn ? (
+        <div className="sticky-book sticky-pair"><a className="btn" href={bookHref}>{RES[locale].title}</a><a className="btn" href={orderHref}>{ORD[locale].title}</a></div>
+      ) : showBook ? <a className="sticky-book btn" href={bookHref}>{resto ? RES[locale].title : d.bookNow}</a>
+        : orderOn ? <a className="sticky-book btn" href={orderHref}>{ORD[locale].title}</a> : null}
       <footer className="foot">
         <div className="wrap">
           <strong>{hotel.name}</strong>

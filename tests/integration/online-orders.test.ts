@@ -1,0 +1,158 @@
+import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { and, eq } from "drizzle-orm";
+import { closeDb, db } from "../../src/db/client";
+import { deliveryFlags, emailOutbox, hotelModules, hotels, onlineOrders, posReceipts, smsOutbox } from "../../src/db/schema";
+import { todayIn, zonedToUtc } from "../../src/domain/dates";
+import { FakePaymentProvider } from "../../src/payments/fake";
+import { setPaymentProvider } from "../../src/payments/provider";
+import { openTickets, saveItem, saveOption, saveOptionGroup, setGroupItems } from "../../src/services/pos";
+import { getSettings, saveOpeningHours } from "../../src/services/reservations";
+import {
+  acceptOrder, completeOrder, createOnlineOrder, heartbeat, notAccepted, onlineOrdersJob, orderFeesForMonth, orderReadiness, orderSettings, outForDelivery,
+  pauseOrders, readyOrder, rejectOrder, saveOrderSettings, saveZone, screenOrders, setOrdersEnabled, startTestOrder, saveItemOnline, onlineMenu, onlineOrderingOn,
+} from "../../src/services/online-orders";
+import { makeHotel } from "../helpers";
+
+afterAll(closeDb);
+afterEach(() => setPaymentProvider(null));
+
+const allDay = Object.fromEntries([0, 1, 2, 3, 4, 5, 6].map((d) => [String(d), [{ from: "00:00", to: "23:59" }]]));
+
+async function setup() {
+  const { hotel } = await makeHotel({}, []);
+  await db().update(hotels).set({ contactPhone: "079 123 45 67" }).where(eq(hotels.id, hotel.id));
+  await db().insert(hotelModules).values({ hotelId: hotel.id, module: "restaurant", enabled: true });
+  const [h] = await db().select().from(hotels).where(eq(hotels.id, hotel.id));
+  const pizza = await saveItem(h.id, null, { category: "Pizza", name: "Margherita", priceRappen: 1800, vatDineInBps: 810, vatTakeawayBps: 260 }, "t");
+  const g = await saveOptionGroup(h.id, null, { name: "Grösse", required: true, maxChoices: 1 }, "t");
+  const big = await saveOption(h.id, g.id, { name: "gross", priceRappen: 400 }, "t");
+  await setGroupItems(h.id, g.id, [pizza.id], "t");
+  await saveOpeningHours(h.id, allDay, "t");
+  await saveOrderSettings(h.id, { pickup: true, delivery: true, slotMinutes: 15, maxPerSlot: 5, deliveryPerSlot: 3, leadMin: 0, cutoffMin: 0, cashPickup: true, cashDelivery: true, cashMaxRappen: 10000, guestSms: true }, "t");
+  const noon = zonedToUtc(todayIn(h.timezone), "12:00", h.timezone);
+  return { h, pizza, big, noon };
+}
+const order = (pizzaId: string, optionIds: string[], extra: object = {}) => ({ kind: "pickup" as const, time: "asap", payment: "card" as const, name: "Gast", phone: "079 111 22 33", email: "gast@example.ch", language: "de", lines: [{ itemId: pizzaId, quantity: 2, optionIds, note: "scharf" }], ...extra });
+
+describe("Online-Bestellung (SPEC 20.4)", () => {
+  it("Live-Gang erst nach Probebestellung; Probe empfangen, annehmen, bereit → bestanden, ohne Bon", async () => {
+    const { h } = await setup();
+    expect((await orderReadiness(h)).map((p) => p.key)).toEqual(["zones", "test"]);
+    await expect(setOrdersEnabled(h, true, "t")).rejects.toThrow(/Probebestellung/);
+    await saveZone(h.id, null, { name: "Stadt", postalCodes: ["9000"], minOrderRappen: 2000, feeRappen: 500, freeFromRappen: 6000, extraMinutes: 20 }, "t");
+    const t = await startTestOrder(h, "t");
+    expect(t).toMatchObject({ status: "new", isTest: true, feeRappen: 0 });
+    expect((await screenOrders(h.id)).open.map((o) => o.id)).toContain(t.id);
+    await acceptOrder(h, t.id, 0, "t");
+    await readyOrder(h, t.id, "t");
+    expect((await orderSettings(h.id)).testPassedAt).toBeTruthy();
+    expect(await db().select().from(posReceipts).where(eq(posReceipts.hotelId, h.id))).toHaveLength(0);
+    await setOrdersEnabled(h, true, "t");
+    expect((await orderSettings(h.id)).enabled).toBe(true);
+  });
+
+  it("Karte: bezahlt → neu, Annahme legt Küche und Bon an (Take-away), bereit, abgeholt; Gebühr 1,9 %", async () => {
+    const { h, pizza, big, noon } = await setup();
+    await saveZone(h.id, null, { name: "Stadt", postalCodes: ["9000"], minOrderRappen: 0, feeRappen: 0, freeFromRappen: null, extraMinutes: 0 }, "t");
+    await db().insert((await import("../../src/db/schema")).onlineOrderSettings).values({ hotelId: h.id }).onConflictDoNothing();
+    await db().update((await import("../../src/db/schema")).onlineOrderSettings).set({ enabled: true, testPassedAt: new Date() }).where(eq((await import("../../src/db/schema")).onlineOrderSettings.hotelId, h.id));
+    await expect(createOnlineOrder(h, order(pizza.id, []), { now: noon })).rejects.toThrow(/Grösse/);
+    const { order: o } = await createOnlineOrder(h, order(pizza.id, [big.id]), { now: noon });
+    expect(o).toMatchObject({ status: "new", number: "A-001", subtotalRappen: 4400, totalRappen: 4400, feeRappen: 84 });
+    expect(o.items[0]).toMatchObject({ description: "Margherita · gross · scharf", unitPriceRappen: 2200, vatBps: 0 });
+    const mails = await db().select().from(emailOutbox).where(and(eq(emailOutbox.hotelId, h.id), eq(emailOutbox.template, "order_received")));
+    expect(mails).toHaveLength(1);
+    const a = await acceptOrder(h, o.id, 10, "t");
+    expect(a.status).toBe("accepted");
+    expect(a.posOrderId).toBeTruthy();
+    expect(a.receiptId).toBeTruthy();
+    const kitchen = await openTickets(h.id, "kitchen");
+    expect(kitchen[0].label).toMatch(/^Abholung \d\d:\d\d · A-001$/);
+    expect(kitchen[0].lines[0]).toMatchObject({ quantity: 2, mode: "takeaway" });
+    await readyOrder(h, o.id, "t");
+    expect(await openTickets(h.id, "kitchen")).toHaveLength(0);
+    expect(await db().select().from(smsOutbox).where(eq(smsOutbox.ref, `order-ready:${o.id}`))).toHaveLength(1); // Gast-SMS eingeschaltet
+    await completeOrder(h, o.id, "t");
+    const fees = await orderFeesForMonth(h, todayIn(h.timezone).slice(0, 7));
+    expect(fees).toEqual({ total: 84, uncollected: 0 });
+  });
+
+  it("Bar und Lieferung: Mindestwert, Liefergebühr als Bonzeile, Fahrer, Bon erst bei Übergabe, nicht angenommen markiert", async () => {
+    const { h, pizza, big, noon } = await setup();
+    const { onlineOrderSettings } = await import("../../src/db/schema");
+    await db().insert(onlineOrderSettings).values({ hotelId: h.id, enabled: true, testPassedAt: new Date(), delivery: true, cashDelivery: true }).onConflictDoUpdate({ target: onlineOrderSettings.hotelId, set: { enabled: true, testPassedAt: new Date() } });
+    await saveZone(h.id, null, { name: "Stadt", postalCodes: ["9000"], minOrderRappen: 5000, feeRappen: 500, freeFromRappen: 8000, extraMinutes: 20 }, "t");
+    const addr = { street: "Bahnhofstrasse", houseNo: "1", postalCode: "9000", city: "St. Gallen" };
+    await expect(createOnlineOrder(h, order(pizza.id, [big.id], { kind: "delivery", payment: "cash", address: { ...addr, postalCode: "8000" } }), { now: noon })).rejects.toThrow(/nicht nach 8000/);
+    await expect(createOnlineOrder(h, order(pizza.id, [big.id], { kind: "delivery", payment: "cash", address: addr }), { now: noon })).rejects.toThrow(/Mindestbestellwert/);
+    const big3 = { ...order(pizza.id, [big.id]), kind: "delivery" as const, payment: "cash" as const, address: addr, lines: [{ itemId: pizza.id, quantity: 3, optionIds: [big.id], note: "" }] };
+    const { order: o } = await createOnlineOrder(h, big3, { now: noon });
+    expect(o).toMatchObject({ status: "new", subtotalRappen: 6600, deliveryFeeRappen: 500, totalRappen: 7100 });
+    await acceptOrder(h, o.id, 0, "t");
+    expect((await db().select().from(posReceipts).where(eq(posReceipts.hotelId, h.id)))).toHaveLength(0); // bar: noch kein Bon
+    await outForDelivery(h, o.id, "Marco", "t");
+    await completeOrder(h, o.id, "t");
+    const [r] = await db().select().from(posReceipts).where(eq(posReceipts.hotelId, h.id));
+    expect(r.totalRappen).toBe(7100);
+    expect(r.items.map((x) => x.description)).toContain("Liefergebühr");
+    expect(await orderFeesForMonth(h, todayIn(h.timezone).slice(0, 7))).toEqual({ total: 135, uncollected: 135 });
+    // zweite Lieferung nicht angenommen → Adresse markiert
+    const { order: o2 } = await createOnlineOrder(h, big3, { now: noon });
+    await acceptOrder(h, o2.id, 0, "t");
+    await notAccepted(h, o2.id, "t");
+    expect(await db().select().from(deliveryFlags).where(eq(deliveryFlags.hotelId, h.id))).toHaveLength(1);
+    const { order: o3 } = await createOnlineOrder(h, big3, { now: noon });
+    expect((await screenOrders(h.id)).flagged.size).toBe(1);
+    await rejectOrder(h, o3.id, "Zu viel los", "t");
+  });
+
+  it("Absicherung: Alarm nach 5 Min. (SMS), Storno mit Rückerstattung nach 10 Min.; Pause; Herzschlag pausiert und setzt fort", async () => {
+    const { h, pizza, big, noon } = await setup();
+    const { onlineOrderSettings } = await import("../../src/db/schema");
+    await db().insert(onlineOrderSettings).values({ hotelId: h.id, enabled: true, testPassedAt: new Date() }).onConflictDoUpdate({ target: onlineOrderSettings.hotelId, set: { enabled: true, testPassedAt: new Date() } });
+    const fp = new FakePaymentProvider(); setPaymentProvider(fp);
+    const { order: o } = await createOnlineOrder(h, order(pizza.id, [big.id]), { now: noon });
+    await db().update(onlineOrders).set({ createdAt: new Date(Date.now() - 6 * 60_000) }).where(eq(onlineOrders.id, o.id));
+    await onlineOrdersJob();
+    expect(await db().select().from(smsOutbox).where(eq(smsOutbox.ref, `order-alarm:${o.id}`))).toHaveLength(1);
+    await onlineOrdersJob(); // nur einmal
+    expect(await db().select().from(smsOutbox).where(eq(smsOutbox.ref, `order-alarm:${o.id}`))).toHaveLength(1);
+    await db().update(onlineOrders).set({ createdAt: new Date(Date.now() - 11 * 60_000) }).where(eq(onlineOrders.id, o.id));
+    await onlineOrdersJob();
+    const [x] = await db().select().from(onlineOrders).where(eq(onlineOrders.id, o.id));
+    expect(x.status).toBe("expired");
+    expect(x.refundedAt).toBeTruthy();
+    expect(fp.refunds[0]).toMatchObject({ amountRappen: o.totalRappen });
+    // Pause von Hand
+    await pauseOrders(h, 30, "t");
+    await expect(createOnlineOrder(h, order(pizza.id, [big.id]), { now: noon })).rejects.toThrow(/keine Online-Bestellungen/);
+    await pauseOrders(h, 0, "t");
+    // Herzschlag: offen (ganzer Tag), kein Gerät → automatische Pause; Gerät meldet sich → weiter
+    const r = await onlineOrdersJob();
+    expect(r.paused).toBeGreaterThanOrEqual(1);
+    expect((await orderSettings(h.id)).autoPaused).toBe(true);
+    await heartbeat(h.id, "tablet-kueche-01", { battery: 80, charging: true, soundOk: true });
+    expect((await orderSettings(h.id)).autoPaused).toBe(false);
+    await onlineOrdersJob();
+    expect((await orderSettings(h.id)).autoPaused).toBe(false);
+    void getSettings;
+  });
+
+  it("Artikel online: Beschreibung, nur Website-Fotos, Allergene aus der festen Liste; ausgeschaltet nicht im Menü; Checkliste", async () => {
+    const { h, pizza } = await setup();
+    await saveItemOnline(h.id, pizza.id, { online: true, description: "  Tomaten,   Mozzarella ", photoUrl: "https://fremd.example/x.jpg", allergens: ["milk", "gluten", "erfunden"] }, "t");
+    let menu = await onlineMenu(h.id);
+    expect(menu[0]).toMatchObject({ description: "Tomaten, Mozzarella", photoUrl: null, allergens: ["gluten", "milk"] });
+    await saveItemOnline(h.id, pizza.id, { online: true, description: "", photoUrl: "/media/abc/pizza.jpg", allergens: [] }, "t");
+    expect((await onlineMenu(h.id))[0].photoUrl).toBe("/media/abc/pizza.jpg");
+    await saveItemOnline(h.id, pizza.id, { online: false, description: "", photoUrl: null, allergens: [] }, "t");
+    menu = await onlineMenu(h.id);
+    expect(menu).toHaveLength(0);
+    expect((await orderReadiness(h)).map((p) => p.key)).toContain("items");
+    expect(await onlineOrderingOn(h.id)).toBe(false);
+    const { diningChecklist } = await import("../../src/services/onboarding");
+    const item = (await diningChecklist(h)).find((c) => c.key === "bestellung")!;
+    expect(item.done).toBe(false);
+    expect(item.hint).toMatch(/online bestellbar/);
+  });
+});

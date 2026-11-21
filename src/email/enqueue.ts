@@ -49,7 +49,8 @@ export type TemplateName =
   | "waitlist_available"
   | "table_reserved"
   | "table_reminder"
-  | "table_waitlist";
+  | "table_waitlist"
+  | "order_received" | "order_accepted" | "order_rejected" | "order_ready" | "order_out" | "order_alarm";
 
 /** SPEC 10: E-Mails nur über die Outbox. Gleiche Kombination booking/template/to wird nur einmal eingereiht. */
 export async function enqueueEmail(

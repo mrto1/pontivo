@@ -10,6 +10,9 @@ import { priceToRappen, type MenuDraft } from "@/src/domain/menu-import";
 import { SetupImportError, adoptMenu, discardImport, getImport, importMenuFromPdf, importMenuFromUrl, importsThisMonth, setupImportEnabled } from "@/src/services/setup-import";
 import { formatChf } from "@/src/domain/money";
 import { parsePosItems } from "@/src/domain/pos-import";
+import { ALLERGENS, ALLERGEN_LABEL } from "@/src/domain/online-order";
+import { saveItemOnline } from "@/src/services/online-orders";
+import { photoLibrary } from "@/src/services/site";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -44,6 +47,14 @@ async function toggle(f: FormData) {
   const it = (await listItems(c.hotel.id)).find((i) => i.id === s(f, "id"));
   if (it) await saveItem(c.hotel.id, it.id, { ...it, category: it.category ?? "", active: !it.active }, c.actor);
   here(c.hotel.id, it?.active ? "Ausgeblendet." : "Eingeblendet.");
+}
+async function online(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  try {
+    await saveItemOnline(c.hotel.id, s(f, "id"), { online: f.get("online") === "on", description: s(f, "description"), photoUrl: s(f, "photoUrl") || null, allergens: f.getAll("allergen").map(String) }, c.actor);
+  } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
+  here(c.hotel.id, "Online-Angaben gespeichert.");
 }
 async function group(f: FormData) {
   "use server";
@@ -128,7 +139,7 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
   const sp = await searchParams;
   const { hotel } = await requireHotel(hotelId, "manager");
   await requireModule(hotel.id, "restaurant");
-  const [items, groups] = await Promise.all([listItems(hotel.id), listOptionGroups(hotel.id)]);
+  const [items, groups, photos] = await Promise.all([listItems(hotel.id), listOptionGroups(hotel.id), photoLibrary(hotel)]);
   const gate = setupImportGate(hotel, setupImportEnabled());
   const runsLeft = Math.max(0, env().SETUP_RUNS_PER_MONTH - (await importsThisMonth(hotel.id, new Date(), "menu")));
   const open = sp.draft ? await getImport(hotel.id, sp.draft) : null;
@@ -159,6 +170,24 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
             <td><form action={toggle}>{H}<input type="hidden" name="id" value={i.id} /><button className="btn secondary small">{i.active ? "Ausblenden" : "Einblenden"}</button></form></td></tr>)}
         </tbody></table> : <p className="muted">Noch kein Artikel.</p>}
       </section>
+      {items.length ? (
+        <section className="card stack" id="online" data-testid="items-online">
+          <h2>Online-Bestellung: Beschreibung, Foto, Allergene</h2>
+          <p className="small muted">Gäste sehen bei jedem Artikel die Allergene (14 deklarationspflichtige nach LIV Anhang 6) und den Hinweis «Fragen zu Allergenen: bitte anrufen». Die Angaben verantworten Sie als Betrieb.</p>
+          {items.filter((i) => i.active).map((i) => (
+            <details key={i.id}>
+              <summary>{i.name} {i.online ? null : <span className="badge warn">nicht online</span>} {i.allergens.length ? <span className="small muted">· {i.allergens.map((a) => ALLERGEN_LABEL[a as keyof typeof ALLERGEN_LABEL]?.de ?? a).join(", ")}</span> : null}</summary>
+              <form action={online} className="stack">{H}<input type="hidden" name="id" value={i.id} />
+                <FormSwitch name="online" defaultOn={i.online} label="Online bestellbar" />
+                <div><label htmlFor={`d-${i.id}`}>Beschreibung</label><textarea id={`d-${i.id}`} name="description" maxLength={400} rows={2} defaultValue={i.description} /></div>
+                <div><label htmlFor={`p-${i.id}`}>Foto (aus den Website-Fotos)</label><select id={`p-${i.id}`} name="photoUrl" defaultValue={i.photoUrl ?? ""}><option value="">Kein Foto</option>{photos.map((p) => <option key={p.url} value={p.url}>{p.alt || p.url.split("/").pop()}</option>)}</select></div>
+                <fieldset><legend className="small">Allergene</legend><div className="opt-grid">{ALLERGENS.map((a) => <label key={a} className="opt-row"><input type="checkbox" name="allergen" value={a} defaultChecked={i.allergens.includes(a)} /> {ALLERGEN_LABEL[a].de}</label>)}</div></fieldset>
+                <div><button className="btn secondary small">Speichern</button></div>
+              </form>
+            </details>
+          ))}
+        </section>
+      ) : null}
       <section className="card stack" id="optionen" data-testid="option-groups">
         <h2>Optionen und Menüs</h2>
         <p className="small muted">Garstufe, Beilage, «ohne Zwiebeln» oder ein Menü aus Vorspeise, Hauptgang und Dessert: Legen Sie eine Gruppe an (z. B. «Garstufe», Pflicht, eine Wahl), fügen Sie Optionen mit Aufpreis hinzu und ordnen Sie die Gruppe Artikeln zu. Ein Menü ist ein Artikel mit Pflichtgruppen.</p>

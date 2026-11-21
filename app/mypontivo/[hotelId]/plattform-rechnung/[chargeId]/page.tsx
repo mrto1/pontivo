@@ -22,13 +22,14 @@ export default async function PlatformInvoice({ params }: { params: Promise<{ ho
   const [c] = await db().select().from(platformCharges).where(and(eq(platformCharges.id, chargeId), eq(platformCharges.hotelId, hotel.id)));
   if (!c || !c.invoiceNo) notFound();
   const p = platformInfo();
-  const b = billMonth({ feesRappen: c.feesRappen, minimumRappen: c.minimumRappen, aiRappen: c.aiModuleRappen + c.aiPacksRappen, vatBps: c.vatBps });
-  const feeLabel = `Plattformgebühr ${hotel.platformFeeBps / 100} % auf Direktbuchungen und Gutscheine`;
+  const b = billMonth({ feesRappen: c.feesRappen, minimumRappen: c.minimumRappen, aiRappen: c.aiModuleRappen + c.aiPacksRappen, vatBps: c.vatBps, uncollectedRappen: c.uncollectedFeesRappen, smsRappen: c.smsRappen });
+  const feeLabel = `Plattformgebühr ${hotel.platformFeeBps / 100} % auf Direktbuchungen, Gutscheine und Online-Bestellungen`;
   const lines: { label: string; net: number }[] = [
     ...(c.feesRappen > 0 ? [{ label: feeLabel, net: c.feesRappen }] : []),
     ...(b.shortfallRappen > 0 ? [{ label: `Ergänzung auf die Mindestgebühr (${formatChf(c.minimumRappen)} pro Monat)`, net: b.shortfallRappen }] : []),
     ...(c.aiModuleRappen > 0 ? [{ label: "KI-Chat, Modul", net: c.aiModuleRappen }] : []),
     ...(c.aiPacksRappen > 0 ? [{ label: "KI-Chat, Zusatzpakete", net: c.aiPacksRappen }] : []),
+    ...(c.smsRappen > 0 ? [{ label: "SMS an Gäste (Selbstkosten)", net: c.smsRappen }] : []),
   ];
   const status = c.status === "succeeded" ? `Bezahlt per Karte ${hotel.billingCardLabel ?? ""}`.trim()
     : c.status === "none" ? "Nichts zu bezahlen: die Plattformgebühren wurden bereits bei den Buchungen über Stripe einbehalten."
@@ -56,7 +57,8 @@ export default async function PlatformInvoice({ params }: { params: Promise<{ ho
             <tr><td><strong>Total ohne MWST</strong></td><td className="inv-right"><strong>{formatChf(b.netRappen)}</strong></td></tr>
             {c.vatBps > 0 ? <tr><td>MWST {formatBps(c.vatBps)}</td><td className="inv-right">{formatChf(c.vatRappen)}</td></tr> : null}
             <tr><td><strong>Rechnungsbetrag</strong></td><td className="inv-right"><strong>{formatChf(b.grossRappen)}</strong></td></tr>
-            {c.feesRappen > 0 ? <tr><td>Abzüglich bereits über Stripe einbehaltene Plattformgebühren</td><td className="inv-right">−{formatChf(c.feesRappen)}</td></tr> : null}
+            {b.withheldRappen > 0 ? <tr><td>Abzüglich bereits über Stripe einbehaltene Plattformgebühren</td><td className="inv-right">−{formatChf(b.withheldRappen)}</td></tr> : null}
+            {c.uncollectedFeesRappen > 0 ? <tr><td className="small muted">davon nicht einbehalten (Online-Bestellungen bar): {formatChf(c.uncollectedFeesRappen)}</td><td /></tr> : null}
             <tr><td><strong>Von der Karte zu belasten</strong></td><td className="inv-right"><strong>{formatChf(c.chargeRappen)}</strong></td></tr>
           </tfoot>
         </table>

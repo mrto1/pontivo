@@ -220,6 +220,14 @@ export async function diningChecklist(hotel: Hotel): Promise<CheckItem[]> {
       ? "In Prüfung bei Stripe, meist 1–2 Werktage. Pontivo kann das nicht beschleunigen. Bis dahin ohne Anzahlung; Reservierungen laufen normal."
       : "Nötig für Anzahlungen und später die Online-Bestellung. Alles andere läuft schon ohne.",
   });
+  // Online-Bestellung (SPEC 20.4): freiwillig, schaltet erst nach Speisekarte, Stripe und Probebestellung live
+  const { orderSettings, orderReadiness } = await import("./online-orders");
+  const ord = await orderSettings(hotel.id);
+  const miss = ord.enabled ? [] : await orderReadiness(hotel);
+  list.push({
+    key: "bestellung", title: "Online-Bestellung (freiwillig)", done: ord.enabled, href: `${base}/restaurant/bestellung-einstellungen`, wait: !ord.enabled && miss.length > 0 && miss.every((m) => m.key === "stripe") && !!hotel.stripeAccountId,
+    hint: ord.enabled ? undefined : miss.length ? `Fehlt noch: ${miss.map((m) => m.text).join(" ")}` : "Bereit: jetzt live schalten.",
+  });
   if (resto && hotel.monthlyMinimumRappen > 0) list.push({ key: "karte", title: "Karte für die Grundgebühr", done: !!hotel.billingPaymentMethodId, href: `${base}/einrichten?step=karte` });
   list.push({ key: "domain", title: "Eigene Domain (freiwillig)", done: !!hotel.primaryDomain, href: `${base}/site`, hint: hotel.primaryDomain ? undefined : "Später möglich. Nach der Umstellung beim Domain-Anbieter dauert es bis zu 24 Stunden." });
   return list;

@@ -52,7 +52,7 @@ describe("Admin-Menü", () => {
     expect(groups.map((g) => g.title)).toEqual(["Betrieb", "Verkauf", "Technik"]);
     expect(groups.map((g) => g.items.map((i) => i.label))).toEqual([
       ["Grunddaten", "Zahlungsmethoden", "Zimmer & Tarife", "Zusatzleistungen", "Team & Rollen"],
-      ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "Speisekarte", "Tischplan & Reservierung online", "KI-Chat"],
+      ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "Speisekarte", "Tischplan & Reservierung online", "Online-Bestellung & Lieferung", "KI-Chat"],
       ["Funktionen", "Geräte & Kasse", "Datenübernahme", "Abo & Gebühren"],
     ]);
     for (const g of groups) { expect(g.lead.length).toBeGreaterThan(10); for (const i of g.items) expect(i.lead, i.label).toBeTruthy(); }
@@ -86,7 +86,7 @@ describe("Admin-Menü", () => {
     const d = adminNav(hotel, new Set(), { area: "dining", kind: "restaurant" });
     expect(d.primary.map((i) => i.label)).toEqual(["Heute", "Reservierungen", "Bestellungen", "Finanzen"]);
     expect(d.primary.map((i) => i.tabs!.map((t) => t.key))).toEqual([
-      ["dininghome", "inbox"], ["reservations", "resplan", "waitlist", "guestbook"], ["restaurant", "kasse", "kitchen"], ["posclose", "invoices", "vouchers", "accountingexport"],
+      ["dininghome", "inbox"], ["reservations", "resplan", "waitlist", "guestbook"], ["onlineorders", "restaurant", "kasse", "kitchen", "driver"], ["posclose", "invoices", "vouchers", "accountingexport"],
     ]);
     const keys = allPages(d).map((i) => i.key);
     for (const k of ["rooms", "extras", "channex", "ical", "gaesteportal", "upsell", "direct", "api", "access", "migration", "plan", "calendar", "housekeeping"]) expect(keys).not.toContain(k);

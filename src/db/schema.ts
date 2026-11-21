@@ -651,6 +651,9 @@ export const platformCharges = pgTable("platform_charges", {
   /** KI-Chat (SPEC 14b): Modulpreis und Zusatzpakete des Monats, in chargeRappen enthalten */
   aiModuleRappen: integer("ai_module_rappen").notNull().default(0),
   aiPacksRappen: integer("ai_packs_rappen").notNull().default(0),
+  /** nicht über Stripe einbehaltene Gebühren (Online-Bestellung bar, SPEC 20.4) und weiterverrechnete Gast-SMS */
+  uncollectedFeesRappen: integer("uncollected_fees_rappen").notNull().default(0),
+  smsRappen: integer("sms_rappen").notNull().default(0),
   status: text("status").$type<"none" | "pending" | "succeeded" | "failed">().notNull(),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   error: text("error"),
@@ -1359,6 +1362,11 @@ export const posItems = pgTable("pos_items", {
   dailySpecial: boolean("daily_special").notNull().default(false),
   active: boolean("active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
+  /** Online-Bestellung (SPEC 20.4): bestellbar, Beschreibung, Foto, Allergene (Codes aus ALLERGENS) */
+  online: boolean("online").notNull().default(true),
+  description: text("description").notNull().default(""),
+  photoUrl: text("photo_url"),
+  allergens: text("allergens").array().notNull().default(sql`'{}'::text[]`),
   /** Station für den Küchenbildschirm (SPEC 19.49): Küche, Bar oder keine */
   station: text("station").$type<"kitchen" | "bar" | "none">().notNull().default("kitchen"),
   createdAt: ts("created_at").notNull().defaultNow(),
@@ -1792,3 +1800,122 @@ export const posWaitlist = pgTable("pos_waitlist", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type PosWaitlistEntry = typeof posWaitlist.$inferSelect;
+
+// ---------------------------------------------------------------- Online-Bestellung (SPEC 20.4, 20.5)
+
+export const onlineOrderSettings = pgTable("online_order_settings", {
+  hotelId: uuid("hotel_id").primaryKey(),
+  enabled: boolean("enabled").notNull().default(false),
+  pickup: boolean("pickup").notNull().default(true),
+  delivery: boolean("delivery").notNull().default(false),
+  slotMinutes: integer("slot_minutes").notNull().default(15),
+  maxPerSlot: integer("max_per_slot").notNull().default(5),
+  deliveryPerSlot: integer("delivery_per_slot").notNull().default(3),
+  leadMin: integer("lead_min").notNull().default(20),
+  cutoffMin: integer("cutoff_min").notNull().default(15),
+  cashPickup: boolean("cash_pickup").notNull().default(false),
+  cashDelivery: boolean("cash_delivery").notNull().default(false),
+  cashMaxRappen: integer("cash_max_rappen"),
+  guestSms: boolean("guest_sms").notNull().default(false),
+  pausedUntil: ts("paused_until"),
+  autoPaused: boolean("auto_paused").notNull().default(false),
+  testPassedAt: ts("test_passed_at"),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+export type OnlineOrderSettings = typeof onlineOrderSettings.$inferSelect;
+
+export const deliveryZones = pgTable("delivery_zones", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: text("name").notNull(),
+  postalCodes: text("postal_codes").array().notNull(),
+  minOrderRappen: integer("min_order_rappen").notNull().default(0),
+  feeRappen: integer("fee_rappen").notNull().default(0),
+  freeFromRappen: integer("free_from_rappen"),
+  extraMinutes: integer("extra_minutes").notNull().default(15),
+  active: boolean("active").notNull().default(true),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type DeliveryZone = typeof deliveryZones.$inferSelect;
+
+export type OnlineOrderItem = { itemId: string; quantity: number; optionIds: string[]; note: string; description: string; unitPriceRappen: number; vatBps: number; options: { group: string; name: string; priceRappen: number }[] };
+export type OnlineOrderStatus = "pending_payment" | "new" | "accepted" | "ready" | "out" | "completed" | "rejected" | "expired" | "cancelled" | "not_accepted";
+
+export const onlineOrders = pgTable("online_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  day: date("day", { mode: "string" }).notNull(),
+  number: text("number").notNull(),
+  publicToken: text("public_token").notNull().unique(),
+  kind: text("kind").$type<"pickup" | "delivery">().notNull(),
+  status: text("status").$type<OnlineOrderStatus>().notNull(),
+  payment: text("payment").$type<"card" | "cash">().notNull(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull(),
+  email: text("email").notNull().default(""),
+  language: text("language").notNull().default("de"),
+  street: text("street").notNull().default(""),
+  houseNo: text("house_no").notNull().default(""),
+  postalCode: text("postal_code").notNull().default(""),
+  city: text("city").notNull().default(""),
+  floor: text("floor").notNull().default(""),
+  bell: text("bell").notNull().default(""),
+  addressHint: text("address_hint").notNull().default(""),
+  zoneId: uuid("zone_id"),
+  items: jsonb("items").$type<OnlineOrderItem[]>().notNull(),
+  subtotalRappen: integer("subtotal_rappen").notNull(),
+  deliveryFeeRappen: integer("delivery_fee_rappen").notNull().default(0),
+  totalRappen: integer("total_rappen").notNull(),
+  feeRappen: integer("fee_rappen").notNull().default(0),
+  requestedAt: ts("requested_at").notNull(),
+  promisedAt: ts("promised_at"),
+  note: text("note").notNull().default(""),
+  rejectReason: text("reject_reason").notNull().default(""),
+  isTest: boolean("is_test").notNull().default(false),
+  stripeSessionId: text("stripe_session_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  refundedAt: ts("refunded_at"),
+  posOrderId: uuid("pos_order_id"),
+  receiptId: uuid("receipt_id"),
+  driver: text("driver").notNull().default(""),
+  alarmedAt: ts("alarmed_at"),
+  acceptedAt: ts("accepted_at"),
+  readyAt: ts("ready_at"),
+  outAt: ts("out_at"),
+  completedAt: ts("completed_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type OnlineOrder = typeof onlineOrders.$inferSelect;
+
+export const deliveryFlags = pgTable("delivery_flags", {
+  hotelId: uuid("hotel_id").notNull(),
+  addressKey: text("address_key").notNull(),
+  reason: text("reason").notNull().default(""),
+  createdAt: ts("created_at").notNull().defaultNow(),
+}, (t) => [primaryKey({ columns: [t.hotelId, t.addressKey] })]);
+
+export const orderScreens = pgTable("order_screens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  deviceKey: text("device_key").notNull(),
+  label: text("label").notNull().default(""),
+  lastSeenAt: ts("last_seen_at").notNull().defaultNow(),
+  battery: integer("battery"),
+  charging: boolean("charging"),
+  soundOkAt: ts("sound_ok_at"),
+});
+
+export const smsOutbox = pgTable("sms_outbox", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id"),
+  ref: text("ref").unique(),
+  toPhone: text("to_phone").notNull(),
+  text: text("text").notNull(),
+  kind: text("kind").$type<"alarm" | "guest">().notNull(),
+  billable: boolean("billable").notNull().default(false),
+  status: text("status").$type<"pending" | "sent" | "failed" | "skipped">().notNull().default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  error: text("error"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  sentAt: ts("sent_at"),
+});

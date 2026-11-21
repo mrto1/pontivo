@@ -24,6 +24,12 @@ const schema = z.object({
   POSTMARK_SERVER_TOKEN: z.string().optional(),
   // Passwort (Basic Auth) bzw. Token (Header x-webhook-token) für den Postmark-Webhook für Bounces/Spam-Beschwerden
   POSTMARK_WEBHOOK_SECRET: z.string().optional(),
+  /** SMS über ASPSMS (SPEC 20.4): ohne Zugangsdaten nur Mail und Push */
+  ASPSMS_USERKEY: z.string().optional(),
+  ASPSMS_PASSWORD: z.string().optional(),
+  ASPSMS_ORIGINATOR: z.string().max(11).default("Pontivo"),
+  /** Weiterverrechneter Preis je Gast-SMS in Rappen (Selbstkosten) */
+  SMS_GUEST_PRICE_RAPPEN: z.coerce.number().int().min(0).default(8),
   // Push-Mitteilungen im Admin (Web Push). Schlüsselpaar erzeugen: npx web-push generate-vapid-keys. Ohne Schlüssel ist die Funktion aus.
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),

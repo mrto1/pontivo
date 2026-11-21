@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { PosError, markDone, openTickets, type Station } from "@/src/services/pos";
-import { AutoRefresh } from "@/components/public/AutoRefresh";
+import { KitchenBell } from "@/components/admin/KitchenBell";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -30,8 +30,8 @@ export default async function KitchenPage({ params, searchParams }: { params: Pr
   const base = `/mypontivo/${hotel.id}/restaurant/kueche`;
   return (
     <div className="stack">
-      <AutoRefresh seconds={10} />
       <h1>Küche</h1>
+      <KitchenBell tickets={tickets.map((t) => t.orderId)} />
       <p className="tabs-inline">
         <Link className={station === "kitchen" ? "btn small" : "btn secondary small"} href={`${base}?station=kitchen`}>Küche</Link>{" "}
         <Link className={station === "bar" ? "btn small" : "btn secondary small"} href={`${base}?station=bar`}>Bar</Link>

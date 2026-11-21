@@ -572,6 +572,8 @@ fieldset.plain { border: 0; padding: 0; margin: 0; min-width: 0; }
 @media (max-width: 700px) {
   .sticky-book { display: block; position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 20; padding: 14px; font-size: 1.05rem; box-shadow: 0 6px 24px rgba(0,0,0,.22); }
   .site:has(.sticky-book) .foot { padding-bottom: 88px; }
+  .sticky-book.sticky-pair { display: flex; gap: 8px; padding: 0; box-shadow: none; background: none; }
+  .sticky-pair .btn { flex: 1; padding: 14px 8px; font-size: 1rem; box-shadow: 0 6px 24px rgba(0,0,0,.22); }
 }
 
 /* ---------- Gästestimmen, FAQ, Angebote, Tipps, Anfrage, Gutschein, Karte ---------- */
@@ -766,6 +768,11 @@ table.plan tr.plan-off { opacity: .55; }
 .cal-date { padding: 7px 12px; border-radius: 999px; font-size: .88rem; width: auto; }
 .row-x { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 50%; width: 28px; height: 28px; line-height: 1; font-size: 1.1rem; cursor: pointer; padding: 0; }
 .row-x:hover { color: var(--danger); border-color: var(--danger); }
+.seg { display: inline-flex; border: 1px solid var(--line, #ccc); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg label { position: relative; padding: 8px 16px; border-radius: 999px; cursor: pointer; font-weight: 600; font-size: .95rem; }
+.seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.seg label:has(input:checked) { background: var(--brand, var(--accent)); color: var(--brand-ink, #fff); }
+.seg label:has(input:focus-visible) { outline: 2px solid var(--brand-link, var(--accent)); outline-offset: 2px; }
 .link-btn { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; font-size: .9rem; cursor: pointer; text-align: left; justify-self: start; }
 .link-btn:hover { text-decoration: underline; }
 .export-pop { position: relative; }
@@ -1001,6 +1008,15 @@ pre { overflow-x: auto; }
 .kds-ticket.late { border-color: var(--danger, #b3261e); }
 .kds-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .kds-line { width: 100%; text-align: left; font-size: 1.1rem; padding: 12px; border-radius: 8px; border: 1px solid var(--border, #ddd); background: transparent; cursor: pointer; }
+.order-card.new { border: 2px solid var(--danger, #b3261e); animation: order-pulse 1.5s ease-in-out infinite; }
+@keyframes order-pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger, #b3261e) 25%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .order-card.new { animation: none; } }
+/* Online-Bestellung Gästeseite (SPEC 20.4) */
+.order-layout { display: grid; gap: 24px; padding: 32px 0; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .order-layout { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; } .order-cart { position: sticky; top: 16px; } }
+.order-item { display: flex; gap: 12px; align-items: flex-start; }
+.order-photo { width: 88px; height: 88px; object-fit: cover; border-radius: 8px; flex: none; }
+.link-btn { background: none; border: 0; padding: 4px 0; color: var(--brand-link, var(--accent)); cursor: pointer; text-align: left; text-decoration: underline; font: inherit; }
 
 /* Tischplan (SPEC 19.49 Etappe C) */
 .plan-area { position: relative; width: 100%; aspect-ratio: 3 / 2; border: 1px dashed var(--border, #ccc); border-radius: 12px; background: repeating-linear-gradient(0deg, transparent 0 39px, rgba(0,0,0,.04) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, rgba(0,0,0,.04) 39px 40px); touch-action: none; overflow: hidden; }

@@ -50,12 +50,18 @@ export type MonthBilling = {
  * Monatsabrechnung: Gebühren (1,9 %) werden schon bei der Buchung über Stripe einbehalten, die Differenz zur Mindestgebühr,
  * der KI-Chat und die MWST kommen von der Karte.
  */
-export function billMonth(o: { feesRappen: number; minimumRappen: number; aiRappen: number; vatBps: number }): MonthBilling {
+/**
+ * `feesRappen`: alle verdienten Plattformgebühren des Monats; davon `uncollectedRappen` nicht über Stripe einbehalten (z. B. Online-Bestellung bar, SPEC 20.4).
+ * `smsRappen`: weiterverrechnete Gast-SMS. Belastet wird: Differenz zum Minimum + nicht einbehaltene Gebühren + KI + SMS + MWST.
+ */
+export function billMonth(o: { feesRappen: number; minimumRappen: number; aiRappen: number; vatBps: number; uncollectedRappen?: number; smsRappen?: number }): MonthBilling {
+  const uncollected = Math.min(o.uncollectedRappen ?? 0, o.feesRappen);
+  const sms = o.smsRappen ?? 0;
   const base = Math.max(o.feesRappen, o.minimumRappen);
-  const net = base + o.aiRappen;
+  const net = base + o.aiRappen + sms;
   const vat = o.vatBps > 0 ? vatOnNet(net, o.vatBps) : 0;
   const shortfall = Math.max(0, o.minimumRappen - o.feesRappen);
-  return { netRappen: net, vatRappen: vat, grossRappen: net + vat, withheldRappen: o.feesRappen, payRappen: shortfall + o.aiRappen + vat, shortfallRappen: shortfall };
+  return { netRappen: net, vatRappen: vat, grossRappen: net + vat, withheldRappen: o.feesRappen - uncollected, payRappen: shortfall + uncollected + o.aiRappen + sms + vat, shortfallRappen: shortfall };
 }
 
 export const invoiceNumber = (year: number, seq: number) => `R-${year}-${String(seq).padStart(5, "0")}`;

@@ -11,14 +11,14 @@ describe("Einarbeitung (PMS-ERSATZ 4.2)", () => {
   it("5 bis 8 Aufgaben je Rolle (Housekeeping kurz), eindeutige Schlüssel", () => {
     const all = Object.values(GUIDE).flat().map((t) => t.key);
     expect(new Set(all).size).toBe(all.length);
-    for (const [r, list] of Object.entries(GUIDE)) expect(list.length, r).toBeGreaterThanOrEqual(r === "housekeeping" ? 4 : 5);
+    for (const [r, list] of Object.entries(GUIDE)) expect(list.length, r).toBeGreaterThanOrEqual(r === "housekeeping" ? 4 : r === "driver" ? 2 : 5); // Fahrer: eine Seite, zwei Handgriffe
     for (const list of Object.values(GUIDE)) expect(list.length).toBeLessThanOrEqual(8);
   });
   it("jede Aufgabe zeigt auf einen echten Menüpunkt", () => {
     for (const t of Object.values(GUIDE).flat()) expect(keys.has(t.area), `${t.key}: ${t.area}`).toBe(true);
   });
   it("eingeschränkte Rollen bekommen nur Aufgaben in ihren Bereichen", () => {
-    for (const r of ["reception", "housekeeping", "accounting", "service"] as LimitedRole[]) {
+    for (const r of ["reception", "housekeeping", "accounting", "service", "driver"] as LimitedRole[]) {
       for (const t of GUIDE[r]) expect(ROLE_AREAS[r].includes(t.area), `${r}: ${t.key} → ${t.area}`).toBe(true);
       expect(ROLE_AREAS[r]).toContain("firstweek");
       expect(ROLE_AREAS[r]).toContain("help");

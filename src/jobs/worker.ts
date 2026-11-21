@@ -3,6 +3,8 @@
  * - holds:   abgelaufene Holds freigeben (jede Minute, SPEC 5.5)
  * - waitlist: Warteliste prüfen und Gäste benachrichtigen (alle 5 Minuten, SPEC 19.29)
  * - table-reservations: Tischreservierungen: unbezahlte freigeben, Wartelisten, Erinnerungen (alle 5 Minuten, SPEC 19.49)
+ * - online-orders: Online-Bestellung: Alarm nach 5 Min., Storno nach 10 Min., Herzschlag der Bestellbildschirme (jede Minute, SPEC 20.4)
+ * - sms: SMS-Outbox über ASPSMS senden (jede Minute, SPEC 20.4)
  * - booking-recovery: Erinnerung nach abgebrochener Buchung (alle 10 Minuten, SPEC 19.29)
  * - winback: Wiederkehr-Mail an Gäste mit Werbe-Einwilligung (täglich 10:10, SPEC 19.32)
  * - monthly-mail: Monatsmail an die Inhaber (am 2. des Monats 07:30, SPEC 19.32)
@@ -39,6 +41,8 @@ import { deliverDue, webhookCleanup } from "../services/webhooks";
 import { recoveryJob, waitlistJob, winbackJob } from "../services/direct-tools";
 import { monthlyMailJob } from "../services/monthly-mail";
 import { tableJob } from "../services/reservations";
+import { onlineOrdersJob } from "../services/online-orders";
+import { sendDueSms } from "../services/sms";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "webhooks", cron: "* * * * *", run: () => deliverDue() },
@@ -46,6 +50,8 @@ const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
   { name: "waitlist", cron: "*/5 * * * *", run: () => waitlistJob() },
   { name: "table-reservations", cron: "*/5 * * * *", run: () => tableJob() },
+  { name: "online-orders", cron: "* * * * *", run: () => onlineOrdersJob() },
+  { name: "sms", cron: "* * * * *", run: () => sendDueSms() },
   { name: "booking-recovery", cron: "*/10 * * * *", run: () => recoveryJob() },
   { name: "winback", cron: "10 10 * * *", run: () => winbackJob() },
   { name: "monthly-mail", cron: "30 7 2 * *", run: () => monthlyMailJob() },

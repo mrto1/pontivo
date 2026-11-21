@@ -110,6 +110,6 @@ describe("Betriebsart Restaurant (SPEC 20.1)", () => {
     [h] = await db().select().from(hotels).where(eq(hotels.id, h.id));
     expect(h.onboarding.completedAt).toBeTruthy();
     list = await diningChecklist(h);
-    expect(list.map((c) => c.key)).toEqual(["betrieb", "tische", "reservierung", "speisekarte", "zahlungen", "karte", "domain"]);
+    expect(list.map((c) => c.key)).toEqual(["betrieb", "tische", "reservierung", "speisekarte", "zahlungen", "bestellung", "karte", "domain"]);
   });
 });

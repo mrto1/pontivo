@@ -45,3 +45,15 @@ describe("Rechnung an das Hotel", () => {
 
   it("Rechnungsnummer", () => expect(invoiceNumber(2026, 42)).toBe("R-2026-00042"));
 });
+
+describe("Plattformrechnung mit Online-Bestellungen (SPEC 20.4)", () => {
+  it("bar bezahlte Gebühren und Gast-SMS kommen auf die Belastung", async () => {
+    const { billMonth } = await import("../../src/domain/platform-invoice");
+    const b = billMonth({ feesRappen: 3000, minimumRappen: 1900, aiRappen: 0, vatBps: 0, uncollectedRappen: 1000, smsRappen: 80 });
+    expect(b.withheldRappen).toBe(2000);
+    expect(b.netRappen).toBe(3080);
+    expect(b.payRappen).toBe(1080); // nicht einbehalten + SMS, kein Minimum-Ausgleich
+    const low = billMonth({ feesRappen: 500, minimumRappen: 1900, aiRappen: 0, vatBps: 0, uncollectedRappen: 500 });
+    expect(low.payRappen).toBe(1400 + 500);
+  });
+});

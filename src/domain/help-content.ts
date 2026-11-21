@@ -86,6 +86,17 @@ export const FLOWS: Flow[] = [
     tip: "Die Kasse läuft auch ohne Internet weiter und gleicht danach ab. Bons sind lückenlos nummeriert und unveränderbar.",
   },
   {
+    key: "f_online_order", title: "Online-Bestellungen annehmen", roles: ["owner", "service"], area: "onlineorders",
+    goal: "Bestellungen zum Abholen oder Liefern sicher empfangen und rechtzeitig bestätigen.",
+    steps: ["Gastronomie → Bestellungen → Online auf dem Tablet im Restaurant öffnen (am Ladekabel), «Prüfung starten» und den Ton bestätigen.", "Neue Bestellung klingelt: «Annehmen» (oder +10/+20/+30 Min.) oder mit Grund ablehnen; bezahlte Beträge gehen dann automatisch zurück.", "Ist das Essen fertig: «Bereit». Bei Abholung danach «Abgeholt»; Lieferungen übernimmt der Fahrer in seiner Ansicht."],
+    tip: "Nach 5 Minuten ohne Antwort kommt ein Alarm per SMS und Mail, nach 10 Minuten wird storniert. Ist kein Bestellbildschirm erreichbar, pausiert Pontivo die Online-Bestellung von selbst.",
+  },
+  {
+    key: "f_deliver", title: "Eine Lieferung ausfahren", roles: ["owner", "driver", "service"], area: "driver",
+    goal: "Bestellung zum Gast bringen und bei Barzahlung richtig abrechnen.",
+    steps: ["Lieferungen am Handy öffnen; Adresse, Telefon und Betrag stehen auf der Karte.", "Beim Losfahren «Unterwegs» tippen, der Gast bekommt Bescheid; die Navigation öffnet sich über den Link.", "Beim Gast «Geliefert» (bar: Betrag kassieren). Niemand da oder Annahme verweigert: «Nicht angenommen»."],
+  },
+  {
     key: "f_export", title: "Buchungsliste für den Treuhänder", roles: ["owner", "accounting"], area: "accountingexport",
     goal: "Rechnungen und Zahlungen eines Monats als Liste für die Buchhaltung.",
     steps: ["Finanzen → Buchhaltung öffnen.", "Konten einmal zuordnen (Erlös, Kurtaxe, MWST, Zahlungsarten).", "Monat wählen und die CSV-Datei herunterladen."],

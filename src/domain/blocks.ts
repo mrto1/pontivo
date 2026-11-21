@@ -139,7 +139,7 @@ export function tr(v: L | undefined, lang: Locale): string {
 }
 
 /** Reservierte Pfade, die keine Seite belegen darf */
-export const RESERVED_SLUGS = new Set(["book", "agb", "datenschutz", "tisch", "b", "h", "admin", "api", "media", "widget", "vorschau", "de", "en", "fr", "it", "nl"]);
+export const RESERVED_SLUGS = new Set(["book", "agb", "datenschutz", "tisch", "bestellen", "bestellung", "b", "h", "admin", "api", "media", "widget", "vorschau", "de", "en", "fr", "it", "nl"]);
 
 export function slugify(s: string): string {
   return s
