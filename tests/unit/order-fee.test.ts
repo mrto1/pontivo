@@ -32,7 +32,8 @@ describe("Preis Online-Bestellung (SPEC 20.4)", () => {
   });
 
   it("Preisangabe für den Betrieb", () => {
-    expect(orderPriceText({ model: "percent", startedOn: null, pilotUntil: null }, "2027-01-01", "1.9", 5900, 4)).toMatch(/Normalpreis 1\.9 %.*3 Monate.*CHF 59.*Pilotbetrieb.*CHF 149.*noch 4 Plätze/);
+    expect(orderPriceText({ model: "percent", startedOn: null, pilotUntil: null }, "2027-01-01", "1.9", 5900, 4)).toMatch(/Normalpreis 1\.9 %.*3 Monate.*CHF 59.*Pilotbetrieb.*CHF 149 pro Monat\.$/);
+    expect(orderPriceText({ model: "percent", startedOn: null, pilotUntil: null }, "2027-01-01", "1.9", 5900, 4)).not.toMatch(/Plätze/);
     expect(orderPriceText({ model: "fixed", startedOn: "2027-01-10", pilotUntil: "2028-01-10" }, "2027-02-01", "1.9", 5900, 0)).toMatch(/^Sonderangebot mindestens bis 30\.04\.2027.*bis 09\.01\.2028 nie mehr als CHF 149/);
     expect(orderPriceText({ model: "percent", startedOn: "2027-01-10", pilotUntil: null }, "2027-06-01", "1.9", 5900, 0)).toBe("1.9 % pro Bestellung (auch bar, dann mit der Monatsrechnung).");
   });

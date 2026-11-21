@@ -18,7 +18,7 @@ const SWITCH_UNTIL = "2027-04-30";
 export function RestaurantHome({ contact, account, draft, fee, feeBps, minimum, today, introRappen, introMonths, pilot }: {
   contact: ShellContact; account: { label: string } | null; draft: boolean; fee: string; feeBps: number; minimum: string; today: string;
   /** Sonderangebot Online-Bestellung (SPEC 20.4): pauschal pro Monat in den ersten Monaten */ introRappen: number; introMonths: number;
-  /** Pilotbetriebe: freie Plätze, Kostendach pro Monat, Dauer; null = keine Plätze mehr */ pilot: { left: number; slots: number; capRappen: number; months: number } | null;
+  /** Pilotbetriebe: Kostendach pro Monat, Dauer; null = alle Plätze vergeben (Abschnitt verschwindet). Freie Plätze werden bewusst nicht angezeigt. */ pilot: { left: number; slots: number; capRappen: number; months: number } | null;
 }) {
   const st = contact.staticSite;
   const talk = mailHref(contact, "Pontivo für unser Restaurant");
@@ -126,7 +126,7 @@ export function RestaurantHome({ contact, account, draft, fee, feeBps, minimum, 
             <h2 className={s.h2}>Sonderangebot: {introMonths} Monate Online-Bestellung pauschal</h2>
             <p>Starten Sie ohne Rechnen: In den ersten {introMonths} Monaten ab dem Einschalten zahlen Sie für die Online-Bestellung pauschal {intro} pro Monat, egal wie viele Bestellungen hereinkommen. Danach gilt der Normalpreis von {fee} % pro Bestellung. Den Wechsel kündigen wir Ihnen vorher an.</p>
             {pilot ? (
-              <p data-testid="order-pilot"><strong>Für die ersten {pilot.slots} Restaurants: Pilotbetrieb.</strong> Sie zahlen {pilot.months} Monate lang ab dem Start nie mehr als {cap} pro Monat für die Online-Bestellung, auch wenn Ihre {fee} % mehr ergäben. Dafür hören wir Ihnen zu: Ihre Rückmeldungen fliessen direkt in neue Funktionen. <strong>Noch {pilot.left} von {pilot.slots} Plätzen frei.</strong></p>
+              <p data-testid="order-pilot"><strong>Für die ersten {pilot.slots} Restaurants: Pilotbetrieb.</strong> Sie zahlen {pilot.months} Monate lang ab dem Start nie mehr als {cap} pro Monat für die Online-Bestellung, auch wenn Ihre {fee} % mehr ergäben. Dafür hören wir Ihnen zu: Ihre Rückmeldungen fliessen direkt in neue Funktionen.</p>
             ) : null}
             <p className={s.fieldHint}>Alle Einzelheiten: <a href={pageHref("/pilot-bedingungen", st)}>Pilotbedingungen Online-Bestellung</a>. Preise ohne MWST, sofern geschuldet.</p>
           </div>

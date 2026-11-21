@@ -63,7 +63,7 @@ export function orderPriceText(s: OrderFeeState, today: Day, feePercent: string,
   const normal = `${feePercent} % pro Bestellung (auch bar, dann mit der Monatsrechnung)`;
   const pilot = s.pilotUntil && today < s.pilotUntil ? ` Als Pilotbetrieb zahlen Sie bis ${dmy(addDaysLocal(s.pilotUntil, -1))} nie mehr als ${chf(PILOT_CAP_RAPPEN)} pro Monat.` : "";
   if (!s.startedOn) {
-    const offer = pilotSlotsLeft > 0 ? ` Als einer der ersten ${PILOT_SLOTS} Betriebe werden Sie Pilotbetrieb: ${PILOT_MONTHS} Monate lang höchstens ${chf(PILOT_CAP_RAPPEN)} pro Monat (noch ${pilotSlotsLeft} Plätze frei).` : "";
+    const offer = pilotSlotsLeft > 0 ? ` Als einer der ersten ${PILOT_SLOTS} Betriebe werden Sie Pilotbetrieb: ${PILOT_MONTHS} Monate lang höchstens ${chf(PILOT_CAP_RAPPEN)} pro Monat.` : "";
     return `Normalpreis ${normal}. Sonderangebot: die ersten ${ORDER_INTRO_MONTHS} Monate ab dem Einschalten pauschal ${chf(flatRappen)} pro Monat, keine Gebühr pro Bestellung.${offer}`;
   }
   if (inIntro(s, today)) {
