@@ -43,11 +43,12 @@ export default async function MyPontivo({ params }: { params: Promise<{ hotelId:
 
       <section className="card mp-section" id="sicherheit">
         <h2>Sicherheit</h2>
-        <p className="muted">Anmeldung per E-Mail-Link und per Passkey sind gleichwertig. Die Authenticator-App (2FA) kommt freiwillig zusätzlich dazu.</p>
+        <p className="muted">Anmeldung mit Passwort oder Passkey sind gleichwertig; der Login-Link per E-Mail bleibt für «Passwort vergessen». Die Authenticator-App (2FA) kommt freiwillig zusätzlich dazu.</p>
         <AccountSecurity
           passkeys={pks.map((p) => ({ id: p.id, name: p.name, createdAt: p.createdAt.toISOString(), lastUsedAt: p.lastUsedAt?.toISOString() ?? null }))}
           totpOn={totp}
           passkeyOnly={user.emailLoginDisabled}
+        passwordSet={!!user.passwordHash}
           codesLeft={left}
         />
       </section>

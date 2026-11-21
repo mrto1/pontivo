@@ -343,7 +343,7 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
     case "email_change_notice":
       return wrap(c, l, de ? "Änderung Ihrer Anmelde-Adresse" : "Change of your sign-in address",
         [de ? (c.data.done ? `Die Anmelde-Adresse Ihres Kontos wurde auf ${String(c.data.newEmail)} geändert. Ab jetzt melden Sie sich nur noch mit der neuen Adresse an.` : `Für Ihr Konto wurde beantragt, die Anmelde-Adresse auf ${String(c.data.newEmail)} zu ändern. Sie ändert sich erst, wenn die neue Adresse bestätigt wird.`) : (c.data.done ? `The sign-in address of your account was changed to ${String(c.data.newEmail)}.` : `A change of your sign-in address to ${String(c.data.newEmail)} was requested. It only takes effect once the new address is confirmed.`),
-          de ? "Waren Sie das nicht? Melden Sie sich sofort an und prüfen Sie unter «Profil & Sicherheit» (Profilbild oben rechts) Ihre Passkeys und die Zwei-Faktor-Anmeldung, oder schreiben Sie uns." : "Was this not you? Sign in right away and check your passkeys and two-factor sign-in under My account, Security, or write to us."],
+          de ? "Waren Sie das nicht? Melden Sie sich sofort an und prüfen Sie unter «Profil & Sicherheit» (Profilbild oben rechts) Ihr Passwort, Ihre Passkeys und die Zwei-Faktor-Anmeldung, oder schreiben Sie uns." : "Was this not you? Sign in right away and check your passkeys and two-factor sign-in under My account, Security, or write to us."],
         []);
     case "booking_recovery": {
       const dm = D[gl];

@@ -22,7 +22,7 @@ export const WAYFINDING: Wayfinding[] = [
   { area: "rooms", title: "Zimmer & Tarife (Einstellungen → Grunddaten)", what: "Zimmertypen, Anzahl Zimmer, Fotos, Tarife (z. B. mit Frühstück, nicht stornierbar) und Zusatzleistungen. Ein Zimmertyp ohne Tarif ist nicht buchbar." },
   { area: "site", title: "Website & Buchung (Einstellungen → Verkauf)", what: "Wie Gäste Sie finden und buchen: eigene Pontivo-Website oder nur der Buchungsknopf auf Ihrer bisherigen Seite. Layout, Schrift, Logo, Sprachen." },
   { area: "team", title: "Team & Rollen (Einstellungen → Grunddaten)", what: "Wer Zugang hat und was jede Rolle sehen darf. Eigene Rollen mit Häkchen pro Seite." },
-  { area: "mypontivo", title: "Profilbild (oben rechts)", what: "Ihr Konto: Passkey, Authenticator, Mitteilungen auf dem Handy, App installieren. Im Menü dahinter auch Erste Woche, diese Hilfe und Abmelden." },
+  { area: "mypontivo", title: "Profilbild (oben rechts)", what: "Ihr Konto: Passwort, Passkey, Authenticator, Mitteilungen auf dem Handy, App installieren. Im Menü dahinter auch Erste Woche, diese Hilfe und Abmelden." },
 ];
 
 export const FLOWS: Flow[] = [

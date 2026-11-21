@@ -142,6 +142,8 @@ export const users = pgTable("users", {
   name: text("name"),
   isPlatformAdmin: boolean("is_platform_admin").notNull().default(false),
   emailLoginDisabled: boolean("email_login_disabled").notNull().default(false),
+  /** scrypt-Hash des Passworts (`src/auth/password.ts`); null = noch keins gesetzt */
+  passwordHash: text("password_hash"),
   emailVerifiedAt: ts("email_verified_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });

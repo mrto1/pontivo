@@ -253,3 +253,8 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Die Tagesliste («Heute») ist für `staff` sichtbar (zuvor nur Manager/Inhaber sahen die Übersicht). ASSUMPTION: Tagesliste ist für Mitarbeitende nützlich und enthält keine Zahlen zu Umsatz.
 - Die Monatsabrechnung («Abo & Gebühren») war für Manager sichtbar, ist jetzt nur Inhaber (Auftrag). Manager verlieren den Zugriff.
 - Tag/An- & Abreisen: Die Seite `frontdesk` wurde auf Wunsch entfernt, ohne Weiterleitung (alte Lesezeichen geben 404). ASSUMPTION: Eingeschränkte Rollen sehen «Tag» nur mit dem Bereich `tag` (Rezeption ja). Hinweise und offene Zahlungen nur bei «Heute».
+
+## Anmeldung mit Passwort (SPEC 19.43)
+- Passwort-Regeln: ASSUMPTION mindestens 8 Zeichen (damit «testtest» für Testkonten geht), keine weiteren Regeln, kein Abgleich mit Leak-Listen.
+- Passwort ist freiwillig; wer keins hat, meldet sich weiter per Passkey oder E-Mail-Link an. Ein Zwang (Pflicht beim nächsten Login) und Passwort-Zurücksetzen durch die Plattform-Verwaltung sind nicht gebaut.
+- Das Passwort ersetzt nicht die Bestätigung der E-Mail-Adresse (`email_verified_at` wird nur durch einen eingelösten Link gesetzt).

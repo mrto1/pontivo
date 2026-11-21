@@ -14,7 +14,8 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
   const presence = (enabled: boolean) => cdp.send("WebAuthn.setAutomaticPresenceSimulation", { authenticatorId, enabled });
   // Standard: Autofill-Angebot aus (der Knopf wird geprüft); am Ende einmal an (Autofill-Weg)
   await page.addInitScript(() => {
-    if (!sessionStorage.getItem("cond")) (PublicKeyCredential as unknown as { isConditionalMediationAvailable: () => Promise<boolean> }).isConditionalMediationAvailable = async () => false;
+    // Ohne «cond» gilt das Gerät als unbekannt (kein Autostart des Passkeys), die Kachel wird per Klick geprüft
+    if (!sessionStorage.getItem("cond")) { (PublicKeyCredential as unknown as { isConditionalMediationAvailable: () => Promise<boolean> }).isConditionalMediationAvailable = async () => false; localStorage.removeItem("pontivo.passkey"); }
   });
   const passkeyLogin = async () => {
     await presence(true);
@@ -59,7 +60,7 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
   // Magic-Link verlangt jetzt den Code
   await context.clearCookies();
   await presence(false);
-  await page.goto("/mypontivo/login");
+  await page.goto("/mypontivo/login?link=1");
   await page.fill("#email", email);
   await page.waitForTimeout(1100); // Mindestzeit des Formular-Schutzes
   await page.getByRole("button", { name: "Login-Link senden" }).click();
@@ -70,7 +71,7 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
 
   // falscher Code, dann Wiederherstellungscode
   await presence(false);
-  await page.goto("/mypontivo/login");
+  await page.goto("/mypontivo/login?link=1");
   await page.fill("#email", email);
   await page.waitForTimeout(1100); // Mindestzeit des Formular-Schutzes
   await page.getByRole("button", { name: "Login-Link senden" }).click();
@@ -105,23 +106,24 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
   // nach dem Neuladen kann der Klick vor der Hydration verloren gehen: wiederholen, bis die Seite reagiert
   await expect(async () => {
     await page.getByRole("button", { name: "Nur Passkey erlauben" }).click({ timeout: 2000 });
-    await expect(page.getByText("eingeschaltet. Der E-Mail-Link funktioniert")).toBeVisible({ timeout: 2000 });
+    await expect(page.getByText("eingeschaltet. Passwort und E-Mail-Link funktionieren")).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 15000 });
   await context.clearCookies();
   await presence(false);
-  await page.goto("/mypontivo/login");
+  await page.goto("/mypontivo/login?link=1");
   await page.fill("#email", email);
   await page.waitForTimeout(1100); // Mindestzeit des Formular-Schutzes
   await page.getByRole("button", { name: "Login-Link senden" }).click();
   await expect(page.getByText("Falls die Adresse bei uns registriert ist")).toBeVisible();
   await expect(page.getByRole("link", { name: "Hier anmelden" })).toHaveCount(0);
   await presence(true);
+  await page.goto("/mypontivo/login");
   await page.getByTestId("passkey-login").click();
   await page.fill("#code", recovery[2]);
   await page.getByRole("button", { name: "Anmelden" }).click();
   await expect(page).toHaveURL(/\/mypontivo(?!\/login)/);
 
-  // Autofill-Weg: Passkey wird ohne Knopf angeboten und beim Laden der Login-Seite verwendet (hier mit simulierter Auswahl)
+  // Autostart: auf einem Gerät mit bekanntem Passkey meldet die Login-Seite beim Laden von selbst an (ohne Knopf)
   await context.clearCookies();
   await page.evaluate(() => sessionStorage.setItem("cond", "1"));
   await presence(true);

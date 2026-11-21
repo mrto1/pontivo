@@ -11,11 +11,12 @@ export default async function Konto() {
     <main className="wrap" style={{ maxWidth: 640, padding: "40px 16px" }}>
       <p><a href="/mypontivo">← Übersicht</a></p>
       <h1>Sicherheit</h1>
-      <p className="muted">Angemeldet als {user.email}. Der Login per E-Mail-Link bleibt immer möglich.</p>
+      <p className="muted">Angemeldet als {user.email}. Mit Passwort oder Passkey; der Login-Link per E-Mail bleibt für «Passwort vergessen» möglich.</p>
       <AccountSecurity
         passkeys={pks.map((p) => ({ id: p.id, name: p.name, createdAt: p.createdAt.toISOString(), lastUsedAt: p.lastUsedAt?.toISOString() ?? null }))}
         totpOn={totp}
         passkeyOnly={user.emailLoginDisabled}
+        passwordSet={!!user.passwordHash}
         codesLeft={left}
       />
     </main>
