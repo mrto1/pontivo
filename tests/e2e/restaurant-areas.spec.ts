@@ -63,7 +63,9 @@ test("Reines Restaurant: nur Gastronomie, kein Umschalter; Service landet in der
   // Assistent mit Restaurant-Schritten
   await page.goto(`/admin/${hotel.id}/einrichten?step=tische`);
   await page.getByLabel("Anzahl Tische").fill("6");
+  const saved = page.waitForResponse((r) => r.request().method() === "POST"); // sonst bricht das nächste goto das Speichern ab (flaky)
   await page.getByRole("button", { name: "Speichern und weiter" }).click();
+  await saved;
   await page.goto(`/admin/${hotel.id}/einrichten?step=tische`); // Angaben fehlen noch, darum führt «weiter» zuerst dorthin
   await expect(page.getByText("6 Tische mit zusammen 24 Plätzen")).toBeVisible();
   // Konzept 7a: Reservation sofort live, ohne Stripe; Checkliste im Heute

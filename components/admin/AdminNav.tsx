@@ -1,7 +1,7 @@
 "use client";
 import { usePathname } from "next/navigation";
 import { isActiveIn, type Nav, type NavItem } from "@/src/admin/nav";
-import { badgeText } from "@/src/domain/unseen";
+import { badgeText, badgeView, type Badge } from "@/src/domain/unseen";
 import { useAreaNav } from "./AreaContext";
 
 /**
@@ -35,12 +35,15 @@ function TabIcon({ name }: { name: string }) {
   );
 }
 
-export function AdminNav({ nav: navIn, home, userLabel, initials, showSettings, badges = {} }: { nav: Nav; home: string; userLabel: string; initials: string; showSettings: boolean; badges?: Record<string, number> }) {
+export function AdminNav({ nav: navIn, home, userLabel, initials, showSettings, badges = {} }: { nav: Nav; home: string; userLabel: string; initials: string; showSettings: boolean; badges?: Record<string, Badge> }) {
   const pathname = usePathname();
   const nav = useAreaNav(navIn);
   const myActive = isActiveIn(pathname, nav, nav.account, home);
   const gearActive = showSettings && isActiveIn(pathname, nav, nav.settings, home);
-  const nb = (i: NavItem) => (badges[i.key] > 0 ? <span className="nav-badge" role="img" aria-label={`${badges[i.key]} neu`}>{badgeText(badges[i.key])}</span> : null);
+  const nb = (i: NavItem) => {
+    const v = badgeView(badges[i.key]);
+    return v ? <span className={`nav-badge ${v.tone}`} role="img" aria-label={v.label}>{badgeText(v.n)}</span> : null;
+  };
   const a = (i: NavItem) => (isActiveIn(pathname, nav, i, home) ? "active" : undefined);
 
   return (

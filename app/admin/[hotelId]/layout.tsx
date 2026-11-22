@@ -17,8 +17,8 @@ import { SetupNotices } from "@/components/admin/SetupNotices";
 import { atLeast } from "@/src/auth/session";
 import { onboardingSteps } from "@/src/services/onboarding";
 import { initials } from "@/src/domain/avatar";
-import { badgesFor, SEEN_KINDS, itemKeyFor } from "@/src/domain/unseen";
-import { SEEN_KIND_LIST, unseenCounts } from "@/src/services/unseen";
+import { badgesFor, itemKeyFor, itemKeyForPage, SEEN_KINDS, TASK_KINDS, type TaskKind } from "@/src/domain/unseen";
+import { openTaskCounts, SEEN_KIND_LIST, unseenCounts } from "@/src/services/unseen";
 import { parallelBanner, setupBanner, setupOpen, unmetNeeds } from "@/src/domain/setup";
 
 export default async function HotelAdminLayout({ children, params }: { children: React.ReactNode; params: Promise<{ hotelId: string }> }) {
@@ -38,7 +38,8 @@ export default async function HotelAdminLayout({ children, params }: { children:
   const doneCount = steps?.filter((x) => x.done).length ?? 0;
   // Zahlen für Ungesehenes (nur Listen, die im Menü dieser Person stehen)
   const shown = SEEN_KIND_LIST.filter((k) => itemKeyFor(k, vn.navs[SEEN_KINDS[k].area]) !== null);
-  const badges = badgesFor(await unseenCounts(user.id, hotel.id, shown), vn.navs);
+  const tasks = (Object.keys(TASK_KINDS) as TaskKind[]).filter((k) => itemKeyForPage(TASK_KINDS[k].page, vn.navs[TASK_KINDS[k].area]) !== null);
+  const badges = badgesFor(await unseenCounts(user.id, hotel.id, shown), await openTaskCounts(hotel, tasks), vn.navs);
   const others = (await hotelsForUser(user.id)).filter((x) => x.hotel.id !== hotel.id);
   return (
     <AreaProvider navs={vn.navs} initialArea={initialArea} cookieName={cookieName} home={home} marked={vn.showSwitch}>

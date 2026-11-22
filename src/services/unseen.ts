@@ -1,6 +1,8 @@
 import { sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
-import { SEEN_KINDS, type SeenKind } from "../domain/unseen";
+import type { Hotel } from "../db/schema";
+import { SEEN_KINDS, type SeenKind, type TaskKind } from "../domain/unseen";
+import { listOpenInvoices } from "./debtors";
 
 /**
  * Ungesehenes je Person (SPEC 20.1): Einträge, die nach dem letzten Öffnen der Liste durch diese Person eingegangen sind.
@@ -34,3 +36,24 @@ export async function unseenCounts(userId: string, hotelId: string, kinds: SeenK
 }
 
 export const SEEN_KIND_LIST = Object.keys(SEEN_KINDS) as SeenKind[];
+
+/**
+ * Offene Aufgaben je Betrieb (SPEC 20.1): gemeinsame Zahl, unabhängig vom Ansehen. Zählt nur die verlangten Arten.
+ * ASSUMPTION: «Überfällig» = ausgestellte, nicht beglichene Rechnung nach Fälligkeit (wie die Liste der Debitoren).
+ */
+export async function openTaskCounts(hotel: Hotel, kinds: TaskKind[]): Promise<Partial<Record<TaskKind, number>>> {
+  const out: Partial<Record<TaskKind, number>> = {};
+  for (const k of kinds) {
+    if (k === "inbox") {
+      const [a] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM inquiries WHERE hotel_id = ${hotel.id} AND status = 'new'`));
+      const [b] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM guest_requests WHERE hotel_id = ${hotel.id} AND status = 'open'`));
+      out.inbox = (a?.n ?? 0) + (b?.n ?? 0);
+    } else if (k === "orders") {
+      const [a] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM online_orders WHERE hotel_id = ${hotel.id} AND status = 'new'`));
+      out.orders = a?.n ?? 0;
+    } else if (k === "overdue") {
+      out.overdue = (await listOpenInvoices(hotel)).filter((i) => i.daysOverdue > 0).length;
+    }
+  }
+  return out;
+}
