@@ -150,4 +150,18 @@ describe("Push-Mitteilungen", () => {
     await savePushPrefs(h.hotel.id, cleaning, { orders: true });
     expect(await who("orders", "k:orders3")).toEqual(["owner"]); // eine Wahl gibt keinen Zugang zu dem, was die Rolle nicht sieht
   });
+  it("Sammelmeldung: mehrere neue Bestellungen im selben Lauf werden eine Meldung; die Erinnerung bleibt einzeln", async () => {
+    const h = await makeHotel();
+    await db().insert(hotelModules).values({ hotelId: h.hotel.id, module: "restaurant", enabled: true });
+    const owner = await member(h.hotel.id, "owner");
+    await saveSubscription(h.hotel.id, owner, sub("sammel" + h.hotel.id), null);
+    const url = `/admin/${h.hotel.id}/restaurant/bestellungen`;
+    for (const n of ["a", "b", "c"]) await enqueuePush(db(), h.hotel.id, `order:${n}`, { title: `Neue Bestellung ${n}`, body: "x", url, kind: "orders" });
+    await enqueuePush(db(), h.hotel.id, "order-alarm:a", { title: "Bestellung wartet", body: "x", url, kind: "orders" });
+    const got: PushPayload[] = [];
+    setPushSender(async (_t, p) => void got.push(p));
+    await sendDuePushes();
+    expect(got.map((p) => p.title).sort()).toEqual(["3 neue Bestellungen", "Bestellung wartet"]);
+    expect((await pending(h.hotel.id)).every((r) => r.status === "sent")).toBe(true);
+  });
 });

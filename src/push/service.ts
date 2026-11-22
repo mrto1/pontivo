@@ -5,6 +5,7 @@ import { bookings, hotelMembers, pushOutbox, pushPrefs, pushSubscriptions } from
 import { visibleNav } from "../admin/visible-nav";
 import { hiddenNavKeys } from "../domain/modules";
 import { pushWanted, type PushKind } from "../domain/push-kinds";
+import { groupPushes } from "../domain/push-group";
 import type { Role } from "../domain/roles";
 import { getHotelById } from "../services/hotels";
 import { env } from "../env";
@@ -111,7 +112,8 @@ export async function sendDuePushes(): Promise<{ sent: number; failed: number }>
   }
   const send = sender ?? realSender;
   const navCache = new Map<string, ReturnType<typeof visibleNav>["navs"] | null>();
-  for (const r of rows) {
+  // Gleichartige Meldungen desselben Betriebs im selben Lauf werden zu einer Sammelmeldung (src/domain/push-group.ts)
+  for (const r of groupPushes(rows)) {
     // Nur Geräte von Personen, die Mitglied sind, die Art sehen dürfen und sie nicht abgestellt haben (SPEC 20.1)
     const all = await db()
       .select({ s: pushSubscriptions, role: hotelMembers.role })
@@ -132,14 +134,14 @@ export async function sendDuePushes(): Promise<{ sent: number; failed: number }>
       if (navs && pushWanted(x.role as Role, r.kind, navs, prefs.get(x.s.userId))) subs.push(x.s);
     }
     if (!subs.length) {
-      await db().update(pushOutbox).set({ status: "cancelled" }).where(eq(pushOutbox.id, r.id));
+      await db().update(pushOutbox).set({ status: "cancelled" }).where(inArray(pushOutbox.id, r.ids));
       continue;
     }
     let delivered = 0;
     let transient = 0;
     for (const s of subs) {
       try {
-        await send({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, { title: r.title, body: r.body, url: r.url, tag: r.dedupeKey });
+        await send({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, { title: r.title, body: r.body, url: r.url, tag: r.tag });
         delivered++;
       } catch (e) {
         const code = (e as { statusCode?: number }).statusCode;
@@ -148,11 +150,11 @@ export async function sendDuePushes(): Promise<{ sent: number; failed: number }>
       }
     }
     if (delivered > 0 || transient === 0) {
-      await db().update(pushOutbox).set({ status: delivered > 0 ? "sent" : "cancelled", sentAt: new Date(), attempts: r.attempts + 1 }).where(eq(pushOutbox.id, r.id));
+      await db().update(pushOutbox).set({ status: delivered > 0 ? "sent" : "cancelled", sentAt: new Date(), attempts: r.attempts + 1 }).where(inArray(pushOutbox.id, r.ids));
       if (delivered > 0) sent++;
     } else {
       const attempts = r.attempts + 1;
-      await db().update(pushOutbox).set({ attempts, status: attempts >= MAX_ATTEMPTS ? "failed" : "pending" }).where(eq(pushOutbox.id, r.id));
+      await db().update(pushOutbox).set({ attempts, status: attempts >= MAX_ATTEMPTS ? "failed" : "pending" }).where(inArray(pushOutbox.id, r.ids));
       if (attempts >= MAX_ATTEMPTS) failed++;
     }
   }
