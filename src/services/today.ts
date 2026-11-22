@@ -1,4 +1,5 @@
 import { and, asc, eq, isNull, lte, sql } from "drizzle-orm";
+import { inboxSplit } from "./inbox-split";
 import { db } from "../db/client";
 import { bookings, guests, roomTypes, type Hotel } from "../db/schema";
 import { addDays, todayIn } from "../domain/dates";
@@ -39,7 +40,7 @@ export async function todayView(hotel: Hotel, o: { day?: string; manages: boolea
   const notices = dayNotices({
     base, manages: o.manages, channexEnabled: hotel.channexEnabled, channexFailed: failed, roomTypesWithoutPhoto: noPhoto,
     openGuestRequests: o.inboxVisible ? await openGuestRequestCount(hotel.id) : 0,
-    openInquiries: o.inboxVisible && o.inquiries ? await newInquiryCount(hotel.id) : 0,
+    openInquiries: o.inboxVisible && o.inquiries ? await newInquiryCount(hotel.id, { exceptDining: await inboxSplit(hotel.id) }) : 0,
     inboxVisible: o.inboxVisible,
   });
   // Offene Restzahlungen für Aufenthalte, die bald beginnen oder laufen

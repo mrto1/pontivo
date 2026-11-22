@@ -124,7 +124,7 @@ describe("Push-Mitteilungen", () => {
     expect(booked!.title).toBe("Neue Buchung");
     expect(booked!.body).toContain(booking.reference);
     expect(booked!.url).toBe(`/admin/${h.hotel.id}/bookings/${booking.id}`);
-    expect(rows.find((r) => r.dedupeKey === `inquiry:${inq.id}`)).toMatchObject({ title: "Neue Anfrage", url: `/admin/${h.hotel.id}/inquiries` });
+    expect(rows.find((r) => r.dedupeKey === `inquiry:${inq.id}`)).toMatchObject({ title: "Neue Anfrage", url: `/admin/${h.hotel.id}/inbox` });
     for (const r of rows) expect(`${r.title} ${r.body}`).not.toMatch(/Erika|Geheim|@/);
   });
   it("Rollen und Einstellungen (SPEC 20.1): nur wer die Liste sieht und die Art nicht abgestellt hat; Nichtmitglieder nie", async () => {

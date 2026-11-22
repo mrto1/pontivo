@@ -15,8 +15,9 @@ const NOUN: Record<Exclude<PushKind, "other">, [string, string]> = {
   reservations: ["neue Reservierung", "neue Reservierungen"],
   bookings: ["neue Buchung", "neue Buchungen"],
   inbox: ["neue Anfrage oder Nachricht", "neue Anfragen und Nachrichten"],
+  dininginbox: ["neue Tischanfrage", "neue Tischanfragen"],
 };
-const LIST: Record<Exclude<PushKind, "other">, string> = { orders: "restaurant/bestellungen", reservations: "restaurant/reservierungen", bookings: "bookings", inbox: "inbox" };
+const LIST: Record<Exclude<PushKind, "other">, string> = { orders: "restaurant/bestellungen", reservations: "restaurant/reservierungen", bookings: "bookings", inbox: "inbox", dininginbox: "inbox?bereich=restaurant" };
 
 export function groupPushes(rows: PushRowLite[], minGroup = 2): PushUnit[] {
   const groups = new Map<string, PushRowLite[]>();

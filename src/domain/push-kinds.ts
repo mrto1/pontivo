@@ -8,13 +8,14 @@ import { atLeast, isLimitedRole, type Role } from "./roles";
 import { itemKeyFor, SEEN_KINDS, type SeenKind } from "./unseen";
 
 export type PushKind = SeenKind | "other";
-export const PUSH_KINDS: PushKind[] = ["orders", "reservations", "bookings", "inbox", "other"];
+export const PUSH_KINDS: PushKind[] = ["orders", "reservations", "bookings", "inbox", "dininginbox", "other"];
 export const isPushKind = (k: string): k is PushKind => (PUSH_KINDS as string[]).includes(k);
 export const PUSH_KIND_LABEL: Record<PushKind, { title: string; hint: string }> = {
   orders: { title: "Online-Bestellungen", hint: "Neue Bestellung und Erinnerung, wenn eine wartet" },
   reservations: { title: "Reservierungen", hint: "Neue Online-Reservierung" },
   bookings: { title: "Buchungen", hint: "Neue Buchung, Stornierung, Überbuchung" },
   inbox: { title: "Anfragen und Nachrichten", hint: "Neue Anfrage, Gästewunsch, Gästenachricht, Check-out im Portal" },
+  dininginbox: { title: "Anfragen (Restaurant)", hint: "Neue Tischanfrage über die Website" },
   other: { title: "Sonstiges", hint: "Gutschein oder Extras verkauft" },
 };
 

@@ -4,9 +4,14 @@
  */
 import type { Area, Nav, NavItem } from "../admin/nav";
 
-export type SeenKind = "inbox" | "bookings" | "reservations" | "orders";
+/** Anfragearten, die im Restaurant-Posteingang landen (nur wenn der Betrieb auch das Restaurant führt); alle übrigen bleiben im Posteingang der Unterkunft */
+export const DINING_INQUIRY_KINDS = ["table"] as const;
+export const isDiningInquiry = (kind: string): boolean => (DINING_INQUIRY_KINDS as readonly string[]).includes(kind);
+
+export type SeenKind = "inbox" | "dininginbox" | "bookings" | "reservations" | "orders";
 export const SEEN_KINDS: Record<SeenKind, { area: Area; page: string }> = {
   inbox: { area: "lodging", page: "inbox" },
+  dininginbox: { area: "dining", page: "inbox" },
   bookings: { area: "lodging", page: "bookings" },
   reservations: { area: "dining", page: "reservations" },
   orders: { area: "dining", page: "onlineorders" },
@@ -26,9 +31,10 @@ export const itemKeyFor = (kind: SeenKind, nav: Nav | null): string | null => it
  * Offene Aufgaben (SPEC 20.1): eine gemeinsame Zahl je Betrieb, nicht je Person. Sie bleibt, bis die Aufgabe erledigt ist, auch wenn jemand die Liste schon gesehen hat.
  * Arten: `inbox` (offene Anfragen und Gästewünsche), `orders` (Online-Bestellungen, die auf Annahme warten), `overdue` (überfällige Rechnungen).
  */
-export type TaskKind = "inbox" | "orders" | "overdue";
+export type TaskKind = "inbox" | "dininginbox" | "orders" | "overdue";
 export const TASK_KINDS: Record<TaskKind, { area: Area; page: string }> = {
   inbox: { area: "lodging", page: "inbox" },
+  dininginbox: { area: "dining", page: "inbox" },
   orders: { area: "dining", page: "onlineorders" },
   overdue: { area: "lodging", page: "debtors" },
 };

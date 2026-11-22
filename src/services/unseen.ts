@@ -3,6 +3,7 @@ import { db, rows } from "../db/client";
 import type { Hotel } from "../db/schema";
 import { SEEN_KINDS, type SeenKind, type TaskKind } from "../domain/unseen";
 import { listOpenInvoices } from "./debtors";
+import { inboxSplit } from "./inbox-split";
 
 /**
  * Ungesehenes je Person (SPEC 20.1): Einträge, die nach dem letzten Öffnen der Liste durch diese Person eingegangen sind.
@@ -21,9 +22,11 @@ export async function unseenCounts(userId: string, hotelId: string, kinds: SeenK
     await db().execute(sql`INSERT INTO user_seen (user_id, hotel_id, kind) VALUES (${userId}, ${hotelId}, ${k}) ON CONFLICT DO NOTHING`);
   }
   const since = (k: SeenKind) => sql`(SELECT seen_at FROM user_seen WHERE user_id = ${userId} AND hotel_id = ${hotelId} AND kind = ${k})`;
+  const split = await inboxSplit(hotelId);
   const queries: Record<SeenKind, () => Promise<number>> = {
+    dininginbox: async () => rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM inquiries WHERE hotel_id = ${hotelId} AND kind = 'table' AND status = 'new' AND created_at > ${since("dininginbox")}`))[0]?.n ?? 0,
     inbox: async () => {
-      const [a] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM inquiries WHERE hotel_id = ${hotelId} AND status = 'new' AND created_at > ${since("inbox")}`));
+      const [a] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM inquiries WHERE hotel_id = ${hotelId} AND status = 'new' AND (${!split}::boolean OR kind <> 'table') AND created_at > ${since("inbox")}`));
       const [b] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM guest_requests WHERE hotel_id = ${hotelId} AND status = 'open' AND created_at > ${since("inbox")}`));
       return (a?.n ?? 0) + (b?.n ?? 0);
     },
@@ -43,9 +46,12 @@ export const SEEN_KIND_LIST = Object.keys(SEEN_KINDS) as SeenKind[];
  */
 export async function openTaskCounts(hotel: Hotel, kinds: TaskKind[]): Promise<Partial<Record<TaskKind, number>>> {
   const out: Partial<Record<TaskKind, number>> = {};
+  const split = kinds.includes("inbox") ? await inboxSplit(hotel.id) : false;
   for (const k of kinds) {
-    if (k === "inbox") {
-      const [a] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM inquiries WHERE hotel_id = ${hotel.id} AND status = 'new'`));
+    if (k === "dininginbox") {
+      out.dininginbox = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM inquiries WHERE hotel_id = ${hotel.id} AND kind = 'table' AND status = 'new'`))[0]?.n ?? 0;
+    } else if (k === "inbox") {
+      const [a] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM inquiries WHERE hotel_id = ${hotel.id} AND status = 'new' AND (${!split}::boolean OR kind <> 'table')`));
       const [b] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM guest_requests WHERE hotel_id = ${hotel.id} AND status = 'open'`));
       out.inbox = (a?.n ?? 0) + (b?.n ?? 0);
     } else if (k === "orders") {

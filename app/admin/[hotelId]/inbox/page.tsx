@@ -8,6 +8,7 @@ import { isOn } from "@/src/domain/modules";
 import { atLeast } from "@/src/auth/session";
 import { InboxError, closeThread, listThreads, openThread, replyToThread } from "@/src/services/inbox";
 import { listInquiries, setInquiryStatus } from "@/src/services/inquiries";
+import { isDiningInquiry } from "@/src/domain/unseen";
 import { createOfferFromInquiry, listOffers, OfferError } from "@/src/services/offers";
 import { OFFER_STATUS_LABEL } from "@/src/domain/offers";
 import { formatDay } from "@/src/i18n/dict";
@@ -81,29 +82,32 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
   const sp = await searchParams;
   const { hotel, role } = await requireHotel(hotelId, "staff", "inbox");
   const rows = await moduleRows(hotel.id);
+  // Getrennter Posteingang (SPEC 20.1): mit Restaurant gehören Tischanfragen in den Posteingang der Gastronomie, alles andere in den der Unterkunft
+  const split = isOn(rows, "restaurant");
+  const dining = split && sp.bereich === "restaurant";
   const webOn = isOn(rows, "inquiries");
-  const portalOn = isOn(rows, "inbox");
+  const portalOn = isOn(rows, "inbox") && !dining;
   const canEdit = atLeast(role, "manager");
   // Quelle: alles | web (Website und Chat) | portal
-  const quelle = sp.quelle === "wuensche" ? "wuensche" : sp.quelle === "web" && webOn ? "web" : sp.quelle === "portal" && portalOn ? "portal" : sp.thread && portalOn ? "portal" : "alle";
+  const quelle = dining ? "web" : sp.quelle === "wuensche" ? "wuensche" : sp.quelle === "web" && webOn ? "web" : sp.quelle === "portal" && portalOn ? "portal" : sp.thread && portalOn ? "portal" : "alle";
   const showWeb = webOn && (quelle === "alle" || quelle === "web");
-  const showWishes = quelle === "alle" || quelle === "wuensche";
+  const showWishes = !dining && (quelle === "alle" || quelle === "wuensche");
   const wishList = showWishes ? await listGuestRequests(hotel.id) : [];
-  const openWishes = await openGuestRequestCount(hotel.id);
+  const openWishes = dining ? 0 : await openGuestRequestCount(hotel.id);
   const showPortal = portalOn && (quelle === "alle" || quelle === "portal");
   const closed = sp.closed === "1";
   const threads = showPortal ? await listThreads(hotel.id, { closed }) : [];
   const open = showPortal && sp.thread ? await openThread(hotel.id, sp.thread) : null;
-  const list = showWeb ? await listInquiries(hotel.id) : [];
+  const list = showWeb ? (await listInquiries(hotel.id)).filter((x) => !split || isDiningInquiry(x.kind) === dining) : [];
   const offerList = showWeb ? await listOffers(hotel.id) : [];
   const offersOf = (id: string) => offerList.filter((o) => o.inquiryId === id);
   const openInq = list.filter((x) => x.status === "new").length;
   const unread = threads.reduce((n, { t }) => n + (t.unread ?? 0), 0);
   const q = (v: string) => `/admin/${hotel.id}/inbox${v === "alle" ? "" : `?quelle=${v}`}`;
-  const sources = [{ k: "alle", label: "Alle" }, ...(webOn ? [{ k: "web", label: "Website und Chat" }] : []), ...(portalOn ? [{ k: "portal", label: "Portale" }] : []), { k: "wuensche", label: `Gästewünsche${openWishes ? ` (${openWishes})` : ""}` }];
+  const sources = dining ? [] : [{ k: "alle", label: "Alle" }, ...(webOn ? [{ k: "web", label: "Website und Chat" }] : []), ...(portalOn ? [{ k: "portal", label: "Portale" }] : []), { k: "wuensche", label: `Gästewünsche${openWishes ? ` (${openWishes})` : ""}` }];
   return (
     <div className="stack">
-      <SeenMark hotelId={hotel.id} kind="inbox" />
+      <SeenMark hotelId={hotel.id} kind={dining ? "dininginbox" : "inbox"} />
       <h1 className="sr-only">Posteingang</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <div className="cal-tools">

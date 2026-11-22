@@ -7,6 +7,8 @@ import { isLocale } from "../i18n/dict";
 import { enqueueEmail } from "../email/enqueue";
 import { enqueuePush } from "../push/service";
 import { audit } from "./audit";
+import { isDiningInquiry } from "../domain/unseen";
+import { inboxSplit } from "./inbox-split";
 
 /** Anfragen (Tischreservation, Gruppen, Seminare, Hochzeiten …) aus dem Website-Baustein «Anfrageformular» */
 
@@ -29,11 +31,12 @@ export const inquirySchema = z.object({
 
 export async function createInquiry(hotel: Hotel, input: z.input<typeof inquirySchema>) {
   const v = inquirySchema.parse(input);
+  const dining = isDiningInquiry(v.kind) && (await inboxSplit(hotel.id));
   return db().transaction(async (tx) => {
     const [row] = await tx.insert(inquiries).values({ hotelId: hotel.id, ...v }).returning();
     const data = { inquiryId: row.id, kind: v.kind, name: v.name, email: v.email, phone: v.phone, dateFrom: v.dateFrom, dateTo: v.dateTo, persons: v.persons, timeOfDay: v.timeOfDay, message: v.message };
     await enqueueEmail(tx, { hotelId: hotel.id, template: "inquiry_received", to: hotel.contactEmail, language: hotel.defaultLanguage, data });
-    await enqueuePush(tx, hotel.id, `inquiry:${row.id}`, { title: "Neue Anfrage", body: v.kind === "table" ? "Tischreservation" : "Anfrage über die Website", url: `/admin/${hotel.id}/inquiries`, kind: "inbox" });
+    await enqueuePush(tx, hotel.id, `inquiry:${row.id}`, { title: "Neue Anfrage", body: v.kind === "table" ? "Tischreservation" : "Anfrage über die Website", url: v.kind === "table" && dining ? `/admin/${hotel.id}/inbox?bereich=restaurant` : `/admin/${hotel.id}/inbox`, kind: v.kind === "table" && dining ? "dininginbox" : "inbox" });
     await enqueueEmail(tx, { hotelId: hotel.id, template: "inquiry_confirmation", to: v.email, language: v.language, data });
     await audit(tx, { hotelId: hotel.id, actor: "guest", action: "inquiry.create", entity: "inquiry", entityId: row.id, details: { kind: v.kind } });
     return row;
@@ -50,8 +53,8 @@ export async function setInquiryStatus(hotelId: string, id: string, status: "new
   return r.length > 0;
 }
 
-export async function newInquiryCount(hotelId: string): Promise<number> {
-  const r = await db().select({ id: inquiries.id }).from(inquiries).where(and(eq(inquiries.hotelId, hotelId), eq(inquiries.status, "new")));
-  return r.length;
+export async function newInquiryCount(hotelId: string, opts: { exceptDining?: boolean } = {}): Promise<number> {
+  const r = await db().select({ id: inquiries.id, kind: inquiries.kind }).from(inquiries).where(and(eq(inquiries.hotelId, hotelId), eq(inquiries.status, "new")));
+  return opts.exceptDining ? r.filter((x) => !isDiningInquiry(x.kind)).length : r.length;
 }
 

@@ -55,4 +55,25 @@ describe("Ungesehenes je Person (SPEC 20.1)", () => {
     await db().update(inquiries).set({ status: "done" }).where(eq(inquiries.id, inq.id));
     expect((await openTaskCounts(h, ["inbox"])).inbox).toBe(0);
   });
+
+  it("getrennter Posteingang: mit Restaurant zählen Tischanfragen nur für die Gastronomie, ohne Restaurant bleibt alles bei der Unterkunft", async () => {
+    const mk = (hotelId: string, kind: string) => db().insert(inquiries).values({ hotelId, kind, name: "X", email: "x@example.ch", message: "Hallo", status: "new" } as never);
+    const both = await makeHotel();
+    await db().insert(hotelModules).values({ hotelId: both.hotel.id, module: "restaurant", enabled: true });
+    await mk(both.hotel.id, "table"); await mk(both.hotel.id, "group");
+    const [hb] = await db().select().from(hotels).where(eq(hotels.id, both.hotel.id));
+    expect(await openTaskCounts(hb, ["inbox", "dininginbox"])).toEqual({ inbox: 1, dininginbox: 1 });
+    const p = await newUser();
+    await unseenCounts(p, both.hotel.id, ["inbox", "dininginbox"]);
+    await new Promise((r) => setTimeout(r, 20));
+    await mk(both.hotel.id, "table");
+    expect(await unseenCounts(p, both.hotel.id, ["inbox", "dininginbox"])).toEqual({ inbox: 0, dininginbox: 1 });
+    await markSeen(p, both.hotel.id, "dininginbox");
+    expect((await unseenCounts(p, both.hotel.id, ["dininginbox"])).dininginbox).toBe(0);
+
+    const lodgingOnly = await makeHotel();
+    await mk(lodgingOnly.hotel.id, "table"); await mk(lodgingOnly.hotel.id, "group");
+    const [hl] = await db().select().from(hotels).where(eq(hotels.id, lodgingOnly.hotel.id));
+    expect((await openTaskCounts(hl, ["inbox"])).inbox).toBe(2);
+  });
 });
