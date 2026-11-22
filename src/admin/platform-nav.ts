@@ -1,7 +1,7 @@
 import type { Nav, NavItem } from "./nav";
 
 /**
- * Menü der Plattform-Verwaltung (/plattform), gleicher Aufbau wie bei myPontivo: Hauptpunkte in der Kopfzeile bzw. unten am Handy,
+ * Menü der Plattform-Verwaltung (/plattform), gleicher Aufbau wie bei Pontivo: Hauptpunkte in der Kopfzeile bzw. unten am Handy,
  * Unterseiten als Reiter über der Seite. Umgruppieren = nur diese Datei und die Seiten unter app/plattform ändern.
  */
 export const PLATFORM_HOME = "/plattform";

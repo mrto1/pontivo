@@ -1,6 +1,6 @@
 import { accountLink } from "@/src/services/account-link";
 
-/** Kleiner Link oben auf den Plattform-Seiten: «Anmelden» oder, wenn angemeldet, «Zu <Betrieb>» (führt zu myPontivo) */
+/** Kleiner Link oben auf den Plattform-Seiten: «Anmelden» oder, wenn angemeldet, «Zu <Betrieb>» (führt zur Verwaltung) */
 export async function AccountLink() {
   if (process.env.STATIC_SITE === "1") return null;
   const a = await accountLink();

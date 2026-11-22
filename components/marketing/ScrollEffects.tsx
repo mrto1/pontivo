@@ -17,7 +17,9 @@ export function ScrollEffects() {
       Array.from(sec.children).forEach((child) => {
         const el = child as HTMLElement;
         const kids = Array.from(el.children) as HTMLElement[];
-        if (grids.test(el.className) && kids.length > 1) {
+        // Raster, Listen und Fragen (FAQ) gestaffelt, auf allen Plattform-Seiten gleich
+        const listy = kids.length > 1 && (getComputedStyle(el).display === "grid" || kids.every((k) => /^(DETAILS|LI|ARTICLE|A)$/.test(k.tagName)));
+        if ((grids.test(el.className) || listy) && kids.length > 1) {
           kids.forEach((k, i) => { k.style.setProperty("--d", `${Math.min(i, 6) * 70}ms`); targets.push(k); });
         } else if (/group/.test(el.className)) {
           // Funktionsgruppen: Titel, dann Kacheln gestaffelt

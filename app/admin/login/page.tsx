@@ -66,7 +66,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<Re
   return (
     <main className="login-wrap">
       <div className="login-card">
-        <div className="login-brand"><span className="login-logo" style={{ ["--pv-fee" as string]: "#e0902b" }}><Logo /></span> myPontivo</div>
+        <div className="login-brand"><span className="login-logo" style={{ ["--pv-fee" as string]: "#e0902b" }}><Logo /></span> Pontivo</div>
         <h1>{linkMode ? "Login-Link anfordern" : "Anmelden"}</h1>
         {sp.emailchanged ? <p className="notice">Die neue E-Mail-Adresse ist bestätigt. Bitte melden Sie sich damit an.</p> : null}
         {sp.error === "retry" ? <p className="notice warn">Bitte nochmals absenden.</p> : null}

@@ -52,7 +52,7 @@ const schema = z.object({
   PLATFORM_CONTACT_EMAIL: z.string().optional(),
   PLATFORM_PHONE: z.string().optional(),
   DEMO_HOTEL_SLUG: z.string().default("demo-gasthof"),
-  // Native App myPontivo (mobile/README.md): Kennungen für Verknüpfung der Links (Android App Links, iOS Universal Links). Leer = Datei bleibt leer.
+  // Native App Pontivo (mobile/README.md): Kennungen für Verknüpfung der Links (Android App Links, iOS Universal Links). Leer = Datei bleibt leer.
   ANDROID_APP_PACKAGE: z.string().optional(),
   /** SHA-256-Fingerabdruck(e) des Signaturzertifikats, getrennt durch Komma (Play Console → App-Signierung) */
   ANDROID_CERT_SHA256: z.string().optional(),

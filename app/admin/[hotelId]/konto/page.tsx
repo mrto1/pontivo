@@ -26,7 +26,7 @@ async function savePrefs(f: FormData) {
   revalidatePath(`/admin/${hotel.id}/konto`);
 }
 
-/** Mein Konto (Teil von myPontivo, dem Admin-Bereich): eigenes Konto, Webseite-Vorschau, App und Mitteilungen, Sicherheit (SPEC 18.10) */
+/** Mein Konto (Teil des Admin-Bereichs): eigenes Konto, Webseite-Vorschau, App und Mitteilungen, Sicherheit (SPEC 18.10) */
 export default async function MyPontivo({ params }: { params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
   const { hotel, user, role } = await requireHotel(hotelId, "staff", "konto");

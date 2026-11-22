@@ -93,6 +93,7 @@
 
 /* ---------- Drei Wege ---------- */
 .paths { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+.pathsTwo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .path { border: 1.5px solid var(--pv-line); border-radius: 16px; padding: 26px; }
 .path h3 { margin: 0 0 10px; font-family: var(--pv-display), sans-serif; font-size: 1.3rem; letter-spacing: -0.02em; line-height: 1.2; }
 .path p { margin: 0; color: var(--pv-quiet); }
@@ -150,7 +151,7 @@
   .hero { gap: 36px; padding-top: 24px; }
   .steps { grid-template-columns: 1fr; gap: 28px; }
   .benefits { grid-template-columns: 1fr; }
-  .paths { grid-template-columns: 1fr; }
+  .paths, .pathsTwo { grid-template-columns: 1fr; }
   .headLinks a:not(.btn):not(.loginLink) { display: none; }
   .headLinks { gap: 14px; }
   .calc, .contact { padding: 26px; }

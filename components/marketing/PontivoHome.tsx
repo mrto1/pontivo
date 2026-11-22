@@ -26,7 +26,7 @@ export type Contact = {
 /** Link auf eine Plattform-Seite (statisch: Datei mit .html) */
 export const pageHref = (path: string, staticSite?: boolean) => (staticSite ? (path === "/" ? "index.html" : `${path.slice(1)}.html`) : path);
 
-export function PontivoHome({ contact, site: siteIn, account, children }: { contact: Contact; site?: ResolvedSite; /** angemeldet: Beschriftung des Links zu myPontivo */ account?: { label: string } | null; children?: React.ReactNode }) {
+export function PontivoHome({ contact, site: siteIn, account, children }: { contact: Contact; site?: ResolvedSite; /** angemeldet: Beschriftung des Links zur Verwaltung */ account?: { label: string } | null; children?: React.ReactNode }) {
   const site = siteIn ?? resolveSite(null, { name: contact.name, fee: FEE_PERCENT, email: contact.email });
   const portalFee = BOOKING * PORTAL;
   const ourFee = (BOOKING * FEE_PERCENT) / 100;
@@ -168,7 +168,7 @@ export function PontivoHome({ contact, site: siteIn, account, children }: { cont
           <span>© {new Date().getFullYear()} {contact.name}</span>
           <span className={s.hosting}><SwissFlag /> {site.text("foot.tagline")}</span>
           <nav className={s.footLinks} aria-label="Rechtliches">
-            {st ? null : <a href="/admin/login">{account ? "myPontivo" : "Anmelden"}</a>}
+            {st ? null : <a href="/admin/login">{account ? "Verwaltung" : "Anmelden"}</a>}
             <a href={pageHref("/impressum", st)}>Impressum</a>
             <a href={pageHref("/datenschutz", st)}>Datenschutz</a>
             <a href={pageHref("/gastgeber-bedingungen", st)}>Bedingungen für Gastgeber</a>

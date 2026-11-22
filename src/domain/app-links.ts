@@ -1,5 +1,5 @@
 /**
- * Verknüpfung der Web-Adresse mit der nativen App myPontivo (SPEC 19.23): Android App Links (`assetlinks.json`) und iOS Universal Links
+ * Verknüpfung der Web-Adresse mit der nativen App Pontivo (SPEC 19.23): Android App Links (`assetlinks.json`) und iOS Universal Links
  * (`apple-app-site-association`). Die Kennungen kommen aus der Konfiguration; ohne sie bleiben die Dateien leer (kein Raten).
  */
 export function assetLinks(pkg?: string, sha256?: string) {

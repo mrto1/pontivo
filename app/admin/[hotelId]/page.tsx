@@ -80,7 +80,7 @@ export default async function Overview({ params, searchParams }: { params: Promi
     const done = steps.filter((x) => x.done).length;
     return (
       <div className="stack">
-        <h1 style={{ margin: 0 }}>Willkommen bei myPontivo</h1>
+        <h1 style={{ margin: 0 }}>Willkommen bei Pontivo</h1>
         <section className="card stack setup-card">
           <div className="setup-head">
             <div>

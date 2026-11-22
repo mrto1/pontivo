@@ -1,4 +1,4 @@
-/** Logo «P als Brücke» für die Kopfzeile des Admin; der Text «myPontivo» bleibt für Screenreader und Suche erhalten */
+/** Logo «P als Brücke» für die Kopfzeile des Admin; der Text «Pontivo» bleibt für Screenreader und Suche erhalten */
 export function BrandMark() {
   return (
     <>
@@ -6,7 +6,7 @@ export function BrandMark() {
         <path d="M30 82V44A23 23 0 0 1 76 44V56" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" />
         <circle cx="76" cy="71" r="8" fill="#e0902b" />
       </svg>
-      <span className="sr-only">myPontivo</span>
+      <span className="sr-only">Pontivo</span>
     </>
   );
 }

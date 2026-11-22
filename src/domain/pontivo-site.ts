@@ -419,7 +419,7 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "Fusszeile",
     "label": "Zeile",
     "multiline": false,
-    "default": "Direktbuchung für Hotels und Ferienwohnungen in der Schweiz · Server und Datenbank bei Infomaniak in Genf"
+    "default": "Direktbuchung für Unterkünfte in der Schweiz · Server und Datenbank bei Infomaniak in Genf"
   }
 ];
 

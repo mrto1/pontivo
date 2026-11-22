@@ -8,7 +8,7 @@ import { AdminNav } from "@/components/admin/AdminNav";
 import { SectionTabs } from "@/components/admin/SectionTabs";
 
 // /plattform ist die Plattform-Verwaltung (nur Plattform-Admins, Einstieg: /plattform).
-// Die Hotel-Oberfläche heisst myPontivo und liegt unter /admin.
+// Die Oberfläche der Betriebe liegt unter /admin.
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
@@ -20,7 +20,7 @@ export default async function PlatformAdminLayout({ children }: { children: Reac
     <div className="pv-admin">
       <header className="admin-head">
         <div className="wrap">
-          <a href={PLATFORM_HOME} className="brand admin-brand" title="myPontivo"><BrandMark /><span className="muted brand-name">Plattform</span></a>
+          <a href={PLATFORM_HOME} className="brand admin-brand" title="Pontivo"><BrandMark /><span className="muted brand-name">Plattform</span></a>
           {user?.isPlatformAdmin ? <AdminNav nav={nav} home={PLATFORM_HOME} userLabel={`${user.email} · Zu meinen Betrieben`} initials={initials(user.name, user.email)} showSettings={false} /> : null}
         </div>
       </header>

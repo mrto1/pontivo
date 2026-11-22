@@ -33,7 +33,7 @@
     --ok: #6ccf9c;
   }
 }
-/* Admin, Login und Plattform-Bereich (myPontivo): gleiche Farben wie die Pontivo-Website (Petrol, Tinte, kühles Weiss).
+/* Admin, Login und Plattform-Bereich (Pontivo): gleiche Farben wie die Pontivo-Website (Petrol, Tinte, kühles Weiss).
    Hotel-Websites bleiben bei den Standardwerten oben. */
 :root:has(.pv-admin), :root:has(.pv-site) {
   color-scheme: light dark;

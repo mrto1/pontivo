@@ -45,7 +45,7 @@ export default async function HotelAdminLayout({ children, params }: { children:
     <AreaProvider navs={vn.navs} initialArea={initialArea} cookieName={cookieName} home={home} marked={vn.showSwitch}>
       <header className="admin-head">
         <div className="wrap">
-          <a href="/admin" className="brand admin-brand" title="myPontivo: Betrieb wechseln"><BrandMark /><span className="muted brand-name">{hotel.name}</span></a>
+          <a href="/admin" className="brand admin-brand" title="Pontivo: Betrieb wechseln"><BrandMark /><span className="muted brand-name">{hotel.name}</span></a>
           {others.length > 0 && !user.isPlatformAdmin ? (
             <details className="small" style={{ display: "inline-block", marginLeft: 12 }}>
               <summary>Betrieb wechseln</summary>

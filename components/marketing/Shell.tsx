@@ -38,7 +38,7 @@ export function MarketingShell({ contact, account, restaurant, current, heroImag
           <span>© {new Date().getFullYear()} {contact.name}</span>
           <span className={s.hosting}><SwissFlag /> {tagline}</span>
           <nav className={s.footLinks} aria-label="Rechtliches">
-            {st ? null : <a href="/admin/login">{account ? "myPontivo" : "Anmelden"}</a>}
+            {st ? null : <a href="/admin/login">{account ? "Verwaltung" : "Anmelden"}</a>}
             <a href={pageHref("/impressum", st)}>Impressum</a>
             <a href={pageHref("/datenschutz", st)}>Datenschutz</a>
             <a href={pageHref("/gastgeber-bedingungen", st)}>Bedingungen für Gastgeber</a>

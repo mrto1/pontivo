@@ -17,7 +17,7 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
   await page.getByRole("link", { name: "Hier anmelden" }).click();
 
   // Nach dem Login: volles Menü, Einrichtungskarte, Hinweise auf jeder Seite; Konto über den Avatar
-  await expect(page.getByRole("heading", { name: "Willkommen bei myPontivo" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Willkommen bei Pontivo" })).toBeVisible();
   await expect(page.locator(".admin-nav").getByRole("link", { name: "Kalender" })).toBeVisible();
   await expect(page.locator(".avatar-link")).toHaveText("RK");
   await expect(page.locator(".setup-chip")).toContainText("Einrichtung");

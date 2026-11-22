@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: resto ? `${name} – Direkt buchen, bestellen, reservieren. Ohne Provision.` : `${name} – Direktbuchung für Schweizer Unterkünfte`,
     description: resto
-      ? `Website, Direktbuchung, Tischreservation und Online-Bestellung für Schweizer Unterkünfte und Restaurants. ${feePercentText()} % auf das, was über ${name} läuft.`
+      ? `Website, Direktbuchung, Tischreservation und Online-Bestellung für das Schweizer Gastgewerbe: Unterkünfte und Restaurants. ${feePercentText()} % auf das, was über ${name} läuft.`
       : `Website mit Online-Buchung und TWINT für Schweizer Unterkünfte. ${feePercentText()} % pro Direktbuchung.`,
   };
 }

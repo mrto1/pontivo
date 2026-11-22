@@ -19,7 +19,7 @@ export function PortalHome({ contact, account, restaurant, fee, minimum }: { con
     ["Bezahlen wie in der Schweiz üblich.", "TWINT und Karte über Stripe. Das Geld geht direkt auf Ihr Konto."],
     ["Eine Website, die verkauft.", `Wir bauen sie Ihnen, oder ${contact.name} kommt auf Ihre bestehende Seite. Texte in mehreren Sprachen auf Knopfdruck.`],
     ["Nur einschalten, was Sie brauchen.", restaurant ? "Jede Funktion ist ein Schalter. Ein Chalet braucht keine Kasse, eine Pizzeria keinen Zimmerplan." : "Jede Funktion ist ein Schalter. Ein Chalet braucht keine Rezeption, ein Hotel mit Team schon."],
-    ["myPontivo auf dem Handy.", restaurant ? "Neue Buchungen und Bestellungen kommen als Push-Mitteilung." : "Neue Buchungen kommen als Push-Mitteilung."],
+    ["Pontivo auf dem Handy.", restaurant ? "Neue Buchungen und Bestellungen kommen als Push-Mitteilung." : "Neue Buchungen kommen als Push-Mitteilung."],
     ["Aus der Schweiz.", "Server und Daten bei Infomaniak in Genf, Rechnungen mit QR-Code, MWST nach Schweizer Sätzen."],
   ];
   const faq = [
@@ -40,7 +40,7 @@ export function PortalHome({ contact, account, restaurant, fee, minimum }: { con
 
       <section className={s.section} id="weiche">
         <h2 className={s.h2}>Was führen Sie?</h2>
-        <div className={s.paths} style={paths.length === 2 ? { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } : undefined}>
+        <div className={`${s.paths}${paths.length === 2 ? ` ${s.pathsTwo}` : ""}`}>
           {paths.map((p) => (
             <a key={p.title} className={`${s.path} ${s.pathLink}`} href={p.href}>
               <h3>{p.title}</h3>
@@ -52,7 +52,7 @@ export function PortalHome({ contact, account, restaurant, fee, minimum }: { con
       </section>
 
       <section className={s.section}>
-        <h2 className={s.h2}>Was alle Betriebe bekommen</h2>
+        <h2 className={s.h2}>Was alle Gastgeber bekommen</h2>
         <dl className={s.benefits}>
           {benefits.map(([t, d]) => <div key={t} className={s.benefit}><dt>{t}</dt><dd>{d}</dd></div>)}
         </dl>

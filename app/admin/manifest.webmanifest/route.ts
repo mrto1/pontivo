@@ -2,9 +2,9 @@ export const dynamic = "force-static";
 
 export function GET() {
   const manifest = {
-    name: "myPontivo",
-    short_name: "myPontivo",
-    description: "Direktbuchung für Hotels und Ferienwohnungen",
+    name: "Pontivo",
+    short_name: "Pontivo",
+    description: "Direktbuchung für das Gastgewerbe",
     id: "/admin",
     start_url: "/admin",
     scope: "/admin/",

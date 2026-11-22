@@ -180,8 +180,8 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Infoniqa (früher Sage 50) und bexio: Format nicht aus offizieller Quelle belegt. bexio: eventuell nur über deren API statt Datei. Zuerst beim Treuhänder klären, welches Programm und welches Format.
 - Website-Schnittstelle: Webhooks, Stornieren über die API, Rückkehr-Adresse nach der Zahlung, Idempotenz-Schlüssel erst bei Bedarf einer Agentur.
 
-## App myPontivo (SPEC 19.23)
-- Bestätigt (18.11.2026): App-Kennung `ch.pontivo.app`, Name «myPontivo», Adresse pontivo.ch.
+## App Pontivo (SPEC 19.23)
+- Bestätigt (18.11.2026): App-Kennung `ch.pontivo.app`, Name «Pontivo», Adresse pontivo.ch.
 - Konten und Material: Google-Play- und Apple-Developer-Konto, Mac für iOS, Icon/Splash/Screenshots, Datenschutzangaben für die Stores, Testbetrieb mit Zugang für den Apple-Prüfer.
 - Mitteilungen: Firebase-Projekt und APNs-Schlüssel einrichten, dann Versand bauen (FCM HTTP v1, Doku vorher lesen).
 - Passkeys in der Hülle auf echten Geräten testen.

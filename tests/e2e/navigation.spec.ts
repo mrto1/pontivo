@@ -6,8 +6,8 @@ import { SESSION_COOKIE, createSessionValue } from "../../src/auth/session";
 import { addMember } from "../../src/services/settings";
 import { makeHotel } from "../helpers";
 
-/** Anmelden und Zugang zu myPontivo von der Plattform-Startseite aus; Name «Mein Konto» für die persönliche Seite. */
-test("Startseite: Anmelden, angemeldet «Zu <Betrieb>», im Admin myPontivo und Mein Konto", async ({ page, context, baseURL }) => {
+/** Anmelden und Zugang zu Pontivo von der Plattform-Startseite aus; Name «Mein Konto» für die persönliche Seite. */
+test("Startseite: Anmelden, angemeldet «Zu <Betrieb>», im Admin Verwaltung und Mein Konto", async ({ page, context, baseURL }) => {
   await page.goto("/");
   await expect(page.getByRole("link", { name: "Anmelden" }).first()).toHaveAttribute("href", "/admin/login");
 
@@ -18,11 +18,11 @@ test("Startseite: Anmelden, angemeldet «Zu <Betrieb>», im Admin myPontivo und 
   await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
 
   await page.goto("/");
-  const to = page.getByRole("link", { name: "myPontivo", exact: true }).first();
+  const to = page.getByRole("link", { name: "Verwaltung", exact: true }).first();
   await expect(to).toBeVisible();
   await to.click();
   await expect(page).toHaveURL(new RegExp(`/admin/${h.hotel.id}`));
-  await expect(page.locator(".admin-brand")).toContainText("myPontivo");
+  await expect(page.locator(".admin-brand")).toContainText("Pontivo");
   await expect(page.locator(".admin-brand")).toContainText(h.hotel.name);
   // Oben rechts: Zahnrad (Inhaber) und Profilbild mit Menü «Mein Konto»
   await expect(page.getByRole("link", { name: "Einstellungen" }).first()).toBeVisible();

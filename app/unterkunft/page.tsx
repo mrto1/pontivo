@@ -18,8 +18,8 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const name = env().PLATFORM_NAME;
   return {
-    title: `${name} für Unterkünfte – Direktbuchung für Hotels`,
-    description: `Website mit Online-Buchung, TWINT und Abgleich mit Booking.com für kleine Hotels in der Schweiz. ${name} kostet ${feePercentText()} % pro Direktbuchung.`,
+    title: `${name} für Unterkünfte – Direktbuchung für Hotels, B&B und Ferienwohnungen`,
+    description: `Website mit Online-Buchung, TWINT und Abgleich mit Booking.com für kleine Hotels, B&B und Ferienwohnungen in der Schweiz. ${name} kostet ${feePercentText()} % pro Direktbuchung.`,
     alternates: { canonical: "/unterkunft" },
   };
 }

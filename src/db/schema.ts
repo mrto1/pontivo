@@ -1668,7 +1668,7 @@ export const webhookDeliveries = pgTable("webhook_deliveries", {
 });
 export type WebhookDelivery = typeof webhookDeliveries.$inferSelect;
 
-/** Gerätekennung der nativen App myPontivo für Mitteilungen (SPEC 19.23) */
+/** Gerätekennung der nativen App Pontivo für Mitteilungen (SPEC 19.23) */
 export const nativePushTokens = pgTable("native_push_tokens", {
   id: uuid("id").primaryKey().defaultRandom(),
   hotelId: uuid("hotel_id").notNull(),
