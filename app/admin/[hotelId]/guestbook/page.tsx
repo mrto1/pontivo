@@ -20,7 +20,7 @@ export default async function Guestbook({ params, searchParams }: { params: Prom
   const lodging = hotel.propertyType !== "restaurant";
   return (
     <div className="stack">
-      <h1>Kartei</h1>
+      <h1 className="sr-only">Kartei</h1>
       <form method="get" className="inline-form">
         <input name="q" defaultValue={q} placeholder="Name, E-Mail, Tag oder Notiz suchen" />
         {tags.length ? (

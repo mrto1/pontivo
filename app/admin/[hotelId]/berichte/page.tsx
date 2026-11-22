@@ -24,7 +24,7 @@ export default async function Berichte({ params }: { params: Promise<{ hotelId: 
   const rule = guestsOn ? await cantonRule(hotel.canton) : null;
   return (
     <div className="stack">
-      <h1>Berichte</h1>
+      <h1 className="sr-only">Berichte</h1>
       <p className="muted">Listen und Exporte für Gemeinde, Polizei, Statistik und Buchhaltung. Jeder Export wird protokolliert.</p>
       <div className="report-grid">
         {owner ? (

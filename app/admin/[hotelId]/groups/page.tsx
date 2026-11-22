@@ -35,7 +35,7 @@ export default async function Groups({ params, searchParams }: { params: Promise
   const list = await listGroups(hotel.id);
   return (
     <div className="stack">
-      <h1>Gruppen</h1>
+      <h1 className="sr-only">Gruppen</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <section className="card">
         {list.length ? (

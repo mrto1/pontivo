@@ -32,7 +32,7 @@ export default async function FeedbackAdmin({ params, searchParams }: { params: 
   const [list, sum] = await Promise.all([listFeedback(hotel.id), feedbackSummary(hotel.id)]);
   return (
     <div className="stack">
-      <h1>Bewertungen</h1>
+      <h1 className="sr-only">Bewertungen</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="muted">Nach dem Aufenthalt (Nachher-Mail, nur Gäste mit Einwilligung) fragen wir die Gäste nach einer Note. Ab der Mindestnote erhalten sie den Link zu Ihrer Bewertungsseite, darunter geht die Rückmeldung nur an Sie (per E-Mail).</p>
       {atLeast(role, "manager") ? (

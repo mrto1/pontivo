@@ -40,7 +40,7 @@ export default async function DriverPage({ params, searchParams }: { params: Pro
   return (
     <div className="stack">
       <AutoRefresh seconds={20} />
-      <h1>Lieferungen</h1>
+      <h1 className="sr-only">Lieferungen</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       {list.length ? list.map((o) => {
         const addr = `${o.street} ${o.houseNo}, ${o.postalCode} ${o.city}`;

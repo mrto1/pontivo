@@ -35,6 +35,8 @@ test("Gästeportal: Wunsch, Erledigt, Check-out", async ({ page, context, baseUR
   await expect(page.getByText("Zusätzliche Handtücher")).toBeVisible();
   await page.getByPlaceholder("Kurze Antwort an den Gast (optional)").fill("Liegen bereit");
   await page.getByRole("button", { name: "Erledigt (Gast sieht es)" }).click();
+  // erst weiter, wenn gespeichert ist (sonst lädt das Portal vor dem Speichern neu)
+  await expect(page.getByRole("button", { name: "Wieder öffnen" })).toBeVisible();
 
   await gp.reload();
   await expect(gp.getByText("erledigt").first()).toBeVisible();

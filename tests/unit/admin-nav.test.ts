@@ -33,7 +33,7 @@ describe("Admin-Menü", () => {
       bookings: "bookings", groups: "groups", resources: "resources", vouchers: "vouchers", guestbook: "guestbook", marketing: "marketing", feedback: "feedback",
       invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung", reports: "berichte",
       settings: "settings", rooms: "rooms", extras: "rooms/extras", payments: "zahlungen", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
-      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posdevices: "restaurant/geraete", posbridge: "posbridge", dininghome: "restaurant/heute", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste", ressettings: "restaurant/einstellungen", migration: "migration", report: "report", konto: "konto", firstweek: "erste-woche", help: "hilfe",
+      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posdevices: "restaurant/geraete", posbridge: "posbridge", dininghome: "restaurant/heute", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste", tables: "restaurant/tische", ressettings: "restaurant/einstellungen", migration: "migration", report: "report", konto: "konto", firstweek: "erste-woche", help: "hilfe",
     });
   });
 
@@ -53,7 +53,7 @@ describe("Admin-Menü", () => {
     expect(groups.map((g) => g.items.map((i) => i.label))).toEqual([
       ["Grunddaten", "Zahlungsmethoden", "Zimmer & Tarife", "Zusatzleistungen", "Team & Rollen"],
       ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "KI-Chat"],
-      ["Speisekarte", "Tischplan & Reservierung online", "Online-Bestellung & Lieferung", "Kasse"],
+      ["Speisekarte", "Tischplan", "Reservierung", "Bestellung", "Kasse"],
       ["Funktionen", "Geräte", "Datenübernahme", "Abo & Gebühren"],
     ]);
     for (const g of groups) { expect(g.lead.length).toBeGreaterThan(10); for (const i of g.items) expect(i.lead, i.label).toBeTruthy(); }
@@ -74,7 +74,7 @@ describe("Admin-Menü", () => {
   it("Gastronomie: Reservierung, Speisekarte, Küche mit Modul restaurant; Tische, Kasse, Abschluss nur mit pos (SPEC 20.1)", () => {
     const dining = (rows: { module: string; enabled: boolean }[]) => allPages(adminNav(hotel, hiddenNavKeys(rows), { area: "dining" })).map((i) => i.key);
     const onlyRes = dining([{ module: "restaurant", enabled: true }]);
-    expect(onlyRes).toEqual(expect.arrayContaining(["dininghome", "reservations", "resplan", "waitlist", "kitchen", "positems", "ressettings"]));
+    expect(onlyRes).toEqual(expect.arrayContaining(["dininghome", "reservations", "resplan", "waitlist", "kitchen", "positems", "tables", "ressettings"]));
     expect(onlyRes).not.toContain("kasse");
     expect(onlyRes).not.toContain("restaurant");
     expect(onlyRes).not.toContain("posclose");
@@ -92,7 +92,7 @@ describe("Admin-Menü", () => {
     ]);
     const keys = allPages(d).map((i) => i.key);
     for (const k of ["rooms", "extras", "channex", "ical", "gaesteportal", "upsell", "direct", "api", "access", "migration", "plan", "calendar", "housekeeping"]) expect(keys).not.toContain(k);
-    expect(keys).toEqual(expect.arrayContaining(["settings", "payments", "team", "site", "positems", "ressettings", "mailtexts", "ki-chat", "terminal", "posdevices", "posbridge", "report"]));
+    expect(keys).toEqual(expect.arrayContaining(["settings", "payments", "team", "site", "positems", "tables", "ressettings", "mailtexts", "ki-chat", "terminal", "posdevices", "posbridge", "report"]));
     expect(d.settings.tabs!.find((i) => i.key === "site")!.label).toBe("Website");
   });
 

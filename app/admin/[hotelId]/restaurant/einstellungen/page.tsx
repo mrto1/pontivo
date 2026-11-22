@@ -1,12 +1,10 @@
 import { Notice } from "@/components/admin/Notice";
 import { FormSwitch } from "@/components/admin/FormSwitch";
-import { FloorPlan } from "@/components/admin/FloorPlan";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
-import { PosError, importTables, listTables, saveTable, saveTableDetails, saveTablePlan } from "@/src/services/pos";
+import { PosError } from "@/src/services/pos";
 import { getSettings, saveSettings } from "@/src/services/reservations";
-import { parsePosTables } from "@/src/domain/pos-import";
 import { publicBase } from "@/src/services/brand";
 import QRCode from "qrcode";
 
@@ -19,40 +17,6 @@ async function guard(f: FormData) {
   await requireModule(c.hotel.id, "restaurant");
   return c;
 }
-async function table(f: FormData) {
-  "use server";
-  const c = await guard(f);
-  try { await saveTable(c.hotel.id, s(f, "name"), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht angelegt: ${e.message}`); }
-  here(c.hotel.id, "Tisch angelegt.");
-}
-async function tableDetails(f: FormData) {
-  "use server";
-  const c = await guard(f);
-  try { await saveTableDetails(c.hotel.id, s(f, "id"), { seats: Number(s(f, "seats")), shape: s(f, "shape") === "round" ? "round" : "square" }, c.actor); }
-  catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
-  here(c.hotel.id, "Tisch gespeichert.");
-}
-async function planSave(f: FormData) {
-  "use server";
-  const c = await guard(f);
-  try {
-    const raw = JSON.parse(s(f, "positions")) as { id: string; x: number | null; y: number | null }[];
-    if (!Array.isArray(raw)) throw new PosError("Plan ungültig.");
-    await saveTablePlan(c.hotel.id, raw.map((p) => ({ id: String(p.id), x: p.x === null ? null : Number(p.x), y: p.y === null ? null : Number(p.y) })), c.actor);
-  } catch (e) { if (!(e instanceof PosError) && !(e instanceof SyntaxError)) throw e; here(c.hotel.id, "Plan nicht gespeichert."); }
-  here(c.hotel.id, "Tischplan gespeichert.");
-}
-async function csvTables(f: FormData) {
-  "use server";
-  const c = await guard(f);
-  const file = f.get("file");
-  if (!(file instanceof File) || !file.size) return here(c.hotel.id, "Nicht importiert: Bitte eine CSV-Datei wählen.");
-  if (file.size > 1_000_000) return here(c.hotel.id, "Nicht importiert: Die Datei ist zu gross (höchstens 1 MB).");
-  const r = parsePosTables(await file.text());
-  if (r.problems.length) return here(c.hotel.id, `Nicht importiert (${r.problems.length} Fehler, es wurde nichts gespeichert). ${r.problems.slice(0, 3).map((p) => `Zeile ${p.row}: ${p.message}`).join(" ")}`);
-  const res = await importTables(c.hotel.id, r.names, c.actor);
-  here(c.hotel.id, `${res.created} Tische importiert${res.skipped ? `, ${res.skipped} übersprungen (gab es schon)` : ""}.`);
-}
 async function settings(f: FormData) {
   "use server";
   const c = await guard(f);
@@ -63,45 +27,20 @@ async function settings(f: FormData) {
   here(c.hotel.id, "Einstellungen gespeichert.");
 }
 
-/** Tischplan & Reservierung online (SPEC 20.1, Zahnrad → Gastronomie): Tische, Plätze, Plan, Einstellungen der Online-Reservierung */
+/** Reservierung (SPEC 20.1, Zahnrad → Gastronomie): Einstellungen der Online-Reservierung. Tische und Plan: Seite «Tischplan» (restaurant/tische) */
 export default async function RestaurantSettingsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
   const { hotel } = await requireHotel(hotelId, "manager");
   await requireModule(hotel.id, "restaurant");
-  const [tables, cfg] = await Promise.all([listTables(hotel.id), getSettings(hotel.id)]);
+  const cfg = await getSettings(hotel.id);
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   const publicUrl = `${publicBase(hotel)}/${hotel.defaultLanguage}/tisch`;
   const qr = cfg.onlineEnabled ? await QRCode.toDataURL(publicUrl, { margin: 1, width: 180 }) : null;
   return (
     <div className="stack">
-      <h1>Tischplan & Reservierung online</h1>
+      <h1>Reservierung</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
-      <form action={table} className="card stack">{H}<h2>Tische ({tables.length})</h2><div><label htmlFor="tname">Neuer Tisch</label><input id="tname" name="name" required maxLength={30} /></div><div><button className="btn secondary">Anlegen</button></div></form>
-      {tables.length ? (
-        <section className="card stack" id="tischplan" data-testid="table-plan">
-          <h2>Tischplan</h2>
-          <p className="small muted">Plätze und Form je Tisch festlegen, dann die Tische im Plan an ihren Ort ziehen. Der Plan erscheint unter Reservierungen → Tischplan (und bei «Tische» mit der Kasse) mit dem aktuellen Zustand.</p>
-          <div className="stack">
-            {tables.map((t) => (
-              <form key={t.id} action={tableDetails} className="inline-form">{H}<input type="hidden" name="id" value={t.id} />
-                <strong style={{ minWidth: 90 }}>{t.name}</strong>
-                <label htmlFor={`seats-${t.id}`} className="small">Plätze</label><input id={`seats-${t.id}`} name="seats" type="number" min={1} max={50} defaultValue={t.seats} style={{ width: 70 }} />
-                <label htmlFor={`shape-${t.id}`} className="small">Form</label><select id={`shape-${t.id}`} name="shape" defaultValue={t.shape}><option value="square">eckig</option><option value="round">rund</option></select>
-                <button className="btn secondary small">Speichern</button></form>
-            ))}
-          </div>
-          <FloorPlan tables={tables.map((t) => ({ id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY }))} editable action={planSave} hotelId={hotel.id} />
-        </section>
-      ) : null}
-      <form action={csvTables} className="card stack">{H}
-        <h2>Tische per CSV importieren</h2>
-        <div className="inline-form">
-          <div><label htmlFor="tfile">CSV-Datei</label><input id="tfile" name="file" type="file" accept=".csv,text/csv" required /></div>
-          <button className="btn secondary">Importieren</button>
-        </div>
-        <p className="small"><a href={`/admin/${hotel.id}/restaurant/vorlage?kind=tables`}>Vorlage Tische (CSV)</a></p>
-      </form>
         <form action={settings} className="card stack" id="online">
           {H}
           <h2>Online-Reservierung für Gäste</h2>

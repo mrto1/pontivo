@@ -30,7 +30,7 @@ export default async function KitchenPage({ params, searchParams }: { params: Pr
   const base = `/admin/${hotel.id}/restaurant/kueche`;
   return (
     <div className="stack">
-      <h1>Küche</h1>
+      <h1 className="sr-only">Küche</h1>
       <KitchenBell tickets={tickets.map((t) => t.orderId)} />
       <p className="tabs-inline">
         <Link className={station === "kitchen" ? "btn small" : "btn secondary small"} href={`${base}?station=kitchen`}>Küche</Link>{" "}

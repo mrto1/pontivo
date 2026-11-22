@@ -56,7 +56,7 @@ export default async function Housekeeping({ params, searchParams }: { params: P
   const n = (st: CleanStatus) => rooms.filter((r) => r.active && r.status === st).length;
   return (
     <div className="stack hk">
-      <h1>Reinigung</h1>
+      <h1 className="sr-only">Reinigung</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <PeriodNav prev={`?day=${addDays(day, -1)}`} next={`?day=${addDays(day, 1)}`} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }}>
         <span className="small muted">{formatDay(day, "de")}</span>

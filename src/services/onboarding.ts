@@ -212,7 +212,7 @@ export async function diningChecklist(hotel: Hotel): Promise<CheckItem[]> {
   const stripe = stripeReady(hotel);
   const list: CheckItem[] = [];
   if (resto) list.push({ key: "betrieb", title: "Angaben und Öffnungszeiten", done: !!(hotel.addressLine && hotel.city), href: `${base}/einrichten?step=betrieb` });
-  list.push({ key: "tische", title: "Tische und Plätze", done: tables.length > 0, href: resto ? `${base}/einrichten?step=tische` : `${base}/restaurant/einstellungen` });
+  list.push({ key: "tische", title: "Tische und Plätze", done: tables.length > 0, href: resto ? `${base}/einrichten?step=tische` : `${base}/restaurant/tische` });
   list.push({ key: "reservierung", title: "Reservation online", done: online, href: resto ? `${base}/einrichten?step=reservierung` : `${base}/restaurant/einstellungen#online`, hint: online ? undefined : "Gäste reservieren über Ihre Website, einen Link oder QR-Code. Geht sofort, ohne Stripe." });
   list.push({ key: "speisekarte", title: "Speisekarte", done: items.length > 0, href: `${base}/restaurant/artikel`, hint: items.length ? undefined : "Per KI aus Website oder PDF, per CSV oder von Hand." });
   list.push({

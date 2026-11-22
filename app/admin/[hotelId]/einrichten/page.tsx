@@ -295,7 +295,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       const tables = await listTables(hotel.id);
       body = (
         <div className="stack">
-          {tables.length ? <p className="notice">✓ {tables.length} Tische mit zusammen {tables.reduce((a, t) => a + t.seats, 0)} Plätzen. Plätze, Form und Lage im Plan ändern Sie unter <a href={`/admin/${hotel.id}/restaurant/einstellungen`}>Tischplan & Reservierung online</a>.</p> : null}
+          {tables.length ? <p className="notice">✓ {tables.length} Tische mit zusammen {tables.reduce((a, t) => a + t.seats, 0)} Plätzen. Plätze, Form und Lage im Plan ändern Sie unter <a href={`/admin/${hotel.id}/restaurant/tische`}>Tischplan</a>.</p> : null}
           <form action={saveTablesStep} className="stack">{H}
             {tables.length ? <input type="hidden" name="stay" value="1" /> : null}
             <p className="muted" style={{ margin: 0 }}>Für den Anfang genügt die Zahl der Tische. Sie heissen «Tisch 1», «Tisch 2» …; Namen, Plätze und Lage passen Sie später im Tischplan an.</p>
@@ -353,7 +353,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             <div><label htmlFor="capacity">Plätze online (gleichzeitig)</label><input id="capacity" name="capacity" type="number" min={1} max={1000} defaultValue={cfg.onlineEnabled ? cfg.capacity : Math.max(1, seats || cfg.capacity)} /></div>
             <div><label htmlFor="maxParty">Grösste Gruppe online</label><input id="maxParty" name="maxParty" type="number" min={1} max={50} defaultValue={cfg.maxParty} /></div>
           </div>
-          <p className="small muted">Anzahlung, Erinnerung, Warteliste und Vorlauf stellen Sie später unter <a href={`/admin/${hotel.id}/restaurant/einstellungen#online`}>Tischplan & Reservierung online</a> ein.</p>
+          <p className="small muted">Anzahlung, Erinnerung, Warteliste und Vorlauf stellen Sie später unter <a href={`/admin/${hotel.id}/restaurant/einstellungen#online`}>Reservierung</a> ein.</p>
           <div style={{ display: "flex", gap: 8 }}><button className="btn">{live ? "Speichern und weiter" : "Reservation live schalten"}</button></div>
         </form>
       );

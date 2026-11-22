@@ -18,7 +18,7 @@ export default async function WaitlistPage({ params, searchParams }: { params: P
   const list = await waitlistOfDay(hotel.id, day);
   return (
     <div className="stack">
-      <h1>Warteliste</h1>
+      <h1 className="sr-only">Warteliste</h1>
       <PeriodNav prev={`?day=${addDays(day, -1)}`} next={`?day=${addDays(day, 1)}`} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }}>
         <span className="small muted">{formatDay(day, "de")}</span>
       </PeriodNav>

@@ -29,29 +29,39 @@ export default async function ReservationPlan({ params, searchParams }: { params
   const [tables, list, cfg, open] = await Promise.all([listTables(hotel.id), reservationsOfDay(hotel.id, day), getSettings(hotel.id), pos ? tablesOverview(hotel.id) : Promise.resolve([])]);
   const t0 = toMin(time);
   const live = list.filter((r) => r.status === "confirmed" || r.status === "seated" || r.status === "pending");
-  // Reservierung am Tisch, die zur gewählten Zeit läuft oder in den nächsten 90 Minuten beginnt
-  const at = (id: string) => live.find((r) => r.tableId === id && toMin(r.time) < t0 + 90 && toMin(r.time) + cfg.durationMin > t0);
+  // Reservierung, die zur gewählten Zeit läuft (Tisch belegt bis Ende) und die nächste danach (Tisch frei bis dahin)
+  const now = (id: string) => live.find((r) => r.tableId === id && toMin(r.time) <= t0 && toMin(r.time) + cfg.durationMin > t0);
+  const next = (id: string) => live.filter((r) => r.tableId === id && toMin(r.time) > t0).sort((a, b) => toMin(a.time) - toMin(b.time))[0];
+  const hhmm = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+  const minSeats = Math.max(0, Math.floor(Number(sp.seats) || 0));
+  const maxSeats = Math.max(0, ...tables.map((t) => t.seats));
   const openBy = new Map(open.map((o) => [o.table.id, o.orders]));
   const planned = tables.filter((t) => t.planX !== null && t.planY !== null);
   return (
     <div className="stack">
-      <h1>Tischplan</h1>
-      <PeriodNav prev={`?day=${addDays(day, -1)}&time=${time}`} next={`?day=${addDays(day, 1)}&time=${time}`} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day", keep: { time } }}>
-        <form method="get" className="inline-form"><input type="hidden" name="day" value={day} /><label htmlFor="time" className="small">Zeit</label><input id="time" name="time" type="time" step={900} defaultValue={time} /><button className="btn secondary small">Zeigen</button></form>
+      <h1 className="sr-only">Tischplan</h1>
+      <PeriodNav prev={`?day=${addDays(day, -1)}&time=${time}&seats=${minSeats}`} next={`?day=${addDays(day, 1)}&time=${time}&seats=${minSeats}`} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day", keep: { time, seats: String(minSeats) } }}>
+        <form method="get" className="plan-filter"><input type="hidden" name="day" value={day} />
+          <div><label htmlFor="time" className="small">Zeit</label><input id="time" name="time" type="time" step={900} defaultValue={time} /></div>
+          <div><label htmlFor="seats" className="small">Plätze</label><select id="seats" name="seats" defaultValue={String(minSeats)}><option value="0">alle</option>{Array.from({ length: maxSeats }, (_, i) => i + 1).map((n) => <option key={n} value={n}>ab {n}</option>)}</select></div>
+          <button className="btn secondary">Zeigen</button></form>
       </PeriodNav>
-      <p className="small muted" style={{ margin: 0 }}>{formatDay(day, "de")}, {time} · grün frei · orange reserviert · rot am Tisch{pos ? " oder offene Bestellung" : ""}</p>
+      <p className="small muted" style={{ margin: 0 }}>{formatDay(day, "de")}, {time} · grün frei (mit Uhrzeit, bis wann) · orange bald reserviert oder belegt · rot am Tisch{pos ? " oder offene Bestellung" : ""}</p>
       {planned.length ? (
         <FloorPlan tables={planned.map((t) => {
-          const r = at(t.id); const orders = openBy.get(t.id) ?? [];
-          const busy = orders.length > 0 || (r?.status === "seated");
+          const cur = now(t.id); const nxt = next(t.id); const orders = openBy.get(t.id) ?? [];
+          const busy = orders.length > 0 || (cur?.status === "seated");
+          const soon = nxt && toMin(nxt.time) < t0 + 90;
+          const target = cur ?? nxt;
           return {
             id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY,
-            tone: busy ? "busy" as const : r ? "soon" as const : "free" as const,
-            info: orders.length ? formatChf(orders.reduce((a, o) => a + o.openRappen, 0)) : r ? `${r.time} ${r.name} (${r.party})` : "frei",
-            href: orders[0] ? `${base}/restaurant/bestellung/${orders[0].order.id}` : r ? `${base}/restaurant/reservierungen?day=${day}` : undefined,
+            tone: busy ? "busy" as const : cur || soon ? "soon" as const : "free" as const,
+            dim: t.seats < minSeats,
+            info: orders.length ? formatChf(orders.reduce((a, o) => a + o.openRappen, 0)) : cur ? `bis ${hhmm(toMin(cur.time) + cfg.durationMin)} ${cur.name} (${cur.party})` : nxt ? `frei bis ${nxt.time}` : "frei",
+            href: orders[0] ? `${base}/restaurant/bestellung/${orders[0].order.id}` : target ? `${base}/restaurant/reservierungen?day=${day}` : undefined,
           };
         })} />
-      ) : <p className="muted">Noch kein Tischplan.{atLeast(role, "manager") ? <> <a href={`${base}/restaurant/einstellungen`}>Tische im Plan platzieren</a></> : null}</p>}
+      ) : <p className="muted">Noch kein Tischplan.{atLeast(role, "manager") ? <> <a href={`${base}/restaurant/tische`}>Tische im Plan platzieren</a></> : null}</p>}
     </div>
   );
 }

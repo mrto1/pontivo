@@ -97,7 +97,7 @@ describe("Zahnrad und Menü je Rolle (SPEC 19.42)", () => {
 
   it("Umschalter (SPEC 20.1): nur Unterkunft mit Gastronomie und nur, wer beide Bereiche sieht", () => {
     const on = new Set<string>(); // keine ausgeblendeten Module = restaurant an
-    const off = new Set(["dininghome", "reservations", "resplan", "waitlist", "kitchen", "positems", "ressettings", "restaurant", "kasse", "posdevices", "posclose"]);
+    const off = new Set(["dininghome", "reservations", "resplan", "waitlist", "kitchen", "positems", "tables", "ressettings", "restaurant", "kasse", "posdevices", "posclose"]);
     expect(visibleNav(hotel, "owner", on).showSwitch).toBe(true);
     expect(visibleNav(hotel, "owner", off).showSwitch).toBe(false);
     expect(visibleNav(hotel, "owner", off).navs.dining).toBeNull();

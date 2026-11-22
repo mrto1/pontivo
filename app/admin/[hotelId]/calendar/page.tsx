@@ -104,7 +104,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
   return (
     <div className="stack">
       <div className="cal-head">
-        <h1 style={{ margin: 0 }}>Kalender</h1>
+        <h1 className="sr-only">Kalender</h1>
         <PeriodNav
           prev={`?from=${addDays(from, -span)}&days=${span}`}
           next={`?from=${addDays(from, span)}&days=${span}`}

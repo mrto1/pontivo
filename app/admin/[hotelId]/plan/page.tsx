@@ -112,7 +112,7 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
 
   return (
     <div className="stack">
-      <h1 style={{ marginBottom: 0 }}>Zimmerplan</h1>
+      <h1 className="sr-only">Zimmerplan</h1>
       <p className="muted" style={{ margin: 0, maxWidth: "46rem" }}>
         Der Zimmerplan zeigt auf einen Blick, welches Zimmer an welchem Tag von wem belegt ist, und wo noch Zimmer frei sind. Sie teilen jeder Buchung eine Zimmernummer zu (von Hand oder automatisch) und können den Gast bei Bedarf in ein anderes Zimmer umquartieren, ohne dass sich Preis oder Verfügbarkeit ändern.
         Das lohnt sich, sobald Gäste konkrete Zimmer bekommen: Die Reinigungsliste weiss dann, welches Zimmer nach der Abreise zu putzen ist, die Tagesliste, wohin der Gast beim Check-in geht, und Doppelbelegungen sind ausgeschlossen. Ohne Zimmerplan funktioniert das Buchen trotzdem; er ist optional.

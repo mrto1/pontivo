@@ -139,6 +139,8 @@ details > summary::-webkit-details-marker { display: none; }
 .admin-brand { font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw; display: inline-flex; align-items: center; gap: 10px; }
 .brand-mark { flex: none; width: 30px; height: 30px; color: var(--accent); }
 .brand-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* Tagesseiten (Heute): das Datum ist die Überschrift; der Seitenname steht als unsichtbare h1 */
+.day-line { margin: 0; font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .admin-nav { display: flex; gap: 4px; align-items: center; }
 .admin-nav a { color: var(--muted); text-decoration: none; padding: 8px 10px; border-radius: 8px; white-space: nowrap; }
@@ -1056,3 +1058,34 @@ pre { overflow-x: auto; }
 .ready-text a { color: var(--ink); font-weight: 600; text-decoration: none; }
 .ready-hint { flex-basis: 100%; }
 .ready-go { color: var(--accent); text-decoration: none; margin-left: auto; align-self: center; }
+
+/* Reservierungsliste: Tischwahl kompakt, Aktionen ruhig (Hauptaktion gefüllt, Rest als Textknopf) */
+.res-table { display: flex; align-items: center; gap: 6px; }
+.res-table select { min-height: 36px; padding: 4px 8px; width: auto; }
+.res-table .btn { min-height: 36px; }
+.res-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+.res-actions .btn.small { min-height: 36px; }
+.res-actions .linklike { background: none; border: 0; padding: 6px 0; min-height: 36px; color: var(--muted, #5a6678); font: inherit; font-size: .875rem; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.res-actions .linklike:hover { color: inherit; }
+
+/* Tischplan bearbeiten: Liste mit Plätzen, Form, «Im Plan»; ein Speichern-Knopf am unteren Rand */
+.te-list { display: flex; flex-direction: column; border: 1px solid var(--border, #d5dbe2); border-radius: 12px; overflow: hidden; }
+.te-row { display: grid; grid-template-columns: minmax(80px, 1fr) 84px auto 84px; align-items: center; gap: 12px; padding: 8px 14px; border-top: 1px solid var(--border, #d5dbe2); }
+.te-row:first-child { border-top: 0; }
+.te-head { font-size: .8rem; color: var(--muted, #5a6678); text-transform: uppercase; letter-spacing: .04em; padding-block: 6px; }
+.te-row input[type="number"] { width: 72px; min-height: 38px; padding: 4px 8px; }
+.seg { display: inline-flex; border: 1px solid var(--border, #bbb); border-radius: 10px; overflow: hidden; }
+.seg button { background: none; border: 0; padding: 8px 14px; min-height: 38px; font: inherit; color: inherit; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--border, #bbb); }
+.seg button[aria-pressed="true"] { background: var(--accent, #0b7285); color: #fff; font-weight: 600; }
+.switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.switch input { width: 40px; height: 22px; accent-color: var(--accent, #0b7285); }
+.te-save { position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 12px 0; background: var(--bg, inherit); }
+@media (max-width: 560px) { .te-row { grid-template-columns: 1fr auto; } .te-head { display: none; } .te-row strong { grid-column: 1 / -1; } }
+
+/* Tischplan-Ansicht: Zeit, Plätze, Zeigen in einer Reihe, Felder unten bündig */
+.plan-filter { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.plan-filter > div { display: flex; flex-direction: column; gap: 4px; }
+.plan-filter input, .plan-filter select { min-height: 44px; width: auto; }
+.plan-filter .btn { min-height: 44px; }
+.plan-table.dim { opacity: .3; }

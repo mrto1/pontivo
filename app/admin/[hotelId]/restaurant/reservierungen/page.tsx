@@ -3,6 +3,7 @@ import { Notice } from "@/components/admin/Notice";
 import { PeriodNav } from "@/components/admin/PeriodNav";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
+import { atLeast } from "@/src/domain/roles";
 import { requireModule } from "@/src/services/modules";
 import { PosError, listTables } from "@/src/services/pos";
 import { assignTable, autoAssignDay, createReservation, getSettings, reservationsOfDay, setReservationStatus, waitlistOfDay } from "@/src/services/reservations";
@@ -70,7 +71,7 @@ async function profile(f: FormData) {
 export default async function ReservationsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "reservations");
+  const { hotel, role } = await requireHotel(hotelId, "staff", "reservations");
   await requireModule(hotel.id, "restaurant");
   const today = todayIn(hotel.timezone);
   const day = sp.day && isDay(sp.day) ? sp.day : today;
@@ -92,11 +93,12 @@ export default async function ReservationsPage({ params, searchParams }: { param
   return (
     <div className="stack">
       <SeenMark hotelId={hotel.id} kind="reservations" />
-      <h1>Tischreservierungen</h1>
+      <h1 className="sr-only">Tischreservierungen</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <PeriodNav prev={`?day=${addDays(day, -1)}`} next={`?day=${addDays(day, 1)}`} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }}>
         <span className="small muted">{formatDay(day, "de")} · {live.length} Reservierungen, {guests} Gäste{peak ? `, gleichzeitig bis zu ${peak} von ${cfg.capacity} Plätzen` : ""}</span>
       </PeriodNav>
+      {!tables.length ? <p className="notice">Noch keine Tische angelegt. {atLeast(role, "manager") ? <a href={`/admin/${hotel.id}/restaurant/tische`}>Tische anlegen</a> : "Bitte die Leitung, Tische anzulegen."}</p> : atLeast(role, "manager") ? <p className="small muted" style={{ margin: 0 }}><a href={`/admin/${hotel.id}/restaurant/tische`}>Tische bearbeiten</a></p> : null}
       <section className="card">
         {list.length ? (
           <table className="table" data-testid="res-list"><thead><tr><th>Zeit</th><th>Pers.</th><th>Gast</th><th>Tisch</th><th>Status</th><th /></tr></thead><tbody>
@@ -119,12 +121,12 @@ export default async function ReservationsPage({ params, searchParams }: { param
                     </details>
                   ) : null}
                 </td>
-                <td><form action={table} className="inline-form">{H}{D}<input type="hidden" name="id" value={r.id} />
-                  <select name="tableId" defaultValue={r.tableId ?? ""} aria-label={`Tisch ${r.name}`}><option value="">–</option>{tables.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.seats})</option>)}</select> <button className="btn secondary small">Setzen</button></form>
+                <td><form action={table} className="res-table">{H}{D}<input type="hidden" name="id" value={r.id} />
+                  <select name="tableId" defaultValue={r.tableId ?? ""} aria-label={`Tisch ${r.name}`}><option value="">–</option>{tables.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.seats})</option>)}</select><button className="btn secondary small">Setzen</button></form>
                   {r.tableId ? <span className="small muted">{tname.get(r.tableId)}</span> : null}</td>
                 <td>{STATUS[r.status]}{r.depositStatus !== "none" ? <div className="small muted">Anzahlung {formatChf(r.depositRappen)}: {r.depositStatus === "paid" ? "bezahlt (bei der Rechnung abziehen)" : r.depositStatus === "refunded" ? "zurückerstattet" : "offen"}</div> : null}</td>
-                <td>{r.status === "pending" ? null : (["seated", "noshow", "cancelled"] as const).filter((x) => x !== r.status).map((x) => (
-                  <form key={x} action={status} style={{ display: "inline" }}>{H}{D}<input type="hidden" name="id" value={r.id} /><input type="hidden" name="status" value={x} /><button className="btn secondary small">{x === "seated" ? "Am Tisch" : x === "noshow" ? "Nicht erschienen" : "Stornieren"}</button></form>
+                <td className="res-actions">{r.status === "pending" ? null : (["seated", "noshow", "cancelled"] as const).filter((x) => x !== r.status).map((x) => (
+                  <form key={x} action={status} style={{ display: "contents" }}>{H}{D}<input type="hidden" name="id" value={r.id} /><input type="hidden" name="status" value={x} /><button className={x === "seated" ? "btn small" : "linklike"}>{x === "seated" ? "Am Tisch" : x === "noshow" ? "Nicht erschienen" : "Stornieren"}</button></form>
                 ))}</td>
               </tr>
             ))}

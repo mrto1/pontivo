@@ -43,7 +43,7 @@ export default async function DayClosePage({ params, searchParams }: { params: P
   const onsiteTotal = Object.values(t.onsite).reduce((a, b) => a + b, 0);
   return (
     <div className="stack">
-      <h1>Tagesabschluss</h1>
+      <h1 className="sr-only">Tagesabschluss</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <PeriodNav prev={`?day=${addDays(day, -1)}`} next={day < today ? `?day=${addDays(day, 1)}` : undefined} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }} />
       <section className="card stack">

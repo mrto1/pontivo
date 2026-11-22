@@ -48,7 +48,7 @@ export default async function MarketingPage({ params, searchParams }: { params: 
   const count = (await previewRecipients(hotel.id, cur?.segment ?? {})).length;
   return (
     <div className="stack">
-      <h1>Newsletter</h1>
+      <h1 className="sr-only">Newsletter</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="muted">Gesendet wird nur an Gäste, die bei der Buchung dem Newsletter zugestimmt haben. Jede Mail enthält einen Abmeldelink. Aktuell erreichen Sie {count} Gäste{cur ? " mit dieser Auswahl" : " (alle mit Einwilligung)"}.</p>
       <form action={save} className="card stack">

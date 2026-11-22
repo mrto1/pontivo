@@ -25,7 +25,7 @@ export default async function Bookings({ params, searchParams }: { params: Promi
     <div className="stack">
       <SeenMark hotelId={hotel.id} kind="bookings" />
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>Buchungen</h1>
+        <h1 className="sr-only">Buchungen</h1>
         <a className="btn small" href={`/admin/${hotel.id}/bookings/new`}>+ Buchung erfassen</a>
         {atLeast(role, "owner") ? <a className="btn secondary small" style={{ marginLeft: "auto" }} href={`/admin/${hotel.id}/berichte`}>Abrechnung exportieren</a> : null}
       </div>

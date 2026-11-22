@@ -67,7 +67,7 @@ export default async function ResourcesPage({ params, searchParams }: { params: 
   const canEdit = role === "owner" || role === "manager";
   return (
     <div className="stack">
-      <h1>Angebote vor Ort</h1>
+      <h1 className="sr-only">Angebote vor Ort</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <form className="card"><label htmlFor="day">Tag</label> <input id="day" name="day" type="date" defaultValue={day} /> <button className="btn secondary">Anzeigen</button></form>
       <section className="card">

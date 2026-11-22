@@ -104,7 +104,7 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
   return (
     <div className="stack">
       <SeenMark hotelId={hotel.id} kind="inbox" />
-      <h1>Posteingang</h1>
+      <h1 className="sr-only">Posteingang</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <div className="cal-tools">
         {sources.length > 1 ? (

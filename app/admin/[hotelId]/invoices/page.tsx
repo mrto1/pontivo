@@ -39,7 +39,7 @@ export default async function Invoices({ params, searchParams }: { params: Promi
   const list = await listInvoices(hotel.id, sp.filter === "draft" ? "draft" : sp.filter === "issued" ? "issued" : "all");
   return (
     <div className="stack">
-      <h1>Rechnungen</h1>
+      <h1 className="sr-only">Rechnungen</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="small">
         <a href={`/admin/${hotel.id}/invoices`}>Alle</a> · <a href={`?filter=draft`}>Entwürfe</a> · <a href={`?filter=issued`}>Ausgestellt</a> ·{" "}

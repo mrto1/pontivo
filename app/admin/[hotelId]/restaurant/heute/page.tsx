@@ -47,9 +47,9 @@ export default async function DiningToday({ params, searchParams }: { params: Pr
   const [orders, cash] = ordersOn ? await Promise.all([screenOrders(hotel.id), manager ? cashByDriver(hotel) : Promise.resolve([])]) : [null, []];
   return (
     <div className="stack">
-      <h1 style={{ margin: 0 }}>{isToday ? "Heute" : "Tagesübersicht"}</h1>
+      <h1 className="sr-only">{isToday ? "Heute" : "Tagesübersicht"}</h1>
       <PeriodNav prev={`${here}?day=${addDays(today, -1)}`} next={`${here}?day=${addDays(today, 1)}`} todayHref={here} todayActive={isToday} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: today, param: "day" }} />
-      <p className="muted" style={{ margin: 0 }}>{isToday ? "Heute, " : ""}{formatDay(today, "de")}</p>
+      <p className="day-line">{isToday ? "Heute, " : ""}{formatDay(today, "de")}</p>
       {checklist.length ? (
         <details className="card ready" open={openItems.length > 0} data-testid="ready-checklist">
           <summary>

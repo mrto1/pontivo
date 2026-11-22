@@ -1,0 +1,1 @@
+export type PlanTable = { id: string; name: string; seats: number; shape: "square" | "round"; x: number | null; y: number | null; dim?: boolean; tone?: "free" | "busy" | "soon"; info?: string; href?: string };

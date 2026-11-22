@@ -12,7 +12,7 @@ export default async function KassePage({ params }: { params: Promise<{ hotelId:
   await requireModule(hotel.id, "pos");
   return (
     <div className="stack">
-      <h1>Kasse</h1>
+      <h1 className="sr-only">Kasse</h1>
       <OfflineKasse hotelId={hotel.id} vatLiable={invoicingSettings(hotel).vatLiable} />
     </div>
   );

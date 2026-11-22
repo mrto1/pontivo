@@ -72,7 +72,7 @@ export default async function Debtors({ params, searchParams }: { params: Promis
   const hid = <input type="hidden" name="hotelId" value={hotel.id} />;
   return (
     <div className="stack">
-      <h1>Debitoren</h1>
+      <h1 className="sr-only">Debitoren</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
 
       <section className="card stack">

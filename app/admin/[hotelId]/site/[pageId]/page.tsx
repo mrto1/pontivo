@@ -525,13 +525,13 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
       return (<>
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
         <LField name="intro" label="Einleitung" value={b.intro} rows={2} max={1000} langs={langs} />
-        <p className="muted small">Zeiten, Plätze und Ein/Aus stellen Sie unter <a href={`/admin/${hotelId}/restaurant/einstellungen#online`}>Tischplan & Reservierung online</a> ein. Ist die Online-Reservierung aus, bleibt der Baustein unsichtbar.</p>
+        <p className="muted small">Zeiten, Plätze und Ein/Aus stellen Sie unter <a href={`/admin/${hotelId}/restaurant/einstellungen#online`}>Reservierung</a> ein. Ist die Online-Reservierung aus, bleibt der Baustein unsichtbar.</p>
       </>);
     case "order":
       return (<>
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
         <LField name="intro" label="Einleitung" value={b.intro} rows={2} max={1000} langs={langs} />
-        <p className="muted small">Abholung, Lieferung und Ein/Aus stellen Sie unter <a href={`/admin/${hotelId}/restaurant/bestellung-einstellungen`}>Online-Bestellung & Lieferung</a> ein. Ist sie aus, bleibt der Baustein unsichtbar.</p>
+        <p className="muted small">Abholung, Lieferung und Ein/Aus stellen Sie unter <a href={`/admin/${hotelId}/restaurant/bestellung-einstellungen`}>Bestellung</a> ein. Ist sie aus, bleibt der Baustein unsichtbar.</p>
       </>);
     case "voucher":
       return (<>

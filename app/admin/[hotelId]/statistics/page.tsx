@@ -32,7 +32,7 @@ export default async function Statistik({ params, searchParams }: { params: Prom
   );
   return (
     <div className="stack">
-      <h1>Statistik</h1>
+      <h1 className="sr-only">Statistik</h1>
       <nav className="seg" aria-label="Zeitraum">
         {PERIODS.map((p) => <a key={p} href={`?period=${p}`} aria-current={p === period ? "true" : undefined}>{PERIOD_LABEL[p]}</a>)}
       </nav>

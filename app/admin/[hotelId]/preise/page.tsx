@@ -113,7 +113,7 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
   const aiLeft = ai ? Math.max(0, env().AI_PRICING_RUNS_PER_DAY - (await runsToday(hotel.id, today))) : 0;
   return (
     <div className="stack">
-      <h1>Preisempfehlung</h1>
+      <h1 className="sr-only">Preisempfehlung</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <p className="muted">Nach Ihren Regeln schlägt Pontivo täglich Preise für die nächsten 90 Nächte vor, mit einem Satz als Begründung. Nichts ändert sich ohne Ihre Bestätigung, ausser Sie schalten «automatisch übernehmen» ein: dann nur innerhalb von Mindest- und Höchstpreis. Übernommene Preise gehen wie alle Kalenderänderungen an Ihre Kanäle.</p>
 

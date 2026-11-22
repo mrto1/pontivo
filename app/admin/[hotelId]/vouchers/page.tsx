@@ -64,7 +64,7 @@ export default async function Vouchers({ params, searchParams }: { params: Promi
   const open = paid.reduce((a, v) => a + v.remainingRappen, 0);
   return (
     <div className="stack">
-      <h1>Gutscheine</h1>
+      <h1 className="sr-only">Gutscheine</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
 
       <section className="card stack">
