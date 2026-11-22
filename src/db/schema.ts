@@ -734,6 +734,8 @@ export const pushOutbox = pgTable("push_outbox", {
   title: text("title").notNull(),
   body: text("body").notNull(),
   url: text("url").notNull(),
+  /** Art der Mitteilung (SPEC 20.1): bestimmt, wer sie bekommt */
+  kind: text("kind").$type<"inbox" | "bookings" | "reservations" | "orders" | "other">().notNull().default("other"),
   status: text("status").$type<"pending" | "sent" | "failed" | "cancelled">().notNull().default("pending"),
   attempts: integer("attempts").notNull().default(0),
   createdAt: ts("created_at").notNull().defaultNow(),
@@ -1962,4 +1964,12 @@ export const userSeen = pgTable("user_seen", {
   hotelId: uuid("hotel_id").notNull().references(() => hotels.id),
   kind: text("kind").$type<"inbox" | "bookings" | "reservations" | "orders">().notNull(),
   seenAt: ts("seen_at").notNull().defaultNow(),
+}, (t) => [primaryKey({ columns: [t.userId, t.hotelId, t.kind] })]);
+
+/** SPEC 20.1: Mitteilungen je Person abstellen; ohne Eintrag gilt «an» für Arten, die die Person sieht */
+export const pushPrefs = pgTable("push_prefs", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  hotelId: uuid("hotel_id").notNull().references(() => hotels.id, { onDelete: "cascade" }),
+  kind: text("kind").$type<"inbox" | "bookings" | "reservations" | "orders" | "other">().notNull(),
+  enabled: boolean("enabled").notNull(),
 }, (t) => [primaryKey({ columns: [t.userId, t.hotelId, t.kind] })]);

@@ -52,7 +52,7 @@ export async function createGuestRequest(hotel: Hotel, bookingId: string, input:
       // bookingId bewusst leer: die Mail-Warteschlange lässt sonst nur eine Mail je Buchung und Vorlage zu, jeder Wunsch soll aber ankommen
       data: { requestId: row.id, bookingId, reference: b.reference, label, message, checkin: b.checkin, checkout: b.checkout, guestLanguage: lang },
     });
-    await enqueuePush(tx, hotel.id, `guest_request:${row.id}`, { title: `Gästewunsch · ${b.reference}`, body: [label, message].filter(Boolean).join(": ").slice(0, 140), url: `/admin/${hotel.id}/inbox?quelle=wuensche` });
+    await enqueuePush(tx, hotel.id, `guest_request:${row.id}`, { title: `Gästewunsch · ${b.reference}`, body: [label, message].filter(Boolean).join(": ").slice(0, 140), url: `/admin/${hotel.id}/inbox?quelle=wuensche`, kind: "inbox" });
     await audit(tx, { hotelId: hotel.id, actor: "guest", action: "guest_request.create", entity: "guest_request", entityId: row.id, details: { bookingId, itemId } });
     return row;
   });
@@ -99,7 +99,7 @@ export async function selfCheckout(hotel: Hotel, bookingId: string, today: strin
     if (!selfCheckoutOpen(b, today, true)) throw new RequestError("closed");
     await tx.update(bookings).set({ guestCheckoutAt: new Date() }).where(and(eq(bookings.id, b.id), eq(bookings.hotelId, hotel.id)));
     const [row] = await tx.insert(guestRequests).values({ hotelId: hotel.id, bookingId, itemId: "checkout", label: "Check-out durch den Gast", message: "" }).returning();
-    await enqueuePush(tx, hotel.id, `guest_checkout:${b.id}`, { title: `Check-out · ${b.reference}`, body: "Der Gast hat im Portal ausgecheckt.", url: `/admin/${hotel.id}/inbox?quelle=wuensche` });
+    await enqueuePush(tx, hotel.id, `guest_checkout:${b.id}`, { title: `Check-out · ${b.reference}`, body: "Der Gast hat im Portal ausgecheckt.", url: `/admin/${hotel.id}/inbox?quelle=wuensche`, kind: "inbox" });
     await audit(tx, { hotelId: hotel.id, actor: "guest", action: "booking.self_checkout", entity: "booking", entityId: b.id, details: { requestId: row.id } });
     return "done";
   });

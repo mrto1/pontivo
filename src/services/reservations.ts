@@ -9,6 +9,7 @@ import { enqueueEmail } from "../email/enqueue";
 import { env } from "../env";
 import { getPaymentProvider } from "../payments/provider";
 import { isLocale } from "../i18n/dict";
+import { enqueuePush } from "../push/service";
 import { audit } from "./audit";
 import { getHotelById } from "./hotels";
 import { PosError } from "./pos";
@@ -67,6 +68,12 @@ export async function onlineReservationsToday(hotel: Hotel): Promise<number> {
   const start = zonedToUtc(todayIn(hotel.timezone), "00:00", hotel.timezone);
   const [r] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM pos_reservations WHERE hotel_id = ${hotel.id} AND source = 'online' AND status IN ('confirmed','pending') AND created_at >= ${start}`));
   return r?.n ?? 0;
+}
+
+/** Mitteilung «Neue Reservierung» (nur Online-Reservierungen; ohne Namen, die Mitteilung erscheint auf dem Sperrbildschirm) */
+async function pushNewReservation(ex: Parameters<typeof enqueuePush>[0], hotelId: string, r: PosReservation) {
+  if (r.source !== "online") return;
+  await enqueuePush(ex, hotelId, `reservation:${r.id}`, { title: "Neue Reservierung", body: `${r.day} ${r.time} · ${r.party} ${r.party === 1 ? "Person" : "Personen"}`, url: `/admin/${hotelId}/restaurant/reservierungen`, kind: "reservations" });
 }
 
 export const reservationsOfDay = (hotelId: string, day: string) =>
@@ -142,6 +149,8 @@ export async function createReservation(hotel: Hotel, i: ReservationInput, sourc
     }).returning();
     await audit(tx, { hotelId: hotel.id, actor, action: "reservation.create", entity: "pos_reservation", entityId: row.id, details: { source, day: row.day, time: row.time, party: row.party, deposit } });
     if (!deposit && email) await sendConfirmation(tx, hotel, row);
+    // ASSUMPTION: Mit Anzahlung kommt die Mitteilung erst, wenn bezahlt ist (unbezahlte laufen ab)
+    if (!deposit) await pushNewReservation(tx, hotel.id, row);
     return row;
   });
   if (!deposit) return { reservation: r, checkoutUrl: null };
@@ -184,6 +193,7 @@ export async function markReservationPaid(id: string, p: { sessionId: string | n
     const [u] = await tx.update(posReservations).set({ status: "confirmed", depositStatus: "paid", stripePaymentIntentId: p.paymentIntentId, stripeSessionId: p.sessionId ?? r.stripeSessionId }).where(eq(posReservations.id, id)).returning();
     await audit(tx, { hotelId: r.hotelId, actor: "payment", action: "reservation.deposit_paid", entity: "pos_reservation", entityId: id, details: { amount: r.depositRappen } });
     await sendConfirmation(tx, hotel, u);
+    await pushNewReservation(tx, hotel.id, u);
     return null;
   });
   if (late) {

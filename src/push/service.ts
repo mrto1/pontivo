@@ -1,7 +1,12 @@
 import webpush from "web-push";
 import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import { db, type Executor } from "../db/client";
-import { bookings, pushOutbox, pushSubscriptions } from "../db/schema";
+import { bookings, hotelMembers, pushOutbox, pushPrefs, pushSubscriptions } from "../db/schema";
+import { visibleNav } from "../admin/visible-nav";
+import { hiddenNavKeys } from "../domain/modules";
+import { pushWanted, type PushKind } from "../domain/push-kinds";
+import type { Role } from "../domain/roles";
+import { getHotelById } from "../services/hotels";
 import { env } from "../env";
 
 /**
@@ -35,9 +40,9 @@ const realSender: PushSender = async (target, payload) => {
 };
 
 /** Mitteilung einreihen (in der Transaktion des Ereignisses). Pro Hotel und Ereignis nur einmal. */
-export async function enqueuePush(ex: Executor, hotelId: string, dedupeKey: string, p: Omit<PushPayload, "tag">) {
+export async function enqueuePush(ex: Executor, hotelId: string, dedupeKey: string, p: Omit<PushPayload, "tag"> & { kind?: PushKind }) {
   if (!p.url.startsWith("/admin/")) throw new Error("Push-Link muss auf /admin/ zeigen");
-  await ex.insert(pushOutbox).values({ hotelId, dedupeKey, title: p.title, body: p.body.slice(0, 200), url: p.url }).onConflictDoNothing();
+  await ex.insert(pushOutbox).values({ hotelId, dedupeKey, title: p.title, body: p.body.slice(0, 200), url: p.url, kind: p.kind ?? "other" }).onConflictDoNothing();
 }
 
 export type BookingPushKind = "new" | "cancelled" | "overbooking";
@@ -52,7 +57,7 @@ export async function pushForBooking(ex: Executor, hotelId: string, bookingId: s
     cancelled: { title: "Buchung storniert", body: what },
     overbooking: { title: "Überbuchung – bitte sofort prüfen", body: what },
   }[kind];
-  await enqueuePush(ex, hotelId, `booking_${kind}:${bookingId}`, { ...text, url: `/admin/${hotelId}/bookings/${bookingId}` });
+  await enqueuePush(ex, hotelId, `booking_${kind}:${bookingId}`, { ...text, url: `/admin/${hotelId}/bookings/${bookingId}`, kind: "bookings" });
 }
 
 // ---------------------------------------------------------------- Geräte
@@ -94,7 +99,7 @@ export async function hasSubscription(hotelId: string, userId: string, endpoint:
 
 const MAX_ATTEMPTS = 3;
 
-/** Fällige Mitteilungen an alle Geräte des Hotels senden. Abgemeldete Geräte (404/410) werden gelöscht. */
+/** Fällige Mitteilungen an die Geräte der berechtigten Personen des Hotels senden. Abgemeldete Geräte (404/410) werden gelöscht. */
 export async function sendDuePushes(): Promise<{ sent: number; failed: number }> {
   const rows = await db().select().from(pushOutbox).where(eq(pushOutbox.status, "pending")).orderBy(pushOutbox.id).limit(50);
   let sent = 0;
@@ -105,8 +110,27 @@ export async function sendDuePushes(): Promise<{ sent: number; failed: number }>
     return { sent, failed };
   }
   const send = sender ?? realSender;
+  const navCache = new Map<string, ReturnType<typeof visibleNav>["navs"] | null>();
   for (const r of rows) {
-    const subs = await db().select().from(pushSubscriptions).where(eq(pushSubscriptions.hotelId, r.hotelId));
+    // Nur Geräte von Personen, die Mitglied sind, die Art sehen dürfen und sie nicht abgestellt haben (SPEC 20.1)
+    const all = await db()
+      .select({ s: pushSubscriptions, role: hotelMembers.role })
+      .from(pushSubscriptions)
+      .innerJoin(hotelMembers, and(eq(hotelMembers.hotelId, pushSubscriptions.hotelId), eq(hotelMembers.userId, pushSubscriptions.userId)))
+      .where(eq(pushSubscriptions.hotelId, r.hotelId));
+    const prefs = new Map((await db().select().from(pushPrefs).where(and(eq(pushPrefs.hotelId, r.hotelId), eq(pushPrefs.kind, r.kind)))).map((x) => [x.userId, x.enabled]));
+    const subs: (typeof pushSubscriptions.$inferSelect)[] = [];
+    for (const x of all) {
+      const key = `${r.hotelId}:${x.role}`;
+      if (!navCache.has(key)) {
+        // Lazy: services/modules zieht next/navigation, das die Playwright-Tests nicht laden können
+        const { moduleRows } = await import("../services/modules");
+        const h = await getHotelById(r.hotelId);
+        navCache.set(key, h ? visibleNav(h, x.role as Role, hiddenNavKeys(await moduleRows(h.id))).navs : null);
+      }
+      const navs = navCache.get(key);
+      if (navs && pushWanted(x.role as Role, r.kind, navs, prefs.get(x.s.userId))) subs.push(x.s);
+    }
     if (!subs.length) {
       await db().update(pushOutbox).set({ status: "cancelled" }).where(eq(pushOutbox.id, r.id));
       continue;
@@ -134,4 +158,18 @@ export async function sendDuePushes(): Promise<{ sent: number; failed: number }>
   }
   await db().delete(pushOutbox).where(and(inArray(pushOutbox.status, ["sent", "cancelled", "failed"]), lt(pushOutbox.createdAt, sql`now() - interval '7 days'`)));
   return { sent, failed };
+}
+
+// ---------------------------------------------------------------- Einstellungen je Person (SPEC 20.1)
+
+export async function getPushPrefs(hotelId: string, userId: string): Promise<Partial<Record<PushKind, boolean>>> {
+  const r = await db().select().from(pushPrefs).where(and(eq(pushPrefs.hotelId, hotelId), eq(pushPrefs.userId, userId)));
+  return Object.fromEntries(r.map((x) => [x.kind, x.enabled]));
+}
+
+/** Speichert die Wahl für die genannten Arten (nur diese Person, nur dieser Betrieb) */
+export async function savePushPrefs(hotelId: string, userId: string, prefs: Partial<Record<PushKind, boolean>>) {
+  for (const [kind, enabled] of Object.entries(prefs) as [PushKind, boolean][]) {
+    await db().insert(pushPrefs).values({ hotelId, userId, kind, enabled }).onConflictDoUpdate({ target: [pushPrefs.userId, pushPrefs.hotelId, pushPrefs.kind], set: { enabled } });
+  }
 }

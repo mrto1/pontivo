@@ -1,8 +1,8 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { db, closeDb } from "../../src/db/client";
-import { pushOutbox, pushSubscriptions, users } from "../../src/db/schema";
-import { enqueuePush, hasSubscription, removeSubscription, saveSubscription, sendDuePushes, setPushSender, type PushPayload, type PushTarget } from "../../src/push/service";
+import { hotelMembers, hotelModules, pushOutbox, pushSubscriptions, users } from "../../src/db/schema";
+import { enqueuePush, hasSubscription, savePushPrefs, removeSubscription, saveSubscription, sendDuePushes, setPushSender, type PushPayload, type PushTarget } from "../../src/push/service";
 import { createDirectBooking, confirmBooking } from "../../src/services/bookings";
 import { createInquiry } from "../../src/services/inquiries";
 import { setPaymentProvider } from "../../src/payments/provider";
@@ -27,6 +27,12 @@ const sub = (n: string) => ({ endpoint: `https://push.example.test/${n}`, keys: 
 async function makeUser() {
   const [u] = await db().insert(users).values({ email: `u-${uid()}@example.ch` }).returning();
   return u.id;
+}
+/** Mitglied eines Betriebs mit Rolle (Mitteilungen gehen nur an Mitglieder) */
+async function member(hotelId: string, role = "owner") {
+  const id = await makeUser();
+  await db().insert(hotelMembers).values({ hotelId, userId: id, role });
+  return id;
 }
 function recorder() {
   const sent: { target: PushTarget; payload: PushPayload }[] = [];
@@ -61,7 +67,8 @@ describe("Push-Mitteilungen", () => {
   it("senden: nur an Geräte des eigenen Hotels; abgemeldete Geräte (410) werden gelöscht", async () => {
     const a = await makeHotel();
     const b = await makeHotel();
-    const u = await makeUser();
+    const u = await member(a.hotel.id);
+    await db().insert(hotelMembers).values({ hotelId: b.hotel.id, userId: u, role: "owner" });
     await saveSubscription(a.hotel.id, u, sub("a1"), null);
     await saveSubscription(a.hotel.id, u, sub("gone"), null);
     await saveSubscription(b.hotel.id, u, sub("b1"), null);
@@ -86,7 +93,7 @@ describe("Push-Mitteilungen", () => {
     await sendDuePushes();
     expect((await pending(h.hotel.id))[0].status).toBe("cancelled");
 
-    const u = await makeUser();
+    const u = await member(h.hotel.id);
     await saveSubscription(h.hotel.id, u, sub("flaky"), null);
     await enqueuePush(db(), h.hotel.id, "n:2", { title: "T", body: "b", url: `/admin/${h.hotel.id}` });
     setPushSender(async () => {
@@ -119,5 +126,28 @@ describe("Push-Mitteilungen", () => {
     expect(booked!.url).toBe(`/admin/${h.hotel.id}/bookings/${booking.id}`);
     expect(rows.find((r) => r.dedupeKey === `inquiry:${inq.id}`)).toMatchObject({ title: "Neue Anfrage", url: `/admin/${h.hotel.id}/inquiries` });
     for (const r of rows) expect(`${r.title} ${r.body}`).not.toMatch(/Erika|Geheim|@/);
+  });
+  it("Rollen und Einstellungen (SPEC 20.1): nur wer die Liste sieht und die Art nicht abgestellt hat; Nichtmitglieder nie", async () => {
+    const h = await makeHotel();
+    await db().insert(hotelModules).values({ hotelId: h.hotel.id, module: "restaurant", enabled: true });
+    const owner = await member(h.hotel.id, "owner");
+    const service = await member(h.hotel.id, "service");
+    const cleaning = await member(h.hotel.id, "housekeeping");
+    const stranger = await makeUser(); // Gerät ohne Mitgliedschaft
+    for (const [n, u] of [["owner", owner], ["service", service], ["cleaning", cleaning], ["stranger", stranger]] as const) await saveSubscription(h.hotel.id, u, sub(n + h.hotel.id), null);
+    const who = async (kind: "orders" | "bookings" | "other", key: string) => {
+      await enqueuePush(db(), h.hotel.id, key, { title: "T", body: "b", url: `/admin/${h.hotel.id}`, kind });
+      const sent: string[] = [];
+      setPushSender(async (t) => void sent.push(t.endpoint.split("/").pop()!.replace(h.hotel.id, "")));
+      await sendDuePushes();
+      return sent.sort();
+    };
+    expect(await who("orders", "k:orders")).toEqual(["owner", "service"]); // Reinigung sieht keine Bestellungen
+    expect(await who("bookings", "k:bookings")).toEqual(["owner"]); // Service sieht keine Hotelbuchungen
+    expect(await who("other", "k:other")).toEqual(["owner"]); // Sonstiges nur Inhaber/Manager
+    await savePushPrefs(h.hotel.id, service, { orders: false });
+    expect(await who("orders", "k:orders2")).toEqual(["owner"]); // Service hat Bestellungen abgestellt
+    await savePushPrefs(h.hotel.id, cleaning, { orders: true });
+    expect(await who("orders", "k:orders3")).toEqual(["owner"]); // eine Wahl gibt keinen Zugang zu dem, was die Rolle nicht sieht
   });
 });

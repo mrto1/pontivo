@@ -48,7 +48,7 @@ export async function ingestMessage(m: IncomingMessage): Promise<boolean> {
     }).where(eq(inboxThreads.id, thread.id));
     if (m.sender === "guest") {
       // Mitteilung ohne Personendaten und ohne Nachrichtentext
-      await enqueuePush(tx, hotel.id, `inbox:${m.threadId}:${m.messageId}`, { title: "Neue Gästenachricht", body: m.provider || "Portal", url: `/admin/${hotel.id}/inbox?thread=${thread.id}` });
+      await enqueuePush(tx, hotel.id, `inbox:${m.threadId}:${m.messageId}`, { title: "Neue Gästenachricht", body: m.provider || "Portal", url: `/admin/${hotel.id}/inbox?thread=${thread.id}`, kind: "inbox" });
     }
     return true;
   });

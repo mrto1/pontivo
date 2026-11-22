@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { closeDb, db } from "../../src/db/client";
-import { hotelModules, hotels, posReservations, sitePages } from "../../src/db/schema";
+import { hotelModules, hotels, posReservations, pushOutbox, sitePages } from "../../src/db/schema";
 import { addDays, todayIn } from "../../src/domain/dates";
 import { kartei, REGULAR_VISITS, restaurantVisits, saveProfile } from "../../src/services/guest-notes";
 import { createReservation, getSettings, saveSettings, slotsFor, tableReservationOnline } from "../../src/services/reservations";
@@ -29,6 +29,12 @@ describe("R2-Rest (SPEC 20.2)", () => {
     expect(await tableReservationOnline(on.id)).toBe(true);
     const r = await createReservation(on, { day, time: "18:00", party: 2, name: "Gast", phone: "1" }, "online", "guest");
     expect(r.reservation.status).toBe("confirmed");
+    // Mitteilung «Neue Reservierung» (Art reservations, ohne Namen); selbst erfasste Reservierungen lösen keine aus
+    await createReservation(on, { day, time: "19:00", party: 2, name: "Telefon", phone: "2" }, "admin", "staff");
+    const pushes = await db().select().from(pushOutbox).where(eq(pushOutbox.hotelId, on.id));
+    expect(pushes.filter((p) => p.kind === "reservations")).toHaveLength(1);
+    expect(pushes.find((p) => p.kind === "reservations")).toMatchObject({ title: "Neue Reservierung", url: `/admin/${on.id}/restaurant/reservierungen` });
+    expect(JSON.stringify(pushes)).not.toContain("Gast");
   });
 
   it("Kartei: Besuche aus Reservierungen, Stammgast ab 3, Gäste nur aus Reservierungen, Notiz je E-Mail", async () => {
