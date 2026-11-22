@@ -1,1 +1,1 @@
-export type PlanTable = { id: string; name: string; seats: number; shape: "square" | "round"; x: number | null; y: number | null; dim?: boolean; tone?: "free" | "busy" | "soon"; info?: string; href?: string };
+export type PlanTable = { id: string; name: string; seats: number; shape: "square" | "round"; x: number | null; y: number | null; tone?: "free" | "busy" | "soon"; /** kurz im Tisch, z. B. «frei bis 20:00» */ info?: string; /** Einzelheiten beim Antippen */ detail?: string[]; href?: string; hrefLabel?: string; /** abgeblendet (Filter) */ dim?: boolean };

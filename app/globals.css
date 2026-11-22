@@ -1089,3 +1089,10 @@ pre { overflow-x: auto; }
 .plan-filter input, .plan-filter select { min-height: 44px; width: auto; }
 .plan-filter .btn { min-height: 44px; }
 .plan-table.dim { opacity: .3; }
+
+/* Tischplan-Anzeige: Tische sind Knöpfe, Einzelheiten unter dem Plan */
+button.plan-table { font: inherit; cursor: pointer; }
+.plan-table .plan-info { font-size: .72rem; line-height: 1.15; white-space: nowrap; }
+.plan-table.dim { opacity: .3; }
+.plan-table.selected { outline: 3px solid var(--accent, #0b7285); outline-offset: 2px; }
+.plan-detail { padding: 12px 14px; }

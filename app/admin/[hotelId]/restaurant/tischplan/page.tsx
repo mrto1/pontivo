@@ -13,6 +13,7 @@ import { formatChf } from "@/src/domain/money";
 import { atLeast, hasArea } from "@/src/domain/roles";
 
 export const dynamic = "force-dynamic";
+const SOON_MIN = 30;
 
 /** Tischplan mit Reservierungszustand (SPEC 20.1): frei, reserviert (bald), am Tisch; mit Kasse auch offene Bestellungen */
 export default async function ReservationPlan({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
@@ -46,19 +47,28 @@ export default async function ReservationPlan({ params, searchParams }: { params
           <div><label htmlFor="seats" className="small">Plätze</label><select id="seats" name="seats" defaultValue={String(minSeats)}><option value="0">alle</option>{Array.from({ length: maxSeats }, (_, i) => i + 1).map((n) => <option key={n} value={n}>ab {n}</option>)}</select></div>
           <button className="btn secondary">Zeigen</button></form>
       </PeriodNav>
-      <p className="small muted" style={{ margin: 0 }}>{formatDay(day, "de")}, {time} · grün frei (mit Uhrzeit, bis wann) · orange bald reserviert oder belegt · rot am Tisch{pos ? " oder offene Bestellung" : ""}</p>
+      <p className="small muted" style={{ margin: 0 }}>{formatDay(day, "de")}, {time} · grün frei (mit Uhrzeit, bis wann) · orange belegt oder in weniger als 30 Minuten reserviert · rot am Tisch{pos ? " oder offene Bestellung" : ""}</p>
       {planned.length ? (
         <FloorPlan tables={planned.map((t) => {
           const cur = now(t.id); const nxt = next(t.id); const orders = openBy.get(t.id) ?? [];
           const busy = orders.length > 0 || (cur?.status === "seated");
-          const soon = nxt && toMin(nxt.time) < t0 + 90;
-          const target = cur ?? nxt;
+          // ASSUMPTION: «bald» (orange) heisst: nächste Reservierung in weniger als 30 Minuten; sonst bleibt der Tisch grün mit «frei bis HH:MM».
+          const soon = nxt && toMin(nxt.time) < t0 + SOON_MIN;
+          const freeUntil = nxt ? nxt.time : null;
+          const endCur = cur ? hhmm(toMin(cur.time) + cfg.durationMin) : null;
+          const detail: string[] = [];
+          if (orders.length) detail.push(`Offene Bestellung: ${formatChf(orders.reduce((a, o) => a + o.openRappen, 0))}`);
+          if (cur) detail.push(`${cur.status === "seated" ? "Am Tisch" : "Reserviert"}: ${cur.name}, ${cur.party} Pers., ${cur.time} bis ${endCur}`);
+          if (nxt) detail.push(`${cur ? "Danach" : "Nächste"} Reservierung: ${nxt.time} ${nxt.name}, ${nxt.party} Pers.${cur ? "" : ` (Tisch bis dahin frei)`}`);
+          if (!cur && !nxt && !orders.length) detail.push("Frei für den Rest des Tages.");
           return {
             id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY,
             tone: busy ? "busy" as const : cur || soon ? "soon" as const : "free" as const,
             dim: t.seats < minSeats,
-            info: orders.length ? formatChf(orders.reduce((a, o) => a + o.openRappen, 0)) : cur ? `bis ${hhmm(toMin(cur.time) + cfg.durationMin)} ${cur.name} (${cur.party})` : nxt ? `frei bis ${nxt.time}` : "frei",
-            href: orders[0] ? `${base}/restaurant/bestellung/${orders[0].order.id}` : target ? `${base}/restaurant/reservierungen?day=${day}` : undefined,
+            info: orders.length ? "offen" : cur ? `bis ${endCur}` : freeUntil ? `frei bis ${freeUntil}` : undefined,
+            detail,
+            href: orders[0] ? `${base}/restaurant/bestellung/${orders[0].order.id}` : cur || nxt ? `${base}/restaurant/reservierungen?day=${day}` : undefined,
+            hrefLabel: orders[0] ? "Bestellung öffnen" : "Reservierungen des Tages",
           };
         })} />
       ) : <p className="muted">Noch kein Tischplan.{atLeast(role, "manager") ? <> <a href={`${base}/restaurant/tische`}>Tische im Plan platzieren</a></> : null}</p>}
