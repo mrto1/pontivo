@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { Fragment } from "react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -117,19 +118,16 @@ export default async function Calendar({ params, searchParams }: { params: Promi
               <a key={r.days} href={`?from=${from}&days=${r.days}`} className={r.days === span ? "on" : ""}>{r.label}</a>
             ))}
           </div>
-          <details className="export-pop">
-            <summary className="btn secondary small">Excel-Export</summary>
-            <form method="get" action={`/admin/${hotel.id}/calendar/csv`} className="export-card">
-              <div><label>Von</label><input type="date" name="from" defaultValue={from} required /></div>
-              <div><label>Bis (inkl.)</label><input type="date" name="to" defaultValue={addDays(from, span - 1)} required /></div>
-              <button className="btn small">CSV herunterladen</button>
-              <p className="muted small" style={{ margin: 0 }}>Höchstens 366 Tage, für Excel (Semikolon, UTF-8).</p>
-            </form>
-          </details>
         </PeriodNav>
       </div>
       {sp.msg ? <Notice text={sp.msg} /> : null}
-      <p className="small muted" style={{ margin: 0 }}>Die Zahl ist die Anzahl <strong>freier Zimmer</strong> je Nacht. Rot = ausgebucht. Fahren Sie über eine Zahl (am Handy: antippen), sehen Sie, wie viele gebucht, gesperrt oder über ein Portal belegt sind.</p>
+      <p className="small muted" style={{ margin: 0 }}>
+        Zahl = freie Zimmer pro Nacht · rot = ausgebucht
+        <InfoTip title="So lesen Sie den Kalender">
+          <p>Die Zahl ist die Anzahl <strong>freier Zimmer</strong> je Nacht, rot bedeutet ausgebucht.</p>
+          <p>Fahren Sie über eine Zahl (am Handy: antippen), um zu sehen, wie viele Zimmer gebucht, gesperrt oder über ein Portal belegt sind.</p>
+        </InfoTip>
+      </p>
       <div className="scroll-x">
         <table className="cal">
           <thead>
@@ -188,6 +186,21 @@ export default async function Calendar({ params, searchParams }: { params: Promi
           </tbody>
         </table>
       </div>
+
+      <form method="get" action={`/admin/${hotel.id}/calendar/csv`} className="cal-export">
+        <span className="cal-export-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M4 9h16M4 15h16M10 3v18" /></svg>
+        </span>
+        <div className="cal-export-text"><strong>Kalender als Excel-Datei</strong><span className="muted small">Freie Zimmer und Preise, höchstens 366 Tage</span></div>
+        <div className="cal-export-range">
+          <label htmlFor="cx-from">Von</label><input id="cx-from" type="date" name="from" defaultValue={from} required />
+          <label htmlFor="cx-to">Bis</label><input id="cx-to" type="date" name="to" defaultValue={addDays(from, span - 1)} required />
+        </div>
+        <button className="btn-dl primary">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" /></svg>
+          Herunterladen
+        </button>
+      </form>
 
       {canEdit ? (
         <div className="grid">

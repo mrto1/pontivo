@@ -2,31 +2,17 @@ import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
-import { ResourceError, cancelResourceBooking, createResourceBooking, listDay, listResources, saveResource } from "@/src/services/resources";
+import { ResourceError, cancelResourceBooking, createResourceBooking, listDay, listResources } from "@/src/services/resources";
 import { hhmm } from "@/src/domain/resources";
 import { formatChf } from "@/src/domain/money";
-import { todayIn } from "@/src/domain/dates";
+import { formatDay } from "@/src/i18n/dict";
+import { addDays, todayIn } from "@/src/domain/dates";
+import { PeriodNav } from "@/components/admin/PeriodNav";
 
 export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (h: string, day: string, msg: string) => redirect(`/admin/${h}/resources?day=${day}&msg=${encodeURIComponent(msg)}`);
 
-async function saveRes(f: FormData) {
-  "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "resources");
-  let msg = "Angebot gespeichert.";
-  try {
-    await saveResource(c.hotel.id, s(f, "id") || null, {
-      name: s(f, "name"), kind: s(f, "kind") as "other", capacity: Number(s(f, "capacity")), slotMinutes: Number(s(f, "slotMinutes")), openFrom: s(f, "openFrom"), openTo: s(f, "openTo"),
-      priceRappen: Math.round(Number(s(f, "price").replace(",", ".") || 0) * 100), pricePerPerson: f.get("pricePerPerson") === "on", vatKind: s(f, "vatKind") as "standard", active: f.get("active") === "on",
-    }, c.actor);
-  } catch (e) {
-    if (!(e instanceof ResourceError)) throw e;
-    msg = `Nicht gespeichert: ${e.message}`;
-  }
-  back(c.hotel.id, s(f, "day"), msg);
-}
 async function book(f: FormData) {
   "use server";
   const c = await requireHotel(s(f, "hotelId"), "staff", "resources");
@@ -54,8 +40,6 @@ async function cancel(f: FormData) {
   back(c.hotel.id, s(f, "day"), msg);
 }
 
-const KINDS = { wellness: "Wellness / Sauna", seminar: "Seminarraum (exklusiv)", sport: "Sport (Tennis …)", other: "Anderes" };
-
 export default async function ResourcesPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
@@ -69,9 +53,9 @@ export default async function ResourcesPage({ params, searchParams }: { params: 
     <div className="stack">
       <h1 className="sr-only">Angebote vor Ort</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
-      <form className="card"><label htmlFor="day">Tag</label> <input id="day" name="day" type="date" defaultValue={day} /> <button className="btn secondary">Anzeigen</button></form>
+      <PeriodNav prev={`?day=${addDays(day, -1)}`} next={`?day=${addDays(day, 1)}`} todayHref="?" todayActive={day === todayIn(hotel.timezone)} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }} />
       <section className="card">
-        <h2>Gebucht am {day}</h2>
+        <h2>Gebucht am {formatDay(day, "de")}</h2>
         {bookingsToday.length ? (
           <table className="table"><thead><tr><th>Angebot</th><th>Zeit</th><th>Gast</th><th>Personen</th><th>Preis</th><th /></tr></thead><tbody>
             {bookingsToday.map(({ rb, resource }) => (
@@ -95,23 +79,7 @@ export default async function ResourcesPage({ params, searchParams }: { params: 
           <div><button className="btn">Buchen</button></div>
         </form>
       ) : null}
-      {canEdit ? [...list, null].map((r) => (
-        <form key={r?.id ?? "new"} action={saveRes} className="card stack">
-          <h2>{r ? `Angebot: ${r.name}` : "Neues Angebot"}</h2>
-          <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="day" value={day} />{r ? <input type="hidden" name="id" value={r.id} /> : null}
-          <div><label>Name</label><input name="name" defaultValue={r?.name ?? ""} required /></div>
-          <div><label>Art</label><select name="kind" defaultValue={r?.kind ?? "wellness"}>{Object.entries(KINDS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
-          <div><label>Plätze pro Zeitfenster</label><input name="capacity" type="number" min={1} defaultValue={r?.capacity ?? 4} /></div>
-          <div><label>Länge eines Zeitfensters (Minuten)</label><input name="slotMinutes" type="number" min={15} step={15} defaultValue={r?.slotMinutes ?? 60} /></div>
-          <div><label>Geöffnet von</label><input name="openFrom" defaultValue={r ? hhmm(r.openFrom) : "08:00"} /></div>
-          <div><label>Geöffnet bis</label><input name="openTo" defaultValue={r ? hhmm(r.openTo) : "20:00"} /></div>
-          <div><label>Preis CHF je Zeitfenster</label><input name="price" inputMode="decimal" defaultValue={r ? r.priceRappen / 100 : 0} /></div>
-          <label><input type="checkbox" name="pricePerPerson" defaultChecked={r?.pricePerPerson} /> Preis gilt pro Person</label>
-          <div><label>MWST</label><select name="vatKind" defaultValue={r?.vatKind ?? "standard"}><option value="standard">Normalsatz</option><option value="stay">Beherbergungssatz</option><option value="none">keine</option></select></div>
-          <label><input type="checkbox" name="active" defaultChecked={r?.active ?? true} /> aktiv</label>
-          <div><button className="btn">Speichern</button></div>
-        </form>
-      )) : null}
+      {canEdit ? <p className="small muted">Angebote, Plätze und Preise ändern Sie unter <a href={`/admin/${hotel.id}/resources/angebote`}>Einstellungen → Angebote vor Ort</a>.</p> : null}
     </div>
   );
 }

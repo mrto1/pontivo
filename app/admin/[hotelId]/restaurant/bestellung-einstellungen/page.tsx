@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { FormSwitch } from "@/components/admin/FormSwitch";
 import { CopyBox } from "@/components/admin/CopyBox";
 import { redirect } from "next/navigation";
@@ -76,8 +77,7 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
   const fix: Record<string, string> = { hours: `${base}/settings#gastronomie`, items: `${base}/restaurant/artikel`, zones: "#gebiete", stripe: `${base}/zahlungen`, test: "#probe", kind: "#einstellungen" };
   return (
     <div className="stack">
-      <h1>Bestellung</h1>
-      <p className="small muted" data-testid="order-price">Preis: {orderPriceText({ model, startedOn: cfg.startedOn, pilotUntil: cfg.pilotUntil }, todayIn(hotel.timezone), feePercentText(hotel.platformFeeBps), ORDER_MODULE_RAPPEN, slotsLeft)} <a href="/pilot-bedingungen" target="_blank">Pilotbedingungen</a>{cfg.termsVersion ? ` (bestätigt, Fassung ${cfg.termsVersion})` : ""}</p>
+      <h1>Bestellung<InfoTip>Preis: {orderPriceText({ model, startedOn: cfg.startedOn, pilotUntil: cfg.pilotUntil }, todayIn(hotel.timezone), feePercentText(hotel.platformFeeBps), ORDER_MODULE_RAPPEN, slotsLeft)} <a href="/pilot-bedingungen" target="_blank">Pilotbedingungen</a>{cfg.termsVersion ? ` (bestätigt, Fassung ${cfg.termsVersion})` : ""}</InfoTip></h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <section className="card stack" data-testid="orders-live">
         <h2>Status</h2>

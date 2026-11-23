@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -74,7 +75,7 @@ export default async function OwnersPage({ params, searchParams }: { params: Pro
     <div className="stack">
       <h1>Eigentümerabrechnung</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
-      <p className="muted">Für Verwalter von Ferienwohnungen: Objekte (Zimmertypen) gehören Eigentümern. Umsatz = Übernachtungspreise bestätigter Buchungen, Nächte im Monat (ohne Kurtaxe und Zusatzleistungen).</p>
+      <div><InfoTip label="Worum geht es hier?">Für Verwalter von Ferienwohnungen: Objekte (Zimmertypen) gehören Eigentümern. Umsatz = Übernachtungspreise bestätigter Buchungen, Nächte im Monat (ohne Kurtaxe und Zusatzleistungen).</InfoTip></div>
       <PeriodNav prev={`?month=${shiftMonth(month, -1)}`} next={month < todayIn(hotel.timezone).slice(0, 7) ? `?month=${shiftMonth(month, 1)}` : undefined} todayHref="?" todayActive={month === prevMonth(hotel.timezone)} todayLabel="Letzter Monat" prevLabel="Vormonat" nextLabel="Folgemonat" jump={{ kind: "month", value: month, param: "month" }} />
       {stmts.map((x) => (
         <section key={x.owner.id} className="card stack">

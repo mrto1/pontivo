@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { requireHotel } from "@/src/auth/guard";
@@ -115,7 +116,7 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
     <div className="stack">
       <h1 className="sr-only">Preisempfehlung</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
-      <p className="muted">Nach Ihren Regeln schlägt Pontivo täglich Preise für die nächsten 90 Nächte vor, mit einem Satz als Begründung. Nichts ändert sich ohne Ihre Bestätigung, ausser Sie schalten «automatisch übernehmen» ein: dann nur innerhalb von Mindest- und Höchstpreis. Übernommene Preise gehen wie alle Kalenderänderungen an Ihre Kanäle.</p>
+      <div><InfoTip label="Worum geht es hier?">Nach Ihren Regeln schlägt Pontivo täglich Preise für die nächsten 90 Nächte vor, mit einem Satz als Begründung. Nichts ändert sich ohne Ihre Bestätigung, ausser Sie schalten «automatisch übernehmen» ein: dann nur innerhalb von Mindest- und Höchstpreis. Übernommene Preise gehen wie alle Kalenderänderungen an Ihre Kanäle.</InfoTip></div>
 
       <section className="card stack">
         <h2>Vorschläge {proposals.length ? `(${proposals.length})` : ""}</h2>

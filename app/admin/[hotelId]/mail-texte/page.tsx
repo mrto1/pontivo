@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { saveMailTexts } from "@/src/services/mail-texts";
@@ -54,8 +55,7 @@ export default async function MailTexte({ params, searchParams }: { params: Prom
   const std = Object.fromEntries(langs.map((l) => [l, defaultMailText(hotel, template, l, env().APP_BASE_URL)]));
   return (
     <div className="stack">
-      <h1>Gäste-Mails</h1>
-      <p className="muted small">Eigene Sätze in den Mails an Ihre Gäste. Beträge, Daten, Links und Bedingungen bleiben unverändert, Ihre Texte kommen dazu. Die Felder zeigen den Standardtext. Ändern Sie ihn nach Wunsch; Felder, die Sie nicht ändern, bleiben Standard. Ein leeres Feld stellt den Standardtext wieder her. Platzhalter: {"{name}"}, {"{hotel}"}, {"{reference}"}, {"{betrag}"} (offener Betrag), {"{datum}"} (Zahlungsfrist), {"{nummer}"} (Rechnungsnummer).</p>
+      <h1>Gäste-Mails<InfoTip>Eigene Sätze in den Mails an Ihre Gäste. Beträge, Daten, Links und Bedingungen bleiben unverändert, Ihre Texte kommen dazu. Die Felder zeigen den Standardtext. Ändern Sie ihn nach Wunsch; Felder, die Sie nicht ändern, bleiben Standard. Ein leeres Feld stellt den Standardtext wieder her. Platzhalter: {"{name}"}, {"{hotel}"}, {"{reference}"}, {"{betrag}"} (offener Betrag), {"{datum}"} (Zahlungsfrist), {"{nummer}"} (Rechnungsnummer).</InfoTip></h1>
       <nav className="seg" aria-label="Mail">
         {MAIL_TEMPLATES.map((t) => <a key={t.key} href={`?t=${t.key}`} aria-current={t.key === template ? "true" : undefined}>{t.label}</a>)}
       </nav>

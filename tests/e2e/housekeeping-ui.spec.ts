@@ -27,6 +27,17 @@ test("Reinigung: Zähler, Statusschalter heute, an anderen Tagen gesperrt", asyn
   expect(before).toBe(1);
   await expect(page.locator(".hk-card.dirty")).toHaveCount(0);
 
+  // Mangel melden / Auftrag in der Seitenleiste; Erklärung zu Sauber und Geprüft hinter ⓘ
+  await page.getByRole("button", { name: "Was heisst Sauber und Geprüft?" }).click();
+  await expect(page.getByRole("region", { name: "Was heisst Sauber und Geprüft?" })).toContainText("Zusätzlich");
+  await page.keyboard.press("Escape");
+  await first.getByRole("link", { name: "Mangel melden / Auftrag" }).click();
+  const drawer = page.getByRole("dialog");
+  await drawer.locator("textarea[name=text]").fill("Glühbirne defekt");
+  await drawer.getByRole("button", { name: "Speichern" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(first).toContainText("Mangel: Glühbirne defekt");
+
   const tomorrow = addDays(todayIn("Europe/Zurich"), 1);
   await page.goto(`/admin/${h.hotel.id}/housekeeping?day=${tomorrow}`);
   await expect(page.getByText("nur für heute")).toBeVisible();

@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { DownloadLink } from "@/components/admin/DownloadLink";
 import { notFound, redirect } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { ZodError } from "zod";
@@ -100,7 +101,7 @@ export default async function GroupPage({ params, searchParams }: { params: Prom
                 <td><a href={`/admin/${hotel.id}/bookings/${r.bookingId}`}>{r.reference}</a></td></tr>))}</tbody>
           </table></div>
         ) : <p className="muted small">Noch keine Teilnehmer.</p>}
-        {d.rooming.length ? <p><a className="btn secondary small" href={`/admin/${hotel.id}/groups/${g.id}/rooming`}>Als CSV (Excel)</a></p> : null}
+        {d.rooming.length ? <p><DownloadLink href={`/admin/${hotel.id}/groups/${g.id}/rooming`}>Als CSV (Excel)</DownloadLink></p> : null}
         {active && d.blocks.length ? (
           <form action={member} className="stack">{hid}
             <h3 style={{ margin: 0 }}>Teilnehmer hinzufügen</h3>

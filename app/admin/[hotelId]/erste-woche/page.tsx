@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { requireHotel } from "@/src/auth/guard";
 import { adminNav, allPages } from "@/src/admin/nav";
 import { hiddenNavKeys } from "@/src/domain/modules";
@@ -27,8 +28,7 @@ export default async function FirstWeekPage({ params }: { params: Promise<{ hote
   const p = progress(tasks, done);
   return (
     <div className="stack">
-      <h1>Erste Woche: {GUIDE_ROLE_LABEL[guideRole(role)]}</h1>
-      <p className="muted">{p.done} von {p.total} erledigt. Jede Aufgabe führt direkt an die richtige Stelle. Unter «Hilfe» steht, was jede Funktion kann.</p>
+      <h1>Erste Woche: {GUIDE_ROLE_LABEL[guideRole(role)]}<InfoTip>{p.done} von {p.total} erledigt. Jede Aufgabe führt direkt an die richtige Stelle. Unter «Hilfe» steht, was jede Funktion kann.</InfoTip></h1>
       <ul className="stack" style={{ listStyle: "none", padding: 0 }}>
         {tasks.map((t) => (
           <li key={t.key} className="card">

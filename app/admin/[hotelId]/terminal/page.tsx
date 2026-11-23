@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -30,7 +31,7 @@ export default async function TerminalPage({ params, searchParams }: { params: P
     <div className="stack">
       <h1>Kartenterminal</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
-      <p className="muted">Kartenzahlung am Empfang mit einem Stripe-Kartenleser (z. B. WisePOS E oder S700). Die Zahlung geht auf Ihr Stripe-Konto und wird in der Buchung als «Karte» verbucht. Bezahlt wird auf der Buchung unter «Rechnung &amp; Kasse».</p>
+      <div><InfoTip label="Worum geht es hier?">Kartenzahlung am Empfang mit einem Stripe-Kartenleser (z. B. WisePOS E oder S700). Die Zahlung geht auf Ihr Stripe-Konto und wird in der Buchung als «Karte» verbucht. Bezahlt wird auf der Buchung unter «Rechnung &amp; Kasse».</InfoTip></div>
       <div className="card stack">
         <h3>Kartenleser</h3>
         {readers.length ? <ul>{readers.map((r) => <li key={r.id}>{r.label}</li>)}</ul> : <p className="muted small">Noch kein Gerät.</p>}

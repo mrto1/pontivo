@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { DownloadLink } from "@/components/admin/DownloadLink";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -55,7 +56,7 @@ export default async function PosClosePage({ params, searchParams }: { params: P
             <div><button className="btn">Tag abschliessen</button></div>
           </form>
         )}
-        <p><a className="btn secondary small" href={`/admin/${hotel.id}/restaurant/export?from=${day}&to=${day}`}>Bons dieses Tages (CSV)</a> <a className="btn secondary small" href={`/admin/${hotel.id}/restaurant/export?from=${day.slice(0, 8)}01&to=${day}`}>Monat bis hier (CSV)</a></p>
+        <p><DownloadLink href={`/admin/${hotel.id}/restaurant/export?from=${day}&to=${day}`}>Bons dieses Tages (CSV)</DownloadLink> <DownloadLink href={`/admin/${hotel.id}/restaurant/export?from=${day.slice(0, 8)}01&to=${day}`}>Monat bis hier (CSV)</DownloadLink></p>
       </section>
       {warn.unsynced.length || warn.rejected.length || warn.unassigned.length ? (
         <section className="card stack">

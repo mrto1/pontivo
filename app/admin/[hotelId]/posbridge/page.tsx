@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -42,7 +43,7 @@ export default async function PosBridgePage({ params, searchParams }: { params: 
     <div className="stack">
       <h1>Kassen-Schnittstelle</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
-      <p className="muted">Wer seine Restaurantkasse behält, bucht Posten über diese Schnittstelle aufs Zimmer. Die Posten erscheinen in der Hotelrechnung der Buchung.</p>
+      <div><InfoTip label="Worum geht es hier?">Wer seine Restaurantkasse behält, bucht Posten über diese Schnittstelle aufs Zimmer. Die Posten erscheinen in der Hotelrechnung der Buchung.</InfoTip></div>
       {sp.new ? (
         <div className="card stack">
           <h2>Neuer Schlüssel</h2>

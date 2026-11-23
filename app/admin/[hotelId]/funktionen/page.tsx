@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
@@ -35,8 +36,7 @@ export default async function Funktionen({ params, searchParams }: { params: Pro
   const rows = await moduleRows(hotel.id);
   return (
     <div className="stack">
-      <h1>Funktionen</h1>
-      <p className="muted small">Schalten Sie aus, was Sie nicht brauchen. Es verschwindet dann aus dem Menü. Ihre Daten bleiben erhalten und sind wieder da, wenn Sie die Funktion einschalten. KI-Chat und Upselling schalten Sie auf ihren eigenen Seiten ein.</p>
+      <h1>Funktionen<InfoTip>Schalten Sie aus, was Sie nicht brauchen. Es verschwindet dann aus dem Menü. Ihre Daten bleiben erhalten und sind wieder da, wenn Sie die Funktion einschalten. KI-Chat und Upselling schalten Sie auf ihren eigenen Seiten ein.</InfoTip></h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       {MODULE_GROUPS.map((g) => (
         <section key={g.title} className="card stack">

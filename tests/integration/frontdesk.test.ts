@@ -4,7 +4,7 @@ import { closeDb, db } from "../../src/db/client";
 import { bookingRooms, bookings, rooms } from "../../src/db/schema";
 import { confirmBooking, createDirectBooking } from "../../src/services/bookings";
 import { todayView } from "../../src/services/today";
-import { assignRoom, autoAssign, createRoom, dayLists, deleteRoom, FrontdeskError, listMoves, listRooms, moveRoom, planBookings, seedRooms, setRoomActive } from "../../src/services/frontdesk";
+import { assignRoom, autoAssign, createRoom, dayLists, deleteRoom, FrontdeskError, listMoves, listRooms, moveRoom, planBookings, seedRooms, setRoomActive, updateRoom } from "../../src/services/frontdesk";
 import { generateTasks } from "../../src/services/housekeeping";
 import { addDays, todayIn } from "../../src/domain/dates";
 import { guest, inDays, makeHotel } from "../helpers";
@@ -33,6 +33,21 @@ describe("Rezeption (SPEC 16.2)", () => {
     expect(s.rooms.map((r) => r.number)).toEqual(["1", "2", "3"]);
     expect(await seedRooms(s.hotel.id, s.rt.roomType.id, "t")).toBe(0);
     await expect(createRoom(s.hotel.id, { roomTypeId: s.rt.roomType.id, number: "2" }, "t")).rejects.toBeInstanceOf(FrontdeskError);
+  });
+
+  it("Zimmer ändern: Nummer, Etage, Notiz, Sperre; Duplikat, fremdes Hotel und Typwechsel mit Buchung abgelehnt", async () => {
+    const s = await setup(2);
+    const other = await setup(1);
+    const [r1, r2] = s.rooms;
+    await updateRoom(s.hotel.id, r1.id, { roomTypeId: r1.roomTypeId, number: "101", floor: "1. OG", note: "Balkon", active: false }, "t");
+    const after = (await listRooms(s.hotel.id)).find((r) => r.id === r1.id)!;
+    expect([after.number, after.floor, after.note, after.active]).toEqual(["101", "1. OG", "Balkon", false]);
+    await expect(updateRoom(s.hotel.id, r1.id, { roomTypeId: r1.roomTypeId, number: r2.number, active: true }, "t")).rejects.toThrow(/gibt es schon/);
+    await expect(updateRoom(s.hotel.id, other.rooms[0].id, { roomTypeId: r1.roomTypeId, number: "x", active: true }, "t")).rejects.toBeInstanceOf(FrontdeskError); // fremdes Hotel
+    // Typwechsel nur ohne zugewiesene Buchungen
+    const b = await book(s, 40);
+    await assignRoom(s.hotel.id, b.br.id, r2.id, "t");
+    await expect(updateRoom(s.hotel.id, r2.id, { roomTypeId: other.rt.roomType.id, number: r2.number, active: true }, "t")).rejects.toBeInstanceOf(FrontdeskError);
   });
 
   it("Zuweisung: gleicher Typ, keine Doppelbelegung, überlappende Nächte blockiert, Anschluss am Abreisetag erlaubt", async () => {

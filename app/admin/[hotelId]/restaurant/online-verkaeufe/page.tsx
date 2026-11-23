@@ -1,4 +1,5 @@
 import { requireHotel } from "@/src/auth/guard";
+import { DownloadLink } from "@/components/admin/DownloadLink";
 import { requireModule } from "@/src/services/modules";
 import { onlineSalesDays } from "@/src/services/online-sales";
 import { salesTotal } from "@/src/domain/online-sales";
@@ -32,7 +33,7 @@ export default async function OnlineSales({ params, searchParams }: { params: Pr
       <h1>Online-Verkäufe {label}</h1>
       <div className="no-print">
         <PeriodNav prev={`${base}?month=${shiftMonth(month, -1)}`} next={month < cur ? `${base}?month=${shiftMonth(month, 1)}` : undefined} todayHref={base} todayActive={month === cur} todayLabel="Dieser Monat" jump={{ kind: "month", value: month, param: "month" }}>
-          <a className="btn secondary small" href={`${base}/csv?month=${month}`}>CSV</a>
+          <DownloadLink href={`${base}/csv?month=${month}`}>CSV</DownloadLink>
           <PrintButton />
         </PeriodNav>
       </div>

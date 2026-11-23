@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { DownloadLink } from "@/components/admin/DownloadLink";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -251,7 +252,7 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
           <div><label htmlFor="file">CSV-Datei</label><input id="file" name="file" type="file" accept=".csv,text/csv" required /></div>
           <button className="btn">Importieren</button>
         </div>
-        <p className="small"><a href={`/admin/${hotel.id}/restaurant/vorlage?kind=items`}>Vorlage Artikel (CSV)</a></p>
+        <p className="small"><DownloadLink href={`/admin/${hotel.id}/restaurant/vorlage?kind=items`}>Vorlage Artikel (CSV)</DownloadLink></p>
       </form>
     </div>
   );

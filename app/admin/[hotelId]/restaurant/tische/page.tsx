@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { DownloadLink } from "@/components/admin/DownloadLink";
 import { TableEditor } from "@/components/admin/TableEditor";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
@@ -70,7 +71,7 @@ export default async function TablesSettingsPage({ params, searchParams }: { par
           <div><label htmlFor="tfile">CSV-Datei</label><input id="tfile" name="file" type="file" accept=".csv,text/csv" required /></div>
           <button className="btn secondary">Importieren</button>
         </div>
-        <p className="small"><a href={`/admin/${hotel.id}/restaurant/vorlage?kind=tables`}>Vorlage Tische (CSV)</a></p>
+        <p className="small"><DownloadLink href={`/admin/${hotel.id}/restaurant/vorlage?kind=tables`}>Vorlage Tische (CSV)</DownloadLink></p>
       </form>
     </div>
   );

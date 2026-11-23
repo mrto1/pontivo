@@ -54,6 +54,25 @@ export async function seedRooms(hotelId: string, roomTypeId: string, actor: stri
   return made;
 }
 
+export async function updateRoom(hotelId: string, roomId: string, input: { roomTypeId: string; number: string; floor?: string; note?: string; active: boolean }, actor: string): Promise<void> {
+  const number = input.number.trim();
+  if (!number || number.length > 20) throw new FrontdeskError("Bitte eine Zimmernummer (höchstens 20 Zeichen) angeben.");
+  const [cur] = await db().select().from(rooms).where(and(eq(rooms.id, roomId), eq(rooms.hotelId, hotelId)));
+  if (!cur) throw new FrontdeskError("Zimmer nicht gefunden.");
+  const [rt] = await db().select().from(roomTypes).where(and(eq(roomTypes.id, input.roomTypeId), eq(roomTypes.hotelId, hotelId)));
+  if (!rt) throw new FrontdeskError("Zimmertyp nicht gefunden.");
+  const [dup] = await db().select({ id: rooms.id }).from(rooms).where(and(eq(rooms.hotelId, hotelId), eq(rooms.number, number), ne(rooms.id, roomId)));
+  if (dup) throw new FrontdeskError(`Die Nummer «${number}» gibt es schon.`);
+  if (cur.roomTypeId !== rt.id) {
+    // Zugewiesene Buchungen gehören zum bisherigen Zimmertyp: Wechsel nur, solange keine Buchung am Zimmer hängt
+    const [used] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM booking_rooms WHERE hotel_id = ${hotelId} AND room_id = ${roomId}`));
+    if (used.n > 0) throw new FrontdeskError("Der Zimmertyp kann nicht geändert werden, solange dem Zimmer Buchungen zugewiesen sind (auch vergangene).");
+  }
+  await db().update(rooms).set({ roomTypeId: rt.id, number, floor: (input.floor ?? "").trim().slice(0, 40), note: (input.note ?? "").trim().slice(0, 200), active: input.active })
+    .where(and(eq(rooms.id, roomId), eq(rooms.hotelId, hotelId)));
+  await audit(db(), { hotelId, actor, action: "room.update", entity: "room", entityId: roomId, details: { number, roomTypeId: rt.id, active: input.active } });
+}
+
 export async function setRoomActive(hotelId: string, roomId: string, active: boolean, actor: string) {
   await db().update(rooms).set({ active }).where(and(eq(rooms.id, roomId), eq(rooms.hotelId, hotelId)));
   await audit(db(), { hotelId, actor, action: active ? "room.on" : "room.off", entity: "room", entityId: roomId, details: {} });

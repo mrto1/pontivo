@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { DownloadLink } from "./DownloadLink";
 
 export type ExportAction = { label: string; path: string; param: string | Partial<Record<Kind, string>>; extra?: Record<string, string>; target?: "_blank"; primary?: boolean };
 export type Kind = "month" | "quarter" | "year" | "range";
@@ -54,7 +55,7 @@ export function ExportCard({ title, lead, kinds, initial, actions, children }: {
       </div>
       {children}
       <div className="export-actions">
-        {actions.map((a) => <a key={a.label} className={`btn small${a.primary === false ? " secondary" : ""}`} href={href(a)} target={a.target}>{a.label}</a>)}
+        {actions.map((a) => <DownloadLink key={a.label} primary={a.primary !== false && actions.indexOf(a) === 0} href={href(a)} target={a.target}>{a.label}</DownloadLink>)}
       </div>
     </section>
   );

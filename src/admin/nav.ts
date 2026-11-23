@@ -105,6 +105,7 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
         set("Betrieb", link("payments", "Zahlungsmethoden", "zahlungen"), "Karte und TWINT über Stripe, Anzahlung, Grundgebühr und hinterlegte Karte."),
         set("Betrieb", link("rooms", "Zimmer & Tarife"), "Zimmertypen, Fotos, Preise und Tarife."),
         set("Betrieb", link("extras", "Zusatzleistungen", "rooms/extras"), "Hund, Parkplatz, Endreinigung und weitere Extras zum Zimmer."),
+        set("Betrieb", link("resourcelist", "Angebote vor Ort", "resources/angebote"), "Sauna, Seminarraum, Tennisplatz: Plätze, Zeitfenster und Preise."),
         set("Betrieb", link("team", "Team & Rollen"), "Wer Zugang hat und was jede Person sehen darf."),
         set("Verkauf", { ...link("g-site", "Website & Buchung", "site"), tabs: [link("site", "Website"), link("direct", "Direktbuchung", "direktbuchung"), link("api", "Schnittstelle (API)")] }, "Texte, Fotos und Farben der Website, Buchungsstrecke, Werkzeuge für Direktbuchungen."),
         set("Verkauf", { ...link("g-channels", "Kanäle", "channex"), tabs: [link("channex", "Channel-Manager"), link("ical", "Kalender-Abgleich")] }, "Booking.com, Airbnb, Expedia und iCal, dazu die Provision der Portale."),

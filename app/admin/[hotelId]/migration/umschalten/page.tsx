@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireHotel } from "@/src/auth/guard";
@@ -44,8 +45,7 @@ export default async function Umschalten({ params, searchParams }: { params: Pro
   return (
     <div className="stack">
       <p className="small"><a href={`/admin/${hotel.id}/migration`}>← Datenübernahme</a></p>
-      <h1>Umschalt-Checkliste</h1>
-      <p className="muted">Gehen Sie die Punkte der Reihe nach durch. Pontivo prüft, was es prüfen kann; den Rest bestätigen Sie. Nichts ist gesperrt: Erst mit «Umschalten» endet der Parallelbetrieb.</p>
+      <h1>Umschalt-Checkliste<InfoTip>Gehen Sie die Punkte der Reihe nach durch. Pontivo prüft, was es prüfen kann; den Rest bestätigen Sie. Nichts ist gesperrt: Erst mit «Umschalten» endet der Parallelbetrieb.</InfoTip></h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       {sp.error ? <p className="notice warn" role="alert">{sp.error}</p> : null}
       {done ? <p className="notice">Umgeschaltet am {new Date(done).toLocaleDateString("de-CH")}. Ihre Übernahmen lassen sich noch bis {rollbackUntil(done).toLocaleDateString("de-CH")} rückgängig machen (Seite «Datenübernahme»), solange nichts Wesentliches daran bearbeitet wurde.</p> : null}

@@ -1,4 +1,6 @@
 import { PeriodNav } from "@/components/admin/PeriodNav";
+import { DownloadLink } from "@/components/admin/DownloadLink";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { hestaMonth } from "@/src/services/hesta";
@@ -21,8 +23,7 @@ export default async function Hesta({ params, searchParams }: { params: Promise<
   const tot = r.rows.reduce((a, x) => ({ arrivals: a.arrivals + x.arrivals, nights: a.nights + x.nights }), { arrivals: 0, nights: 0 });
   return (
     <div className="stack">
-      <h1>Beherbergungsstatistik (HESTA)</h1>
-      <p className="muted">Zahlen für die Meldung an das Bundesamt für Statistik. Sie tragen sie im Portal des BFS (eHESTA) ein; eine automatische Übermittlung gibt es noch nicht. Herkunftsland = Nationalität aus der Gästemeldung; Personen ohne Meldung stehen unter «Land unbekannt».</p>
+      <h1>Beherbergungsstatistik (HESTA)<InfoTip>Zahlen für die Meldung an das Bundesamt für Statistik. Sie tragen sie im Portal des BFS (eHESTA) ein; eine automatische Übermittlung gibt es noch nicht. Herkunftsland = Nationalität aus der Gästemeldung; Personen ohne Meldung stehen unter «Land unbekannt».</InfoTip></h1>
       <PeriodNav prev={`?month=${shiftMonth(month, -1)}`} next={month < thisMonth ? `?month=${shiftMonth(month, 1)}` : undefined} todayHref="?" todayActive={month === shiftMonth(thisMonth, -1)} todayLabel="Letzter Monat" prevLabel="Vormonat" nextLabel="Folgemonat" jump={{ kind: "month", value: month, param: "month" }} />
       <section className="card stack">
         <h2>Angebot und Belegung</h2>
@@ -45,7 +46,7 @@ export default async function Hesta({ params, searchParams }: { params: Promise<
             </tbody>
           </table>
         ) : <p className="muted">Keine Gäste in diesem Monat.</p>}
-        <div><a className="btn secondary small" href={`/admin/${hotel.id}/statistics/hesta/csv?month=${month}`}>Als CSV laden</a></div>
+        <div><DownloadLink href={`/admin/${hotel.id}/statistics/hesta/csv?month=${month}`}>Als CSV laden</DownloadLink></div>
       </section>
     </div>
   );

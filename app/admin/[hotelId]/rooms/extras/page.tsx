@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
@@ -107,7 +108,7 @@ export default async function Extras({ params, searchParams }: { params: Promise
     <div className="stack">
             <h1>Zusatzleistungen</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
-      <p className="muted">Gäste wählen Zusatzleistungen bei der Online-Buchung dazu, der Betrag wird gleich mitbezahlt. Obligatorische Leistungen sind im angezeigten Gesamtpreis bereits enthalten (Preisbekanntgabe). Bei einer Stornierung werden Zusatzleistungen immer zurückerstattet; die Stornogebühr gilt nur für den Zimmerpreis.</p>
+      <div><InfoTip label="Worum geht es hier?">Gäste wählen Zusatzleistungen bei der Online-Buchung dazu, der Betrag wird gleich mitbezahlt. Obligatorische Leistungen sind im angezeigten Gesamtpreis bereits enthalten (Preisbekanntgabe). Bei einer Stornierung werden Zusatzleistungen immer zurückerstattet; die Stornogebühr gilt nur für den Zimmerpreis.</InfoTip></div>
       {hotel.channexEnabled ? <p className="notice warn small">Buchungen über Booking.com &amp; Co. enthalten diese Zusatzleistungen nicht. Obligatorische Gebühren wie eine Endreinigung bitte zusätzlich im Extranet des Portals eintragen.</p> : null}
 
       {list.length ? (

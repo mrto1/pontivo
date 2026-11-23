@@ -1,4 +1,5 @@
 import { FormSwitch } from "@/components/admin/FormSwitch";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
@@ -51,8 +52,7 @@ export default async function PortalSettingsPage({ params, searchParams }: { par
   const tips = p?.tips ?? [];
   return (
     <div className="stack">
-      <h1>Gästeportal</h1>
-      <p className="muted">Die Buchungsseite, die der Gast über den Link in seiner Mail öffnet (kein Login). Hier legen Sie fest, was er dort sieht und tun kann. Die Seite sieht für alle Betriebe gleich aus, Sie ändern nur die Inhalte.</p>
+      <h1>Gästeportal<InfoTip>Die Buchungsseite, die der Gast über den Link in seiner Mail öffnet (kein Login). Hier legen Sie fest, was er dort sieht und tun kann. Die Seite sieht für alle Betriebe gleich aus, Sie ändern nur die Inhalte.</InfoTip></h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
 
       <form action={save} className="card stack">

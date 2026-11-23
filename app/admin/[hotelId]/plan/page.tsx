@@ -1,10 +1,14 @@
 import { Notice } from "@/components/admin/Notice";
 import { PeriodNav } from "@/components/admin/PeriodNav";
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { InfoTip } from "@/components/admin/InfoTip";
+import { DrawerKeys } from "@/components/admin/DrawerKeys";
+import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { requireModule } from "@/src/services/modules";
-import { assignRoom, autoAssign, createRoom, deleteRoom, FrontdeskError, listRooms, moveRoom, planBookings, seedRooms, setRoomActive, type PlanBooking } from "@/src/services/frontdesk";
+import { assignRoom, autoAssign, createRoom, deleteRoom, FrontdeskError, listRooms, moveRoom, planBookings, seedRooms, updateRoom, type PlanBooking } from "@/src/services/frontdesk";
 import { addDays, diffDays, isDay, todayIn, weekday } from "@/src/domain/dates";
 import { formatDay } from "@/src/i18n/dict";
 import { db } from "@/src/db/client";
@@ -17,7 +21,7 @@ const DAYS = 14;
 const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
-async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<string>) {
+async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<string>, reopen = "") {
   const c = await requireHotel(s(f, "hotelId"), "staff", "plan");
   await requireModule(c.hotel.id, "frontdesk");
   let msg: string;
@@ -26,6 +30,8 @@ async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>
   } catch (e) {
     if (!(e instanceof FrontdeskError)) throw e;
     msg = `Nicht geändert: ${e.message}`;
+    // bei einem Fehler bleibt die Seitenleiste offen (reopen = «room=<id>» bzw. «room=neu»)
+    return redirect(`/admin/${c.hotel.id}/plan?from=${encodeURIComponent(s(f, "from"))}${reopen ? `&${reopen}` : ""}&msg=${encodeURIComponent(msg)}`);
   }
   redirect(`/admin/${c.hotel.id}/plan?from=${encodeURIComponent(s(f, "from"))}&msg=${encodeURIComponent(msg)}`);
 }
@@ -42,27 +48,22 @@ async function auto(f: FormData) {
   "use server";
   await act(f, async (c) => { const r = await autoAssign(c.hotel.id, todayIn(c.hotel.timezone), c.actor); return `${r.assigned} Buchungen zugewiesen${r.left ? `, ${r.left} ohne freies Zimmer` : ""}.`; });
 }
-async function addRoom(f: FormData) {
+async function saveRoom(f: FormData) {
   "use server";
+  const id = s(f, "roomId");
   await act(f, async (c) => {
     if (!atLeast(c.role, "manager")) throw new FrontdeskError("Dafür braucht es die Rolle Manager.");
-    await createRoom(c.hotel.id, { roomTypeId: s(f, "roomTypeId"), number: s(f, "number"), floor: s(f, "floor"), note: s(f, "note") }, c.actor);
+    const input = { roomTypeId: s(f, "roomTypeId"), number: s(f, "number"), floor: s(f, "floor"), note: s(f, "note") };
+    if (id) { await updateRoom(c.hotel.id, id, { ...input, active: f.get("active") === "on" }, c.actor); return "Zimmer gespeichert."; }
+    await createRoom(c.hotel.id, input, c.actor);
     return "Zimmer angelegt.";
-  });
+  }, `room=${id || "neu"}`);
 }
 async function seed(f: FormData) {
   "use server";
   await act(f, async (c) => {
     if (!atLeast(c.role, "manager")) throw new FrontdeskError("Dafür braucht es die Rolle Manager.");
     return `${await seedRooms(c.hotel.id, s(f, "roomTypeId"), c.actor)} Zimmer angelegt.`;
-  });
-}
-async function toggleRoom(f: FormData) {
-  "use server";
-  await act(f, async (c) => {
-    if (!atLeast(c.role, "manager")) throw new FrontdeskError("Dafür braucht es die Rolle Manager.");
-    await setRoomActive(c.hotel.id, s(f, "roomId"), f.get("active") === "1", c.actor);
-    return "Gespeichert.";
   });
 }
 async function removeRoom(f: FormData) {
@@ -109,15 +110,21 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
   const hid = <input type="hidden" name="hotelId" value={hotel.id} />;
   const fromField = <input type="hidden" name="from" value={from} />;
   const base = `/admin/${hotel.id}/plan`;
+  // Seitenleiste: ?room=<id> bearbeitet ein Zimmer, ?room=neu legt eines an
+  const editRoom = manager && sp.room && sp.room !== "neu" ? rms.find((r) => r.id === sp.room) : undefined;
+  const drawerOpen = manager && types.length > 0 && (sp.room === "neu" || !!editRoom);
 
   return (
     <div className="stack">
       <h1 className="sr-only">Zimmerplan</h1>
-      <p className="muted" style={{ margin: 0, maxWidth: "46rem" }}>
-        Der Zimmerplan zeigt auf einen Blick, welches Zimmer an welchem Tag von wem belegt ist, und wo noch Zimmer frei sind. Sie teilen jeder Buchung eine Zimmernummer zu (von Hand oder automatisch) und können den Gast bei Bedarf in ein anderes Zimmer umquartieren, ohne dass sich Preis oder Verfügbarkeit ändern.
-        Das lohnt sich, sobald Gäste konkrete Zimmer bekommen: Die Reinigungsliste weiss dann, welches Zimmer nach der Abreise zu putzen ist, die Tagesliste, wohin der Gast beim Check-in geht, und Doppelbelegungen sind ausgeschlossen. Ohne Zimmerplan funktioniert das Buchen trotzdem; er ist optional.
-      </p>
-      {sp.msg ? <Notice text={sp.msg} /> : null}
+      <div>
+        <InfoTip label="Wozu dient der Zimmerplan?">
+          <p>Hier sehen Sie, welches Zimmer wann belegt ist und wo noch Zimmer frei sind.</p>
+          <p>Weisen Sie jeder Buchung eine Zimmernummer zu, von Hand oder automatisch. So weiss die Reinigung, was zu putzen ist, und der Empfang, wohin der Gast beim Check-in geht. Zimmerwechsel ändern weder Preis noch Verfügbarkeit.</p>
+          <p>Der Zimmerplan ist optional: Buchen funktioniert auch ohne.</p>
+        </InfoTip>
+      </div>
+      {sp.msg && !drawerOpen ? <Notice text={sp.msg} /> : null}
       <PeriodNav prev={`${base}?from=${addDays(from, -7)}`} next={`${base}?from=${addDays(from, 7)}`} todayHref={base} todayActive={from === today} prevLabel="Woche zurück" nextLabel="Woche vor" jump={{ value: from, param: "from" }} />
 
       {rms.length === 0 ? (
@@ -216,41 +223,76 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
 
       {manager ? (
         <section className="card stack">
-          <h2>Zimmer verwalten</h2>
-          <p className="small muted">Pro Zimmertyp einen Klick legt die Zimmer 1, 2, 3 … passend zur Anzahl an. Danach können Sie Zimmer einzeln ergänzen oder sperren (z. B. wegen Renovation). Verfügbarkeit und Portale ändern sich dadurch nicht.</p>
-          <div className="inline-form">
-            {types.map((t) => (
-              <form key={t.id} action={seed}>{hid}{fromField}<input type="hidden" name="roomTypeId" value={t.id} /><button className="btn secondary small">{t.name}: Zimmer anlegen ({t.roomCount})</button></form>
-            ))}
+          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
+            <h2 style={{ margin: 0 }}>Zimmer verwalten</h2>
+            <Link className="btn" href={`${base}?from=${from}&room=neu`} scroll={false}>+ Zimmer hinzufügen</Link>
           </div>
-          <form action={addRoom} className="inline-form">
-            {hid}{fromField}
-            <div><label>Zimmertyp</label><select name="roomTypeId">{types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
-            <div><label>Nummer</label><input name="number" required maxLength={20} placeholder="z. B. 12" /></div>
-            <div><label>Etage (optional)</label><input name="floor" maxLength={40} /></div>
-            <div><label>Notiz (optional)</label><input name="note" maxLength={200} /></div>
-            <button className="btn small">Zimmer hinzufügen</button>
-          </form>
-          {rms.length ? (
-            <div className="scroll-x"><table className="table">
-              <thead><tr><th>Nr.</th><th>Typ</th><th>Etage</th><th>Status</th><th /></tr></thead>
-              <tbody>
-                {rms.map((r) => (
-                  <tr key={r.id}>
-                    <td>{r.number}</td><td className="small">{r.typeName}</td><td className="small">{r.floor}</td>
-                    <td>{r.active ? <span className="badge">aktiv</span> : <span className="badge warn">gesperrt</span>}</td>
-                    <td>
-                      <div className="inline-form">
-                        <form action={toggleRoom}>{hid}{fromField}<input type="hidden" name="roomId" value={r.id} /><input type="hidden" name="active" value={r.active ? "0" : "1"} /><button className="btn secondary small">{r.active ? "Sperren" : "Freigeben"}</button></form>
-                        <form action={removeRoom}>{hid}{fromField}<input type="hidden" name="roomId" value={r.id} /><button className="btn secondary small">Löschen</button></form>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table></div>
-          ) : null}
+          <p className="small muted">Tippen Sie auf ein Zimmer, um Nummer, Etage oder Notiz zu ändern, es zu sperren (z. B. wegen Renovation) oder zu löschen. Verfügbarkeit und Portale ändern sich dadurch nicht.</p>
+          {types.map((t) => {
+            const have = rms.filter((r) => r.roomTypeId === t.id).length;
+            const missing = t.roomCount - have;
+            return missing > 0 ? (
+              <form key={t.id} action={seed} className="room-missing">
+                {hid}{fromField}<input type="hidden" name="roomTypeId" value={t.id} />
+                <span className="small"><strong>{t.name}</strong>: {have} von {t.roomCount} Zimmern angelegt</span>
+                <button className="btn secondary small">{have === 0 ? `Zimmer 1–${t.roomCount} anlegen` : `${missing} fehlende anlegen`}</button>
+              </form>
+            ) : null;
+          })}
+          {types.map((t) => {
+            const rs = rms.filter((r) => r.roomTypeId === t.id);
+            return rs.length ? (
+              <div key={t.id} className="stack" style={{ gap: 6 }}>
+                <h3 className="small muted" style={{ margin: 0 }}>{t.name}</h3>
+                <ul className="plan-list">
+                  {rs.map((r) => (
+                    <li key={r.id}>
+                      <Link href={`${base}?from=${from}&room=${r.id}`} scroll={false} className="plan-row" aria-label={`Zimmer ${r.number} bearbeiten`}>
+                        <span><strong>{r.number}</strong>{r.floor ? <span className="muted small"> · {r.floor}</span> : null}{r.note ? <><br /><span className="muted small">{r.note}</span></> : null}</span>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>{r.active ? null : <span className="badge warn">gesperrt</span>}<span className="rt-arrow" aria-hidden="true">›</span></span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null;
+          })}
+          {rms.length === 0 && types.length === 0 ? <p className="muted small">Legen Sie zuerst unter «Zimmer &amp; Tarife» einen Zimmertyp an.</p> : null}
         </section>
+      ) : null}
+
+      {drawerOpen ? (
+        <div className="drawer-wrap">
+          <Link className="drawer-backdrop" href={`${base}?from=${from}`} scroll={false} aria-label="Schliessen" tabIndex={-1} />
+          <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" tabIndex={-1}>
+            <header className="drawer-head">
+              <h2 id="drawer-title">{editRoom ? `Zimmer ${editRoom.number}` : "Neues Zimmer"}</h2>
+              <Link className="drawer-close" href={`${base}?from=${from}`} scroll={false} aria-label="Schliessen">✕</Link>
+            </header>
+            <div className="drawer-body stack">
+              {sp.msg ? <Notice text={sp.msg} /> : null}
+              <form action={saveRoom} className="stack">
+                {hid}{fromField}<input type="hidden" name="roomId" value={editRoom?.id ?? ""} />
+                <div><label>Zimmertyp</label><select name="roomTypeId" defaultValue={editRoom?.roomTypeId ?? types[0]?.id}>{types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
+                <div className="form-grid">
+                  <div><label>Nummer</label><input name="number" required maxLength={20} defaultValue={editRoom?.number} placeholder="z. B. 12" /></div>
+                  <div><label>Etage (optional)</label><input name="floor" maxLength={40} defaultValue={editRoom?.floor} placeholder="z. B. 2. OG" /></div>
+                </div>
+                <div><label>Notiz (optional)</label><input name="note" maxLength={200} defaultValue={editRoom?.note} placeholder="z. B. Balkon, ruhig gelegen" /></div>
+                {editRoom ? <label className="check"><input type="checkbox" name="active" defaultChecked={editRoom.active} />Zimmer ist in Betrieb (abwählen = gesperrt, z. B. wegen Renovation)</label> : null}
+                <div className="drawer-actions"><button className="btn">{editRoom ? "Speichern" : "Zimmer anlegen"}</button><Link className="btn secondary" href={`${base}?from=${from}`} scroll={false}>Abbrechen</Link></div>
+              </form>
+              {editRoom ? (
+                <form action={removeRoom} className="room-delete">
+                  {hid}{fromField}<input type="hidden" name="roomId" value={editRoom.id} />
+                  <p className="small muted">Zimmer, denen schon Buchungen zugewiesen waren, lassen sich nicht löschen; sperren Sie sie stattdessen.</p>
+                  <ConfirmButton ask={`Zimmer ${editRoom.number} wirklich löschen?`} className="btn secondary small danger-text">Zimmer löschen</ConfirmButton>
+                </form>
+              ) : null}
+            </div>
+          </aside>
+          <DrawerKeys closeHref={`${base}?from=${from}`} />
+        </div>
       ) : null}
     </div>
   );

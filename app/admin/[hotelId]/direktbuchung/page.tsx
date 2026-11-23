@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
@@ -84,8 +85,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
 
   return (
     <div className="stack">
-      <h1>Direktbuchung</h1>
-      <p className="muted" style={{ margin: 0 }}>Werkzeuge, die mehr Gäste zur Direktbuchung bringen und freie Nächte füllen. Alles ist je Betrieb ein- und ausschaltbar.</p>
+      <h1>Direktbuchung<InfoTip>Werkzeuge, die mehr Gäste zur Direktbuchung bringen und freie Nächte füllen. Alles ist je Betrieb ein- und ausschaltbar.</InfoTip></h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
 
       <section className="card stack" id="vorteile">

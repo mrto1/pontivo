@@ -30,7 +30,7 @@ describe("Admin-Menü", () => {
     const byKey = Object.fromEntries(allPagesBoth(hotel).map((i) => [i.key, i.href.replace("/admin/h1/", "")]));
     expect(byKey).toMatchObject({
       home: "/admin/h1", housekeeping: "housekeeping", inbox: "inbox", restaurant: "restaurant", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", kasse: "kasse", posclose: "restaurant/abschluss", plan: "plan", calendar: "calendar", pricing: "preise",
-      bookings: "bookings", groups: "groups", resources: "resources", vouchers: "vouchers", guestbook: "guestbook", marketing: "marketing", feedback: "feedback",
+      bookings: "bookings", groups: "groups", resources: "resources", resourcelist: "resources/angebote", vouchers: "vouchers", guestbook: "guestbook", marketing: "marketing", feedback: "feedback",
       invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung", reports: "berichte",
       settings: "settings", rooms: "rooms", extras: "rooms/extras", payments: "zahlungen", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
       funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posdevices: "restaurant/geraete", posbridge: "posbridge", dininghome: "restaurant/heute", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste", tables: "restaurant/tische", ressettings: "restaurant/einstellungen", migration: "migration", report: "report", konto: "konto", firstweek: "erste-woche", help: "hilfe",
@@ -51,7 +51,7 @@ describe("Admin-Menü", () => {
     const groups = settingsGroups(nav);
     expect(groups.map((g) => g.title)).toEqual(["Betrieb", "Verkauf", "Gastronomie", "Technik"]);
     expect(groups.map((g) => g.items.map((i) => i.label))).toEqual([
-      ["Grunddaten", "Zahlungsmethoden", "Zimmer & Tarife", "Zusatzleistungen", "Team & Rollen"],
+      ["Grunddaten", "Zahlungsmethoden", "Zimmer & Tarife", "Zusatzleistungen", "Angebote vor Ort", "Team & Rollen"],
       ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "KI-Chat"],
       ["Speisekarte", "Tischplan", "Reservierung", "Bestellung", "Kasse"],
       ["Funktionen", "Geräte", "Datenübernahme", "Abo & Gebühren"],
