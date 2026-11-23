@@ -31,7 +31,7 @@ export function PortalHome({ contact, account, fee, minimum }: { contact: ShellC
     <MarketingShell contact={contact} account={account} current="home" heroImage tagline="Direktbuchung, Reservation und Bestellung für das Schweizer Gastgewerbe · Server und Datenbank bei Infomaniak in Genf" signupHref="/registrieren">
       <section className={s.heroSolo}>
         <h1 className={s.heroTitle}>Ihre Gäste direkt bei Ihnen. Ohne Umweg.</h1>
-        <p className={s.heroLead}>Gäste buchen, bestellen und reservieren direkt bei Ihnen, mit TWINT, Karte oder bar. Nur ${fee} % pro Buchung und Bestellung. Für Schweizer Unterkünfte und Restaurants.</p>
+        <p className={s.heroLead}>Gäste buchen, bestellen und reservieren direkt bei Ihnen, mit TWINT, Karte oder bar. Nur {fee} % pro Buchung und Bestellung. Für Schweizer Unterkünfte und Restaurants.</p>
         <div className={s.heroActions}>
           <a className={s.btn} href={pageHref("/unterkunft", st)}>Für Unterkünfte</a>
           <a className={s.btn} href={pageHref("/restaurant", st)}>Für Restaurants</a>
