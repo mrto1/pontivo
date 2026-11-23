@@ -53,21 +53,6 @@ export async function savePlatformBilling(input: { iban: string; paymentDays: nu
   return v;
 }
 
-const RESTAURANT_KEY = "restaurant_public";
-
-/** Restaurant-Seite öffentlich (SPEC 20.9): verlinkt auf der Startseite, in der Registrierung wählbar. Standard aus (Konzept Entscheid 1). */
-export async function restaurantPublic(): Promise<boolean> {
-  const [r] = await db().select().from(platformSettings).where(eq(platformSettings.key, RESTAURANT_KEY));
-  return r?.value === true;
-}
-
-export async function setRestaurantPublic(on: boolean, actor: string): Promise<void> {
-  await db().transaction(async (tx) => {
-    await tx.insert(platformSettings).values({ key: RESTAURANT_KEY, value: on, updatedBy: actor }).onConflictDoUpdate({ target: platformSettings.key, set: { value: on, updatedAt: new Date(), updatedBy: actor } });
-    await audit(tx, { hotelId: null, actor, action: "platform.restaurant_public", entity: "platform_settings", entityId: RESTAURANT_KEY, details: { on } });
-  });
-}
-
 const ORDER_FEE_KEY = "order_fee_model";
 
 /** Preismodell der Online-Bestellung (SPEC 20.4). Standard «fixed» (CHF 59/Monat), bis die ESTV die Plattformfrage positiv beantwortet. */

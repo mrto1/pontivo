@@ -15,8 +15,8 @@ const SWITCH_UNTIL = "2027-04-30";
  * Seite für Restaurants (SPEC 20.9, Texte: Claude Docs «Pontivo Website-Texte», Abschnitt 3).
  * Preise nach Restaurant-Konzept Abschnitt 6 (Anzahlung für Tischreservation gebührenfrei, Entscheid 21.11.2026).
  */
-export function RestaurantHome({ contact, account, draft, fee, feeBps, minimum, today, introRappen, introMonths, pilot }: {
-  contact: ShellContact; account: { label: string } | null; draft: boolean; fee: string; feeBps: number; minimum: string; today: string;
+export function RestaurantHome({ contact, account, fee, feeBps, minimum, today, introRappen, introMonths, pilot }: {
+  contact: ShellContact; account: { label: string } | null; fee: string; feeBps: number; minimum: string; today: string;
   /** Sonderangebot Online-Bestellung (SPEC 20.4): pauschal pro Monat in den ersten Monaten */ introRappen: number; introMonths: number;
   /** Pilotbetriebe: Kostendach pro Monat, Dauer; null = alle Plätze vergeben (Abschnitt verschwindet). Freie Plätze werden bewusst nicht angezeigt. */ pilot: { left: number; slots: number; capRappen: number; months: number } | null;
 }) {
@@ -56,8 +56,7 @@ export function RestaurantHome({ contact, account, draft, fee, feeBps, minimum, 
     { q: "Wem gehören die Gästedaten?", a: "Ihnen. Wir verkaufen keine Daten und betreiben keinen Marktplatz, auf dem Ihre Gäste zur Konkurrenz weitergeleitet werden." },
   ];
   return (
-    <MarketingShell contact={contact} account={account} restaurant current="restaurant" tagline="Website, Reservation, Bestellung und Kasse für Schweizer Restaurants · Server und Datenbank bei Infomaniak in Genf" signupHref="/registrieren?art=restaurant">
-      {draft ? <p className={s.draftNote} role="note">Entwurf: Diese Seite ist noch nicht verlinkt und für Suchmaschinen gesperrt. Freischalten unter Plattform-Verwaltung → Website-Texte.</p> : null}
+    <MarketingShell contact={contact} account={account} current="restaurant" tagline="Website, Reservation, Bestellung und Kasse für Schweizer Restaurants · Server und Datenbank bei Infomaniak in Genf" signupHref="/registrieren?art=restaurant">
       <section className={s.hero}>
         <div>
           <h1 className={s.heroTitle}>Website, Reservation, Bestellung und Kasse. Aus einer Hand.</h1>

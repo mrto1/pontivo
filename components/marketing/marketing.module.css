@@ -303,7 +303,6 @@
 .pathLink { display: flex; flex-direction: column; gap: 10px; color: inherit !important; text-decoration: none; transition: border-color .15s, transform .15s; }
 .pathLink:hover { border-color: var(--pv-keep); transform: translateY(-2px); }
 .pathCta { margin-top: auto; font-weight: 700; color: var(--pv-keep); }
-.draftNote { margin: 0 0 8px; padding: 10px 14px; border-radius: 10px; background: color-mix(in srgb, var(--pv-fee) 22%, var(--pv-white)); color: var(--pv-ink); font-size: .95rem; }
 .tableWrap { overflow-x: auto; background: var(--pv-white); border-radius: 16px; box-shadow: 0 1px 0 var(--pv-line); margin-bottom: 16px; }
 .priceTable { width: 100%; border-collapse: collapse; font-size: 1rem; }
 .priceTable th, .priceTable td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--pv-line); vertical-align: top; }

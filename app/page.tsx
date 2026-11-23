@@ -8,7 +8,6 @@ import { feePercentText } from "@/src/domain/fee";
 import { formatChf } from "@/src/domain/money";
 import { DEFAULT_MONTHLY_MINIMUM_RAPPEN } from "@/src/legal/host-terms";
 import { accountLink } from "@/src/services/account-link";
-import { restaurantPublic } from "@/src/services/platform-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +30,6 @@ export default async function Root() {
     <PortalHome
       contact={{ name: e.PLATFORM_NAME, email: e.PLATFORM_CONTACT_EMAIL, phone: e.PLATFORM_PHONE, staticSite: st }}
       account={st ? null : await accountLink()}
-      restaurant={await restaurantPublic()}
       fee={feePercentText()}
       minimum={formatChf(DEFAULT_MONTHLY_MINIMUM_RAPPEN).replace(".00", "")}
     />

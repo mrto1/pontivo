@@ -12,8 +12,8 @@ export const mailHref = (c: ShellContact, subject: string) => (c.email ? `mailto
  * Rahmen der öffentlichen Plattform-Seiten (SPEC 20.9): Startseite (Dachmarke), Unterkünfte, Restaurants.
  * Gleiche Kopfzeile, Farben und Schrift; «Restaurants» erscheint erst, wenn die Restaurant-Seite freigeschaltet ist.
  */
-export function MarketingShell({ contact, account, restaurant, current, heroImage, tagline, signupHref, children }: {
-  contact: ShellContact; account: { label: string } | null; restaurant: boolean; current: "home" | "unterkunft" | "restaurant";
+export function MarketingShell({ contact, account, current, heroImage, tagline, signupHref, children }: {
+  contact: ShellContact; account: { label: string } | null; current: "home" | "unterkunft" | "restaurant";
   heroImage?: boolean; tagline: string; signupHref: string; children: React.ReactNode;
 }) {
   const st = contact.staticSite;
@@ -27,7 +27,7 @@ export function MarketingShell({ contact, account, restaurant, current, heroImag
           <a className={s.logo} href={pageHref("/", st)}><Logo />{contact.name}</a>
           <nav className={s.headLinks} aria-label="Hauptnavigation">
             {link("/unterkunft", "Unterkünfte", "unterkunft")}
-            {restaurant ? link("/restaurant", "Restaurants", "restaurant") : null}
+            {link("/restaurant", "Restaurants", "restaurant")}
             <a href="#kontakt">Kontakt</a>
             {st ? null : account ? null : <a className={s.loginLink} href="/admin/login">Anmelden</a>}
             {account && !st ? <a className={s.btn} href="/admin">{account.label}</a> : <a className={s.btn} href={st ? mailHref(contact, "Pontivo für unseren Betrieb") : signupHref}>{st ? "Anfragen" : "Registrieren"}</a>}

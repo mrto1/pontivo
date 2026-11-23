@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { restaurantPublic } from "@/src/services/platform-settings";
 import { feePercentText } from "@/src/domain/fee";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -63,7 +62,6 @@ export default async function Register({ searchParams }: { searchParams: Promise
   // Wer angemeldet ist, registriert sich nicht neu: weiterer Betrieb im selben Konto
   if (await currentUserId()) redirect("/admin/neu");
   const sp = await searchParams;
-  const resto = await restaurantPublic();
   const forRestaurant = sp.art === "restaurant";
   return (
     <PlatformFrame hideSignup>
@@ -100,10 +98,10 @@ export default async function Register({ searchParams }: { searchParams: Promise
         <form action={register} className="card stack">
           <h2 style={{ margin: 0 }}>Registrieren</h2>
           {sp.error ? <p className="notice warn" role="alert">{sp.error}</p> : null}
-          <fieldset className="plain"><legend className="small muted">{forRestaurant || resto ? "Was führen Sie?" : "Was vermieten Sie?"}</legend>
+          <fieldset className="plain"><legend className="small muted">Was führen Sie?</legend>
             <div className="type-pick">
               {/* Restaurant: über ?art=restaurant oder nach Freischaltung der Restaurant-Seite (SPEC 20.9) */}
-              {PROPERTY_TYPES.filter((t) => t !== "restaurant" || sp.art === "restaurant" || resto).map((t, i) => (
+              {PROPERTY_TYPES.map((t, i) => (
                 <label key={t}><input type="radio" name="propertyType" value={t} defaultChecked={sp.art === "restaurant" ? t === "restaurant" : i === 0} required />{PROPERTY_LABEL[t]}</label>
               ))}
             </div>
