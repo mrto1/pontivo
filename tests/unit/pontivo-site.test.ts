@@ -12,7 +12,8 @@ describe("Pontivo-Startseite: Texte", () => {
   it("ohne Überschreibung gelten die Standardtexte, Platzhalter werden ersetzt", () => {
     const s = resolveSite(null, vars);
     expect(s.text("hero.lead")).toContain("Pontivo bringt Online-Buchung");
-    expect(s.text("hero.lead")).toContain("1.9 % pro Direktbuchung");
+    expect(s.text("hero.lead")).toContain("Booking.com läuft weiter");
+    expect(s.faq[9].a).toContain("1.9 %");
     expect(s.text("hero.lead")).not.toContain("{");
     expect(s.faq[9].a).toContain("per E-Mail an info@pontivo.ch;");
     expect(resolveSite(null, { ...vars, email: undefined }).faq[9].a).toContain("per E-Mail; zu Unrecht");
@@ -21,7 +22,7 @@ describe("Pontivo-Startseite: Texte", () => {
   it("Überschreibung gilt, leere Überschreibung zählt als Standard, FAQ-Liste ersetzt die Standardliste", () => {
     const s = resolveSite({ texts: { "hero.title": "Neuer Titel für {name}", "hero.ctaMain": "  " }, faq: [{ q: "Frage?", a: "Antwort {fee} %" }] }, vars);
     expect(s.text("hero.title")).toBe("Neuer Titel für Pontivo");
-    expect(s.text("hero.ctaMain")).toBe("Jetzt selbst einrichten");
+    expect(s.text("hero.ctaMain")).toBe("Jetzt loslegen");
     expect(s.faq).toEqual([{ q: "Frage?", a: "Antwort 1.9 %" }]);
   });
   it("Bereinigen: nur bekannte Schlüssel, gleich wie Standard oder leer = keine Überschreibung, leere FAQ-Zeilen entfallen", () => {

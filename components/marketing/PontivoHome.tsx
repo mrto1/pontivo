@@ -61,7 +61,6 @@ export function PontivoHome({ contact, site: siteIn, account, children }: { cont
             <div className={s.heroActions}>
               {st ? <a className={s.btn} href={mail}>{site.text("hero.ctaSecond")}</a> : (<>
                 <a className={s.btn} href="/registrieren">{site.text("hero.ctaMain")}</a>
-                <a className={s.btnGhost} href={mail}>{site.text("hero.ctaSecond")}</a>
               </>)}
               {contact.demoUrl && !st ? <a className={s.btnGhost} href={contact.demoUrl}>Demo-Hotel ansehen</a> : null}
             </div>

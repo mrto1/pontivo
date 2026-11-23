@@ -13,21 +13,21 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "Kopfbereich",
     "label": "Titel",
     "multiline": false,
-    "default": "Ihre Gäste buchen direkt bei Ihnen. Die Provision bleibt im Haus."
+    "default": "Direktbuchung und Website für Hotels, B&Bs und Ferienwohnungen."
   },
   {
     "key": "hero.lead",
     "group": "Kopfbereich",
     "label": "Einleitung",
     "multiline": true,
-    "default": "{name} bringt Online-Buchung mit TWINT und Kartenzahlung auf Ihre bestehende Website – oder gibt Ihnen eine neue. Für Hotels, B&Bs und Ferienwohnungen. Booking.com läuft weiter und wird automatisch abgeglichen. Sie zahlen {fee} % pro Direktbuchung, mindestens CHF 19 im Monat – sonst nichts."
+    "default": "{name} bringt Online-Buchung mit TWINT und Kartenzahlung auf Ihre bestehende Website – oder gibt Ihnen eine neue. Mit Kalender, Rezeption, Rechnung und Kurtaxe, wenn Sie wollen. Booking.com läuft weiter und wird automatisch abgeglichen."
   },
   {
     "key": "hero.ctaMain",
     "group": "Kopfbereich",
     "label": "Knopf 1",
     "multiline": false,
-    "default": "Jetzt selbst einrichten"
+    "default": "Jetzt loslegen"
   },
   {
     "key": "hero.ctaSecond",

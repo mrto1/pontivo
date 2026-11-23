@@ -63,6 +63,12 @@ export default async function Register({ searchParams }: { searchParams: Promise
   if (await currentUserId()) redirect("/admin/neu");
   const sp = await searchParams;
   const forRestaurant = sp.art === "restaurant";
+  const talk = env().PLATFORM_CONTACT_EMAIL ? `mailto:${env().PLATFORM_CONTACT_EMAIL}?subject=${encodeURIComponent("Pontivo: Frage vor der Registrierung")}` : "/#kontakt";
+  const helpCard = (
+    <div className="card register-help" data-testid="register-help">
+      <strong>Noch Fragen?</strong> Wir beantworten sie gern, bevor Sie sich entscheiden. <a className="btn secondary small" href={talk}>Gespräch vereinbaren</a>
+    </div>
+  );
   return (
     <PlatformFrame hideSignup>
     <main className="register" style={{ padding: "8px 0 56px" }}>
@@ -71,6 +77,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
           {forRestaurant ? (<>
             <h1>Ihr Restaurant online – in 20 Minuten eingerichtet</h1>
             <p className="muted">Website, Tischreservation, Online-Bestellung mit Abholung und Lieferung und auf Wunsch Kasse, für Restaurants, Cafés und Take-aways in der Schweiz.</p>
+            {helpCard}
             <ol className="register-steps">
               <li><strong>Registrieren</strong> – Sie erhalten einen Login-Link per E-Mail.</li>
               <li><strong>Reservation live</strong> – Öffnungszeiten und Tische angeben, Gäste reservieren sofort über Website, Link oder QR-Code.</li>
@@ -83,6 +90,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
           </>) : (<>
           <h1>Direktbuchung für Ihren Betrieb – in 20 Minuten eingerichtet</h1>
           <p className="muted">Online-Buchung mit TWINT und Kartenzahlung für Hotels, B&amp;Bs, Ferienwohnungen und Chalets in der Schweiz – mit neuer Website oder eingebaut in Ihre bestehende.</p>
+          {helpCard}
           <ol className="register-steps">
             <li><strong>Registrieren</strong> – Sie erhalten einen Login-Link per E-Mail.</li>
             <li><strong>Einrichten</strong> – der Assistent fragt Angaben, Kurtaxe, Preise und Fotos ab. Unterbrechen jederzeit möglich.</li>

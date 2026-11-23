@@ -48,7 +48,7 @@ export function RestaurantHome({ contact, account, fee, feeBps, minimum, today, 
   ];
   const faq = [
     { q: "Brauche ich alle vier Bausteine?", a: "Nein. Sie starten zum Beispiel nur mit der Reservation und schalten Bestellung oder Kasse später dazu. Ihre bisherige Kasse können Sie behalten." },
-    { q: "Liefern Sie auch aus?", a: "Ja. Gäste wählen Abholung oder Lieferung. Sie liefern mit Ihren eigenen Fahrern in den Postleitzahlen-Gebieten, die Sie festlegen. Bar bei Lieferung können Sie erlauben oder ausschalten." },
+    { q: "Ist die Auslieferung mit dabei?", a: "Ja. Gäste wählen Abholung oder Lieferung. Sie liefern mit Ihren eigenen Fahrern in den Postleitzahlen-Gebieten, die Sie festlegen. Bar bei Lieferung können Sie erlauben oder ausschalten." },
     { q: "Brauche ich spezielle Geräte?", a: "Nein. Kasse und Bestellbildschirm laufen im Browser auf Tablet, Handy oder Computer." },
     { q: "Was passiert, wenn niemand eine Bestellung annimmt?", a: "Nach fünf Minuten kommt ein Alarm per SMS und Mail, nach zehn Minuten wird die Bestellung storniert und der Gast bekommt sein Geld zurück. Ist kein Bestellbildschirm erreichbar, pausiert die Online-Bestellung von selbst." },
     { q: "Was kostet die Online-Bestellung nach dem Sonderangebot?", a: `${fee} % pro Bestellung, abgezogen bei der Zahlung, bei Barzahlung mit der Monatsrechnung. Bei 400 Bestellungen à CHF 35 sind das CHF ${fmt(ours)} im Monat${pilot ? `, als Pilotbetrieb höchstens ${cap}` : ""}. Den Wechsel kündigen wir Ihnen vorher an, und Sie können monatlich kündigen.` },
@@ -63,8 +63,7 @@ export function RestaurantHome({ contact, account, fee, feeBps, minimum, today, 
           <p className={s.heroLead}>{contact.name} ist das System für Restaurants, Cafés und Take-aways in der Schweiz. Ihre Gäste reservieren und bestellen direkt bei Ihnen, bezahlen mit TWINT oder Karte, und an der Kasse läuft alles zusammen. Ohne Gebühr pro Gast.</p>
           <div className={s.heroActions}>
             {st ? <a className={s.btn} href={talk}>Gespräch vereinbaren</a> : (<>
-              <a className={s.btn} href="/registrieren?art=restaurant">Jetzt selbst einrichten</a>
-              <a className={s.btnGhost} href={talk}>Gespräch vereinbaren</a>
+              <a className={s.btn} href="/registrieren?art=restaurant">Jetzt loslegen</a>
             </>)}
             <a className={s.btnGhost} href="#preise">Preise ansehen</a>
           </div>

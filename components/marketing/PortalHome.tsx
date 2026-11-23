@@ -12,7 +12,7 @@ export function PortalHome({ contact, account, fee, minimum }: { contact: ShellC
   const paths = [
     { title: "Unterkunft", text: "Hotel, B&B, Ferienwohnung, Chalet oder Berggasthaus. Gäste buchen auf Ihrer Website und zahlen sofort. Mit Kalender, Rechnung und Rezeption, wenn Sie wollen.", href: pageHref("/unterkunft", st), cta: "Mehr für Unterkünfte" },
     { title: "Restaurant", text: "Restaurant, Café oder Take-away. Website, Tischreservation, Online-Bestellung und Kasse in einem System.", href: pageHref("/restaurant", st), cta: "Mehr für Restaurants" },
-    { title: "Beides", text: "Hotel mit Restaurant? Dann läuft alles zusammen: Die Konsumation kommt mit einem Klick auf die Zimmerrechnung.", href: talk, cta: "Gespräch vereinbaren" },
+    { title: "Beides", text: "Hotel mit Restaurant? Dann läuft alles zusammen: Die Konsumation kommt mit einem Klick auf die Zimmerrechnung.", href: pageHref("/unterkunft", st), cta: "Mehr für Hotels mit Restaurant" },
   ];
   const benefits = [
     ["Ihre Gastbeziehung bleibt bei Ihnen.", "Name, E-Mail und Vorlieben Ihrer Gäste gehören Ihnen, nicht einem Portal."],
@@ -30,8 +30,8 @@ export function PortalHome({ contact, account, fee, minimum }: { contact: ShellC
   return (
     <MarketingShell contact={contact} account={account} current="home" heroImage tagline="Direktbuchung, Reservation und Bestellung für das Schweizer Gastgewerbe · Server und Datenbank bei Infomaniak in Genf" signupHref="/registrieren">
       <section className={s.heroSolo}>
-        <h1 className={s.heroTitle}>Ihre Gäste direkt bei Ihnen. Ohne Umweg.</h1>
-        <p className={s.heroLead}>Gäste buchen, bestellen und reservieren direkt bei Ihnen, mit TWINT, Karte oder bar. Nur {fee} % pro Buchung und Bestellung. Für Schweizer Unterkünfte und Restaurants.</p>
+        <h1 className={s.heroTitle}>Direktbuchungen, Reservationen und Bestellungen für Schweizer Gastgeber.</h1>
+        <p className={s.heroLead}>Gäste buchen, bestellen und reservieren direkt bei Ihrem Hotel, B&amp;B oder Restaurant – mit TWINT, Karte oder bar. Nur {fee} % pro Buchung und Bestellung.</p>
         <div className={s.heroActions}>
           <a className={s.btn} href={pageHref("/unterkunft", st)}>Für Unterkünfte</a>
           <a className={s.btn} href={pageHref("/restaurant", st)}>Für Restaurants</a>

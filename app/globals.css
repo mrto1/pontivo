@@ -1096,3 +1096,4 @@ button.plan-table { font: inherit; cursor: pointer; }
 .plan-table.dim { opacity: .3; }
 .plan-table.selected { outline: 3px solid var(--accent, #0b7285); outline-offset: 2px; }
 .plan-detail { padding: 12px 14px; }
+.register-help { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 16px 0; padding: 14px 16px; border-left: 4px solid var(--accent, #0b7285); }

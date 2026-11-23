@@ -13,10 +13,9 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const name = env().PLATFORM_NAME;
-  // Keine Aussage «ohne Provision»: wir nehmen einen Prozentsatz pro Buchung oder Bestellung (SPEC 20.9). Gegenüber Portalen: «Statt Portal-Provision».
   return {
-    title: `${name} – Direkt buchen, reservieren, bestellen. Statt Portal-Provision.`,
-    description: `Gäste buchen Zimmer, reservieren Tische und bestellen direkt bei Ihnen, mit TWINT oder Karte. Eigene Website inklusive, nur ${feePercentText()} % auf das, was über ${name} läuft. Für Schweizer Hotels, B&Bs und Restaurants.`,
+    title: `${name} – Direktbuchungen, Reservationen und Bestellungen für Schweizer Gastgeber`,
+    description: `Gäste buchen, bestellen und reservieren direkt bei Ihrem Hotel, B&B oder Restaurant – mit TWINT, Karte oder bar. Nur ${feePercentText()} % pro Buchung und Bestellung.`,
   };
 }
 
