@@ -16,10 +16,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const name = env().PLATFORM_NAME;
   const resto = process.env.STATIC_SITE === "1" ? false : await restaurantPublic();
   return {
-    title: resto ? `${name} – Direkt buchen, bestellen, reservieren. Ohne Provision.` : `${name} – Direktbuchung für Schweizer Unterkünfte`,
+    // Keine Aussage «ohne Provision»: wir nehmen einen Prozentsatz pro Buchung oder Bestellung (SPEC 20.9). Gegenüber Portalen: «Statt Portal-Provision».
+    title: resto ? `${name} – Direkt buchen, reservieren, bestellen. Statt Portal-Provision.` : `${name} – Direktbuchung für Schweizer Hotels, B&B und Ferienwohnungen`,
     description: resto
-      ? `Website, Direktbuchung, Tischreservation und Online-Bestellung für das Schweizer Gastgewerbe: Unterkünfte und Restaurants. ${feePercentText()} % auf das, was über ${name} läuft.`
-      : `Website mit Online-Buchung und TWINT für Schweizer Unterkünfte. ${feePercentText()} % pro Direktbuchung.`,
+      ? `Gäste buchen Zimmer, reservieren Tische und bestellen direkt bei Ihnen, mit TWINT oder Karte. Eigene Website inklusive, nur ${feePercentText()} % auf das, was über ${name} läuft. Für Schweizer Hotels, B&Bs und Restaurants.`
+      : `Gäste buchen direkt bei Ihnen, mit TWINT oder Karte. Website, Kalender und Abgleich mit Booking.com inklusive, nur ${feePercentText()} % pro Direktbuchung. Für Schweizer Hotels, B&Bs und Ferienwohnungen.`,
   };
 }
 
