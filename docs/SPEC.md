@@ -4,6 +4,8 @@ Stand: 6.11.2026 · Sprache der Spezifikation: Deutsch · Code, Tabellen, Variab
 
 Diese Datei ist der Auftrag für KI-Coding-Agenten. Sie ist zusammen mit `schema.sql` die einzige Quelle der Wahrheit.
 
+**Einstieg:** `docs/MODULES.md` zeigt je Modul die Seiten, Tabellen und SPEC-Abschnitte auf einen Blick (erzeugt, nicht von Hand gepflegt).
+
 ---
 
 ## 0. Arbeitsregeln für Agenten

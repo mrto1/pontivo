@@ -1,6 +1,7 @@
 # Regeln für KI-Agenten in diesem Repository
 
 Vor jeder Arbeit lesen: `docs/SPEC.md` (Auftrag, Quelle der Wahrheit) und `db/schema.sql` bzw. `db/migrations/`.
+Einstieg: `docs/MODULES.md` (Modul → Seiten, Tabellen, SPEC-Abschnitt; erzeugt mit `npx tsx scripts/module-index.ts`, nach Modul-, Menü- oder SPEC-Änderungen neu erzeugen).
 
 - Baue nur, was in `docs/SPEC.md` steht. Fehlt etwas: Frage in `QUESTIONS.md` eintragen, einfachste sichere Annahme treffen und im Code mit `// ASSUMPTION:` markieren.
 - Keine externen API-Felder erfinden (Stripe, Channex): verlinkte Doku in SPEC 13 lesen.
