@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { insertFolioItem } from "./folio";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
 import { apiKeys, bookings, folioItems, type ApiKey, type FolioItem } from "../db/schema";
@@ -76,7 +77,8 @@ export async function addItemFromPos(key: ApiKey, req: FolioItemRequest): Promis
     : await bookingByRoom(hotelId, req.room_number!);
   const v = { description: req.description, quantity: req.quantity, unitPriceRappen: req.unit_price_rappen, vatKind: req.vat };
   return db().transaction(async (tx) => {
-    const ins = await tx.insert(folioItems).values({ hotelId, bookingId, ...v, externalId: req.external_id, source: `pos:${key.id}`, createdBy: `api:${key.id}` }).onConflictDoNothing().returning();
+    const created = await insertFolioItem(tx, { hotelId, bookingId, ...v, externalId: req.external_id, source: `pos:${key.id}`, createdBy: `api:${key.id}` }, { ignoreConflict: true });
+    const ins = created ? [created] : [];
     const [b] = await tx.select({ reference: bookings.reference }).from(bookings).where(and(eq(bookings.id, bookingId), eq(bookings.hotelId, hotelId)));
     if (ins.length) {
       await audit(tx, { hotelId, actor: `api:${key.id}`, action: "folio.add", entity: "booking", entityId: bookingId, details: { description: v.description, amount: v.quantity * v.unitPriceRappen, externalId: req.external_id, label: key.label } });

@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { insertFolioItem } from "./folio";
 import { db, rows } from "../db/client";
 import {
   bookings, folioItems, posDayCloses, posDevices, posItemGroups, posItems, posLineDone, posOptionGroups, posOptions, posOrderLines, posOrders, posPayments, posReceipts, posTables,
@@ -454,11 +455,11 @@ export async function pay(hotel: Hotel, i: PayInput, actor: string): Promise<Pos
 async function postToRoom(tx: Tx, hotelId: string, bookingId: string, receipt: PosReceipt, items: PosReceiptItem[], tip: number, actor: string): Promise<string[]> {
   const ids: string[] = [];
   for (const it of items) {
-    const [f] = await tx.insert(folioItems).values({ hotelId, bookingId, description: `${it.description} (Restaurant ${receipt.number})`, quantity: it.quantity, unitPriceRappen: it.unitPriceRappen, vatKind: "standard", vatBpsOverride: it.vatBps, externalId: `pos:${receipt.id}:${it.lineId}`, source: "pos", createdBy: actor }).returning({ id: folioItems.id });
+    const f = (await insertFolioItem(tx, { hotelId, bookingId, description: `${it.description} (Restaurant ${receipt.number})`, quantity: it.quantity, unitPriceRappen: it.unitPriceRappen, vatKind: "standard", vatBpsOverride: it.vatBps, externalId: `pos:${receipt.id}:${it.lineId}`, source: "pos", createdBy: actor }))!;
     ids.push(f.id);
   }
   if (tip) {
-    const [f] = await tx.insert(folioItems).values({ hotelId, bookingId, description: `Trinkgeld (Restaurant ${receipt.number})`, quantity: receipt.kind === "reversal" ? -1 : 1, unitPriceRappen: tip, vatKind: "none", externalId: `pos:${receipt.id}:tip`, source: "pos", createdBy: actor }).returning({ id: folioItems.id });
+    const f = (await insertFolioItem(tx, { hotelId, bookingId, description: `Trinkgeld (Restaurant ${receipt.number})`, quantity: receipt.kind === "reversal" ? -1 : 1, unitPriceRappen: tip, vatKind: "none", externalId: `pos:${receipt.id}:tip`, source: "pos", createdBy: actor }))!;
     ids.push(f.id);
   }
   return ids;

@@ -3,6 +3,7 @@ import { db, rows } from "../db/client";
 import { bookings, folioItems, goods, minibarRefills, posItems, rooms, type FolioItem, type Good } from "../db/schema";
 import { folioVat, needsReorder } from "../domain/goods";
 import { audit } from "./audit";
+import { insertFolioItem } from "./folio";
 
 /** Shop & Lager (SPEC 19.51). Jede Abfrage nach hotel_id. */
 export class GoodsError extends Error {}
@@ -83,9 +84,7 @@ async function sellInTx(tx: Tx, hotelId: string, bookingId: string, goodId: stri
   const [b] = await tx.select({ id: bookings.id }).from(bookings).where(and(eq(bookings.id, bookingId), eq(bookings.hotelId, hotelId)));
   if (!b) throw new GoodsError("Buchung nicht gefunden.");
   const { vatKind, vatBpsOverride } = folioVat(g.vat);
-  const [item] = await tx.insert(folioItems).values({
-    hotelId, bookingId, description: g.name, quantity, unitPriceRappen: g.priceRappen, vatKind, vatBpsOverride, source: `${source}:${g.id}`, createdBy: actor,
-  }).returning();
+  const item = (await insertFolioItem(tx, { hotelId, bookingId, description: g.name, quantity, unitPriceRappen: g.priceRappen, vatKind, vatBpsOverride, source: `${source}:${g.id}`, createdBy: actor }))!;
   if (g.trackStock) await tx.update(goods).set({ stock: sql`${goods.stock} - ${quantity}` }).where(eq(goods.id, g.id));
   await audit(tx, { hotelId, actor, action: "folio.add", entity: "booking", entityId: bookingId, details: { description: g.name, amount: quantity * g.priceRappen, goodId: g.id, source } });
   return item;

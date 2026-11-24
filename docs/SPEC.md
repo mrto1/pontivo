@@ -1261,3 +1261,4 @@ Fall: Hotel und Restaurant sind verschiedene Firmen, also zwei Betriebe in Ponti
 - **Nachfüllen (Etappe 3):** Jede Zählung mit Fehlmenge legt je Ware einen offenen Posten in `minibar_refills` an (ersetzt einen früheren offenen Posten derselben Ware im Zimmer). Die Reinigung zeigt oben «Minibar nachfüllen» (Zimmer, Mengen); «Aufgefüllt» erledigt alle Posten des Zimmers. Beide im `audit_log`.
 - **Später:** Shop-Kasse am Empfang (Waren direkt kassieren, ohne Buchung). Online-Shop ist ausserhalb des Umfangs.
 - **Abnahme:** `tests/integration/goods.test.ts`, `tests/e2e/shop.spec.ts`.
+- **Posten buchen (Vereinfachung):** Alle Posten in `folio_items` entstehen über `insertFolioItem` (`src/services/folio.ts`): Rechnung & Kasse, Shop, Minibar, Angebote vor Ort, Kasse und Kassen-Schnittstelle. Geprüft durch `tests/unit/folio-single-entry.test.ts`.

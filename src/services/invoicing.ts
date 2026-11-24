@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { insertFolioItem } from "./folio";
 import QRCode from "qrcode";
 import { db, rows, type Executor } from "../db/client";
 import {
@@ -76,7 +77,7 @@ export async function addFolioItem(hotelId: string, bookingId: string, input: { 
   return db().transaction(async (tx) => {
     const [b] = await tx.select().from(bookings).where(and(eq(bookings.id, bookingId), eq(bookings.hotelId, hotelId)));
     if (!b) throw new InvoiceError("Buchung nicht gefunden.");
-    const [item] = await tx.insert(folioItems).values({ hotelId, bookingId, description, quantity: input.quantity, unitPriceRappen: input.unitPriceRappen, vatKind: input.vatKind, createdBy: actor }).returning();
+    const item = (await insertFolioItem(tx, { hotelId, bookingId, description, quantity: input.quantity, unitPriceRappen: input.unitPriceRappen, vatKind: input.vatKind, createdBy: actor }))!;
     await audit(tx, { hotelId, actor, action: "folio.add", entity: "booking", entityId: bookingId, details: { description, amount: item.quantity * item.unitPriceRappen } });
     return item;
   });

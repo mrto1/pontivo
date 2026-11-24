@@ -1,4 +1,5 @@
 import { and, asc, eq, sql } from "drizzle-orm";
+import { insertFolioItem } from "./folio";
 import { db, rows } from "../db/client";
 import { bookings, folioItems, guests, resourceBookings, resources, type Resource, type ResourceBooking } from "../db/schema";
 import { freeSeats, parseHhmm, priceOf, validRange } from "../domain/resources";
@@ -76,7 +77,7 @@ export async function createResourceBooking(hotelId: string, i: ResourceBookingI
     const price = priceOf(r, start, end, i.persons);
     let folioItemId: string | null = null;
     if (bookingId && price > 0) {
-      const [f] = await tx.insert(folioItems).values({ hotelId, bookingId, description: `${r.name} ${i.day} ${i.start}–${i.end}${r.pricePerPerson ? ` (${i.persons} P.)` : ""}`, quantity: 1, unitPriceRappen: price, vatKind: r.vatKind, createdBy: actor }).returning({ id: folioItems.id });
+      const f = (await insertFolioItem(tx, { hotelId, bookingId, description: `${r.name} ${i.day} ${i.start}–${i.end}${r.pricePerPerson ? ` (${i.persons} P.)` : ""}`, quantity: 1, unitPriceRappen: price, vatKind: r.vatKind, createdBy: actor }))!;
       folioItemId = f.id;
     }
     const [rb] = await tx.insert(resourceBookings).values({ hotelId, resourceId: r.id, bookingId, folioItemId, guestName, day: i.day, startMin: start, endMin: end, persons: i.persons, priceRappen: price, note, createdBy: actor }).returning();
