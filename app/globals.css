@@ -217,7 +217,8 @@ details > summary::-webkit-details-marker { display: none; }
 .weekdays .chip:hover span { border-color: var(--accent); }
 .weekdays .chip input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .weekdays .chip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
-.stack > * + * { margin-top: 28px; }
+/* doppelte Klasse = höhere Spezifität: Listen- und Karten-Klassen mit «margin: 0» (z. B. .rt-list, .plan-list) schlucken den Abstand sonst */
+.stack.stack > * + * { margin-top: 28px; }
 .kv { display: grid; grid-template-columns: 180px 1fr; gap: 6px 16px; }
 @media (max-width: 600px) { .kv { grid-template-columns: 1fr; } }
 
@@ -926,7 +927,7 @@ pre { overflow-x: auto; }
 .rt-go { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; font-weight: 600; color: var(--accent); }
 .rt-arrow { font-size: 1.4rem; line-height: 1; }
 @media (max-width: 520px) { .rt-go { font-size: 0; } .rt-go .rt-arrow { font-size: 1.6rem; } }
-.drawer-wrap, .stack > .drawer-wrap { position: fixed; inset: 0; margin: 0; z-index: 60; display: flex; justify-content: flex-end; }
+.drawer-wrap, .stack.stack > .drawer-wrap { position: fixed; inset: 0; margin: 0; z-index: 60; display: flex; justify-content: flex-end; }
 .drawer-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
 .drawer { position: relative; width: min(620px, 100%); height: 100%; background: var(--surface); box-shadow: -12px 0 40px rgba(0,0,0,.25); display: flex; flex-direction: column; outline: none; animation: drawer-in .18s ease-out; }
 @keyframes drawer-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
