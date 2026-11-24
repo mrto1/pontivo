@@ -88,7 +88,7 @@ export default async function ShopPage({ params, searchParams }: { params: Promi
           </ul>
         </div>
       ) : null}
-      {list.length === 0 ? <p className="muted">Noch keine Ware.</p> : null}
+      {list.length === 0 ? <p className="muted">Noch keine Ware. Mit «+ Neue Ware» legen Sie die erste an.</p> : null}
       <RowList rows={list.map((x) => ({ id: x.id, href: `${base}?g=${x.id}`, label: `${x.name} bearbeiten`, title: x.name,
         detail: `${x.category ? `${x.category} · ` : ""}${formatChf(x.priceRappen)}${x.minibar ? ` · Minibar ${x.minibarPar}` : ""}${x.trackStock ? ` · Bestand ${x.stock}` : ""}`,
         badges: [...(needsReorder(x) ? [{ text: "nachbestellen" }] : []), ...(x.active ? [] : [{ text: "inaktiv" }])] }))} />

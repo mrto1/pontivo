@@ -47,7 +47,7 @@ export default async function Groups({ params, searchParams }: { params: Promise
                 <td><span className={`badge ${g.status === "active" ? "" : "warn"}`}>{STATUS[g.status]}</span></td>
               </tr>))}</tbody>
           </table></div>
-        ) : <p className="muted small">Noch keine Gruppen.</p>}
+        ) : <p className="muted small">Noch keine Gruppen. Legen Sie unten die erste an.</p>}
       </section>
       <section className="card stack">
         <h2>Neue Gruppe</h2>

@@ -151,7 +151,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
                   ))}
                 </tbody>
               </table>
-            ) : <p className="muted">Noch kein Code angelegt.</p>}
+            ) : <p className="muted">Noch kein Code angelegt. Mit «+ Neuer Code» legen Sie den ersten an.</p>}
             {companies.length ? (
               <details className="card"><summary><strong>+ Neuer Code</strong></summary>
                 <form action={codeSave} className="stack mt12">

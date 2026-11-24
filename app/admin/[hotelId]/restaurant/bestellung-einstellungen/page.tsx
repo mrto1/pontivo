@@ -130,7 +130,7 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
           <table className="table"><thead><tr><th>Gebiet</th><th>PLZ</th><th>Mindestwert</th><th>Gebühr</th><th>Gratis ab</th><th>+ Min.</th></tr></thead><tbody>
             {zones.map((z) => <tr key={z.id} className={z.active ? undefined : "muted"}><td>{z.name}{z.active ? "" : " (aus)"}</td><td className="small">{z.postalCodes.join(", ")}</td><td>{formatChf(z.minOrderRappen)}</td><td>{formatChf(z.feeRappen)}</td><td>{z.freeFromRappen ? formatChf(z.freeFromRappen) : "–"}</td><td>{z.extraMinutes}</td></tr>)}
           </tbody></table>
-        ) : <p className="muted small">Noch kein Liefergebiet.</p>}
+        ) : <p className="muted small">Noch kein Liefergebiet. Legen Sie unten das erste an.</p>}
         <form action={zone} className="stack">{H}
           <h3>Neues Gebiet</h3>
           <div className="inline-form">

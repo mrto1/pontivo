@@ -122,7 +122,7 @@ export default async function Upsell({ params, searchParams }: { params: Promise
               ))}
             </tbody>
           </table></div>
-        ) : <p className="muted small">Noch keine Angebote.</p>}
+        ) : <p className="muted small">Noch keine Angebote. Legen Sie unten das erste an.</p>}
         {canEdit ? (
           <form action={add} className="stack">
             {hidden}

@@ -49,7 +49,7 @@ export default async function ResourceSettings({ params, searchParams }: { param
     <div className="stack">
       <h1>Angebote vor Ort<InfoTip>Wellness, Sauna, Seminarraum oder Tennisplatz, die Gäste in Zeitfenstern buchen. Hier legen Sie fest, was es gibt, wie viele Plätze, wie lange ein Zeitfenster dauert und was es kostet. Gebucht wird unter Buchungen → Angebote vor Ort.</InfoTip></h1>
       {sp.msg && !drawerOpen ? <Notice text={sp.msg} /> : null}
-      {list.length === 0 ? <p className="muted">Noch kein Angebot.</p> : null}
+      {list.length === 0 ? <p className="muted">Noch kein Angebot. Mit «+ Neues Angebot» legen Sie das erste an.</p> : null}
       <RowList rows={list.map((x) => ({ id: x.id, href: `${base}?r=${x.id}`, label: `${x.name} bearbeiten`, title: x.name, badges: x.active ? [] : [{ text: "inaktiv" }],
         detail: `${KINDS[x.kind as keyof typeof KINDS] ?? x.kind} · ${hhmm(x.openFrom)}–${hhmm(x.openTo)} · ${x.capacity} Plätze · ${x.slotMinutes} Min. · ${formatChf(x.priceRappen)}${x.pricePerPerson ? " p. P." : ""}` }))} />
       <div><Link className="btn secondary" href={`${base}?r=neu`} scroll={false}>+ Neues Angebot</Link></div>

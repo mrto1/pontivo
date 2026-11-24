@@ -89,7 +89,7 @@ export default async function PortalSettingsPage({ params, searchParams }: { par
               </li>
             ))}
           </ul>
-        ) : <p className="muted">Noch keine Tipps.</p>}
+        ) : <p className="muted">Noch keine Tipps. Fügen Sie unten den ersten hinzu.</p>}
         <form action={addTip} className="stack">
           <input type="hidden" name="hotelId" value={hotel.id} />
           <div><label htmlFor="tde">Titel (Deutsch)</label><input id="tde" name="titleDe" maxLength={120} required /></div>
