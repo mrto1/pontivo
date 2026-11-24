@@ -171,7 +171,7 @@ export function OrderCart(p: {
           <fieldset className="stack">
             <div><label htmlFor="o-search">{t.addrSearch}</label>
               <input id="o-search" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off" placeholder="Bahnhofstrasse 1, 9000" />
-              <p className="small muted" style={{ margin: "2px 0 0" }}>{t.swisstopo}</p>
+              <p className="small muted m-2-0-0">{t.swisstopo}</p>
               {hits.length ? <ul className="list" data-testid="addr-hits">{hits.map((h) => <li key={h.label}><button type="button" className="link-btn" onClick={() => { setC((x) => ({ ...x, street: h.street, houseNo: h.houseNo, postalCode: h.postalCode, city: h.city })); setHits([]); setQ(""); }}>{h.label}</button></li>)}</ul> : null}
             </div>
             <div className="inline-form">{F("street", { req: true, ac: "address-line1" })}{F("houseNo", { req: true, w: 80 })}</div>

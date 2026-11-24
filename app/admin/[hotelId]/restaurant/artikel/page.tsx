@@ -220,7 +220,7 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
             <h3>{g.name} <span className="small muted">{g.required ? "Pflicht" : "optional"} · höchstens {g.maxChoices}</span></h3>
             <ul>{g.options.map((o) => (
               <li key={o.id}>{o.name}{o.priceRappen ? ` (+${formatChf(o.priceRappen)})` : ""}{o.active ? "" : " (aus)"}
-                <form action={optionToggle} style={{ display: "inline" }}>{H}<input type="hidden" name="id" value={o.id} /><input type="hidden" name="active" value={o.active ? "0" : "1"} /> <button className="btn secondary small">{o.active ? "Ausblenden" : "Einblenden"}</button></form></li>
+                <form className="d-inline" action={optionToggle}>{H}<input type="hidden" name="id" value={o.id} /><input type="hidden" name="active" value={o.active ? "0" : "1"} /> <button className="btn secondary small">{o.active ? "Ausblenden" : "Einblenden"}</button></form></li>
             ))}</ul>
             <form action={option} className="inline-form">{H}<input type="hidden" name="groupId" value={g.id} />
               <div><label htmlFor={`on-${g.id}`}>Neue Option</label><input id={`on-${g.id}`} name="name" required maxLength={60} /></div>

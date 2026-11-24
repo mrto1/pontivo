@@ -48,7 +48,7 @@ export default async function PlatformInvoice({ params }: { params: Promise<{ ho
         .qr-slip{display:grid;grid-template-columns:62mm 1fr;border-top:1px dashed #111;margin-top:10mm;min-height:105mm;font-size:9px;background:#fff;color:#000}
         .qr-slip>div{padding:5mm} .qr-slip>div:first-child{border-right:1px dashed #111} .qr-slip h4{font-size:11px;margin:0 0 3mm}
         .qr-slip .qr{width:46mm;height:46mm} .qr-slip .qr svg{width:100%;height:100%} .qr-slip .lbl{font-size:6.5pt;font-weight:700;margin-top:2mm} .qr-slip p{margin:0;font-size:8pt}`}</style>
-      <div className="no-print" style={{ margin: "16px 0" }}><PrintButton /></div>
+      <div className="no-print m-16-0"><PrintButton /></div>
       <div className="stack">
         <p className="m0"><strong>{p.operator}</strong><br />{p.address}{env().PLATFORM_UID ? <><br />UID {env().PLATFORM_UID}</> : null}{c.vatNumber ? <><br />MWST-Nr. {c.vatNumber}</> : null}<br />{p.email}</p>
         <p style={{ margin: "16px 0 0" }}>{hotel.legalName ?? hotel.name}<br />{hotel.addressLine ?? ""}{hotel.addressLine ? <br /> : null}{[hotel.postalCode, hotel.city].filter(Boolean).join(" ")}</p>

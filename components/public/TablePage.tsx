@@ -24,7 +24,7 @@ export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; loc
   const slots = settings.onlineEnabled && day ? (await slotsFor(hotel, day, party)).filter((x) => x.ok) : null;
   return (
     <Shell hotel={hotel} locale={locale} base={base} path="/tisch">
-      <section style={{ padding: "32px 0", maxWidth: 560 }} className="stack">
+      <section className="stack pad32-560">
         <h1>{r.title}</h1>
         {!settings.onlineEnabled ? <p className="notice warn">{r.off}</p> : (
           <>
@@ -85,7 +85,7 @@ export async function TableTokenPage({ hotel, locale, base, token, sp }: { hotel
   const mine = res && res.hotelId === hotel.id ? res : null;
   return (
     <Shell hotel={hotel} locale={locale} base={base} path="/tisch">
-      <section style={{ padding: "32px 0", maxWidth: 560 }} className="stack">
+      <section className="stack pad32-560">
         {!mine ? <><h1>{r.title}</h1><p className="notice warn">{r.cancelled}</p></> : (
           <>
             {mine.status === "pending" ? <AutoRefresh seconds={5} /> : null}

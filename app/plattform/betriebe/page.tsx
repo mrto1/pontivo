@@ -27,7 +27,7 @@ export default async function Betriebe({ searchParams }: { searchParams: Promise
             <div>
               <h3 className="m0"><a href={`/admin/${h.id}`}>{h.name}</a> <span className={`badge${h.status === "live" ? "" : " warn"}`}>{STATUS[h.status] ?? h.status}</span>{health.get(h.id) ? <> <span className={`ampel ampel-${health.get(h.id)!.level}`} title={HEALTH_LABEL[health.get(h.id)!.level]}>{HEALTH_LABEL[health.get(h.id)!.level]}</span></> : null}</h3>
               {health.get(h.id)?.reasons.length ? <ul className="ampel-reasons small">{health.get(h.id)!.reasons.map((r) => <li key={r.text} className={`ampel-${r.level}`}>{r.text}</li>)}</ul> : null}
-              <p className="muted small" style={{ margin: "4px 0 0" }}>{h.bookings} Buchungen · {h.invoices} Rechnungen · angelegt {fmt(h.createdAt)}</p>
+              <p className="muted small m-4-0-0">{h.bookings} Buchungen · {h.invoices} Rechnungen · angelegt {fmt(h.createdAt)}</p>
             </div>
             {h.status === "live" || h.status === "paused" ? (
               <form action={hotelStatus}>
@@ -39,7 +39,7 @@ export default async function Betriebe({ searchParams }: { searchParams: Promise
             ) : null}
           </div>
 
-          <div className="stack" style={{ gap: 8 }}>
+          <div className="stack gap8">
             <h4 className="plat-label">Team</h4>
             {h.members.length ? (
               <ul className="plat-list">
@@ -72,7 +72,7 @@ export default async function Betriebe({ searchParams }: { searchParams: Promise
               <div><label htmlFor={`f5e64m3-${h.id}`}>Zur Bestätigung den Namen eintippen</label><input id={`f5e64m3-${h.id}`} name="confirm" placeholder={h.name} aria-label={`Namen von ${h.name} zur Bestätigung`} required /></div>
               <div><button className="btn secondary small">Endgültig löschen</button></div>
             </form>
-            {h.status === "live" || h.invoices > 0 ? <p className="small muted" style={{ margin: "8px 0 0" }}>Achtung: Rechnungen müssen in der Schweiz 10 Jahre aufbewahrt werden.</p> : null}
+            {h.status === "live" || h.invoices > 0 ? <p className="small muted m-8-0-0">Achtung: Rechnungen müssen in der Schweiz 10 Jahre aufbewahrt werden.</p> : null}
           </details>
         </article>
       ))}

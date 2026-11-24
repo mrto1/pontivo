@@ -20,8 +20,8 @@ export async function TerminalCard({ hotel, bookingId }: { hotel: Hotel; booking
         <div key={p.id} className="small">
           {formatChf(p.amountRappen)} · {STATUS[p.status]}
           {p.status === "pending" ? (<>
-            {" "}<form action={terminalCheckAction} style={{ display: "inline" }}>{hid}<input type="hidden" name="tpId" value={p.id} /><button className="btn secondary small">Status prüfen</button></form>
-            {" "}<form action={terminalCancelAction} style={{ display: "inline" }}>{hid}<input type="hidden" name="tpId" value={p.id} /><button className="btn secondary small">Abbrechen</button></form>
+            {" "}<form className="d-inline" action={terminalCheckAction}>{hid}<input type="hidden" name="tpId" value={p.id} /><button className="btn secondary small">Status prüfen</button></form>
+            {" "}<form className="d-inline" action={terminalCancelAction}>{hid}<input type="hidden" name="tpId" value={p.id} /><button className="btn secondary small">Abbrechen</button></form>
           </>) : null}
         </div>
       ))}
@@ -29,7 +29,7 @@ export async function TerminalCard({ hotel, bookingId }: { hotel: Hotel; booking
         <form action={terminalStartAction} className="inline-form">
           {hid}
           <div><label htmlFor="fd7161">Leser</label><select id="fd7161" name="readerId">{readers.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></div>
-          <div><label htmlFor="fd7162">Betrag CHF</label><input id="fd7162" name="amount" inputMode="decimal" required defaultValue={(open / 100).toFixed(2)} style={{ width: 110 }} /></div>
+          <div><label htmlFor="fd7162">Betrag CHF</label><input className="w110" id="fd7162" name="amount" inputMode="decimal" required defaultValue={(open / 100).toFixed(2)} /></div>
           <button className="btn small">Am Terminal bezahlen</button>
         </form>
       ) : <p className="muted small">Nichts offen.</p>}

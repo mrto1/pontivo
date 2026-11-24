@@ -45,10 +45,10 @@ export default async function Uebersicht() {
       <PageHead title="Plattform-Verwaltung">Nur für Pontivo-Admins. Hier siehst du den Stand der Plattform und was Aufmerksamkeit braucht. Die Bereiche findest du oben im Menü.</PageHead>
 
       <section className="tiles">
-        <a className="card tile" href="/plattform/betriebe" style={{ textDecoration: "none", color: "inherit" }}><span className="muted small">Betriebe online</span><strong>{live} <span className="muted small" style={{ fontWeight: 400 }}>von {hotels.length}</span></strong></a>
-        <a className="card tile" href="/plattform/benutzer" style={{ textDecoration: "none", color: "inherit" }}><span className="muted small">Benutzer</span><strong>{users.length}</strong></a>
-        <a className="card tile" href="/plattform/vertrieb" style={{ textDecoration: "none", color: "inherit" }}><span className="muted small">Offene Leads</span><strong>{sales.funnel.open}</strong></a>
-        <a className="card tile" href="/plattform/rechnungen" style={{ textDecoration: "none", color: "inherit" }}><span className="muted small">Fehlgeschlagene Belastungen</span><strong>{failed.length}</strong></a>
+        <a className="card tile plain-link" href="/plattform/betriebe"><span className="muted small">Betriebe online</span><strong>{live} <span className="muted small" style={{ fontWeight: 400 }}>von {hotels.length}</span></strong></a>
+        <a className="card tile plain-link" href="/plattform/benutzer"><span className="muted small">Benutzer</span><strong>{users.length}</strong></a>
+        <a className="card tile plain-link" href="/plattform/vertrieb"><span className="muted small">Offene Leads</span><strong>{sales.funnel.open}</strong></a>
+        <a className="card tile plain-link" href="/plattform/rechnungen"><span className="muted small">Fehlgeschlagene Belastungen</span><strong>{failed.length}</strong></a>
       </section>
 
       <section className="card stack">
@@ -66,7 +66,7 @@ export default async function Uebersicht() {
         <h2 className="m0">Bereiche</h2>
         <div className="tiles" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))" }}>
           {AREAS.map((a) => (
-            <a key={a.href} className="card tile" href={a.href} style={{ textDecoration: "none", color: "inherit" }}>
+            <a key={a.href} className="card tile plain-link" href={a.href}>
               <strong style={{ fontSize: "1.05rem" }}>{a.title}</strong><span className="muted small">{a.text}</span>
             </a>
           ))}

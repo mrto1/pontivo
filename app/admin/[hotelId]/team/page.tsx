@@ -113,7 +113,7 @@ export default async function Team({ params, searchParams }: { params: Promise<{
                 <td>{m.user.email}{m.user.id === user.id ? <span className="muted small"> (Sie)</span> : null}</td>
                 <td>
                   {m.user.id === user.id ? nameOf(m.role) : (
-                    <form action={memberRole} className="inline-form" style={{ gap: 6 }}>
+                    <form action={memberRole} className="inline-form gap6">
                       {hidden}<input type="hidden" name="userId" value={m.user.id} />
                       <select name="role" defaultValue={m.role} aria-label={`Rolle von ${m.user.email}`}>{roleOptions}</select>
                       <button className="btn secondary small">Ändern</button>
@@ -149,7 +149,7 @@ export default async function Team({ params, searchParams }: { params: Promise<{
             </summary>
             <form action={standardSave} className="stack mt12">
               {hidden}<input type="hidden" name="role" value={t.key} />
-              <div style={{ maxWidth: 320 }}><label htmlFor={`fb48dm1-${t.key}`}>Name der Rolle</label><input id={`fb48dm1-${t.key}`} name="name" defaultValue={t.name} required maxLength={40} /></div>
+              <div className="mw320"><label htmlFor={`fb48dm1-${t.key}`}>Name der Rolle</label><input id={`fb48dm1-${t.key}`} name="name" defaultValue={t.name} required maxLength={40} /></div>
               <AreaChecks selected={t.areas} />
               <div className="inline-form"><button className="btn small">Speichern</button></div>
             </form>
@@ -164,7 +164,7 @@ export default async function Team({ params, searchParams }: { params: Promise<{
             <summary><strong>{r.name}</strong> <span className="muted small">· {r.areas.length} Seite{r.areas.length === 1 ? "" : "n"} · {members.filter((m) => m.role === `custom:${r.id}`).length} Person(en)</span></summary>
             <form action={roleSave} className="stack mt12">
               {hidden}<input type="hidden" name="roleId" value={r.id} />
-              <div style={{ maxWidth: 320 }}><label htmlFor={`fb48dm2-${r.id}`}>Name der Rolle</label><input id={`fb48dm2-${r.id}`} name="name" defaultValue={r.name} required maxLength={40} /></div>
+              <div className="mw320"><label htmlFor={`fb48dm2-${r.id}`}>Name der Rolle</label><input id={`fb48dm2-${r.id}`} name="name" defaultValue={r.name} required maxLength={40} /></div>
               <AreaChecks selected={r.areas} />
               <div className="inline-form"><button className="btn small">Rolle speichern</button></div>
             </form>
@@ -176,7 +176,7 @@ export default async function Team({ params, searchParams }: { params: Promise<{
           <summary><strong>+ Eigene Rolle anlegen</strong></summary>
           <form action={roleSave} className="stack mt12">
             {hidden}
-            <div style={{ maxWidth: 320 }}><label htmlFor="fb48d3">Name der Rolle</label><input id="fb48d3" name="name" required maxLength={40} placeholder="z. B. Nachtportier" defaultValue={template ? `${template.label} (angepasst)` : ""} /></div>
+            <div className="mw320"><label htmlFor="fb48d3">Name der Rolle</label><input id="fb48d3" name="name" required maxLength={40} placeholder="z. B. Nachtportier" defaultValue={template ? `${template.label} (angepasst)` : ""} /></div>
             <p className="muted small m0">
               Vorlage übernehmen: {ROLE_TEMPLATES.map((t, i) => <span key={t.key}>{i ? " · " : ""}<a href={`?vorlage=${t.key}#neu`}>{t.label}</a></span>)}. Danach Seiten an- oder abhaken.
             </p>

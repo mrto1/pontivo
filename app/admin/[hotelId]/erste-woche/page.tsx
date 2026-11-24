@@ -36,8 +36,8 @@ export default async function FirstWeekPage({ params }: { params: Promise<{ hote
               <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="task" value={t.key} /><input type="hidden" name="done" value={done.has(t.key) ? "0" : "1"} />
               <div>
                 <strong style={done.has(t.key) ? { textDecoration: "line-through" } : undefined}>{t.title}</strong>
-                <p className="small muted" style={{ margin: "4px 0 0" }}>{t.hint}</p>
-                <p className="small" style={{ margin: "4px 0 0" }}><a href={href.get(t.area)}>Öffnen</a></p>
+                <p className="small muted m-4-0-0">{t.hint}</p>
+                <p className="small m-4-0-0"><a href={href.get(t.area)}>Öffnen</a></p>
               </div>
               <button className={`btn small ${done.has(t.key) ? "secondary" : ""}`}>{done.has(t.key) ? "Zurücknehmen" : "Erledigt"}</button>
             </form>

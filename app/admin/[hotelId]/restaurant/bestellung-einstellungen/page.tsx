@@ -118,7 +118,7 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
         </div>
         <FormSwitch name="cashPickup" defaultOn={cfg.cashPickup} label="Bar bei Abholung erlauben" />
         <FormSwitch name="cashDelivery" defaultOn={cfg.cashDelivery} label="Bar bei Lieferung erlauben" hint="Telefon ist Pflicht; Adressen mit früherer Nicht-Annahme werden markiert. " />
-        <div><label htmlFor="cashMax">Höchstbetrag bar CHF (leer = ohne)</label><input id="cashMax" name="cashMax" inputMode="decimal" defaultValue={cfg.cashMaxRappen ? (cfg.cashMaxRappen / 100).toString() : ""} style={{ width: 120 }} /></div>
+        <div><label htmlFor="cashMax">Höchstbetrag bar CHF (leer = ohne)</label><input className="w120" id="cashMax" name="cashMax" inputMode="decimal" defaultValue={cfg.cashMaxRappen ? (cfg.cashMaxRappen / 100).toString() : ""} /></div>
         <FormSwitch name="guestSms" defaultOn={cfg.guestSms} label="SMS an Gäste («bereit», «unterwegs»)" hint="Zusätzlich zur Mail. Kosten zum Selbstkostenpreis auf der Monatsrechnung (ca. 8 Rappen je SMS). Alarme an Sie sind inklusive." />
         <p className="small muted">Bestellt werden kann innerhalb der Öffnungszeiten (Betriebsdaten). Gäste bezahlen online mit Karte oder TWINT; Sie nehmen jede Bestellung auf dem Bestellbildschirm an. Nicht angenommene Bestellungen lösen nach 5 Minuten einen Alarm aus und werden nach 10 Minuten automatisch storniert und erstattet.</p>
         <div><button className="btn">Speichern</button></div>

@@ -43,7 +43,7 @@ export default async function FeedbackPage({ params, searchParams }: { params: P
   const reviewUrl = hotel.content?.feedback?.reviewUrl ?? "";
   return (
     <Shell hotel={hotel} locale={locale} base={base}>
-      <section style={{ padding: "32px 0", maxWidth: 560 }}>
+      <section className="pad32-560">
         <h1>{f.title}</h1>
         {sp.r === "public" && reviewUrl ? (
           <div className="stack"><p className="notice">{f.thanksPublic}</p><p><a className="btn" href={reviewUrl} target="_blank" rel="noopener noreferrer">{f.publicButton}</a></p></div>

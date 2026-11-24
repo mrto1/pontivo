@@ -57,7 +57,7 @@ export function SearchBar({ action, locale, defaults, today, plan, codes, code }
       {codes || code ? (
         <div>
           <label htmlFor="code">{D[locale].codeHave}</label>
-          <input id="code" name="code" defaultValue={code ?? ""} autoComplete="off" maxLength={24} style={{ textTransform: "uppercase" }} />
+          <input className="upper" id="code" name="code" defaultValue={code ?? ""} autoComplete="off" maxLength={24} />
         </div>
       ) : null}
       <button className="btn" type="submit">{d.search}</button>

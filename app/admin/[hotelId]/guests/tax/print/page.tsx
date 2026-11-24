@@ -17,12 +17,12 @@ export default async function PrintTax({ params, searchParams }: { params: Promi
   return (
     <div className="print-page">
       <style>{`.admin-head{display:none} @media print{.no-print{display:none} body{background:#fff;color:#000} .table th,.table td{font-size:9pt;padding:4px}}`}</style>
-      <div className="no-print" style={{ margin: "16px 0" }}><PrintButton /></div>
+      <div className="no-print m-16-0"><PrintButton /></div>
       <h1>{quarter ? `Kurtaxe-Abrechnung ${quarter.replace("-Q", " Q")}` : `Kurtaxe-Liste ${month}`}</h1>
       <p>{hotel.legalName ?? hotel.name}{hotel.municipality ? `, Gemeinde ${hotel.municipality}` : ""}, Kanton {hotel.canton}</p>
       <p className="small muted">Erstellt am {todayIn(hotel.timezone)}.</p>
       <TaxTable r={r} />
-      {quarter ? <p style={{ marginTop: 32 }} className="small">Ort, Datum: ______________________ &nbsp; Unterschrift: ______________________</p> : null}
+      {quarter ? <p className="small mt32">Ort, Datum: ______________________ &nbsp; Unterschrift: ______________________</p> : null}
     </div>
   );
 }

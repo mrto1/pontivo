@@ -52,7 +52,7 @@ export default async function NewHotel({ searchParams }: { searchParams: Promise
           <div className="mode-url"><label htmlFor="websiteUrl">Adresse Ihrer Website</label><input id="websiteUrl" name="websiteUrl" maxLength={300} placeholder="www.chalet-edelweiss.ch" inputMode="url" /></div>
         </fieldset>
         <div><label htmlFor="name">Name des Betriebs</label><input id="name" name="name" required maxLength={120} /></div>
-        <div className="form-grid" style={{ marginTop: 0 }}>
+        <div className="form-grid mt0">
           <div><label htmlFor="canton">Kanton</label><select id="canton" name="canton" required defaultValue=""><option value="" disabled>wählen</option>{CANTONS.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
           <div><label htmlFor="municipality">Gemeinde</label><input id="municipality" name="municipality" required maxLength={100} /></div>
         </div>

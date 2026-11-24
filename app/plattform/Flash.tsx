@@ -12,7 +12,7 @@ export function Flash({ sp }: { sp: Record<string, string | undefined> }) {
 
 export function PageHead({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
-    <header className="stack" style={{ gap: 6 }}>
+    <header className="stack gap6">
       <h1 className="m0">{title}</h1>
       {children ? <p className="muted small m0">{children}</p> : null}
     </header>

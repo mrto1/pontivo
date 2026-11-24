@@ -44,7 +44,7 @@ export default async function PosBridgePage({ params, searchParams }: { params: 
         <div className="card stack">
           <h2>Neuer Schlüssel</h2>
           <p className="notice warn">Bitte jetzt kopieren und an den Kassenanbieter geben. Er wird nur einmal angezeigt.</p>
-          <p><code style={{ wordBreak: "break-all" }}>{sp.new}</code></p>
+          <p><code className="break-all">{sp.new}</code></p>
         </div>
       ) : null}
       <form action={create} className="card stack">

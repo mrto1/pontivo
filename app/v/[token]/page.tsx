@@ -27,7 +27,7 @@ export default async function VoucherView({ params, searchParams }: { params: Pr
 
   return (
     <Shell hotel={hotel} locale={locale} base={base} noBookButton>
-      <section style={{ padding: "32px 0" }}>
+      <section className="pad32">
         {v.status === "pending" ? (<><p className="notice">{d.vPending}</p>{sp.paid ? <AutoRefresh seconds={3} /> : null}</>) : null}
         {v.status === "cancelled" ? <p className="notice warn">{d.paymentAborted}</p> : null}
         {v.status === "paid" ? (

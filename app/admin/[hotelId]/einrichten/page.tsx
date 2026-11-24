@@ -226,7 +226,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
   );
   const next = steps[idx + 1]?.key;
   const skipBtn = next ? (
-    <form action={skip} style={{ display: "inline" }}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value={next} /><button className="btn secondary">Später</button></form>
+    <form className="d-inline" action={skip}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value={next} /><button className="btn secondary">Später</button></form>
   ) : null;
 
   const resto = isRestaurant(hotel.propertyType);
@@ -282,7 +282,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           <p className="muted m0">Kreuzen Sie an, was auf Sie zutrifft. Alles andere bleibt ausgeblendet und lässt sich jederzeit unter «Funktionen» ändern.</p>
           {(resto ? CHOICES.filter((c) => RESTAURANT_CHOICES.includes(c.key)) : CHOICES).map((c) => (
             <label key={c.key} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
-              <input type="checkbox" name={`c_${c.key}`} value="1" defaultChecked={choiceOn(rows, c, isOn)} style={{ width: "auto", marginTop: 4 }} />
+              <input className="w-auto-mt4" type="checkbox" name={`c_${c.key}`} value="1" defaultChecked={choiceOn(rows, c, isOn)} />
               <span>{c.question}</span>
             </label>
           ))}
@@ -364,11 +364,11 @@ export default async function Wizard({ params, searchParams }: { params: Promise
         <form action={saveUmstieg} className="stack">{H}
           <p className="muted m0">Haben Sie bereits eine Hotelsoftware oder Buchungsverwaltung?</p>
           <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
-            <input type="radio" name="answer" value="none" defaultChecked={hotel.onboarding.previousSoftware !== "yes"} style={{ width: "auto", marginTop: 4 }} />
+            <input className="w-auto-mt4" type="radio" name="answer" value="none" defaultChecked={hotel.onboarding.previousSoftware !== "yes"} />
             <span>Nein, ich starte neu mit Pontivo.</span>
           </label>
           <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
-            <input type="radio" name="answer" value="yes" defaultChecked={hotel.onboarding.previousSoftware === "yes"} style={{ width: "auto", marginTop: 4 }} />
+            <input className="w-auto-mt4" type="radio" name="answer" value="yes" defaultChecked={hotel.onboarding.previousSoftware === "yes"} />
             <span>Ja, ich wechsle von einer anderen Software und möchte meine Reservierungen übernehmen.</span>
           </label>
           <p className="small muted m0">Bei «Ja» läuft Ihre alte Software zunächst parallel weiter. Unter «Datenübernahme» finden Sie dann den Import, die Umschalt-Checkliste und Hinweise zum Parallelbetrieb.</p>
@@ -522,7 +522,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             <StripeOnboarding hotelId={hotel.id} publishableKey={env().STRIPE_PUBLISHABLE_KEY!} privacyUrl={`${env().APP_BASE_URL}/datenschutz`} />
           ) : null}
           {isOwner ? (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div className="flex-wrap8">
               {hotel.stripeChargesEnabled ? null : <form action={stripeStart}>{H}<button className={env().STRIPE_PUBLISHABLE_KEY ? "btn secondary small" : "btn"}>{env().STRIPE_PUBLISHABLE_KEY ? "Lieber auf der Stripe-Seite einrichten" : hotel.stripeAccountId ? "Bei Stripe fortsetzen" : "Konto bei Stripe eröffnen"}</button></form>}
               {hotel.stripeAccountId ? <form action={stripeReload}>{H}<input type="hidden" name="stay" value={hotel.stripeChargesEnabled ? "" : "1"} /><button className={env().STRIPE_PUBLISHABLE_KEY && !hotel.stripeChargesEnabled ? "btn secondary small" : "btn secondary"}>Status prüfen</button></form> : null}
             </div>
@@ -596,7 +596,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           <h3>3. Jemand anderes macht Ihre Website?</h3>
           <p className="small muted">Schicken Sie diese Seite oder den Link oben an Ihre Webagentur – mehr braucht es nicht.</p>
           {hotel.status !== "live" ? <p className="notice warn small">Noch nicht online: Gäste sehen auf der Buchungsseite einen Hinweis statt Angeboten.</p> : null}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div className="flex-wrap8">
             <form action={embedCheck}>{H}<button className="btn">Meine Website prüfen</button></form>
             {hotel.onboarding.embeddedAt ? null : <form action={embedCheck}>{H}<input type="hidden" name="confirm" value="1" /><button className="btn secondary">Ist eingebaut</button></form>}
             {hotel.onboarding.embeddedAt ? <a className="btn secondary" href={`/admin/${hotel.id}`}>Zu «Heute»</a> : null}

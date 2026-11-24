@@ -173,7 +173,7 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
             {hidden}
             <div>
               <label htmlFor="pct">Provision der Buchungsportale in %</label>
-              <input id="pct" name="pct" type="number" min={0} max={30} step={0.5} defaultValue={otaCommissionBps(hotel) / 100} style={{ width: 120 }} />
+              <input className="w120" id="pct" name="pct" type="number" min={0} max={30} step={0.5} defaultValue={otaCommissionBps(hotel) / 100} />
             </div>
             <button className="btn secondary small">Speichern</button>
           </form>

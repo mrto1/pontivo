@@ -69,7 +69,7 @@ export default async function Vouchers({ params, searchParams }: { params: Promi
         <h2>Einlösen</h2>
         <form action={redeem} className="inline-form">
           {hidden}
-          <div><label htmlFor="f92f71">Code</label><input id="f92f71" name="code" required placeholder="GS-XXXX-XXXX" defaultValue={sp.q ?? ""} style={{ textTransform: "uppercase" }} /></div>
+          <div><label htmlFor="f92f71">Code</label><input className="upper" id="f92f71" name="code" required placeholder="GS-XXXX-XXXX" defaultValue={sp.q ?? ""} /></div>
           <div><label htmlFor="f92f72">Betrag CHF</label><input id="f92f72" name="amount" required inputMode="decimal" placeholder="z. B. 120" /></div>
           <div style={{ minWidth: 220 }}><label htmlFor="f92f73">Notiz (optional)</label><input id="f92f73" name="note" maxLength={200} placeholder="z. B. Abendessen 12.3." /></div>
           <button className="btn">Einlösen</button>

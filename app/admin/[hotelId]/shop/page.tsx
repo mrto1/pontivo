@@ -123,7 +123,7 @@ export default async function ShopPage({ params, searchParams }: { params: Promi
               {g?.trackStock ? (
                 <form action={receiveAction} className="inline-form">
                   <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={g.id} />
-                  <div><label htmlFor="f01b28">Wareneingang (negativ = Korrektur)</label><input id="f01b28" name="delta" type="number" required style={{ width: 120 }} /></div>
+                  <div><label htmlFor="f01b28">Wareneingang (negativ = Korrektur)</label><input className="w120" id="f01b28" name="delta" type="number" required /></div>
                   <button className="btn secondary small">Buchen</button>
                 </form>
               ) : null}

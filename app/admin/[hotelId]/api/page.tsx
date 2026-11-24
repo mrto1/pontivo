@@ -75,7 +75,7 @@ export default async function ApiPage({ params, searchParams }: { params: Promis
         <div className="card stack">
           <h2>Neuer Schlüssel</h2>
           <p className="notice warn">Bitte jetzt kopieren und an Ihre Webagentur geben. Er wird nur einmal angezeigt.</p>
-          <p><code style={{ wordBreak: "break-all" }}>{sp.new}</code></p>
+          <p><code className="break-all">{sp.new}</code></p>
         </div>
       ) : null}
       <form action={create} className="card stack">
@@ -106,7 +106,7 @@ export default async function ApiPage({ params, searchParams }: { params: Promis
       <section className="card stack">
         <h2>Webhooks</h2>
         <p className="small muted">Pontivo meldet Ihrer Website, wenn eine Buchung bezahlt, storniert oder nicht bezahlt wurde (ohne Gästedaten). Jede Meldung ist mit dem Geheimnis der Adresse signiert; bei Fehlern wird bis zu 7 Mal wiederholt.</p>
-        {sp.secret ? <div className="notice warn"><strong>Geheimnis der neuen Adresse (nur jetzt sichtbar):</strong><br /><code style={{ wordBreak: "break-all" }}>{sp.secret}</code></div> : null}
+        {sp.secret ? <div className="notice warn"><strong>Geheimnis der neuen Adresse (nur jetzt sichtbar):</strong><br /><code className="break-all">{sp.secret}</code></div> : null}
         <form action={addHook} className="stack">
           <input type="hidden" name="hotelId" value={hotel.id} />
           <label>Adresse (https)<input name="url" placeholder="https://www.beispiel.ch/pontivo-webhook" required /></label>

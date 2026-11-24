@@ -26,7 +26,7 @@ export default async function UpsellPage({ params, searchParams }: { params: Pro
 
   return (
     <Shell hotel={hotel} locale={locale} base={base}>
-      <section style={{ padding: "32px 0" }}>
+      <section className="pad32">
         <h1>{u.title}</h1>
         {sp.paid ? <p className="notice">{u.thanks}</p> : null}
         {sp.empty ? <p className="notice warn">{u.noteIncluded}</p> : null}

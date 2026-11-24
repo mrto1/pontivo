@@ -110,7 +110,7 @@ export default async function ReservationsPage({ params, searchParams }: { param
                   {prof.get(r.email.toLowerCase())?.note ? <div className="small">Kartei: {prof.get(r.email.toLowerCase())!.note.slice(0, 120)}</div> : null}
                   {notes && r.email ? (
                     <details className="small"><summary>Kartei</summary>
-                      <form action={profile} className="stack" style={{ marginTop: 6 }}>{H}{D}<input type="hidden" name="email" value={r.email} />
+                      <form action={profile} className="stack mt6">{H}{D}<input type="hidden" name="email" value={r.email} />
                         <div><label htmlFor={`tags-${r.id}`}>Tags (Komma)</label><input id={`tags-${r.id}`} name="tags" defaultValue={prof.get(r.email.toLowerCase())?.tags.join(", ") ?? ""} placeholder="Stammgast, Fensterplatz" maxLength={200} /></div>
                         <div><label htmlFor={`note-${r.id}`}>Notiz</label><input id={`note-${r.id}`} name="note" defaultValue={prof.get(r.email.toLowerCase())?.note ?? ""} maxLength={1000} placeholder="z. B. ohne Nüsse, mag Ecktisch" /></div>
                         <p className="muted m0">Allergien nur als kurzer Hinweis für die Küche, keine Gesundheitsangaben.</p>

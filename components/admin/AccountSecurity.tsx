@@ -97,7 +97,7 @@ export function AccountSecurity({ passkeys, totpOn, codesLeft, passkeyOnly, pass
             ))}
           </ul>
         ) : <p className="small">Noch kein Passkey.</p>}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="flex-wrap8">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name, z. B. «iPhone von Ruth»" maxLength={60} aria-label="Name des Passkeys" />
           <button className="btn" onClick={addPasskey} data-testid="passkey-add">Passkey hinzufügen</button>
         </div>
@@ -131,7 +131,7 @@ export function AccountSecurity({ passkeys, totpOn, codesLeft, passkeyOnly, pass
           <div className="stack">
             <p><strong>Aktiv.</strong> Noch {left} Wiederherstellungscodes übrig.</p>
             <p className="small muted">Zum Ausschalten oder für neue Wiederherstellungscodes einen gültigen Code (App oder Wiederherstellungscode) eingeben:</p>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div className="flex-wrap8">
               <input value={code} onChange={(e) => setCode(e.target.value)} autoComplete="one-time-code" aria-label="Code" />
               <button className="btn secondary" onClick={regenerate}>Neue Wiederherstellungscodes</button>
               <button className="btn secondary" onClick={disable}>Ausschalten</button>

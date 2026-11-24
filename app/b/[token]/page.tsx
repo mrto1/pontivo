@@ -88,7 +88,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
   const canOut = selfCheckoutOpen(booking, today, selfCheckoutEnabled(portal));
   return (
     <Shell hotel={hotel} locale={locale} base={base} chatToken={token}>
-      <section style={{ padding: "32px 0" }}>
+      <section className="pad32">
         <h1>{d.booking}</h1>
         {sp.paid && booking.status === "confirmed" ? <p className="notice">{d.paidThanks}</p> : null}
         {sp.paid && booking.status === "hold" ? (<><p className="notice">{d.paymentPending}</p><AutoRefresh seconds={3} /></>) : null}
@@ -128,7 +128,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
         {guestInfo ? (
           <div className="card mt16">
             <h3>{pt.infoTitle}</h3>
-            <p style={{ whiteSpace: "pre-wrap" }}>{guestInfo}</p>
+            <p className="pre-wrap">{guestInfo}</p>
           </div>
         ) : null}
         {extrasOffer ? (
@@ -141,7 +141,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
         {arrival ? (
           <div className="card mt16">
             <h3>{CHAT_TEXT[locale].arrivalTitle}</h3>
-            <p style={{ whiteSpace: "pre-wrap" }}>{arrival}</p>
+            <p className="pre-wrap">{arrival}</p>
           </div>
         ) : null}
         {door.codes.length ? (
@@ -166,7 +166,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
           <div className="card mt16">
             <h3>{pt.tipsTitle}</h3>
             <ul className="list">
-              {tips.map((x) => <li key={x.id}><strong>{x.title}</strong>{x.text ? <div className="small" style={{ whiteSpace: "pre-wrap" }}>{x.text}</div> : null}</li>)}
+              {tips.map((x) => <li key={x.id}><strong>{x.title}</strong>{x.text ? <div className="small pre-wrap">{x.text}</div> : null}</li>)}
             </ul>
           </div>
         ) : null}

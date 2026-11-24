@@ -36,7 +36,7 @@ export default async function Rechnungen({ searchParams }: { searchParams: Promi
                   <td>{st.warn ? <span className="badge warn">{st.text}</span> : st.text}</td>
                   <td><form action={invoicePaid} className="inline-form">{To}<input type="hidden" name="id" value={c.id} />
                     <input type="date" name="paidOn" defaultValue={today} aria-label={`Zahlungsdatum ${c.invoiceNo}`} style={{ width: 140 }} />
-                    <input name="note" placeholder="Notiz" maxLength={200} aria-label={`Notiz ${c.invoiceNo}`} style={{ width: 120 }} />
+                    <input className="w120" name="note" placeholder="Notiz" maxLength={200} aria-label={`Notiz ${c.invoiceNo}`} />
                     <button className="btn small">Bezahlt</button></form></td>
                   <td className="inline-form">
                     {c.dunningLevel < 3 ? <form action={invoiceRemind}>{To}<input type="hidden" name="id" value={c.id} /><button className="btn secondary small">Mahnung senden</button></form> : null}

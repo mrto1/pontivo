@@ -15,10 +15,10 @@ export default async function Abmelden({ searchParams }: { searchParams: Promise
     const { redirect } = await import("next/navigation");
     redirect(`/abmelden?done=1`);
   }
-  if (sp.done) return <main style={{ maxWidth: 480, margin: "64px auto", padding: 16 }}><h1>Abgemeldet</h1><p>Sie erhalten keine Newsletter mehr. / You will no longer receive newsletters.</p></main>;
-  if (!valid) return <main style={{ maxWidth: 480, margin: "64px auto", padding: 16 }}><h1>Link ungültig</h1><p>Dieser Abmelde-Link ist nicht gültig. / This unsubscribe link is not valid.</p></main>;
+  if (sp.done) return <main className="card480"><h1>Abgemeldet</h1><p>Sie erhalten keine Newsletter mehr. / You will no longer receive newsletters.</p></main>;
+  if (!valid) return <main className="card480"><h1>Link ungültig</h1><p>Dieser Abmelde-Link ist nicht gültig. / This unsubscribe link is not valid.</p></main>;
   return (
-    <main style={{ maxWidth: 480, margin: "64px auto", padding: 16 }}>
+    <main className="card480">
       <h1>Newsletter abbestellen</h1>
       <p>{e}</p>
       <form action={confirm}><input type="hidden" name="h" value={h} /><input type="hidden" name="e" value={e} /><input type="hidden" name="t" value={t} /><button className="btn">Abmelden / Unsubscribe</button></form>

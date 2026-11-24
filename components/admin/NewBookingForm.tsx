@@ -28,7 +28,7 @@ export async function NewBookingForm({ hotel, sp, action, cancelHref }: { hotel:
       <div><label>Abreise</label><input type="date" name="checkout" required min={addDays(today, 1)} defaultValue={sp.checkout ?? addDays(checkin, 1)} /></div>
       <div><label>Erwachsene</label><input type="number" name="adults" min={1} max={30} required defaultValue={sp.adults ?? 2} className="w80" /></div>
       <div><label>Kinder</label><input type="number" name="children" min={0} max={20} defaultValue={sp.children ?? 0} className="w80" /></div>
-      <div><label>Alter der Kinder</label><input name="ages" placeholder="z. B. 4, 9" defaultValue={sp.ages} style={{ width: 120 }} /></div>
+      <div><label>Alter der Kinder</label><input className="w120" name="ages" placeholder="z. B. 4, 9" defaultValue={sp.ages} /></div>
     </div>
     {[2, 3].map((i) => (
       <details key={i} open={!!sp[`offer${i}`]}>
@@ -43,7 +43,7 @@ export async function NewBookingForm({ hotel, sp, action, cancelHref }: { hotel:
           </div>
           <div><label>Erwachsene</label><input type="number" name={`adults${i}`} min={1} max={30} defaultValue={sp[`adults${i}`] ?? 2} className="w80" /></div>
           <div><label>Kinder</label><input type="number" name={`children${i}`} min={0} max={20} defaultValue={sp[`children${i}`] ?? 0} className="w80" /></div>
-          <div><label>Alter der Kinder</label><input name={`ages${i}`} placeholder="z. B. 4, 9" defaultValue={sp[`ages${i}`]} style={{ width: 120 }} /></div>
+          <div><label>Alter der Kinder</label><input className="w120" name={`ages${i}`} placeholder="z. B. 4, 9" defaultValue={sp[`ages${i}`]} /></div>
         </div>
       </details>
     ))}

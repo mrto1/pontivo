@@ -65,7 +65,7 @@ export default async function MailTexte({ params, searchParams }: { params: Prom
             <div><label htmlFor={`f1168m1-${l}`}>Betreff</label><input id={`f1168m1-${l}`} name={`subject_${l}`} maxLength={LIMITS.subject} defaultValue={mine[l]?.subject ?? std[l].subject} /></div>
             <div><label htmlFor={`f1168m2-${l}`}>Einleitung (nach der Anrede)</label><textarea id={`f1168m2-${l}`} name={`intro_${l}`} rows={3} maxLength={LIMITS.intro} defaultValue={mine[l]?.intro ?? std[l].intro} /></div>
             <div><label htmlFor={`f1168m3-${l}`}>Zusätzlicher Schluss (vor der Grussformel, leer = keiner)</label><textarea id={`f1168m3-${l}`} name={`outro_${l}`} rows={3} maxLength={LIMITS.outro} defaultValue={mine[l]?.outro ?? ""} /></div>
-            <details><summary className="small">Vorschau (gespeicherter Stand, Beispieldaten)</summary><pre className="small" style={{ whiteSpace: "pre-wrap" }}>{preview(hotel, template, l)}</pre></details>
+            <details><summary className="small">Vorschau (gespeicherter Stand, Beispieldaten)</summary><pre className="small pre-wrap">{preview(hotel, template, l)}</pre></details>
           </section>
         ))}
         <div><button className="btn">Speichern</button></div>

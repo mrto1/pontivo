@@ -95,17 +95,17 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
           {hidden}
           <label className="check"><input type="checkbox" name="enabled" defaultChecked={d?.benefits?.enabled === true} /> Vorteile im Buchungsfenster anzeigen</label>
           {items.map((b, i) => (
-            <div key={i} className="stack" style={{ gap: 6 }}>
+            <div key={i} className="stack gap6">
               <div className="row">
                 <div style={{ flex: "1 1 320px" }}><label>Vorteil {i + 1} (Deutsch)</label><input name={`text_${i}_de`} defaultValue={b?.text.de ?? ""} maxLength={90} placeholder={i === 0 ? "z. B. Late Check-out bis 14 Uhr" : ""} /></div>
                 <div style={{ width: 150 }}><label htmlFor={`fbe24m1-${i}`}>ab Nächten</label><input id={`fbe24m1-${i}`} name={`min_${i}`} type="number" min={1} max={30} defaultValue={b?.minNights ?? ""} placeholder="alle" /></div>
               </div>
               {langs.length > 1 ? (
                 <details><summary className="small muted">Übersetzungen</summary>
-                  <div className="row" style={{ marginTop: 6 }}>
+                  <div className="row mt6">
                     {langs.filter((l) => l !== "de").map((l) => <div key={l} style={{ flex: "1 1 220px" }}><label>{LOCALE_NAMES[l]}</label><input name={`text_${i}_${l}`} defaultValue={b?.text[l] ?? ""} maxLength={90} /></div>)}
                   </div>
-                  <p className="muted small" style={{ margin: "4px 0 0" }}>Fehlt eine Sprache, sehen Gäste Englisch oder Deutsch.</p>
+                  <p className="muted small m-4-0-0">Fehlt eine Sprache, sehen Gäste Englisch oder Deutsch.</p>
                 </details>
               ) : null}
             </div>
@@ -144,7 +144,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
                             <label className="check"><input type="checkbox" name="active" defaultChecked={c.active} /> Aktiv</label>
                             <div className="inline-form"><button className="btn small">Speichern</button></div>
                           </form>
-                          <form action={codeDelete} style={{ marginTop: 6 }}>{hidden}<input type="hidden" name="codeId" value={c.id} /><button className="btn secondary small">Löschen</button></form>
+                          <form className="mt6" action={codeDelete}>{hidden}<input type="hidden" name="codeId" value={c.id} /><button className="btn secondary small">Löschen</button></form>
                         </details>
                       </td>
                     </tr>
@@ -158,7 +158,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
                   {hidden}
                   <div style={{ maxWidth: 360 }}><label htmlFor="fbe241">Firma</label><select id="fbe241" name="companyId" required>{companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
                   <div className="row">
-                    <div><label htmlFor="fbe242">Code (leer = wird erzeugt)</label><input id="fbe242" name="code" maxLength={24} style={{ textTransform: "uppercase" }} /></div>
+                    <div><label htmlFor="fbe242">Code (leer = wird erzeugt)</label><input className="upper" id="fbe242" name="code" maxLength={24} /></div>
                     <div><label htmlFor="fbe243">Rabatt %</label><input id="fbe243" name="discount" type="number" min={0} max={50} step="0.5" defaultValue={10} /></div>
                   </div>
                   <label className="check"><input type="checkbox" name="invoice" /> Auf Rechnung buchen (keine Kartenzahlung)</label>

@@ -136,7 +136,7 @@ export function BookingForm(props: {
           <summary className="small">{d.voucherHave}</summary>
           <div style={{ marginTop: 8, maxWidth: 320 }}>
             <label>{d.voucherCodeLabel}</label>
-            <input name="voucher" placeholder="GS-XXXX-XXXX" autoComplete="off" style={{ textTransform: "uppercase" }} />
+            <input className="upper" name="voucher" placeholder="GS-XXXX-XXXX" autoComplete="off" />
             <p className="small muted">{d.voucherHint}</p>
           </div>
         </details>

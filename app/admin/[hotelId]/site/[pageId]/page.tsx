@@ -500,9 +500,9 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
               <tr key={w}>
                 <td>{w}</td>
                 {[0, 1, 2].map((j) => (
-                  <td key={j} style={{ whiteSpace: "nowrap" }}>
-                    <input type="time" name={`d${i}.${j}.from`} defaultValue={b.days[i]?.[j]?.from ?? ""} step={900} style={{ width: 110 }} aria-label={`${w} ${j + 1}. von`} /> –{" "}
-                    <input type="time" name={`d${i}.${j}.to`} defaultValue={b.days[i]?.[j]?.to ?? ""} step={900} style={{ width: 110 }} aria-label={`${w} ${j + 1}. bis`} />
+                  <td className="nowrap" key={j}>
+                    <input className="w110" type="time" name={`d${i}.${j}.from`} defaultValue={b.days[i]?.[j]?.from ?? ""} step={900} aria-label={`${w} ${j + 1}. von`} /> –{" "}
+                    <input className="w110" type="time" name={`d${i}.${j}.to`} defaultValue={b.days[i]?.[j]?.to ?? ""} step={900} aria-label={`${w} ${j + 1}. bis`} />
                   </td>
                 ))}
               </tr>
@@ -586,7 +586,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
             {extra.map((l) => <a key={l} href={langHref(l)} className={l === editLang ? "active" : undefined} aria-current={l === editLang ? "true" : undefined}>{LOCALE_NAMES[l]}</a>)}
           </div>
           {canTranslate ? (
-            <div className="inline-form" style={{ gap: 6 }}>
+            <div className="inline-form gap6">
               <form action={translateAction}>{ids}<input type="hidden" name="mode" value="missing" /><button className="btn small" disabled={!left}>Fehlende Texte übersetzen</button></form>
               <form action={translateAction}>{ids}<input type="hidden" name="mode" value="all" /><button className="btn secondary small" disabled={!left} title="Überschreibt auch angepasste Übersetzungen">Alles neu übersetzen</button></form>
               <span className="small muted">aus dem Deutschen in alle Sprachen · noch {left} diesen Monat</span>
@@ -651,7 +651,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
             {canEdit ? <button className="btn small">Baustein speichern</button> : null}
           </form>
           {canTranslate && editLang && blockHasText(b) ? (
-            <form action={translateAction} className="inline-form" style={{ gap: 6 }}>
+            <form action={translateAction} className="inline-form gap6">
               {ids}<input type="hidden" name="blockId" value={b.id} /><input type="hidden" name="mode" value="all" /><input type="hidden" name="onlyLang" value={editLang} />
               <button className="btn secondary small" disabled={!left}>Diesen Baustein auf {LOCALE_NAMES[editLang]} neu übersetzen</button>
               <span className="small muted">vorher speichern</span>

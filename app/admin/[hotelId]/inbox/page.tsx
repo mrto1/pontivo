@@ -130,7 +130,7 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
                     <h3 className="m0">{r.label} · <a href={`/admin/${hotel.id}/bookings/${bookingId}`}>{reference}</a></h3>
                     <span className="small muted">{fmt(r.createdAt)} · Aufenthalt {formatDay(checkin, "de")} – {formatDay(checkout, "de")}</span>
                   </div>
-                  {r.message ? <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{r.message}</p> : null}
+                  {r.message ? <p className="pre-wrap0">{r.message}</p> : null}
                   {r.status === "done" && r.note ? <p className="small muted m0">Antwort an den Gast: {r.note}</p> : null}
                   <form action={wishDone} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                     <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={r.id} />
@@ -162,7 +162,7 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
                     {x.dateFrom ? (<><span className="muted">Datum</span><span>{formatDay(x.dateFrom, "de")}{x.dateTo ? ` – ${formatDay(x.dateTo, "de")}` : ""}{x.timeOfDay ? `, ${x.timeOfDay} Uhr` : ""}</span></>) : null}
                     {x.persons ? (<><span className="muted">Personen</span><span>{x.persons}</span></>) : null}
                   </div>
-                  {x.message ? <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{x.message}</p> : null}
+                  {x.message ? <p className="pre-wrap0">{x.message}</p> : null}
                   {offersOf(x.id).map((o) => <p key={o.id} className="small m0">Angebot: <a href={`/admin/${hotel.id}/offers/${o.id}`}>{o.title}</a> · {OFFER_STATUS_LABEL[o.status]}</p>)}
                   {canEdit && x.kind !== "table" ? (
                     <form action={makeOffer}>
@@ -211,7 +211,7 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
                     {open.messages.map((m) => (
                       <div key={m.id} className={m.sender === "guest" ? "" : "muted"}>
                         <small>{m.sender === "guest" ? "Gast" : "Hotel"} · {fmt(m.createdAt)}</small>
-                        <div style={{ whiteSpace: "pre-wrap" }}>{m.body || (m.attachments.length ? "(Anhang, im Portal ansehen)" : "")}</div>
+                        <div className="pre-wrap">{m.body || (m.attachments.length ? "(Anhang, im Portal ansehen)" : "")}</div>
                       </div>
                     ))}
                   </div>

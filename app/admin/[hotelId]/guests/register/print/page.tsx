@@ -20,7 +20,7 @@ export default async function PrintRegister({ params, searchParams }: { params: 
   return (
     <div className="print-page">
       <style>{`.admin-head{display:none} @media print{.no-print{display:none} body{background:#fff;color:#000} .table th,.table td{font-size:8pt;padding:3px}} .sig{height:36px}`}</style>
-      <div className="no-print" style={{ margin: "16px 0" }}><PrintButton /></div>
+      <div className="no-print m-16-0"><PrintButton /></div>
       <h1>Gästeregister {sp.from} bis {sp.to}</h1>
       <p>{hotel.legalName ?? hotel.name}{hotel.addressLine ? `, ${hotel.addressLine}` : ""}{hotel.city ? `, ${hotel.postalCode ?? ""} ${hotel.city}` : ""} · Kanton {hotel.canton}</p>
       <p className="small muted">Erstellt am {todayIn(hotel.timezone)}, {list.length} Einträge. Vertraulich: nur zur Herausgabe an die Polizei auf Verlangen.</p>

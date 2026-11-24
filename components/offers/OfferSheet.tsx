@@ -19,7 +19,7 @@ export function OfferSheet({ hotel, offer, lines, resourceNames = {} }: { hotel:
       </div>
       <p className="m0">{offer.company ? <>{offer.company}<br /></> : null}{offer.customerName}</p>
       <h2 className="m0">{offer.title}</h2>
-      {offer.intro ? <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{offer.intro}</p> : null}
+      {offer.intro ? <p className="pre-wrap0">{offer.intro}</p> : null}
       <table className="table">
         <thead><tr><th>Position</th><th className="ta-r">Menge</th><th className="ta-r">Preis</th><th className="ta-r">Total</th></tr></thead>
         <tbody>

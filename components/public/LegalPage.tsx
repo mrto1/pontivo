@@ -17,7 +17,7 @@ export async function LegalPage({ hotel, locale, base, kind }: { hotel: Hotel; l
         {showDraft ? <p className="notice warn small">{doc.draftNote}</p> : null}
         <p>{doc.intro}</p>
         {doc.sections.map((s) => (
-          <section key={s.h} style={{ marginTop: 24 }}>
+          <section className="mt24" key={s.h}>
             <h3>{s.h}</h3>
             {s.p.map((t, i) => <p key={i}>{t}</p>)}
           </section>

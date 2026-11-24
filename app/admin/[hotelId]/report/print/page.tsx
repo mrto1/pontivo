@@ -17,7 +17,7 @@ export default async function PrintReport({ params, searchParams }: { params: Pr
   return (
     <div className="print-page">
       <style>{`.admin-head{display:none} @media print{.no-print{display:none} body{background:#fff;color:#000} .table th,.table td{font-size:9pt;padding:4px}}`}</style>
-      <div className="no-print" style={{ margin: "16px 0" }}><PrintButton /></div>
+      <div className="no-print m-16-0"><PrintButton /></div>
       <h1>Monatsabrechnung {month}</h1>
       <p>{hotel.legalName ?? hotel.name}{hotel.addressLine ? `, ${hotel.addressLine}` : ""}{hotel.city ? `, ${hotel.postalCode ?? ""} ${hotel.city}` : ""}</p>
       <p className="small muted">Erstellt am {todayIn(hotel.timezone)}. Buchungen mit Bestätigung im Monat (Zeitzone {hotel.timezone}). Beträge in CHF.</p>

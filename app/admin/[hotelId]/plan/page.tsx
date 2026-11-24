@@ -239,7 +239,7 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
           {types.map((t) => {
             const rs = rms.filter((r) => r.roomTypeId === t.id);
             return rs.length ? (
-              <div key={t.id} className="stack" style={{ gap: 6 }}>
+              <div key={t.id} className="stack gap6">
                 <h3 className="small muted m0">{t.name}</h3>
                 <ul className="plan-list">
                   {rs.map((r) => (

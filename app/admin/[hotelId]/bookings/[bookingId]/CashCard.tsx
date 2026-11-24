@@ -50,7 +50,7 @@ export async function CashCard({ hotel, bookingId, status }: { hotel: Hotel; boo
         {hid}
         <div style={{ minWidth: 200 }}><label htmlFor="f14273">Beschreibung</label><input id="f14273" name="description" required maxLength={200} placeholder="z. B. Abendessen" /></div>
         <div><label htmlFor="f14274">Menge</label><input id="f14274" name="quantity" type="number" defaultValue={1} className="w70" /></div>
-        <div><label htmlFor="f14275">Preis CHF (Rabatt: negativ)</label><input id="f14275" name="price" required inputMode="decimal" style={{ width: 110 }} /></div>
+        <div><label htmlFor="f14275">Preis CHF (Rabatt: negativ)</label><input className="w110" id="f14275" name="price" required inputMode="decimal" /></div>
         <div><label htmlFor="f14276">MWST</label><select id="f14276" name="vatKind" defaultValue="standard"><option value="standard">übrige Leistungen</option><option value="stay">Beherbergung</option><option value="none">ohne MWST</option></select></div>
         <button className="btn secondary small">Posten hinzufügen</button>
       </form>

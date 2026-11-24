@@ -25,7 +25,7 @@ export async function OrderPage({ hotel, locale, base, sp }: { hotel: Hotel; loc
   if (!open) {
     return (
       <Shell hotel={hotel} locale={locale} base={base} path="/bestellen" noBookButton>
-        <section style={{ padding: "32px 0", maxWidth: 560 }} className="stack"><h1>{t.title}</h1><p className="notice warn" data-testid="orders-closed">{t.closed}</p></section>
+        <section className="stack pad32-560"><h1>{t.title}</h1><p className="notice warn" data-testid="orders-closed">{t.closed}</p></section>
       </Shell>
     );
   }
@@ -51,7 +51,7 @@ export async function OrderStatusPage({ hotel, locale, base, token, sp }: { hote
   const t = ORD[locale];
   const o = await orderByToken(token);
   if (!o || o.hotelId !== hotel.id) {
-    return <Shell hotel={hotel} locale={locale} base={base} noBookButton><section style={{ padding: "32px 0" }}><h1>{t.title}</h1><p className="notice warn">–</p></section></Shell>;
+    return <Shell hotel={hotel} locale={locale} base={base} noBookButton><section className="pad32"><h1>{t.title}</h1><p className="notice warn">–</p></section></Shell>;
   }
   const hm = (d: Date) => formatInTimeZone(d, hotel.timezone, "HH:mm");
   // Quittung (SPEC 20.8): Bon der Online-Bestellung mit MWST, auch ohne Modul Kasse
@@ -62,7 +62,7 @@ export async function OrderStatusPage({ hotel, locale, base, token, sp }: { hote
     <Shell hotel={hotel} locale={locale} base={base} path={`/bestellung/${token}`} noBookButton>
       {LIVE.has(o.status) ? <AutoRefresh seconds={15} /> : null}
       {one(sp, "neu") || one(sp, "paid") ? <ClearCart hotelId={hotel.id} /> : null}
-      <section style={{ padding: "32px 0", maxWidth: 560 }} className="stack" data-testid="order-status">
+      <section className="stack pad32-560" data-testid="order-status">
         <h1>{t.number} {o.number}</h1>
         <p className={`notice${["rejected", "expired", "cancelled", "not_accepted"].includes(o.status) ? " warn" : ""}`} data-status={o.status}>
           {t.status[o.status] ?? o.status}{o.status === "rejected" && o.rejectReason ? ` (${o.rejectReason})` : ""}

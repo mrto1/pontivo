@@ -53,7 +53,7 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
   return (
     <div>
       <div className="stack gap24">
-        <header className="stack" style={{ gap: 6 }}>
+        <header className="stack gap6">
           <h1 className="m0">Vertriebs-Cockpit</h1>
           <p className="muted small m0">Interessenten, Status und persönliche Nachrichten. Selbst registrierte Betriebe erscheinen automatisch; wird ein Betrieb online geschaltet, gilt der Lead als gewonnen. Nachrichten gehen einzeln an eine Person, kein Massenversand.</p>
         </header>
@@ -102,7 +102,7 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
                   <h3 className="m0">{l.name} <span className="badge">{LEAD_STATUS_LABEL[l.status as LeadStatus]}</span>
                     {h ? <> <span className={`ampel ampel-${h.level}`}>{HEALTH_LABEL[h.level]}</span></> : null}
                     {isDue({ status: l.status as LeadStatus, nextActionAt: l.nextActionAt }, k.today) ? <> <span className="badge warn">Schritt fällig</span></> : null}</h3>
-                  <p className="muted small" style={{ margin: "4px 0 0" }}>
+                  <p className="muted small m-4-0-0">
                     {[l.contactName, l.email, l.phone, l.canton].filter(Boolean).join(" · ") || "Keine Kontaktdaten"} · {LEAD_SOURCE_LABEL[l.source as keyof typeof LEAD_SOURCE_LABEL]} · seit {fmt(l.createdAt)}
                     {l.nextActionAt ? ` · nächster Schritt ${l.nextActionAt}` : ""}{l.hotelId ? <> · <a href={`/admin/${l.hotelId}`}>Betrieb öffnen</a></> : null}{l.website ? <> · <a href={l.website} target="_blank" rel="noopener noreferrer">Website</a></> : null}
                   </p>

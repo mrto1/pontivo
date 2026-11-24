@@ -184,7 +184,7 @@ export function CheckinForm(props: {
       {props.groupMode ? (
         <fieldset className="card">
           <legend>{x.participants}</legend>
-          <p className="small muted" style={{ marginTop: 0 }}>{x.participantsHint}</p>
+          <p className="small muted mt0">{x.participantsHint}</p>
           {rows.map((r, i) => {
             const k = (f: string) => `participants.${i}.${f}`;
             return (

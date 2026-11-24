@@ -41,7 +41,7 @@ export default async function AdminHome() {
       )}
       <p className="small muted">Umsatz = bestätigte Buchungen dieses Monats (nach Bestätigungsdatum), ohne Abzüge.</p>
       {canAdd ? <p><a className="btn secondary small" href="/admin/neu">Weiteren Betrieb anlegen</a></p> : null}
-      {user.isPlatformAdmin ? <p style={{ marginTop: 24 }}><a href="/plattform">Plattform-Verwaltung</a></p> : null}
+      {user.isPlatformAdmin ? <p className="mt24"><a href="/plattform">Plattform-Verwaltung</a></p> : null}
       <p className="mt8"><a href="/admin/konto">Sicherheit: Passkey und Authenticator</a></p>
       <form action="/api/auth/logout" method="post" className="mt8"><button className="btn secondary small">Abmelden</button></form>
     </main>

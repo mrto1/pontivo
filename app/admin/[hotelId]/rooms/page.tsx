@@ -250,7 +250,7 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
       {hotel.channexEnabled ? <p className="notice warn small">Neue Zimmertypen oder Tarife zusätzlich auf der Seite «Channex» anlegen bzw. zuordnen, damit sie auch bei Booking.com erscheinen.</p> : null}
 
       {langs.length > 1 && canEdit && translationEnabled() ? (
-        <form action={translateAll} className="inline-form" style={{ gap: 8 }}>
+        <form action={translateAll} className="inline-form gap8">
           <input type="hidden" name="hotelId" value={hotel.id} />
           <button className="btn secondary small" disabled={!left}>Fehlende Namen und Beschreibungen übersetzen (auch Zusatzleistungen)</button>
           <span className="small muted">aus dem Deutschen nach {langs.filter((l) => l !== "de").map((l) => l.toUpperCase()).join(", ")} · noch {left} diesen Monat</span>

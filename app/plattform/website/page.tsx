@@ -72,7 +72,7 @@ export default async function WebsiteEditor({ searchParams }: { searchParams: Pr
         ))}
         <div><button className="btn">Speichern</button></div>
       </form>
-      <form action={reset} style={{ marginTop: 24 }}>
+      <form className="mt24" action={reset}>
         <button className="btn secondary small">Alle Texte auf Standard zurücksetzen</button>
       </form>
     </div>

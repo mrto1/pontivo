@@ -153,7 +153,7 @@ export default async function Housekeeping({ params, searchParams }: { params: P
             </header>
             <div className="drawer-body stack">
               {open.issues.length ? (
-                <div className="stack" style={{ gap: 8 }}>
+                <div className="stack gap8">
                   <h3 className="m0">Offene Mängel</h3>
                   {open.issues.map((i) => (
                     <form key={i.id} action={fix} className="inline-form">

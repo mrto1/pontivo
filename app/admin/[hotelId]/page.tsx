@@ -85,7 +85,7 @@ export default async function Overview({ params, searchParams }: { params: Promi
           <div className="setup-head">
             <div>
               <h2 className="m0">Einrichtung: {done} von {steps.length} Schritten</h2>
-              <p className="muted small" style={{ margin: "4px 0 0" }}>Sobald Zimmer und Preise erfasst sind und Sie online gehen, füllen sich Kalender, Statistik und diese Übersicht. Alle Seiten können Sie schon jetzt ansehen.</p>
+              <p className="muted small m-4-0-0">Sobald Zimmer und Preise erfasst sind und Sie online gehen, füllen sich Kalender, Statistik und diese Übersicht. Alle Seiten können Sie schon jetzt ansehen.</p>
             </div>
             <a className="btn" href={`/admin/${hotel.id}/einrichten?step=${next}`}>Einrichtung fortsetzen</a>
           </div>

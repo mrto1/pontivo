@@ -52,7 +52,7 @@ export function PasskeyLogin() {
     }
   }
   return (
-    <div className="stack" style={{ gap: 8 }}>
+    <div className="stack gap8">
       <button type="button" className="passkey-tile" onClick={go} disabled={busy} data-testid="passkey-login">
         <span className="passkey-ico" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">

@@ -19,7 +19,7 @@ export default async function Checkin({ params, searchParams }: { params: Promis
   const base = hotel.primaryDomain ? "" : `/h/${hotel.slug}`;
   return (
     <Shell hotel={hotel} locale={locale} base={base} noBookButton>
-      <section style={{ padding: "32px 0" }}>
+      <section className="pad32">
         <h1>{CI[locale].title}</h1>
         <p className="muted">{booking.reference} · {booking.checkin} – {booking.checkout}</p>
         <CheckinForm

@@ -1151,3 +1151,30 @@ button.plan-table { font: inherit; cursor: pointer; }
 .w70 { width: 70px !important; }
 .w80 { width: 80px !important; }
 .w90 { width: 90px !important; }
+
+/* Hilfsklassen für ehemalige Inline-Styles */
+.w-auto-mt4{width:auto;margin-top:4px !important}
+.mt32{margin-top:32px !important}
+.plain-link{text-decoration:none;color:inherit !important}
+.mt24{margin-top:24px !important}
+.mw320{max-width:320px !important}
+.m-2-0-0{margin:2px 0 0 !important}
+.m-4-0-0{margin:4px 0 0 !important}
+.w120{width:120px !important}
+.pre-wrap{white-space:pre-wrap !important}
+.upper{text-transform:uppercase !important}
+.mt0{margin-top:0 !important}
+.w110{width:110px !important}
+.card480{max-width:480px;margin:64px auto;padding:16px !important}
+.flex-wrap8{display:flex;gap:8px;flex-wrap:wrap !important}
+.pad32-560{padding:32px 0;max-width:560px !important}
+.nowrap{white-space:nowrap !important}
+.m-8-0-0{margin:8px 0 0 !important}
+.pre-wrap0{white-space:pre-wrap;margin:0 !important}
+.m-16-0{margin:16px 0 !important}
+.gap8{gap:8px !important}
+.break-all{word-break:break-all !important}
+.mt6{margin-top:6px !important}
+.pad32{padding:32px 0 !important}
+.d-inline{display:inline !important}
+.gap6{gap:6px !important}
