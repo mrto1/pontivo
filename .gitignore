@@ -14,7 +14,7 @@ deploy/.env.production
 
 # Sicherungen (Personendaten)
 backups/
-buchhaltung/
+/buchhaltung/
 
 # Testumgebung int: Geheimnisse und Passwortschutz
 deploy/.env.int
