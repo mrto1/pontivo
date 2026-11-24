@@ -33,13 +33,22 @@ export default async function Invoices({ params, searchParams }: { params: Promi
   const { hotel, role } = await requireHotelModule("invoicing", hotelId, "staff", "invoices");
   const manager = atLeast(role, "manager");
   const set = invoicingSettings(hotel);
-  const list = await listInvoices(hotel.id, sp.filter === "draft" ? "draft" : sp.filter === "issued" ? "issued" : "all");
+  const filter = sp.filter === "draft" ? "draft" : sp.filter === "issued" ? "issued" : "all";
+  const q = sp.q?.trim() ?? "";
+  const LIMIT = 200;
+  const list = await listInvoices(hotel.id, filter, LIMIT, q);
+  const qs = (f: string) => `?${new URLSearchParams({ ...(f !== "all" ? { filter: f } : {}), ...(q ? { q } : {}) })}`;
   return (
     <div className="stack">
       <h1 className="sr-only">Rechnungen</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
+      <form method="get" className="card bk-filter">
+        {filter !== "all" ? <input type="hidden" name="filter" value={filter} /> : null}
+        <div><label htmlFor="inv-q">Suche</label><input id="inv-q" type="search" name="q" defaultValue={q} placeholder="Nummer, Referenz oder Empfänger" maxLength={80} /></div>
+        <button className="btn small">Suchen</button>
+      </form>
       <p className="small">
-        <a href={`/admin/${hotel.id}/invoices`}>Alle</a> · <a href={`?filter=draft`}>Entwürfe</a> · <a href={`?filter=issued`}>Ausgestellt</a> ·{" "}
+        <a href={`/admin/${hotel.id}/invoices${qs("all")}`}>Alle</a> · <a href={qs("draft")}>Entwürfe</a> · <a href={qs("issued")}>Ausgestellt</a> ·{" "}
         Neue Rechnung: auf der Buchung unter «Rechnung &amp; Kasse».
       </p>
       <section className="card stack">
@@ -60,7 +69,8 @@ export default async function Invoices({ params, searchParams }: { params: Promi
               ))}
             </tbody>
           </table></div>
-        ) : <p className="muted small">Noch keine Rechnungen.</p>}
+        ) : <p className="muted small">{q ? "Keine Rechnung gefunden." : "Noch keine Rechnungen."}</p>}
+        {list.length >= LIMIT ? <p className="muted small">Es werden die neuesten {LIMIT} gezeigt. Mit der Suche finden Sie ältere.</p> : null}
       </section>
 
       <section className="card stack">

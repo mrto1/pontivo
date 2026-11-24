@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { insertFolioItem } from "./folio";
 import QRCode from "qrcode";
 import { db, rows, type Executor } from "../db/client";
@@ -381,9 +381,16 @@ export async function swissQrSvg(payload: string): Promise<string> {
   return svg.replace("</svg>", `${cross}</svg>`);
 }
 
-export async function listInvoices(hotelId: string, filter: "all" | "draft" | "issued" = "all", limit = 200): Promise<(Invoice & { reference: string | null })[]> {
+/**
+ * Rechnungsliste. `q`: Suche nach Rechnungsnummer, Buchungsreferenz, Name oder Firma des Empfängers (Teiltext, ohne Gross-/Kleinschreibung;
+ * % und _ sind keine Platzhalter).
+ */
+export async function listInvoices(hotelId: string, filter: "all" | "draft" | "issued" = "all", limit = 200, q = ""): Promise<(Invoice & { reference: string | null })[]> {
+  const term = q.trim().slice(0, 80);
+  const like = `%${term.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+  const search = term ? or(ilike(invoices.number, like), ilike(bookings.reference, like), ilike(sql`${invoices.recipient}->>'name'`, like), ilike(sql`${invoices.recipient}->>'company'`, like)) : undefined;
   const r = await db().select({ inv: invoices, reference: bookings.reference }).from(invoices).leftJoin(bookings, eq(bookings.id, invoices.bookingId))
-    .where(and(eq(invoices.hotelId, hotelId), filter === "all" ? sql`true` : eq(invoices.status, filter))).orderBy(desc(invoices.createdAt)).limit(limit);
+    .where(and(eq(invoices.hotelId, hotelId), filter === "all" ? sql`true` : eq(invoices.status, filter), search)).orderBy(desc(invoices.createdAt)).limit(limit);
   return r.map((x) => ({ ...x.inv, reference: x.reference }));
 }
 

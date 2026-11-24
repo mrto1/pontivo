@@ -5,7 +5,7 @@ import { bookings, emailOutbox, hotels, invoices, onsitePayments } from "../../s
 import { confirmBooking, createDirectBooking } from "../../src/services/bookings";
 import { markBalanceOnsite } from "../../src/services/balance";
 import {
-  addFolioItem, bookingBalance, createCreditNote, createInvoiceDraft, deleteDraft, deleteFolioItem, InvoiceError, invoiceView, issueInvoice,
+  listInvoices, addFolioItem, bookingBalance, createCreditNote, createInvoiceDraft, deleteDraft, deleteFolioItem, InvoiceError, invoiceView, issueInvoice,
   recordOnsitePayment, sendInvoiceEmail, updateDraft, updateInvoicingSettings, listFolio,
 } from "../../src/services/invoicing";
 import { vatOf } from "../../src/domain/invoice";
@@ -203,5 +203,20 @@ describe("Pauschalen auf der Rechnung (SPEC 19.4)", () => {
     expect(rp.breakfastIncluded).toBe(false);
     const rp2 = await updateRatePlan(s.hotel.id, plan.id, { ...base, breakfastIncluded: true }, "t");
     expect(rp2.board).toBe("breakfast");
+  });
+
+  it("Suche in der Rechnungsliste: Referenz, Empfänger, Teiltext; nur im eigenen Betrieb; % ist kein Platzhalter", async () => {
+    const s = await setup();
+    const other = await setup();
+    const b = await book(s);
+    const ob = await book(other);
+    const inv = await createInvoiceDraft(s.hotel, b.id, "t");
+    await createInvoiceDraft(other.hotel, ob.id, "t");
+    const found = async (q: string) => (await listInvoices(s.hotel.id, "all", 200, q)).map((x) => x.id);
+    expect(await found("")).toEqual([inv.id]);
+    expect(await found(b.reference.slice(0, 5).toLowerCase())).toEqual([inv.id]);
+    expect(await found(String(inv.recipient.name ?? "").slice(0, 3))).toContain(inv.id);
+    expect(await found("%")).toEqual([]);
+    expect(await found("nichtda")).toEqual([]);
   });
 });
