@@ -6,6 +6,8 @@ import { confirmBooking, createDirectBooking } from "../../src/services/bookings
 import { GoodsError, adjustStock, countMinibar, markRefilled, refillList, deleteGood, listGoods, reorderList, saveGood, sellToBooking } from "../../src/services/goods";
 import { seedRooms, listRooms, assignRoom } from "../../src/services/frontdesk";
 import { bookingRooms } from "../../src/db/schema";
+import { PosError, addLines, createDevice, openOrder, pay, reverseLine, reverseReceipt, saveItem } from "../../src/services/pos";
+import { linkPosItem } from "../../src/services/goods";
 import { addDays, todayIn } from "../../src/domain/dates";
 import { guest, inDays, makeHotel } from "../helpers";
 
@@ -83,5 +85,27 @@ describe("Shop & Lager (SPEC 19.51)", () => {
     expect((await refillList(h.hotel.id))[0].items).toEqual([expect.objectContaining({ quantity: 3 })]);
     expect(await markRefilled(h.hotel.id, room.id, "t")).toBe(1);
     expect(await refillList(h.hotel.id)).toEqual([]);
+  });
+
+  it("Kasse → Lager: Verkauf senkt den Bestand, Storno und Gegenbon geben ihn zurück; fremde Ware abgelehnt", async () => {
+    const { h } = await setup();
+    const other = await setup();
+    const mehl = await saveGood(h.hotel.id, null, { ...base, name: "Pizzamehl", trackStock: true, stock: 20 }, "t", false);
+    const foreign = await saveGood(other.h.hotel.id, null, base, "t", true);
+    const item = await saveItem(h.hotel.id, null, { category: "Laden", name: "Pizzamehl 1 kg", priceRappen: 400, vatDineInBps: 260, vatTakeawayBps: 260 }, "t");
+    await expect(linkPosItem(h.hotel.id, item.id, foreign.id, "t")).rejects.toBeInstanceOf(GoodsError);
+    await linkPosItem(h.hotel.id, item.id, mehl.id, "t");
+    const dev = await createDevice(h.hotel.id, "T1", "Tablet", "t");
+    const order = await openOrder(h.hotel.id, { deviceId: dev.id }, "k");
+    const [line] = await addLines(h.hotel, order.id, [{ itemId: item.id, quantity: 5 }], "k");
+    const stock = async () => (await db().select().from(goods).where(eq(goods.id, mehl.id)))[0].stock;
+    expect(await stock()).toBe(15);
+    await reverseLine(h.hotel.id, line.id, 2, "falsch", "k");
+    expect(await stock()).toBe(17);
+    const receipt = await pay(h.hotel, { orderId: order.id, deviceId: dev.id, selection: [{ lineId: line.id, quantity: 3 }], payments: [{ method: "cash", amountRappen: 1200 }] }, "k");
+    expect(await stock()).toBe(17);
+    await reverseReceipt(h.hotel, receipt.id, dev.id, "Rückgabe", "k");
+    expect(await stock()).toBe(20);
+    void PosError;
   });
 });

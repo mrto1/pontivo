@@ -26,7 +26,7 @@ export type NavKind = "hotel" | "restaurant";
 export type HotelRef = { id: string; slug: string; primaryDomain: string | null };
 
 /** Punkte, die es nur für Unterkünfte gibt; reine Restaurants sehen sie nicht (Zahnrad) */
-export const LODGING_ONLY = ["rooms", "extras", "resourcelist", "shop", "channex", "ical", "gaesteportal", "upsell", "direct", "api", "access", "migration"] as const;
+export const LODGING_ONLY = ["rooms", "extras", "resourcelist", "channex", "ical", "gaesteportal", "upsell", "direct", "api", "access", "migration"] as const;
 
 /** Gruppen des Zahnrads (Reihenfolge und Erklärung) */
 export const SETTINGS_GROUPS: { title: string; lead: string }[] = [

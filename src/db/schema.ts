@@ -1418,6 +1418,8 @@ export const posItems = pgTable("pos_items", {
   allergens: text("allergens").array().notNull().default(sql`'{}'::text[]`),
   /** Station für den Küchenbildschirm (SPEC 19.49): Küche, Bar oder keine */
   station: text("station").$type<"kitchen" | "bar" | "none">().notNull().default("kitchen"),
+  /** Verknüpfte Ware aus «Shop & Lager» (SPEC 19.51): ein Verkauf senkt deren Bestand */
+  goodId: uuid("good_id"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type PosItem = typeof posItems.$inferSelect;

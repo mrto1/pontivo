@@ -2,7 +2,8 @@ import { Notice } from "@/components/admin/Notice";
 import { DownloadLink } from "@/components/admin/DownloadLink";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { moduleOn, requireModule } from "@/src/services/modules";
+import { GoodsError, linkPosItem, listGoods } from "@/src/services/goods";
 import { PosError, importItems, listItems, listOptionGroups, saveItem, saveOption, saveOptionGroup, setGroupItems, setOptionActive } from "@/src/services/pos";
 import { FormSwitch } from "@/components/admin/FormSwitch";
 import { env } from "@/src/env";
@@ -41,6 +42,14 @@ async function station(f: FormData) {
   const it = (await listItems(c.hotel.id)).find((i) => i.id === s(f, "id"));
   if (it) await saveItem(c.hotel.id, it.id, { ...it, category: it.category ?? "", station: stationOf(s(f, "station")) }, c.actor);
   here(c.hotel.id, "Station gespeichert.");
+}
+async function linkGood(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  await requireModule(c.hotel.id, "shop");
+  let msg = "Verknüpfung gespeichert.";
+  try { await linkPosItem(c.hotel.id, s(f, "id"), s(f, "goodId") || null, c.actor); } catch (e) { if (!(e instanceof GoodsError)) throw e; msg = e.message; }
+  here(c.hotel.id, msg);
 }
 async function toggle(f: FormData) {
   "use server";
@@ -146,6 +155,8 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
   const open = sp.draft ? await getImport(hotel.id, sp.draft) : null;
   const menu = open && open.purpose === "menu" && open.status === "draft" ? (open.draft as unknown as MenuDraft) : null;
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
+  const shopOn = await moduleOn(hotel.id, "shop");
+  const goodsList = shopOn ? (await listGoods(hotel.id)).filter((g) => g.trackStock) : [];
   return (
     <div className="stack">
       <h1>Speisekarte</h1>
@@ -171,6 +182,20 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
             <td><form action={toggle}>{H}<input type="hidden" name="id" value={i.id} /><button className="btn secondary small">{i.active ? "Ausblenden" : "Einblenden"}</button></form></td></tr>)}
         </tbody></table> : <p className="muted">Noch kein Artikel.</p>}
       </section>
+      {shopOn && items.length ? (
+        <section className="card stack" id="lager">
+          <h2>Lager</h2>
+          <p className="small muted">Verknüpfen Sie einen Artikel mit einer Ware aus «Shop &amp; Lager» (mit Lagerbestand): Jeder Verkauf an der Kasse senkt den Bestand, Storno und Gegenbon geben ihn zurück.</p>
+          {goodsList.length === 0 ? <p className="muted small">Noch keine Ware mit Lagerbestand. Legen Sie sie unter Einstellungen → Shop &amp; Lager an.</p> : (
+            <table className="table"><tbody>
+              {items.map((i) => (
+                <tr key={i.id}><td>{i.name}</td><td><form action={linkGood} className="inline-form">{H}<input type="hidden" name="id" value={i.id} />
+                  <select name="goodId" defaultValue={i.goodId ?? ""} aria-label={`Ware für ${i.name}`}><option value="">Keine Verknüpfung</option>{goodsList.map((g) => <option key={g.id} value={g.id}>{g.name} (Bestand {g.stock})</option>)}</select> <button className="btn secondary small">Setzen</button></form></td></tr>
+              ))}
+            </tbody></table>
+          )}
+        </section>
+      ) : null}
       {items.length ? (
         <section className="card stack" id="online" data-testid="items-online">
           <h2>Online-Bestellung: Beschreibung, Foto, Allergene</h2>

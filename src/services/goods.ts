@@ -1,6 +1,6 @@
-import { and, asc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
-import { bookings, folioItems, goods, minibarRefills, rooms, type FolioItem, type Good } from "../db/schema";
+import { bookings, folioItems, goods, minibarRefills, posItems, rooms, type FolioItem, type Good } from "../db/schema";
 import { folioVat, needsReorder } from "../domain/goods";
 import { audit } from "./audit";
 
@@ -164,4 +164,31 @@ export async function markRefilled(hotelId: string, roomId: string, actor: strin
     .where(and(eq(minibarRefills.hotelId, hotelId), eq(minibarRefills.roomId, roomId), isNull(minibarRefills.doneAt))).returning({ id: minibarRefills.id });
   if (done.length) await audit(db(), { hotelId, actor, action: "minibar.refilled", entity: "room", entityId: roomId, details: { count: done.length } });
   return done.length;
+}
+
+/** Kassenartikel mit einer Ware verknüpfen (oder lösen); die Ware muss dem Betrieb gehören */
+export async function linkPosItem(hotelId: string, itemId: string, goodId: string | null, actor: string): Promise<void> {
+  if (goodId) {
+    const [g] = await db().select({ id: goods.id }).from(goods).where(and(eq(goods.id, goodId), eq(goods.hotelId, hotelId)));
+    if (!g) throw new GoodsError("Ware nicht gefunden.");
+  }
+  const r = await db().update(posItems).set({ goodId }).where(and(eq(posItems.id, itemId), eq(posItems.hotelId, hotelId))).returning({ id: posItems.id });
+  if (!r.length) throw new GoodsError("Kassenartikel nicht gefunden.");
+  await audit(db(), { hotelId, actor, action: "good.link_pos", entity: "pos_item", entityId: itemId, details: { goodId } });
+}
+
+/**
+ * Kasse → Lager (in der Transaktion der Kasse): `sign` −1 beim Verkauf, +1 bei Storno/Gegenbon.
+ * ASSUMPTION: Nur Artikel mit verknüpfter Ware und Lager; der Bestand darf unter 0 fallen.
+ */
+export async function posStockMove(tx: Tx, hotelId: string, moves: { itemId: string | null; quantity: number }[], sign: 1 | -1): Promise<void> {
+  const ids = [...new Set(moves.flatMap((m) => (m.itemId ? [m.itemId] : [])))];
+  if (!ids.length) return;
+  const its = await tx.select({ id: posItems.id, goodId: posItems.goodId }).from(posItems).where(and(eq(posItems.hotelId, hotelId), inArray(posItems.id, ids)));
+  for (const it of its) {
+    if (!it.goodId) continue;
+    const qty = moves.filter((m) => m.itemId === it.id).reduce((a, m) => a + m.quantity, 0);
+    if (!qty) continue;
+    await tx.update(goods).set({ stock: sql`${goods.stock} + ${sign * qty}` }).where(and(eq(goods.id, it.goodId), eq(goods.hotelId, hotelId), eq(goods.trackStock, true)));
+  }
 }

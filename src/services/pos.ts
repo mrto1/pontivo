@@ -11,6 +11,7 @@ import {
 } from "../domain/pos";
 import { GENESIS_HASH, hashReceipt, verifyChain } from "../domain/pos-chain";
 import { checkChoice, composeLine, NOTE_MAX, type ChosenOption, type GroupDef } from "../domain/pos-options";
+import { posStockMove } from "./goods";
 import { audit } from "./audit";
 import { invoicingSettings } from "./invoicing";
 import { RoomLinkError, activeLink, chargeRemote } from "./room-link";
@@ -270,7 +271,7 @@ export async function addLines(hotel: Hotel, orderId: string, inputs: LineInput[
       }
       const id = i.id ?? crypto.randomUUID();
       const ins = await tx.insert(posOrderLines).values({ id, hotelId: hotel.id, orderId, itemId: it.id, description: text, quantity: i.quantity, unitPriceRappen: price, vatBps: bps, mode, createdBy: actor, deviceAt: i.deviceAt ?? null, options: comp.options.length ? comp.options : null, note: comp.note }).onConflictDoNothing().returning();
-      if (ins.length) out.push(ins[0]);
+      if (ins.length) { out.push(ins[0]); await posStockMove(tx, hotel.id, [{ itemId: it.id, quantity: i.quantity }], -1); }
       else {
         const [ex] = await tx.select().from(posOrderLines).where(and(eq(posOrderLines.id, id), eq(posOrderLines.hotelId, hotel.id), eq(posOrderLines.orderId, orderId)));
         if (!ex) throw new PosError("Diese Zeilen-Id gehört zu einer anderen Bestellung.");
@@ -307,6 +308,7 @@ export async function reverseLine(hotelId: string, lineId: string, quantity: num
     const open = outstanding(lines, paid).get(l.id) ?? 0;
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > open) throw new PosError(open <= 0 ? "Diese Zeile ist schon bezahlt. Korrektur nur mit Gegenbon." : `Es sind nur noch ${open} offen.`);
     const [r] = await tx.insert(posOrderLines).values({ id: crypto.randomUUID(), hotelId, orderId: l.orderId, itemId: l.itemId, description: l.description, quantity: -quantity, unitPriceRappen: l.unitPriceRappen, vatBps: l.vatBps, mode: l.mode, reversesLineId: l.id, reason: why, createdBy: actor }).returning();
+    await posStockMove(tx, hotelId, [{ itemId: l.itemId, quantity }], 1);
     await audit(tx, { hotelId, actor, action: "pos.line_reverse", entity: "pos_order", entityId: l.orderId, details: { lineId, quantity, reason: why } });
     return r;
   });
@@ -505,6 +507,9 @@ export async function reverseReceipt(hotel: Hotel, receiptId: string, deviceId: 
       try { await chargeRemote(hotelId, hotel.name, room.remoteReference, rv, items, orig.tipRappen, orig.id, room.remoteLinkId); }
       catch (e) { if (!(e instanceof RoomLinkError)) throw e; throw new PosError(e.message); }
     }
+    // Gegenbon: Waren mit Lager kommen zurück ins Lager (Menge je Zeile aus dem Bon)
+    const lineRows = await tx.select({ id: posOrderLines.id, itemId: posOrderLines.itemId }).from(posOrderLines).where(and(eq(posOrderLines.orderId, orig.orderId), eq(posOrderLines.hotelId, hotelId)));
+    await posStockMove(tx, hotelId, orig.items.map((x) => ({ itemId: lineRows.find((l) => l.id === x.lineId)?.itemId ?? null, quantity: x.quantity })), 1);
     for (const p of pays) await tx.insert(posPayments).values({ hotelId, receiptId: rv.id, method: p.method, amountRappen: -p.amountRappen, bookingId: p.bookingId, folioItemIds: [], remoteLinkId: p.remoteLinkId, remoteReference: p.remoteReference });
     await audit(tx, { hotelId, actor, action: "pos.receipt_reverse", entity: "pos_receipt", entityId: orig.id, details: { number, reason: why } });
     return rv;
