@@ -5,7 +5,8 @@ import Link from "next/link";
 import { InfoTip } from "@/components/admin/InfoTip";
 import { DrawerKeys } from "@/components/admin/DrawerKeys";
 import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { moduleOn, requireModule } from "@/src/services/modules";
+import { GoodsError, countMinibar, minibarGoods } from "@/src/services/goods";
 import { addTask, board, generateTasks, HousekeepingError, reportIssue, resolveIssue, setCleanStatus, type CleanStatus } from "@/src/services/housekeeping";
 import { addDays, isDay, todayIn } from "@/src/domain/dates";
 import { formatDay } from "@/src/i18n/dict";
@@ -33,6 +34,22 @@ async function report(f: FormData) {
   const isTask = s(f, "kind") === "task";
   await act(f, (c) => (isTask ? addTask(c.hotel.id, s(f, "roomId"), s(f, "day"), s(f, "text"), c.actor) : reportIssue(c.hotel.id, s(f, "roomId"), s(f, "text"), c.actor)));
 }
+async function minibar(f: FormData) {
+  "use server";
+  const c = await requireHotel(s(f, "hotelId"), "staff", "housekeeping");
+  await requireModule(c.hotel.id, "housekeeping");
+  await requireModule(c.hotel.id, "shop");
+  let msg: string;
+  try {
+    const counts = [...f.keys()].filter((k) => k.startsWith("n_")).map((k) => ({ goodId: k.slice(2), present: Number(s(f, k)) }));
+    const r = await countMinibar(c.hotel.id, s(f, "roomId"), s(f, "day"), counts, c.actor);
+    msg = r.billed.length ? `Minibar verrechnet: ${r.billed.map((b) => `${b.quantity} × ${b.name}`).join(", ")}.` : "Minibar vollständig.";
+  } catch (e) {
+    if (!(e instanceof GoodsError)) throw e;
+    msg = `Nicht gespeichert: ${e.message}`;
+  }
+  redirect(`/admin/${c.hotel.id}/housekeeping?day=${s(f, "day")}&room=${s(f, "roomId")}&msg=${encodeURIComponent(msg)}`);
+}
 async function fix(f: FormData) {
   "use server";
   await act(f, (c) => resolveIssue(c.hotel.id, s(f, "issueId"), c.actor));
@@ -54,6 +71,7 @@ export default async function Housekeeping({ params, searchParams }: { params: P
   const hid = (id: string) => (<><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="day" value={day} /><input type="hidden" name="roomId" value={id} /></>);
   const editable = day === today; // ASSUMPTION: der Status gilt für das Zimmer jetzt, nicht je Tag; an anderen Tagen nur Vorschau/Rückblick
   const open = sp.room ? sorted.find((r) => r.roomId === sp.room) : undefined;
+  const mini = open && hotel.propertyType !== "restaurant" && (await moduleOn(hotel.id, "shop")) ? await minibarGoods(hotel.id) : [];
   const n = (st: CleanStatus) => rooms.filter((r) => r.active && r.status === st).length;
   return (
     <div className="stack hk">
@@ -126,6 +144,17 @@ export default async function Housekeeping({ params, searchParams }: { params: P
                     </form>
                   ))}
                 </div>
+              ) : null}
+              {mini.length ? (
+                <form action={minibar} className="stack">
+                  {hid(open.roomId)}
+                  <h3 style={{ margin: 0 }}>Minibar zählen</h3>
+                  <p className="small muted" style={{ margin: 0 }}>Was ist noch im Zimmer? Fehlendes wird dem Gast verrechnet.</p>
+                  {mini.map((m) => (
+                    <div key={m.id} className="inline-form"><label style={{ flex: 1 }}>{m.name} <span className="muted small">(Soll {m.minibarPar})</span></label><input name={`n_${m.id}`} type="number" min={0} max={999} defaultValue={m.minibarPar} style={{ width: 80 }} /></div>
+                  ))}
+                  <div className="drawer-actions"><button className="btn secondary">Minibar buchen</button></div>
+                </form>
               ) : null}
               <form action={report} className="stack">
                 {hid(open.roomId)}

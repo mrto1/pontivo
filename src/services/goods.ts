@@ -1,5 +1,5 @@
 import { and, asc, eq, sql } from "drizzle-orm";
-import { db } from "../db/client";
+import { db, rows } from "../db/client";
 import { bookings, folioItems, goods, type FolioItem, type Good } from "../db/schema";
 import { folioVat, needsReorder } from "../domain/goods";
 import { audit } from "./audit";
@@ -75,19 +75,61 @@ export async function adjustStock(hotelId: string, id: string, delta: number, ac
  * Artikel aufs Zimmer buchen: ein Posten in der Buchung (Name, Preis, MWST als Kopie), Bestand sinkt in derselben Transaktion.
  * ASSUMPTION: Der Bestand darf unter 0 fallen (verkauft ist verkauft); die Liste «Nachbestellen» zeigt es, die Inventur korrigiert.
  */
+type Tx = Parameters<Parameters<ReturnType<typeof db>["transaction"]>[0]>[0];
+
+async function sellInTx(tx: Tx, hotelId: string, bookingId: string, goodId: string, quantity: number, actor: string, source = "shop"): Promise<FolioItem> {
+  const [g] = await tx.select().from(goods).where(and(eq(goods.id, goodId), eq(goods.hotelId, hotelId))).for("update");
+  if (!g || !g.active || !g.sellable) throw new GoodsError("Artikel nicht verkäuflich.");
+  const [b] = await tx.select({ id: bookings.id }).from(bookings).where(and(eq(bookings.id, bookingId), eq(bookings.hotelId, hotelId)));
+  if (!b) throw new GoodsError("Buchung nicht gefunden.");
+  const { vatKind, vatBpsOverride } = folioVat(g.vat);
+  const [item] = await tx.insert(folioItems).values({
+    hotelId, bookingId, description: g.name, quantity, unitPriceRappen: g.priceRappen, vatKind, vatBpsOverride, source: `${source}:${g.id}`, createdBy: actor,
+  }).returning();
+  if (g.trackStock) await tx.update(goods).set({ stock: sql`${goods.stock} - ${quantity}` }).where(eq(goods.id, g.id));
+  await audit(tx, { hotelId, actor, action: "folio.add", entity: "booking", entityId: bookingId, details: { description: g.name, amount: quantity * g.priceRappen, goodId: g.id, source } });
+  return item;
+}
+
+/**
+ * Artikel aufs Zimmer buchen: ein Posten in der Buchung (Name, Preis, MWST als Kopie), Bestand sinkt in derselben Transaktion.
+ * ASSUMPTION: Der Bestand darf unter 0 fallen (verkauft ist verkauft); die Liste «Nachbestellen» zeigt es, die Inventur korrigiert.
+ */
 export async function sellToBooking(hotelId: string, bookingId: string, goodId: string, quantity: number, actor: string): Promise<FolioItem> {
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) throw new GoodsError("Ungültige Menge.");
+  return db().transaction((tx) => sellInTx(tx, hotelId, bookingId, goodId, quantity, actor));
+}
+
+/** Artikel der Minibar (aktiv, verkäuflich) */
+export const minibarGoods = (hotelId: string) =>
+  db().select().from(goods).where(and(eq(goods.hotelId, hotelId), eq(goods.minibar, true), eq(goods.active, true), eq(goods.sellable, true))).orderBy(asc(goods.category), asc(goods.name));
+
+/**
+ * Minibar-Zählung durch die Reinigung: je Artikel die vorhandene Menge. Fehlendes (Sollmenge − vorhanden) wird dem Gast verrechnet,
+ * der das Zimmer bewohnt oder heute verlässt. ASSUMPTION: massgebend ist der Aufenthalt, der vor `day` begann und am frühesten endet;
+ * gibt es keinen, wird nichts gebucht (Fehlermeldung), ausser nichts fehlt.
+ */
+export async function countMinibar(hotelId: string, roomId: string, day: string, counts: { goodId: string; present: number }[], actor: string): Promise<{ billed: { name: string; quantity: number }[]; bookingId: string | null }> {
+  const list = await minibarGoods(hotelId);
+  const missing: { goodId: string; qty: number }[] = [];
+  for (const c of counts) {
+    const g = list.find((x) => x.id === c.goodId);
+    if (!g) continue;
+    if (!Number.isInteger(c.present) || c.present < 0 || c.present > 999) throw new GoodsError("Menge ungültig.");
+    if (c.present < g.minibarPar) missing.push({ goodId: g.id, qty: g.minibarPar - c.present });
+  }
+  if (!missing.length) return { billed: [], bookingId: null };
   return db().transaction(async (tx) => {
-    const [g] = await tx.select().from(goods).where(and(eq(goods.id, goodId), eq(goods.hotelId, hotelId))).for("update");
-    if (!g || !g.active || !g.sellable) throw new GoodsError("Artikel nicht verkäuflich.");
-    const [b] = await tx.select({ id: bookings.id }).from(bookings).where(and(eq(bookings.id, bookingId), eq(bookings.hotelId, hotelId)));
-    if (!b) throw new GoodsError("Buchung nicht gefunden.");
-    const { vatKind, vatBpsOverride } = folioVat(g.vat);
-    const [item] = await tx.insert(folioItems).values({
-      hotelId, bookingId, description: g.name, quantity, unitPriceRappen: g.priceRappen, vatKind, vatBpsOverride, source: `shop:${g.id}`, createdBy: actor,
-    }).returning();
-    if (g.trackStock) await tx.update(goods).set({ stock: sql`${goods.stock} - ${quantity}` }).where(eq(goods.id, g.id));
-    await audit(tx, { hotelId, actor, action: "folio.add", entity: "booking", entityId: bookingId, details: { description: g.name, amount: quantity * g.priceRappen, goodId: g.id } });
-    return item;
+    const found = rows<{ bookingId: string }>(await tx.execute(sql`
+      SELECT rs.booking_id AS "bookingId" FROM room_stays rs JOIN bookings b ON b.id = rs.booking_id
+       WHERE rs.hotel_id = ${hotelId} AND rs.room_id = ${roomId} AND b.status = 'confirmed' AND rs.from_day < ${day}::date AND rs.to_day >= ${day}::date
+       ORDER BY rs.to_day ASC LIMIT 1`));
+    if (!found.length) throw new GoodsError("Keine Buchung zum Verrechnen in diesem Zimmer.");
+    const billed: { name: string; quantity: number }[] = [];
+    for (const m of missing) {
+      const it = await sellInTx(tx, hotelId, found[0].bookingId, m.goodId, m.qty, actor, "minibar");
+      billed.push({ name: it.description, quantity: m.qty });
+    }
+    return { billed, bookingId: found[0].bookingId };
   });
 }

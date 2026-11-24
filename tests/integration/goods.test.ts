@@ -3,8 +3,10 @@ import { eq } from "drizzle-orm";
 import { closeDb, db } from "../../src/db/client";
 import { folioItems, goods } from "../../src/db/schema";
 import { confirmBooking, createDirectBooking } from "../../src/services/bookings";
-import { GoodsError, adjustStock, deleteGood, listGoods, reorderList, saveGood, sellToBooking } from "../../src/services/goods";
-import { addDays } from "../../src/domain/dates";
+import { GoodsError, adjustStock, countMinibar, deleteGood, listGoods, reorderList, saveGood, sellToBooking } from "../../src/services/goods";
+import { seedRooms, listRooms, assignRoom } from "../../src/services/frontdesk";
+import { bookingRooms } from "../../src/db/schema";
+import { addDays, todayIn } from "../../src/domain/dates";
 import { guest, inDays, makeHotel } from "../helpers";
 
 afterAll(closeDb);
@@ -56,5 +58,24 @@ describe("Shop & Lager (SPEC 19.51)", () => {
     await expect(sellToBooking(h.hotel.id, booking.id, g.id, 0, "t")).rejects.toBeInstanceOf(GoodsError);
     await deleteGood(h.hotel.id, g.id, "t");
     expect((await db().select().from(folioItems).where(eq(folioItems.id, item.id))).length).toBe(1);
+  });
+
+  it("Minibar zählen: Fehlendes wird dem Gast im Zimmer verrechnet, vollständig = nichts; ohne Gast Fehlermeldung", async () => {
+    const { h, booking } = await setup();
+    await seedRooms(h.hotel.id, h.rooms[0].roomType.id, "t");
+    const [room] = await listRooms(h.hotel.id);
+    const g = await saveGood(h.hotel.id, null, { ...base, name: "Cola", priceRappen: 500, minibar: true, minibarPar: 3, trackStock: true, stock: 10 }, "t", true);
+    const today = addDays(todayIn(h.hotel.timezone), 2); // Zähltag in der Zukunft: Buchungen in der Vergangenheit sind nicht möglich
+    expect(await countMinibar(h.hotel.id, room.id, today, [{ goodId: g.id, present: 3 }], "t")).toEqual({ billed: [], bookingId: null });
+    await expect(countMinibar(h.hotel.id, room.id, today, [{ goodId: g.id, present: 1 }], "t")).rejects.toBeInstanceOf(GoodsError);
+    // Aufenthalt aus setup(): beginnt morgen, am Zähltag (übermorgen) im Haus
+    const [br] = await db().select().from(bookingRooms).where(eq(bookingRooms.bookingId, booking.id));
+    await assignRoom(h.hotel.id, br.id, room.id, "t");
+    const r = await countMinibar(h.hotel.id, room.id, today, [{ goodId: g.id, present: 1 }], "t");
+    expect(r.billed).toEqual([{ name: "Cola", quantity: 2 }]);
+    const items = await db().select().from(folioItems).where(eq(folioItems.bookingId, booking.id));
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ quantity: 2, unitPriceRappen: 500, source: `minibar:${g.id}` });
+    expect((await db().select().from(goods).where(eq(goods.id, g.id)))[0].stock).toBe(8);
   });
 });
