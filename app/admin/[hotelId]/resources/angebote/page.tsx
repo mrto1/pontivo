@@ -1,6 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { InfoTip } from "@/components/admin/InfoTip";
-import { DrawerKeys } from "@/components/admin/DrawerKeys";
+import { Drawer, DrawerActions } from "@/components/admin/Drawer";
+import { RowList } from "@/components/admin/RowList";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
@@ -52,27 +53,12 @@ export default async function ResourceSettings({ params, searchParams }: { param
       <h1>Angebote vor Ort<InfoTip>Wellness, Sauna, Seminarraum oder Tennisplatz, die Gäste in Zeitfenstern buchen. Hier legen Sie fest, was es gibt, wie viele Plätze, wie lange ein Zeitfenster dauert und was es kostet. Gebucht wird unter Buchungen → Angebote vor Ort.</InfoTip></h1>
       {sp.msg && !drawerOpen ? <Notice text={sp.msg} /> : null}
       {list.length === 0 ? <p className="muted">Noch kein Angebot.</p> : null}
-      <ul className="plan-list">
-        {list.map((x) => (
-          <li key={x.id}>
-            <Link href={`${base}?r=${x.id}`} scroll={false} className="plan-row" aria-label={`${x.name} bearbeiten`}>
-              <span><strong>{x.name}</strong><br /><span className="muted small">{KINDS[x.kind as keyof typeof KINDS] ?? x.kind} · {hhmm(x.openFrom)}–{hhmm(x.openTo)} · {x.capacity} Plätze · {x.slotMinutes} Min. · {formatChf(x.priceRappen)}{x.pricePerPerson ? " p. P." : ""}</span></span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>{x.active ? null : <span className="badge warn">inaktiv</span>}<span className="rt-arrow" aria-hidden="true">›</span></span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <RowList rows={list.map((x) => ({ id: x.id, href: `${base}?r=${x.id}`, label: `${x.name} bearbeiten`, title: x.name, badges: x.active ? [] : [{ text: "inaktiv" }],
+        detail: `${KINDS[x.kind as keyof typeof KINDS] ?? x.kind} · ${hhmm(x.openFrom)}–${hhmm(x.openTo)} · ${x.capacity} Plätze · ${x.slotMinutes} Min. · ${formatChf(x.priceRappen)}${x.pricePerPerson ? " p. P." : ""}` }))} />
       <div><Link className="btn secondary" href={`${base}?r=neu`} scroll={false}>+ Neues Angebot</Link></div>
 
       {drawerOpen ? (
-        <div className="drawer-wrap">
-          <Link className="drawer-backdrop" href={base} scroll={false} aria-label="Schliessen" tabIndex={-1} />
-          <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" tabIndex={-1}>
-            <header className="drawer-head">
-              <h2 id="drawer-title">{r ? r.name : "Neues Angebot"}</h2>
-              <Link className="drawer-close" href={base} scroll={false} aria-label="Schliessen">✕</Link>
-            </header>
-            <div className="drawer-body stack">
+        <Drawer title={r ? r.name : "Neues Angebot"} closeHref={base}>
               {sp.msg ? <Notice text={sp.msg} /> : null}
               <form action={saveRes} className="stack">
                 <input type="hidden" name="hotelId" value={hotel.id} />{r ? <input type="hidden" name="id" value={r.id} /> : null}
@@ -88,12 +74,9 @@ export default async function ResourceSettings({ params, searchParams }: { param
                 </div>
                 <label className="check"><input type="checkbox" name="pricePerPerson" defaultChecked={r?.pricePerPerson} />Preis gilt pro Person</label>
                 <label className="check"><input type="checkbox" name="active" defaultChecked={r?.active ?? true} />Aktiv (buchbar)</label>
-                <div className="drawer-actions"><button className="btn">{r ? "Speichern" : "Angebot anlegen"}</button><Link className="btn secondary" href={base} scroll={false}>Abbrechen</Link></div>
+                <DrawerActions submit={r ? "Speichern" : "Angebot anlegen"} cancelHref={base} />
               </form>
-            </div>
-          </aside>
-          <DrawerKeys closeHref={base} />
-        </div>
+        </Drawer>
       ) : null}
     </div>
   );

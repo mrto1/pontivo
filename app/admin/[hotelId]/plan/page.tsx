@@ -3,7 +3,7 @@ import { PeriodNav } from "@/components/admin/PeriodNav";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { InfoTip } from "@/components/admin/InfoTip";
-import { DrawerKeys } from "@/components/admin/DrawerKeys";
+import { Drawer, DrawerActions } from "@/components/admin/Drawer";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
@@ -262,14 +262,7 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
       ) : null}
 
       {drawerOpen ? (
-        <div className="drawer-wrap">
-          <Link className="drawer-backdrop" href={`${base}?from=${from}`} scroll={false} aria-label="Schliessen" tabIndex={-1} />
-          <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" tabIndex={-1}>
-            <header className="drawer-head">
-              <h2 id="drawer-title">{editRoom ? `Zimmer ${editRoom.number}` : "Neues Zimmer"}</h2>
-              <Link className="drawer-close" href={`${base}?from=${from}`} scroll={false} aria-label="Schliessen">✕</Link>
-            </header>
-            <div className="drawer-body stack">
+        <Drawer title={editRoom ? `Zimmer ${editRoom.number}` : "Neues Zimmer"} closeHref={`${base}?from=${from}`}>
               {sp.msg ? <Notice text={sp.msg} /> : null}
               <form action={saveRoom} className="stack">
                 {hid}{fromField}<input type="hidden" name="roomId" value={editRoom?.id ?? ""} />
@@ -280,7 +273,7 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
                 </div>
                 <div><label>Notiz (optional)</label><input name="note" maxLength={200} defaultValue={editRoom?.note} placeholder="z. B. Balkon, ruhig gelegen" /></div>
                 {editRoom ? <label className="check"><input type="checkbox" name="active" defaultChecked={editRoom.active} />Zimmer ist in Betrieb (abwählen = gesperrt, z. B. wegen Renovation)</label> : null}
-                <div className="drawer-actions"><button className="btn">{editRoom ? "Speichern" : "Zimmer anlegen"}</button><Link className="btn secondary" href={`${base}?from=${from}`} scroll={false}>Abbrechen</Link></div>
+                <DrawerActions submit={editRoom ? "Speichern" : "Zimmer anlegen"} cancelHref={`${base}?from=${from}`} />
               </form>
               {editRoom ? (
                 <form action={removeRoom} className="room-delete">
@@ -289,10 +282,7 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
                   <ConfirmButton ask={`Zimmer ${editRoom.number} wirklich löschen?`} className="btn secondary small danger-text">Zimmer löschen</ConfirmButton>
                 </form>
               ) : null}
-            </div>
-          </aside>
-          <DrawerKeys closeHref={`${base}?from=${from}`} />
-        </div>
+        </Drawer>
       ) : null}
     </div>
   );

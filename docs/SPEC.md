@@ -1262,3 +1262,4 @@ Fall: Hotel und Restaurant sind verschiedene Firmen, also zwei Betriebe in Ponti
 - **Später:** Shop-Kasse am Empfang (Waren direkt kassieren, ohne Buchung). Online-Shop ist ausserhalb des Umfangs.
 - **Abnahme:** `tests/integration/goods.test.ts`, `tests/e2e/shop.spec.ts`.
 - **Posten buchen (Vereinfachung):** Alle Posten in `folio_items` entstehen über `insertFolioItem` (`src/services/folio.ts`): Rechnung & Kasse, Shop, Minibar, Angebote vor Ort, Kasse und Kassen-Schnittstelle. Geprüft durch `tests/unit/folio-single-entry.test.ts`.
+- **Stammdatenlisten (Vereinfachung):** Seitenleiste (`components/admin/Drawer.tsx`: `Drawer`, `DrawerActions`) und Listenzeilen (`RowList`) sind gemeinsame Bausteine für Zimmerplan, Angebote vor Ort und Shop & Lager; neue Stammdatenseiten verwenden sie.

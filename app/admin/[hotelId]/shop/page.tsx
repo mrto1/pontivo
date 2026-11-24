@@ -1,6 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { InfoTip } from "@/components/admin/InfoTip";
-import { DrawerKeys } from "@/components/admin/DrawerKeys";
+import { Drawer, DrawerActions } from "@/components/admin/Drawer";
+import { RowList } from "@/components/admin/RowList";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -91,27 +92,13 @@ export default async function ShopPage({ params, searchParams }: { params: Promi
         </div>
       ) : null}
       {list.length === 0 ? <p className="muted">Noch keine Ware.</p> : null}
-      <ul className="plan-list">
-        {list.map((x) => (
-          <li key={x.id}>
-            <Link href={`${base}?g=${x.id}`} scroll={false} className="plan-row" aria-label={`${x.name} bearbeiten`}>
-              <span><strong>{x.name}</strong><br /><span className="muted small">{x.category ? `${x.category} · ` : ""}{formatChf(x.priceRappen)}{x.minibar ? ` · Minibar ${x.minibarPar}` : ""}{x.trackStock ? ` · Bestand ${x.stock}` : ""}</span></span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>{needsReorder(x) ? <span className="badge warn">nachbestellen</span> : null}{x.active ? null : <span className="badge warn">inaktiv</span>}<span className="rt-arrow" aria-hidden="true">›</span></span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <RowList rows={list.map((x) => ({ id: x.id, href: `${base}?g=${x.id}`, label: `${x.name} bearbeiten`, title: x.name,
+        detail: `${x.category ? `${x.category} · ` : ""}${formatChf(x.priceRappen)}${x.minibar ? ` · Minibar ${x.minibarPar}` : ""}${x.trackStock ? ` · Bestand ${x.stock}` : ""}`,
+        badges: [...(needsReorder(x) ? [{ text: "nachbestellen" }] : []), ...(x.active ? [] : [{ text: "inaktiv" }])] }))} />
       <div><Link className="btn secondary" href={`${base}?g=neu`} scroll={false}>+ Neue Ware</Link></div>
 
       {drawerOpen ? (
-        <div className="drawer-wrap">
-          <Link className="drawer-backdrop" href={base} scroll={false} aria-label="Schliessen" tabIndex={-1} />
-          <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" tabIndex={-1}>
-            <header className="drawer-head">
-              <h2 id="drawer-title">{g ? g.name : "Neue Ware"}</h2>
-              <Link className="drawer-close" href={base} scroll={false} aria-label="Schliessen">✕</Link>
-            </header>
-            <div className="drawer-body stack">
+        <Drawer title={g ? g.name : "Neue Ware"} closeHref={base}>
               {sp.msg ? <Notice text={sp.msg} /> : null}
               <form action={saveAction} className="stack">
                 <input type="hidden" name="hotelId" value={hotel.id} />{g ? <input type="hidden" name="id" value={g.id} /> : null}
@@ -134,7 +121,7 @@ export default async function ShopPage({ params, searchParams }: { params: Promi
                   <div><label>Bestand</label><input name="stock" type="number" defaultValue={g?.stock ?? 0} /></div>
                   <div><label>Mindestbestand</label><input name="minStock" type="number" min={0} defaultValue={g?.minStock ?? 0} /></div>
                 </div>
-                <div className="drawer-actions"><button className="btn">{g ? "Speichern" : "Ware anlegen"}</button><Link className="btn secondary" href={base} scroll={false}>Abbrechen</Link></div>
+                <DrawerActions submit={g ? "Speichern" : "Ware anlegen"} cancelHref={base} />
               </form>
               {g?.trackStock ? (
                 <form action={receiveAction} className="inline-form">
@@ -146,10 +133,7 @@ export default async function ShopPage({ params, searchParams }: { params: Promi
               {g ? (
                 <form action={removeAction}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={g.id} /><ConfirmButton className="btn secondary danger-text" ask="Ware wirklich löschen? Bereits gebuchte Posten bleiben bestehen.">Ware löschen</ConfirmButton></form>
               ) : null}
-            </div>
-          </aside>
-          <DrawerKeys closeHref={base} />
-        </div>
+        </Drawer>
       ) : null}
     </div>
   );
