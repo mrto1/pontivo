@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { addFolioItem, createInvoiceDraft, deleteFolioItem, InvoiceError, recordOnsitePayment } from "@/src/services/invoicing";
+import { GoodsError, sellToBooking } from "@/src/services/goods";
 import { decimalToRappen } from "@/src/domain/money";
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -16,7 +17,7 @@ async function run(f: FormData, min: "staff" | "manager", fn: (c: Awaited<Return
   try {
     out = await fn(c, bookingId);
   } catch (e) {
-    if (!(e instanceof InvoiceError)) throw e;
+    if (!(e instanceof InvoiceError) && !(e instanceof GoodsError)) throw e;
     out = `Nicht gespeichert: ${e.message}`;
   }
   if (typeof out !== "string") redirect(out.to);
@@ -56,5 +57,14 @@ export async function draftAction(f: FormData) {
   await run(f, "staff", async (c, bookingId) => {
     const inv = await createInvoiceDraft(c.hotel, bookingId, c.actor);
     return { to: `/admin/${c.hotel.id}/invoices/${inv.id}` };
+  });
+}
+
+/** Ware aus «Shop & Lager» aufs Zimmer buchen (Modul shop) */
+export async function addGoodAction(f: FormData) {
+  await run(f, "staff", async (c, bookingId) => {
+    await requireModule(c.hotel.id, "shop");
+    await sellToBooking(c.hotel.id, bookingId, s(f, "goodId"), Number(s(f, "quantity")) || 1, c.actor);
+    return "Ware gebucht.";
   });
 }

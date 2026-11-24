@@ -5,7 +5,8 @@ import { todayIn } from "@/src/domain/dates";
 import type { Hotel } from "@/src/db/schema";
 import { moduleOn } from "@/src/services/modules";
 import { TerminalCard } from "./TerminalCard";
-import { addFolioAction, deleteFolioAction, draftAction, onsitePaymentAction } from "./cash-actions";
+import { listGoods } from "@/src/services/goods";
+import { addFolioAction, addGoodAction, deleteFolioAction, draftAction, onsitePaymentAction } from "./cash-actions";
 
 const METHOD: Record<string, string> = { cash: "bar", card: "Karte", twint: "TWINT", bank: "Überweisung", other: "andere" };
 
@@ -15,6 +16,7 @@ export async function CashCard({ hotel, bookingId, status }: { hotel: Hotel; boo
   const folio = await listFolio(hotel.id, bookingId);
   const pays = await listOnsitePayments(hotel.id, bookingId);
   const invs = await invoicesOfBooking(hotel.id, bookingId);
+  const goodsList = (await moduleOn(hotel.id, "shop")) ? await listGoods(hotel.id, { onlySellable: true }) : [];
   const hid = (<><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="bookingId" value={bookingId} /></>);
   const open = bal.openRappen;
   return (
@@ -36,6 +38,14 @@ export async function CashCard({ hotel, bookingId, status }: { hotel: Hotel; boo
           ))}
         </tbody></table>
       ) : <p className="muted small">Keine Posten.</p>}
+      {goodsList.length ? (
+        <form action={addGoodAction} className="inline-form">
+          {hid}
+          <div style={{ minWidth: 200 }}><label>Ware aus dem Shop</label><select name="goodId" required>{goodsList.map((x) => <option key={x.id} value={x.id}>{x.name} · {formatChf(x.priceRappen)}</option>)}</select></div>
+          <div><label>Menge</label><input name="quantity" type="number" min={1} defaultValue={1} style={{ width: 70 }} /></div>
+          <button className="btn secondary small">Ware buchen</button>
+        </form>
+      ) : null}
       <form action={addFolioAction} className="inline-form">
         {hid}
         <div style={{ minWidth: 200 }}><label>Beschreibung</label><input name="description" required maxLength={200} placeholder="z. B. Abendessen" /></div>

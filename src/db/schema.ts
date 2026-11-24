@@ -1296,6 +1296,28 @@ export const ownerStatements = pgTable("owner_statements", {
   sentAt: ts("sent_at").notNull().defaultNow(),
 });
 
+/** Shop & Lager (SPEC 19.51): Waren mit Preis, Minibar-Zuweisung und optionalem Bestand */
+export const goods = pgTable("goods", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: text("name").notNull(),
+  category: text("category").notNull().default(""),
+  priceRappen: integer("price_rappen").notNull().default(0),
+  /** standard = Normalsatz des Betriebs, reduced = reduzierter Satz (2,6 %), none = ohne MWST */
+  vat: text("vat").$type<"standard" | "reduced" | "none">().notNull().default("standard"),
+  /** verkäuflich (Shop, aufs Zimmer); aus = reiner Vorrat */
+  sellable: boolean("sellable").notNull().default(true),
+  active: boolean("active").notNull().default(true),
+  /** Minibar (nur Betriebe mit Unterkunft): Sollmenge je Zimmer */
+  minibar: boolean("minibar").notNull().default(false),
+  minibarPar: integer("minibar_par").notNull().default(0),
+  trackStock: boolean("track_stock").notNull().default(false),
+  stock: integer("stock").notNull().default(0),
+  minStock: integer("min_stock").notNull().default(0),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type Good = typeof goods.$inferSelect;
+
 export const resources = pgTable("resources", {
   id: uuid("id").primaryKey().defaultRandom(),
   hotelId: uuid("hotel_id").notNull(),
