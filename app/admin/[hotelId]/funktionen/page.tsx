@@ -5,8 +5,6 @@ import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { isOn, MODULE_GROUPS, moduleDef } from "@/src/domain/modules";
 import { applyModules, ModuleError, moduleRows, setModule } from "@/src/services/modules";
-import { setDiningLabel } from "@/src/services/settings";
-import { DINING_LABEL, DINING_LABELS } from "@/src/admin/nav";
 import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
@@ -30,18 +28,6 @@ async function toggle(f: FormData) {
   redirect(`/admin/${c.hotel.id}/funktionen?msg=${encodeURIComponent(msg)}`);
 }
 
-async function saveLook(f: FormData) {
-  "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  let msg = "Gespeichert.";
-  try {
-    await setDiningLabel(c.hotel, s(f, "diningLabel"), c.actor);
-  } catch (e) {
-    msg = `Nicht gespeichert: ${(e as Error).message}`;
-  }
-  redirect(`/admin/${c.hotel.id}/funktionen?msg=${encodeURIComponent(msg)}`);
-}
-
 export default async function Funktionen({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
@@ -52,20 +38,6 @@ export default async function Funktionen({ params, searchParams }: { params: Pro
     <div className="stack">
       <h1>Funktionen<InfoTip>Schalten Sie aus, was Sie nicht brauchen. Es verschwindet dann aus dem Menü. Ihre Daten bleiben erhalten und sind wieder da, wenn Sie die Funktion einschalten. KI-Chat und Upselling schalten Sie auf ihren eigenen Seiten ein.</InfoTip></h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
-      {isOn(rows, "restaurant") && hotel.propertyType !== "restaurant" ? (
-        <section className="card stack" id="darstellung">
-          <div>
-            <h2 className="m0">Darstellung</h2>
-            <p className="small muted m-2-0-0">Wie der Restaurant-Bereich im Umschalter oben (Bett | Besteck) heisst.</p>
-          </div>
-          <form action={saveLook} className="stack">
-            <input type="hidden" name="hotelId" value={hotel.id} />
-            <div><label htmlFor="diningLabel">Bezeichnung im Umschalter (Besteck-Symbol)</label>
-              <select id="diningLabel" name="diningLabel" defaultValue={hotel.diningLabel} disabled={!canEdit}>{DINING_LABELS.map((k) => <option key={k} value={k}>{DINING_LABEL[k].de}</option>)}</select></div>
-            {canEdit ? <div><button className="btn">Speichern</button></div> : null}
-          </form>
-        </section>
-      ) : null}
       {MODULE_GROUPS.map((g) => (
         <section key={g.title} className="card stack">
           <div>

@@ -10,3 +10,10 @@ describe("Modulübersicht (docs/MODULES.md)", () => {
     expect(file, "veraltet: npx tsx scripts/module-index.ts ausführen").toBe(moduleIndex());
   });
 });
+
+import { MODULES as ALL_MODULES } from "../../src/domain/modules";
+describe("Modul-Abhängigkeiten", () => {
+  it("jede Abhängigkeit ist ein echtes Modul (sonst «eingeschaltet: channex»)", () => {
+    for (const m of ALL_MODULES) for (const d of m.deps) expect(ALL_MODULES.some((x) => x.key === d), `${m.key} → ${d}`).toBe(true);
+  });
+});

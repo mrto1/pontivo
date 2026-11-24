@@ -25,7 +25,7 @@ Die Spalte «Tabellen» zeigt Tabellen, die in den SPEC-Abschnitten des Moduls g
 | `posbridge` | Kassen-Schnittstelle | `invoicing` | aus | `posbridge` | `api_keys`, `folio_items` | 19.15 |
 | `restaurant` | Restaurant | – | aus | `restaurant/heute`, `restaurant/reservierungen`, `restaurant/tischplan`, `restaurant/warteliste`, `restaurant/kueche`, `restaurant/artikel`, `restaurant/tische`, `restaurant/einstellungen`, `restaurant/bestellungen`, `restaurant/bestellung-einstellungen`, `restaurant/fahrer`, `restaurant/online-verkaeufe` | `online_order_settings`, `online_orders`, `order_screens`, `sms_outbox` | 20.4 |
 | `pos` | Kasse | `restaurant`, `invoicing` | aus | `restaurant`, `kasse`, `restaurant/geraete`, `restaurant/abschluss` | `folio_items`, `online_order_settings`, `online_orders`, `onsite_payments`, `order_screens`, `pos_devices`, `pos_items`, `pos_order_lines`, `pos_orders`, `pos_receipts`, `pos_tables`, `sms_outbox` | 19.16, 20.4 |
-| `inbox` | Posteingang | `channex` | aus | – | – | 19.9 |
+| `inbox` | Posteingang | – | aus | – | – | 19.9 |
 | `feedback` | Bewertungen | – | aus | `feedback` | `stay_feedback` | 19.2 |
 | `pricing_rules` | Preisempfehlung | – | aus | `preise` | `ai_plans`, `ai_pricing_runs`, `channex_outbox`, `pricing_events`, `pricing_proposals`, `pricing_rules` | 19.3, 19.20 |
 | `vouchers` | Gutscheine | – | an | `vouchers` | – | – |

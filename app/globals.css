@@ -1077,10 +1077,10 @@ pre { overflow-x: auto; }
 .seg button { background: none; border: 0; padding: 8px 14px; min-height: 38px; font: inherit; color: inherit; cursor: pointer; }
 .seg button + button { border-left: 1px solid var(--border, #bbb); }
 .seg button[aria-pressed="true"] { background: var(--accent, #0b7285); color: #fff; font-weight: 600; }
-.switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
-.switch input { width: 40px; height: 22px; accent-color: var(--accent, #0b7285); }
+.te-plan { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; }
+.te-plan input { width: 22px; height: 22px; min-height: 0; flex: none; accent-color: var(--accent, #0b7285); }
 .te-save { position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 12px 0; background: var(--bg, inherit); }
-@media (max-width: 560px) { .te-row { grid-template-columns: 1fr auto; } .te-head { display: none; } .te-row strong { grid-column: 1 / -1; } }
+@media (max-width: 560px) { .te-row { grid-template-columns: 84px 1fr; row-gap: 10px; } .te-head { display: none; } .te-row strong, .te-row .te-plan { grid-column: 1 / -1; } .te-row .seg { justify-self: end; } }
 
 /* Tischplan-Ansicht: Zeit, Plätze, Zeigen in einer Reihe, Felder unten bündig */
 .plan-filter { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }

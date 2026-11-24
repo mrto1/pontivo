@@ -102,7 +102,7 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
       key: "einstellungen", label: "Einstellungen", href: `${base}/einstellungen`,
       tabs: [
         set("Betrieb", link("settings", "Betriebsdaten"), "Name, Adresse, Zeiten, Öffnungszeiten und Kurtaxe."),
-        set("Betrieb", link("funktionen", "Funktionen"), "Nur was Sie brauchen, bleibt im Menü. Dazu die Darstellung (Symbol und Name des Restaurant-Bereichs)."),
+        set("Betrieb", link("funktionen", "Funktionen"), "Nur was Sie brauchen, bleibt im Menü."),
         set("Betrieb", link("team", "Team & Rollen"), "Wer Zugang hat und was jede Person sehen darf."),
         set("Betrieb", { ...link("g-devices", "Geräte", "terminal"), tabs: [link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt")] }, "Kartenleser und Türschlösser."),
         set("Betrieb", link("payments", "Zahlungsmethoden", "zahlungen"), "Karte und TWINT über Stripe, Anzahlung, Grundgebühr und hinterlegte Karte."),

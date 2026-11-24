@@ -38,7 +38,7 @@ export function TableEditor({ tables, action, hotelId }: { tables: EditTable[]; 
               <button type="button" aria-pressed={t.shape === "square"} onClick={() => patch(t.id, { shape: "square" })}>eckig</button>
               <button type="button" aria-pressed={t.shape === "round"} onClick={() => patch(t.id, { shape: "round" })}>rund</button>
             </div>
-            <label className="switch"><input type="checkbox" role="switch" checked={t.x !== null} onChange={(e) => patch(t.id, e.target.checked ? { x: 500, y: 500 } : { x: null, y: null })} /><span className="small">{t.x !== null ? "ja" : "nein"}</span></label>
+            <label className="te-plan"><input type="checkbox" checked={t.x !== null} onChange={(e) => patch(t.id, e.target.checked ? { x: 500, y: 500 } : { x: null, y: null })} /><span className="small">Im Plan</span></label>
           </div>
         ))}
       </div>
