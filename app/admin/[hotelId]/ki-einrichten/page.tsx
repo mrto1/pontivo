@@ -70,13 +70,13 @@ export default async function KiEinrichten({ params, searchParams }: { params: P
         <>
           <p className="small muted">Noch {left} von {env().SETUP_RUNS_PER_MONTH} Läufen in diesem Monat. Gelesen werden höchstens {LIMITS.maxPages} Seiten Ihrer Website bzw. ein PDF bis {LIMITS.pdfBytes / 1_000_000} MB und {LIMITS.pdfPages} Seiten. Der gelesene Text wird nicht gespeichert, nur der Entwurf.</p>
           <div className="row">
-            <form action={fromUrl} className="card stack" style={{ flex: 1 }}>
+            <form action={fromUrl} className="card stack flex1">
               {hidden}
               <h2>Aus Ihrer Website</h2>
               <div><label htmlFor="fff281">Adresse (https://…)</label><input id="fff281" name="url" type="url" placeholder="https://www.mein-hotel.ch" required /></div>
               <div><button className="btn" disabled={left === 0}>Entwurf erstellen</button></div>
             </form>
-            <form action={fromPdf} className="card stack" style={{ flex: 1 }} encType="multipart/form-data">
+            <form action={fromPdf} className="card stack flex1" encType="multipart/form-data">
               {hidden}
               <h2>Aus einem PDF</h2>
               <div><label htmlFor="fff282">Datei (Prospekt, Zimmerliste)</label><input id="fff282" name="file" type="file" accept="application/pdf" required /></div>

@@ -22,7 +22,7 @@ export default async function Report({ params, searchParams }: { params: Promise
   return (
     <div className="stack">
       <div className="cal-head">
-        <h1 style={{ margin: 0 }}>Monatsabrechnung</h1>
+        <h1 className="m0">Monatsabrechnung</h1>
         <PeriodNav prev={`?month=${shift(month, -1)}`} next={`?month=${shift(month, 1)}`} todayHref="?" todayActive={month === todayIn(hotel.timezone).slice(0, 7)} todayLabel="Dieser Monat" prevLabel="Vormonat" nextLabel="Folgemonat" jump={{ kind: "month", value: month, param: "month" }}>
         <DownloadLink href={`/admin/${hotel.id}/report/csv?month=${month}`} primary>CSV</DownloadLink>
         <a className="btn small" href={`/admin/${hotel.id}/report/print?month=${month}`} target="_blank">PDF / Drucken</a>

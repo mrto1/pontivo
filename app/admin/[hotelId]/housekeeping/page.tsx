@@ -103,7 +103,7 @@ export default async function Housekeeping({ params, searchParams }: { params: P
       {sorted.length === 0 ? <p className="muted">Noch keine Zimmer. Zimmer legen Sie unter Kalender → Zimmerplan an.</p> : null}
       {refills.length ? (
         <section className="card stack" id="nachfuellen" aria-label="Minibar nachfüllen">
-          <h2 style={{ margin: 0 }}>Minibar nachfüllen</h2>
+          <h2 className="m0">Minibar nachfüllen</h2>
           <ul className="plan-list">
             {refills.map((r) => (
               <li key={r.roomId} className="plan-row" style={{ cursor: "default" }}>
@@ -121,7 +121,7 @@ export default async function Housekeeping({ params, searchParams }: { params: P
               <h2>Zimmer {r.number}{r.floor ? <span className="muted small"> · Etage {r.floor}</span> : null}</h2>
               <span className="hk-pill"><span className="hk-dot" />{LABEL[r.status]}</span>
             </div>
-            <p className="small muted" style={{ margin: 0 }}>{r.typeName}</p>
+            <p className="small muted m0">{r.typeName}</p>
             <div className="hk-tags">
               {r.departing ? <span className="chip">Abreise</span> : null}{r.arriving ? <span className="chip">Anreise</span> : null}
               {r.occupied ? <span className="chip">belegt{r.guest ? ` · ${r.guest}` : ""}</span> : null}
@@ -130,7 +130,7 @@ export default async function Housekeeping({ params, searchParams }: { params: P
             {r.issues.map((i) => (
               <form key={i.id} action={fix} className="inline-form">
                 <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="day" value={day} /><input type="hidden" name="issueId" value={i.id} />
-                <span className="notice warn small" style={{ flex: 1 }}>Mangel: {i.description}</span>
+                <span className="notice warn small flex1">Mangel: {i.description}</span>
                 <button className="btn secondary small">Erledigt</button>
               </form>
             ))}
@@ -154,11 +154,11 @@ export default async function Housekeeping({ params, searchParams }: { params: P
             <div className="drawer-body stack">
               {open.issues.length ? (
                 <div className="stack" style={{ gap: 8 }}>
-                  <h3 style={{ margin: 0 }}>Offene Mängel</h3>
+                  <h3 className="m0">Offene Mängel</h3>
                   {open.issues.map((i) => (
                     <form key={i.id} action={fix} className="inline-form">
                       <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="day" value={day} /><input type="hidden" name="issueId" value={i.id} />
-                      <span className="notice warn small" style={{ flex: 1 }}>{i.description}</span>
+                      <span className="notice warn small flex1">{i.description}</span>
                       <button className="btn secondary small">Erledigt</button>
                     </form>
                   ))}
@@ -167,17 +167,17 @@ export default async function Housekeeping({ params, searchParams }: { params: P
               {mini.length ? (
                 <form action={minibar} className="stack">
                   {hid(open.roomId)}
-                  <h3 style={{ margin: 0 }}>Minibar zählen</h3>
-                  <p className="small muted" style={{ margin: 0 }}>Was ist noch im Zimmer? Fehlendes wird dem Gast verrechnet.</p>
+                  <h3 className="m0">Minibar zählen</h3>
+                  <p className="small muted m0">Was ist noch im Zimmer? Fehlendes wird dem Gast verrechnet.</p>
                   {mini.map((m) => (
-                    <div key={m.id} className="inline-form"><label style={{ flex: 1 }}>{m.name} <span className="muted small">(Soll {m.minibarPar})</span></label><input name={`n_${m.id}`} type="number" min={0} max={999} defaultValue={m.minibarPar} style={{ width: 80 }} /></div>
+                    <div key={m.id} className="inline-form"><label className="flex1">{m.name} <span className="muted small">(Soll {m.minibarPar})</span></label><input name={`n_${m.id}`} type="number" min={0} max={999} defaultValue={m.minibarPar} className="w80" /></div>
                   ))}
                   <div className="drawer-actions"><button className="btn secondary">Minibar buchen</button></div>
                 </form>
               ) : null}
               <form action={report} className="stack">
                 {hid(open.roomId)}
-                <h3 style={{ margin: 0 }}>Neu erfassen</h3>
+                <h3 className="m0">Neu erfassen</h3>
                 <fieldset className="plain hk-kind">
                   <legend className="small muted">Was möchten Sie erfassen?</legend>
                   <label className="hk-kind-opt"><input type="radio" name="kind" value="issue" defaultChecked /><span><strong>Mangel melden</strong><span className="small muted">Etwas ist defekt oder beschädigt, z. B. Glühbirne. Bleibt offen, bis es erledigt ist.</span></span></label>

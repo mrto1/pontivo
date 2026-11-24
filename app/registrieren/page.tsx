@@ -104,7 +104,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
           </>)}
         </section>
         <form action={register} className="card stack">
-          <h2 style={{ margin: 0 }}>Registrieren</h2>
+          <h2 className="m0">Registrieren</h2>
           {sp.error ? <p className="notice warn" role="alert">{sp.error}</p> : null}
           <fieldset className="plain"><legend className="small muted">Was führen Sie?</legend>
             <div className="type-pick">

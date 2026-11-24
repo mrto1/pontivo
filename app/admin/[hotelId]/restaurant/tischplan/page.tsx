@@ -46,7 +46,7 @@ export default async function ReservationPlan({ params, searchParams }: { params
           <div><label htmlFor="seats" className="small">Plätze</label><select id="seats" name="seats" defaultValue={String(minSeats)}><option value="0">alle</option>{Array.from({ length: maxSeats }, (_, i) => i + 1).map((n) => <option key={n} value={n}>ab {n}</option>)}</select></div>
           <button className="btn secondary">Zeigen</button></form>
       </PeriodNav>
-      <p className="small muted" style={{ margin: 0 }}>{formatDay(day, "de")}, {time} · grün frei (mit Uhrzeit, bis wann) · orange belegt oder in weniger als 30 Minuten reserviert · rot am Tisch{pos ? " oder offene Bestellung" : ""}</p>
+      <p className="small muted m0">{formatDay(day, "de")}, {time} · grün frei (mit Uhrzeit, bis wann) · orange belegt oder in weniger als 30 Minuten reserviert · rot am Tisch{pos ? " oder offene Bestellung" : ""}</p>
       {planned.length ? (
         <FloorPlan tables={planned.map((t) => {
           const cur = now(t.id); const nxt = next(t.id); const orders = openBy.get(t.id) ?? [];

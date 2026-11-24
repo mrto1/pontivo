@@ -25,10 +25,10 @@ export default async function TermsPage({ params }: { params: Promise<{ hotelId:
           <h2>{g}</h2>
           {TERMS.filter((t) => t.group === g).map((t) => (
             <article key={t.term} className="card stack" id={slug(t.term)}>
-              <h3 style={{ margin: 0 }}>{t.term}</h3>
-              <p style={{ margin: 0 }}><strong>Was es bedeutet:</strong> {t.meaning}</p>
-              <p style={{ margin: 0 }}><strong>So löst es Pontivo:</strong> {t.inPontivo}</p>
-              {t.area && pages.get(t.area) ? <p style={{ margin: 0 }}><a href={pages.get(t.area)}>Zur Seite</a></p> : null}
+              <h3 className="m0">{t.term}</h3>
+              <p className="m0"><strong>Was es bedeutet:</strong> {t.meaning}</p>
+              <p className="m0"><strong>So löst es Pontivo:</strong> {t.inPontivo}</p>
+              {t.area && pages.get(t.area) ? <p className="m0"><a href={pages.get(t.area)}>Zur Seite</a></p> : null}
             </article>
           ))}
         </section>

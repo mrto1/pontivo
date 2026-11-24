@@ -243,7 +243,7 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
   return (
     <div className="stack">
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
-        <h1 style={{ margin: 0 }}>Zimmer & Tarife</h1>
+        <h1 className="m0">Zimmer & Tarife</h1>
         {canEdit ? <Link className="btn" href={`${base}?neu=1`} scroll={false}>+ Zimmertyp hinzufügen</Link> : null}
       </div>
       {sp.msg && !drawerOpen ? <Notice text={sp.msg} /> : null}
@@ -314,7 +314,7 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
               {open && tab === "tarife" && plan ? (
                 <>
                   <p className="small"><Link href={at("tarife")} scroll={false}>‹ Alle Tarife</Link></p>
-                  <h3 style={{ margin: 0 }}>{plan === "neu" ? "Neuer Tarif" : plan.name}</h3>
+                  <h3 className="m0">{plan === "neu" ? "Neuer Tarif" : plan.name}</h3>
                   <PlanForm hotelId={hotel.id} roomTypeId={open.roomType.id} p={plan === "neu" ? undefined : plan} canEdit={canEdit} langs={langs} cancelHref={at("tarife")} />
                 </>
               ) : null}

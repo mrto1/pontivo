@@ -229,7 +229,7 @@ export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiabl
           <p><button className="btn secondary small" onClick={() => { setCur(null); setMsg(""); }}>← Alle Tische</button> <strong>{order.label || cat?.tables.find((t) => t.id === order.tableId)?.name || "Bestellung"}</strong></p>
           <div className="card stack">
             <div><label htmlFor="mode">Art</label> <select id="mode" value={mode} onChange={(e) => setMode(e.target.value as "dine_in" | "takeaway")}><option value="dine_in">Im Haus</option><option value="takeaway">Take-away</option></select>
-              {" "}<label htmlFor="qty">Menge</label> <input id="qty" type="number" min={1} max={99} value={qty} onChange={(e) => setQty(Math.max(1, Math.min(99, Number(e.target.value) || 1)))} style={{ width: 70 }} /></div>
+              {" "}<label htmlFor="qty">Menge</label> <input id="qty" type="number" min={1} max={99} value={qty} onChange={(e) => setQty(Math.max(1, Math.min(99, Number(e.target.value) || 1)))} className="w70" /></div>
             {choosing ? (
               <div className="card stack" data-testid="options-step">
                 <strong>{choosing.name}</strong>
@@ -257,7 +257,7 @@ export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiabl
               <table className="table"><thead><tr><th>Posten</th><th>Preis</th><th>Offen</th><th>Jetzt</th></tr></thead><tbody>
                 {order.lines.map((l) => (
                   <tr key={l.id}><td>{l.description}{l.mode === "takeaway" ? " (Take-away)" : ""}</td><td>{formatChf(l.unitPriceRappen)}</td><td>{l.openQuantity}</td>
-                    <td>{l.openQuantity ? <input type="number" min={0} max={l.openQuantity} value={paySel[l.id] ?? l.openQuantity} onChange={(e) => setPaySel({ ...paySel, [l.id]: Math.max(0, Math.min(l.openQuantity, Number(e.target.value) || 0)) })} style={{ width: 70 }} aria-label={`Menge ${l.description}`} /> : "bezahlt"}</td></tr>
+                    <td>{l.openQuantity ? <input type="number" min={0} max={l.openQuantity} value={paySel[l.id] ?? l.openQuantity} onChange={(e) => setPaySel({ ...paySel, [l.id]: Math.max(0, Math.min(l.openQuantity, Number(e.target.value) || 0)) })} className="w70" aria-label={`Menge ${l.description}`} /> : "bezahlt"}</td></tr>
                 ))}
               </tbody></table>
             ) : <p className="muted">Noch nichts bestellt.</p>}
@@ -268,7 +268,7 @@ export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiabl
                 <option value="">bitte wählen</option>{(cat?.guests ?? []).map((g) => <option key={g.reference} value={g.reference}>{g.room ? `Zimmer ${g.room}: ` : ""}{g.name || g.reference} ({g.reference})</option>)}
               </select><p className="small muted">Stand der Gästeliste: {cat?.today}. Ohne Verbindung prüft der Server die Buchung erst später.</p></div>
             ) : null}
-            <div><label htmlFor="tip">Trinkgeld CHF</label> <input id="tip" value={tip} onChange={(e) => setTip(e.target.value)} inputMode="decimal" style={{ width: 90 }} /></div>
+            <div><label htmlFor="tip">Trinkgeld CHF</label> <input id="tip" value={tip} onChange={(e) => setTip(e.target.value)} inputMode="decimal" className="w90" /></div>
             <div><button className="btn" onClick={payNow} disabled={!openTotal(order)}>Kassieren</button></div>
             <p className="small muted">Karte und TWINT: erst kassieren, wenn die Zahlung am Gerät bestätigt ist.</p>
             {order.receipts.length ? <p className="small muted">Bons: {order.receipts.map((r) => `${r.number} (${formatChf(r.totalRappen)})`).join(", ")}</p> : null}

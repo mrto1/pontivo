@@ -50,7 +50,7 @@ export default async function PlatformInvoice({ params }: { params: Promise<{ ho
         .qr-slip .qr{width:46mm;height:46mm} .qr-slip .qr svg{width:100%;height:100%} .qr-slip .lbl{font-size:6.5pt;font-weight:700;margin-top:2mm} .qr-slip p{margin:0;font-size:8pt}`}</style>
       <div className="no-print" style={{ margin: "16px 0" }}><PrintButton /></div>
       <div className="stack">
-        <p style={{ margin: 0 }}><strong>{p.operator}</strong><br />{p.address}{env().PLATFORM_UID ? <><br />UID {env().PLATFORM_UID}</> : null}{c.vatNumber ? <><br />MWST-Nr. {c.vatNumber}</> : null}<br />{p.email}</p>
+        <p className="m0"><strong>{p.operator}</strong><br />{p.address}{env().PLATFORM_UID ? <><br />UID {env().PLATFORM_UID}</> : null}{c.vatNumber ? <><br />MWST-Nr. {c.vatNumber}</> : null}<br />{p.email}</p>
         <p style={{ margin: "16px 0 0" }}>{hotel.legalName ?? hotel.name}<br />{hotel.addressLine ?? ""}{hotel.addressLine ? <br /> : null}{[hotel.postalCode, hotel.city].filter(Boolean).join(" ")}</p>
         <h1>Rechnung {c.invoiceNo}</h1>
         <div className="kv small">
@@ -94,7 +94,7 @@ export default async function PlatformInvoice({ params }: { params: Promise<{ ho
                 <div className="lbl">Währung / Betrag</div><p>{formatChf(c.chargeRappen)}</p>
               </div>
               <div>
-                <div className="lbl" style={{ marginTop: 8 }}>Konto / Zahlbar an</div>
+                <div className="lbl mt8">Konto / Zahlbar an</div>
                 <p>{qr.iban.replace(/(.{4})/g, "$1 ").trim()}<br />{qr.creditor.name}<br />{qr.creditor.street}<br />{qr.creditor.zip} {qr.creditor.city}</p>
                 {qr.reference ? <><div className="lbl">Referenz</div><p>{formatQrReference(qr.reference)}</p></> : null}
                 <div className="lbl">Zusätzliche Informationen</div><p>Rechnung {c.invoiceNo}</p>

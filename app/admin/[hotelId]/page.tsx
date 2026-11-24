@@ -33,7 +33,7 @@ async function verify(f: FormData) {
 function List({ title, rows, hotelId, empty, reg, day }: { title: string; rows: DayRow[]; hotelId: string; empty: string; reg?: Map<string, Reg>; day?: string }) {
   return (
     <section className="card stack">
-      <h2 style={{ margin: 0 }}>{title} ({rows.length})</h2>
+      <h2 className="m0">{title} ({rows.length})</h2>
       {rows.length ? (
         <div className="scroll-x"><table className="table">
           <thead><tr><th>Gast</th><th>Personen</th><th>Zimmer</th><th>Aufenthalt</th><th>Buchung</th>{reg ? <th>Meldeschein</th> : null}</tr></thead>
@@ -55,7 +55,7 @@ function List({ title, rows, hotelId, empty, reg, day }: { title: string; rows: 
             ))}
           </tbody>
         </table></div>
-      ) : <p className="muted small" style={{ margin: 0 }}>{empty}</p>}
+      ) : <p className="muted small m0">{empty}</p>}
     </section>
   );
 }
@@ -80,11 +80,11 @@ export default async function Overview({ params, searchParams }: { params: Promi
     const done = steps.filter((x) => x.done).length;
     return (
       <div className="stack">
-        <h1 style={{ margin: 0 }}>Willkommen bei Pontivo</h1>
+        <h1 className="m0">Willkommen bei Pontivo</h1>
         <section className="card stack setup-card">
           <div className="setup-head">
             <div>
-              <h2 style={{ margin: 0 }}>Einrichtung: {done} von {steps.length} Schritten</h2>
+              <h2 className="m0">Einrichtung: {done} von {steps.length} Schritten</h2>
               <p className="muted small" style={{ margin: "4px 0 0" }}>Sobald Zimmer und Preise erfasst sind und Sie online gehen, füllen sich Kalender, Statistik und diese Übersicht. Alle Seiten können Sie schon jetzt ansehen.</p>
             </div>
             <a className="btn" href={`/admin/${hotel.id}/einrichten?step=${next}`}>Einrichtung fortsetzen</a>
@@ -142,10 +142,10 @@ export default async function Overview({ params, searchParams }: { params: Promi
 
       {v.balances?.length || v.overdue?.length ? (
         <section className="card stack">
-          <h2 style={{ margin: 0 }}>Offene Zahlungen</h2>
+          <h2 className="m0">Offene Zahlungen</h2>
           {v.balances?.length ? (
             <>
-              <h3 style={{ margin: 0 }}>Restzahlungen für laufende und bald beginnende Aufenthalte</h3>
+              <h3 className="m0">Restzahlungen für laufende und bald beginnende Aufenthalte</h3>
               <ul className="list">
                 {v.balances.map((b) => <li key={b.bookingId}><a href={`${base}/bookings/${b.bookingId}`}><strong>{b.guest}</strong></a> <span className="muted small">· {b.reference} · Anreise {formatDay(b.checkin, "de")}</span> · {formatChf(b.amountRappen)}</li>)}
               </ul>
@@ -153,11 +153,11 @@ export default async function Overview({ params, searchParams }: { params: Promi
           ) : null}
           {v.overdue?.length ? (
             <>
-              <h3 style={{ margin: 0 }}>Überfällige Rechnungen</h3>
+              <h3 className="m0">Überfällige Rechnungen</h3>
               <ul className="list">
                 {v.overdue.map((i) => <li key={i.id}><strong>{i.number}</strong> <span className="muted small">· {i.payer} · {i.daysOverdue} Tage überfällig</span> · {formatChf(i.openRappen)}</li>)}
               </ul>
-              <p className="small" style={{ margin: 0 }}><a href={`${base}/invoices`}>Zu den Rechnungen</a></p>
+              <p className="small m0"><a href={`${base}/invoices`}>Zu den Rechnungen</a></p>
             </>
           ) : null}
         </section>

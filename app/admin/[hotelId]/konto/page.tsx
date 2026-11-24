@@ -43,7 +43,7 @@ export default async function MyPontivo({ params }: { params: Promise<{ hotelId:
           <strong>{user.email}</strong>
           <span className="muted">{user.isPlatformAdmin ? "Plattformbetreiber" : roleLabel(role)} bei {hotel.name}</span>
         </div>
-        <p style={{ marginTop: 8 }}><ChangeEmail current={user.email} needsCode={totp} /></p>
+        <p className="mt8"><ChangeEmail current={user.email} needsCode={totp} /></p>
       </header>
 
       <section className="card mp-section" id="webseite">

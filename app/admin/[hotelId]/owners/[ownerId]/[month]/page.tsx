@@ -16,10 +16,10 @@ export default async function StatementPrint({ params }: { params: Promise<{ hot
       <h1>Abrechnung {month}</h1>
       <p>{hotel.name}<br />für {x.owner.name}</p>
       <table className="table"><tbody>
-        <tr><td>Umsatz Übernachtungen ({x.bookingsCount} Buchungen)</td><td style={{ textAlign: "right" }}>{formatChf(x.revenueRappen)}</td></tr>
-        <tr><td>Kommission {(x.commissionBps / 100).toLocaleString("de-CH")} %</td><td style={{ textAlign: "right" }}>−{formatChf(x.commissionRappen)}</td></tr>
-        {x.costs.map((c) => <tr key={c.id}><td>{c.description}</td><td style={{ textAlign: "right" }}>−{formatChf(c.amountRappen)}</td></tr>)}
-        <tr><td><strong>Auszahlung</strong></td><td style={{ textAlign: "right" }}><strong>{formatChf(x.netRappen)}</strong></td></tr>
+        <tr><td>Umsatz Übernachtungen ({x.bookingsCount} Buchungen)</td><td className="ta-r">{formatChf(x.revenueRappen)}</td></tr>
+        <tr><td>Kommission {(x.commissionBps / 100).toLocaleString("de-CH")} %</td><td className="ta-r">−{formatChf(x.commissionRappen)}</td></tr>
+        {x.costs.map((c) => <tr key={c.id}><td>{c.description}</td><td className="ta-r">−{formatChf(c.amountRappen)}</td></tr>)}
+        <tr><td><strong>Auszahlung</strong></td><td className="ta-r"><strong>{formatChf(x.netRappen)}</strong></td></tr>
       </tbody></table>
       <p className="muted">Umsatz = Übernachtungspreise bestätigter Buchungen (Nächte im Monat), ohne Kurtaxe und Zusatzleistungen.</p>
     </div>

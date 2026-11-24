@@ -220,8 +220,8 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
                     <h3>{tr(it.title, lang)}</h3>
                     {it.nights > 1 ? <span className="badge">{fill(d.fromNights, { n: it.nights })}</span> : null}
                     <RichText text={tr(it.text, lang)} />
-                    {inc.length ? <><p className="small" style={{ margin: 0 }}><strong>{d.offerIncludes}</strong></p><ul className="offer-includes">{inc.map((x, j) => <li key={j}>{x}</li>)}</ul></> : null}
-                    {it.validTo ? <p className="small muted" style={{ margin: 0 }}>{fill(d.offerValidUntil, { date: shortDate(it.validTo, lang) })}</p> : null}
+                    {inc.length ? <><p className="small m0"><strong>{d.offerIncludes}</strong></p><ul className="offer-includes">{inc.map((x, j) => <li key={j}>{x}</li>)}</ul></> : null}
+                    {it.validTo ? <p className="small muted m0">{fill(d.offerValidUntil, { date: shortDate(it.validTo, lang) })}</p> : null}
                     {tr(it.price, lang) ? <p className="offer-price">{tr(it.price, lang)}</p> : null}
                     <a className="btn" href={`${base}/${lang}/book?${q}`}>{d.bookOffer}</a>
                   </article>
@@ -281,8 +281,8 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
               {tableOnly ? null : <div><label htmlFor={`t-${b.id}`}>{d.inqDateTo}</label><input id={`t-${b.id}`} name="dateTo" type="date" /></div>}
               {b.kinds.includes("table") ? <div><label htmlFor={`h-${b.id}`}>{d.inqTime}{tableOnly ? "" : ` (${d.kind_table})`}</label><input id={`h-${b.id}`} name="time" type="time" required={tableOnly} step={900} /></div> : null}
               <div><label htmlFor={`c-${b.id}`}>{d.inqPersons}</label><input id={`c-${b.id}`} name="persons" type="number" min={1} max={2000} required={tableOnly} /></div>
-              <div style={{ gridColumn: "1 / -1" }}><label htmlFor={`m-${b.id}`}>{d.inqMessage}</label><textarea id={`m-${b.id}`} name="message" rows={4} maxLength={4000} /></div>
-              <div style={{ gridColumn: "1 / -1" }}><p className="small muted">{b.kinds.includes("table") ? `${d.inqTableHint} ` : ""}{d.inqPrivacy}</p><button className="btn">{d.inqSend}</button></div>
+              <div className="col-all"><label htmlFor={`m-${b.id}`}>{d.inqMessage}</label><textarea id={`m-${b.id}`} name="message" rows={4} maxLength={4000} /></div>
+              <div className="col-all"><p className="small muted">{b.kinds.includes("table") ? `${d.inqTableHint} ` : ""}{d.inqPrivacy}</p><button className="btn">{d.inqSend}</button></div>
             </form>
           </section>,
         );
@@ -299,7 +299,7 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
             <form className="card form-grid" action={`${base}/${lang}/tisch`} method="get" data-testid="reserve-block">
               <div><label htmlFor={`rd-${b.id}`}>{r.date}</label><input id={`rd-${b.id}`} name="date" type="date" min={today} defaultValue={today} required /></div>
               <div><label htmlFor={`rp-${b.id}`}>{r.guests}</label><input id={`rp-${b.id}`} name="party" type="number" min={1} max={50} defaultValue={2} required /></div>
-              <div style={{ gridColumn: "1 / -1" }}><button className="btn">{r.show}</button></div>
+              <div className="col-all"><button className="btn">{r.show}</button></div>
             </form>
           </section>,
         );
@@ -333,7 +333,7 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
                 <input type="hidden" name="lang" value={lang} />
                 <input type="hidden" name="back" value={here} />
                 <div className="hp" aria-hidden="true"><label>Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
-                <fieldset className="plain" style={{ gridColumn: "1 / -1" }}>
+                <fieldset className="plain col-all">
                   <legend className="small muted">{d.vAmount}</legend>
                   <div className="amounts">
                     {set.amounts.map((a, i) => (
@@ -346,8 +346,8 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
                 <div><label htmlFor={`vr-${b.id}`}>{d.vFor}</label><input id={`vr-${b.id}`} name="recipientName" maxLength={120} /></div>
                 <div><label htmlFor={`vb-${b.id}`}>{d.vFrom}</label><input id={`vb-${b.id}`} name="buyerName" required maxLength={120} autoComplete="name" /></div>
                 <div><label htmlFor={`ve-${b.id}`}>{d.vEmail}</label><input id={`ve-${b.id}`} name="buyerEmail" type="email" required maxLength={200} autoComplete="email" /></div>
-                <div style={{ gridColumn: "1 / -1" }}><label htmlFor={`vm-${b.id}`}>{d.vMessage}</label><textarea id={`vm-${b.id}`} name="message" rows={2} maxLength={500} /></div>
-                <div style={{ gridColumn: "1 / -1" }}><p className="small muted">{d.vRedeem}</p><button className="btn">{d.vBuy}</button> <span className="small muted">{d.payMethods}</span></div>
+                <div className="col-all"><label htmlFor={`vm-${b.id}`}>{d.vMessage}</label><textarea id={`vm-${b.id}`} name="message" rows={2} maxLength={500} /></div>
+                <div className="col-all"><p className="small muted">{d.vRedeem}</p><button className="btn">{d.vBuy}</button> <span className="small muted">{d.payMethods}</span></div>
               </form>
             ) : <p className="muted">{d.vUnavailable}</p>}
           </section>,

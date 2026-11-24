@@ -104,7 +104,7 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
             {usage ? (
               <p>Diesen Monat: <strong>{usage.conversations}</strong> von {t.included} Gesprächen
                 {usage.packs > 0 ? <>, davon {usage.packs} Zusatzpaket{usage.packs === 1 ? "" : "e"} ({formatChf(usage.packsRappen)})</> : null}.
-                {usage.paused ? <span className="badge warn" style={{ marginLeft: 8 }}>Pause bis Monatsende</span> : null}</p>
+                {usage.paused ? <span className="badge warn ml8">Pause bis Monatsende</span> : null}</p>
             ) : null}
             {keyMissing ? <p className="notice warn small">Der Chat ist technisch noch nicht eingerichtet (API-Schlüssel fehlt). Bitte beim Betreiber melden.</p> : null}
           </section>
@@ -129,7 +129,7 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
           ) : null}
 
           <section className="card stack">
-            <h2>Buchender Chat {m.settings.bookingEnabled ? <span className="badge" style={{ marginLeft: 8 }}>an</span> : null}</h2>
+            <h2>Buchender Chat {m.settings.bookingEnabled ? <span className="badge ml8">an</span> : null}</h2>
             <p className="small">Wenn eingeschaltet, prüft der Chat auf Wunsch der Gäste Verfügbarkeit und Gesamtpreis (immer die echten, serverseitig berechneten Preise) und zeigt eine Angebotskarte. Gebucht wird auf Ihrem normalen Buchungsformular mit Namen, AGB und Zahlung; im Chat werden keine Personendaten erfasst. Jede Rückfrage mit Preisprüfung braucht mehrere KI-Aufrufe, das Gesprächskontingent zählt aber wie bisher pro Gespräch.</p>
             <form action={booking}>{hidden}<input type="hidden" name="on" value={m.settings.bookingEnabled ? "0" : "1"} /><button className="btn secondary small" disabled={!isOwner}>{m.settings.bookingEnabled ? "Ausschalten" : "Einschalten"}</button></form>
           </section>

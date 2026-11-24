@@ -30,8 +30,8 @@ export default function RateRows({ plans, defaultPlan, from, to, currency, max }
                 <td><input type="date" name={`from${i}`} defaultValue={from} aria-label="Von" /></td>
                 <td><input type="date" name={`to${i}`} defaultValue={to} aria-label="Bis" /></td>
                 <td><input name={`price${i}`} inputMode="decimal" placeholder="–" size={7} aria-label="Preis" /></td>
-                <td><input name={`minStay${i}`} type="number" min={1} placeholder="–" style={{ width: 70 }} aria-label="Mindestnächte" /></td>
-                <td><input name={`maxStay${i}`} type="number" min={0} placeholder="–" title="0 = keine Begrenzung" style={{ width: 70 }} aria-label="Höchstnächte" /></td>
+                <td><input name={`minStay${i}`} type="number" min={1} placeholder="–" className="w70" aria-label="Mindestnächte" /></td>
+                <td><input name={`maxStay${i}`} type="number" min={0} placeholder="–" title="0 = keine Begrenzung" className="w70" aria-label="Höchstnächte" /></td>
                 {["cta", "ctd", "stopSell"].map((n) => (
                   <td key={n}>
                     <select name={`${n}${i}`} defaultValue="" aria-label={n}><option value="">–</option><option value="yes">ja</option><option value="no">nein</option></select>

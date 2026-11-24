@@ -117,35 +117,35 @@ export default async function BookingView({ params, searchParams }: { params: Pr
             </tbody>
           </table>
           {balanceOpen(booking) ? (
-            <form method="post" action={`/b/${token}/balance`} style={{ marginTop: 16 }}>
+            <form method="post" action={`/b/${token}/balance`} className="mt16">
               <button className="btn">{d.payBalance} ({formatChf(booking.balanceRappen)})</button>
             </form>
           ) : null}
           {plan ? (<><h3 style={{ marginTop: 20 }}>{d.cancellation}</h3><p className="small muted">{cancellationPolicyText(plan, locale)}</p></>) : null}
           {preview?.cancellable ? <CancelBox token={token} locale={locale} /> : null}
-          {booking.status === "confirmed" ? <p style={{ marginTop: 16 }}><a className="btn secondary small" href={`/b/${token}/kalender`}>{pt.calendar}</a></p> : null}
+          {booking.status === "confirmed" ? <p className="mt16"><a className="btn secondary small" href={`/b/${token}/kalender`}>{pt.calendar}</a></p> : null}
         </div>
         {guestInfo ? (
-          <div className="card" style={{ marginTop: 16 }}>
+          <div className="card mt16">
             <h3>{pt.infoTitle}</h3>
             <p style={{ whiteSpace: "pre-wrap" }}>{guestInfo}</p>
           </div>
         ) : null}
         {extrasOffer ? (
-          <div className="card" style={{ marginTop: 16 }}>
+          <div className="card mt16">
             <h3>{pt.extrasTitle}</h3>
             <p>{pt.extrasText}</p>
             <a className="btn" href={`/b/${token}/upsell?lang=${locale}`}>{pt.extrasButton}</a>
           </div>
         ) : null}
         {arrival ? (
-          <div className="card" style={{ marginTop: 16 }}>
+          <div className="card mt16">
             <h3>{CHAT_TEXT[locale].arrivalTitle}</h3>
             <p style={{ whiteSpace: "pre-wrap" }}>{arrival}</p>
           </div>
         ) : null}
         {door.codes.length ? (
-          <div className="card" style={{ marginTop: 16 }}>
+          <div className="card mt16">
             <h3>{pt.keyTitle}</h3>
             <p>{pt.keyText}</p>
             {door.codes.map((c) => (
@@ -157,13 +157,13 @@ export default async function BookingView({ params, searchParams }: { params: Pr
             ))}
           </div>
         ) : door.waitingForCheckin ? (
-          <div className="card" style={{ marginTop: 16 }}>
+          <div className="card mt16">
             <h3>{pt.keyTitle}</h3>
             <p>{pt.keyNeedCheckin}</p>
           </div>
         ) : null}
         {tips.length ? (
-          <div className="card" style={{ marginTop: 16 }}>
+          <div className="card mt16">
             <h3>{pt.tipsTitle}</h3>
             <ul className="list">
               {tips.map((x) => <li key={x.id}><strong>{x.title}</strong>{x.text ? <div className="small" style={{ whiteSpace: "pre-wrap" }}>{x.text}</div> : null}</li>)}
@@ -171,7 +171,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
           </div>
         ) : null}
         {folio && (folio.items.length || folio.openRappen > 0) ? (
-          <div className="card" style={{ marginTop: 16 }}>
+          <div className="card mt16">
             <h3>{pt.folioTitle}</h3>
             <table className="rows">
               <tbody>
@@ -183,7 +183,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
           </div>
         ) : null}
         {canWish || myRequests.length ? (
-          <div className="card" id="wuensche" style={{ marginTop: 16 }}>
+          <div className="card mt16" id="wuensche" >
             <h3>{pt.wishTitle}</h3>
             {sp.wish ? <p className="notice">{pt.wishSent}</p> : null}
             {sp.wisherr ? <p className="notice warn">{pt.wishErr[sp.wisherr as "empty" | "many" | "closed"] ?? pt.wishErr.many}</p> : null}
@@ -203,7 +203,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
             ) : null}
             {myRequests.length ? (
               <>
-                <h4 style={{ marginTop: 16 }}>{pt.wishListTitle}</h4>
+                <h4 className="mt16">{pt.wishListTitle}</h4>
                 <ul className="list">
                   {myRequests.filter((r) => r.itemId !== "checkout").map((r) => {
                     const opt = wishes.find((w) => w.id === r.itemId);
@@ -221,9 +221,9 @@ export default async function BookingView({ params, searchParams }: { params: Pr
           </div>
         ) : null}
         {booking.guestCheckoutAt || sp.out ? (
-          <div className="card" style={{ marginTop: 16 }}><p style={{ margin: 0 }}>✓ {pt.outDone}</p></div>
+          <div className="card mt16"><p className="m0">✓ {pt.outDone}</p></div>
         ) : canOut ? (
-          <div className="card" style={{ marginTop: 16 }}>
+          <div className="card mt16">
             <h3>{pt.outTitle}</h3>
             <p>{pt.outText}</p>
             <form action={doCheckout}>
@@ -233,7 +233,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
           </div>
         ) : null}
         {ci?.open ? (
-          <div className="card" style={{ marginTop: 16 }}>
+          <div className="card mt16">
             <h3>{CI[locale].linkTitle}</h3>
             {ci.submitted ? <p>✓ {CI[locale].linkDone}</p> : <p>{CI[locale].linkText}</p>}
             {ci.verified ? null : <a className={`btn${ci.submitted ? " secondary small" : ""}`} href={`/b/${token}/checkin?lang=${locale}`}>{ci.submitted ? CI[locale].correct : CI[locale].linkButton}</a>}

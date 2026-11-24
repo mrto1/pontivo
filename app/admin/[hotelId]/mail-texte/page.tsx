@@ -61,7 +61,7 @@ export default async function MailTexte({ params, searchParams }: { params: Prom
         <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="template" value={template} />
         {langs.map((l) => (
           <section key={l} className="card stack">
-            <h2 style={{ margin: 0 }}>{LOCALE_NAMES[l] ?? l}</h2>
+            <h2 className="m0">{LOCALE_NAMES[l] ?? l}</h2>
             <div><label htmlFor={`f1168m1-${l}`}>Betreff</label><input id={`f1168m1-${l}`} name={`subject_${l}`} maxLength={LIMITS.subject} defaultValue={mine[l]?.subject ?? std[l].subject} /></div>
             <div><label htmlFor={`f1168m2-${l}`}>Einleitung (nach der Anrede)</label><textarea id={`f1168m2-${l}`} name={`intro_${l}`} rows={3} maxLength={LIMITS.intro} defaultValue={mine[l]?.intro ?? std[l].intro} /></div>
             <div><label htmlFor={`f1168m3-${l}`}>Zusätzlicher Schluss (vor der Grussformel, leer = keiner)</label><textarea id={`f1168m3-${l}`} name={`outro_${l}`} rows={3} maxLength={LIMITS.outro} defaultValue={mine[l]?.outro ?? ""} /></div>

@@ -30,7 +30,7 @@ export function DirectChart({ data }: { data: MonthRow[] }) {
   const y = (v: number) => T + (H - T - B) * (1 - v / max);
   const base = y(0);
   return (
-    <figure className="viz" style={{ margin: 0 }}>
+    <figure className="viz m0">
       <div className="viz-legend" aria-hidden="true">
         <span><i style={{ background: "var(--viz-direct)" }} />Direkt (Pontivo)</span>
         <span><i style={{ background: "var(--viz-portal)" }} />Buchungsportale</span>
@@ -56,7 +56,7 @@ export function DirectChart({ data }: { data: MonthRow[] }) {
           );
         })}
       </svg>
-      <details className="small" style={{ marginTop: 8 }}>
+      <details className="small mt8">
         <summary className="muted">Als Tabelle</summary>
         <table className="table small">
           <thead><tr><th>Monat</th><th>Direkt</th><th>Portale</th><th>Manuell</th></tr></thead>

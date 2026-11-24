@@ -110,11 +110,11 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
         <FormSwitch name="pickup" defaultOn={cfg.pickup} label="Abholung" />
         <FormSwitch name="delivery" defaultOn={cfg.delivery} label="Lieferung mit eigenen Fahrern" hint="Liefergebiete unten festlegen; Fahrer bekommen die Rolle «Fahrer» unter Team & Rollen." />
         <div className="inline-form">
-          <div><label htmlFor="slotMinutes">Zeitraster (Min.)</label><input id="slotMinutes" name="slotMinutes" type="number" min={5} max={60} defaultValue={cfg.slotMinutes} style={{ width: 90 }} /></div>
-          <div><label htmlFor="maxPerSlot">Abholungen je Zeitfenster</label><input id="maxPerSlot" name="maxPerSlot" type="number" min={1} max={100} defaultValue={cfg.maxPerSlot} style={{ width: 90 }} /></div>
-          <div><label htmlFor="deliveryPerSlot">Lieferungen je Zeitfenster</label><input id="deliveryPerSlot" name="deliveryPerSlot" type="number" min={1} max={100} defaultValue={cfg.deliveryPerSlot} style={{ width: 90 }} /></div>
-          <div><label htmlFor="leadMin">Vorlauf (Min.)</label><input id="leadMin" name="leadMin" type="number" min={0} max={240} defaultValue={cfg.leadMin} style={{ width: 90 }} /></div>
-          <div><label htmlFor="cutoffMin">Bestellschluss vor Schliessung (Min.)</label><input id="cutoffMin" name="cutoffMin" type="number" min={0} max={240} defaultValue={cfg.cutoffMin} style={{ width: 90 }} /></div>
+          <div><label htmlFor="slotMinutes">Zeitraster (Min.)</label><input id="slotMinutes" name="slotMinutes" type="number" min={5} max={60} defaultValue={cfg.slotMinutes} className="w90" /></div>
+          <div><label htmlFor="maxPerSlot">Abholungen je Zeitfenster</label><input id="maxPerSlot" name="maxPerSlot" type="number" min={1} max={100} defaultValue={cfg.maxPerSlot} className="w90" /></div>
+          <div><label htmlFor="deliveryPerSlot">Lieferungen je Zeitfenster</label><input id="deliveryPerSlot" name="deliveryPerSlot" type="number" min={1} max={100} defaultValue={cfg.deliveryPerSlot} className="w90" /></div>
+          <div><label htmlFor="leadMin">Vorlauf (Min.)</label><input id="leadMin" name="leadMin" type="number" min={0} max={240} defaultValue={cfg.leadMin} className="w90" /></div>
+          <div><label htmlFor="cutoffMin">Bestellschluss vor Schliessung (Min.)</label><input id="cutoffMin" name="cutoffMin" type="number" min={0} max={240} defaultValue={cfg.cutoffMin} className="w90" /></div>
         </div>
         <FormSwitch name="cashPickup" defaultOn={cfg.cashPickup} label="Bar bei Abholung erlauben" />
         <FormSwitch name="cashDelivery" defaultOn={cfg.cashDelivery} label="Bar bei Lieferung erlauben" hint="Telefon ist Pflicht; Adressen mit früherer Nicht-Annahme werden markiert. " />
@@ -138,10 +138,10 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
             <div><label htmlFor="zcodes">Postleitzahlen</label><input id="zcodes" name="codes" required placeholder="9000, 9008, 9010" /></div>
           </div>
           <div className="inline-form">
-            <div><label htmlFor="zmin">Mindestbestellwert CHF</label><input id="zmin" name="min" inputMode="decimal" defaultValue="0" style={{ width: 90 }} /></div>
-            <div><label htmlFor="zfee">Liefergebühr CHF</label><input id="zfee" name="fee" inputMode="decimal" defaultValue="0" style={{ width: 90 }} /></div>
-            <div><label htmlFor="zfree">Gratis ab CHF</label><input id="zfree" name="free" inputMode="decimal" style={{ width: 90 }} /></div>
-            <div><label htmlFor="zextra">Zusätzliche Minuten</label><input id="zextra" name="extra" type="number" min={0} max={180} defaultValue={20} style={{ width: 90 }} /></div>
+            <div><label htmlFor="zmin">Mindestbestellwert CHF</label><input id="zmin" name="min" inputMode="decimal" defaultValue="0" className="w90" /></div>
+            <div><label htmlFor="zfee">Liefergebühr CHF</label><input id="zfee" name="fee" inputMode="decimal" defaultValue="0" className="w90" /></div>
+            <div><label htmlFor="zfree">Gratis ab CHF</label><input id="zfree" name="free" inputMode="decimal" className="w90" /></div>
+            <div><label htmlFor="zextra">Zusätzliche Minuten</label><input id="zextra" name="extra" type="number" min={0} max={180} defaultValue={20} className="w90" /></div>
           </div>
           <div><button className="btn secondary">Gebiet anlegen</button></div>
         </form>

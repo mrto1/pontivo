@@ -90,7 +90,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
 
       <section className="card stack" id="vorteile">
         <h2>Vorteile bei Direktbuchung</h2>
-        <p className="muted small" style={{ margin: 0 }}>Kurze Zusagen, die Gäste im Buchungsfenster und in der Bestätigung sehen, zum Beispiel «Late Check-out bis 14 Uhr» oder «Willkommensgetränk». Der Preis bleibt gleich wie auf den Portalen, deshalb ist das mit deren Preisregeln vereinbar. Nur versprechen, was Sie halten.</p>
+        <p className="muted small m0">Kurze Zusagen, die Gäste im Buchungsfenster und in der Bestätigung sehen, zum Beispiel «Late Check-out bis 14 Uhr» oder «Willkommensgetränk». Der Preis bleibt gleich wie auf den Portalen, deshalb ist das mit deren Preisregeln vereinbar. Nur versprechen, was Sie halten.</p>
         <form action={benefitsSave} className="stack">
           {hidden}
           <label className="check"><input type="checkbox" name="enabled" defaultChecked={d?.benefits?.enabled === true} /> Vorteile im Buchungsfenster anzeigen</label>
@@ -117,10 +117,10 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
       <section className="card stack" id="codes">
         <h2>Firmencodes</h2>
         {!debtors ? (
-          <p className="muted small" style={{ margin: 0 }}>Firmencodes gehören zu den Firmenkunden. Schalten Sie unter <a href={`/admin/${hotel.id}/funktionen`}>Einstellungen → Funktionen</a> das Modul «Debitoren» ein, dann legen Sie hier Codes an.</p>
+          <p className="muted small m0">Firmencodes gehören zu den Firmenkunden. Schalten Sie unter <a href={`/admin/${hotel.id}/funktionen`}>Einstellungen → Funktionen</a> das Modul «Debitoren» ein, dann legen Sie hier Codes an.</p>
         ) : (
           <>
-            <p className="muted small" style={{ margin: 0 }}>Eine Firma bucht mit ihrem Code Ihr günstigeres Firmenpreis-Angebot direkt auf Ihrer Seite. Mit «auf Rechnung» ist die Buchung sofort bestätigt und die Rechnung geht an die Firma (siehe Debitoren). Das Feld «Code» erscheint im Buchungsfenster, sobald es einen aktiven Code gibt.</p>
+            <p className="muted small m0">Eine Firma bucht mit ihrem Code Ihr günstigeres Firmenpreis-Angebot direkt auf Ihrer Seite. Mit «auf Rechnung» ist die Buchung sofort bestätigt und die Rechnung geht an die Firma (siehe Debitoren). Das Feld «Code» erscheint im Buchungsfenster, sobald es einen aktiven Code gibt.</p>
             {codes.length ? (
               <table className="table">
                 <thead><tr><th>Firma</th><th>Code</th><th>Rabatt</th><th>Rechnung</th><th>Gültig (Anreise)</th><th>Buchungen</th><th></th></tr></thead>
@@ -154,7 +154,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
             ) : <p className="muted">Noch kein Code angelegt.</p>}
             {companies.length ? (
               <details className="card"><summary><strong>+ Neuer Code</strong></summary>
-                <form action={codeSave} className="stack" style={{ marginTop: 12 }}>
+                <form action={codeSave} className="stack mt12">
                   {hidden}
                   <div style={{ maxWidth: 360 }}><label htmlFor="fbe241">Firma</label><select id="fbe241" name="companyId" required>{companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
                   <div className="row">
@@ -166,14 +166,14 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
                   <div><button className="btn small">Code anlegen</button></div>
                 </form>
               </details>
-            ) : <p className="muted small" style={{ margin: 0 }}>Legen Sie zuerst unter <a href={`/admin/${hotel.id}/invoices/debitoren`}>Finanzen → Debitoren</a> eine Firma an.</p>}
+            ) : <p className="muted small m0">Legen Sie zuerst unter <a href={`/admin/${hotel.id}/invoices/debitoren`}>Finanzen → Debitoren</a> eine Firma an.</p>}
           </>
         )}
       </section>
 
       <section className="card stack" id="luecken">
         <h2>Lückenfüller</h2>
-        <p className="muted small" style={{ margin: 0 }}>Eine Lücke sind ein bis drei freie Nächte zwischen zwei ausgebuchten Nächten eines Zimmertyps. Wer genau diese Lücke bucht, darf den Mindestaufenthalt unterschreiten und bekommt auf Wunsch einen Rabatt. Das gilt nur für Direktbuchungen; Portale bekommen weiterhin Ihre normalen Regeln.</p>
+        <p className="muted small m0">Eine Lücke sind ein bis drei freie Nächte zwischen zwei ausgebuchten Nächten eines Zimmertyps. Wer genau diese Lücke bucht, darf den Mindestaufenthalt unterschreiten und bekommt auf Wunsch einen Rabatt. Das gilt nur für Direktbuchungen; Portale bekommen weiterhin Ihre normalen Regeln.</p>
         <form action={gapsSave} className="stack">
           {hidden}
           <label className="check"><input type="checkbox" name="enabled" defaultChecked={gaps.enabled} /> Lückenfüller einschalten</label>
@@ -194,7 +194,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
 
       <section className="card stack" id="warteliste">
         <h2>Warteliste</h2>
-        <p className="muted small" style={{ margin: 0 }}>Ist für die gesuchten Daten alles ausgebucht, kann sich der Gast eintragen. Wird etwas frei (Stornierung, abgelaufene Reservierung), erhält er einmalig eine Mail mit Link zur Buchung. Wer zuerst bucht, bekommt das Zimmer.</p>
+        <p className="muted small m0">Ist für die gesuchten Daten alles ausgebucht, kann sich der Gast eintragen. Wird etwas frei (Stornierung, abgelaufene Reservierung), erhält er einmalig eine Mail mit Link zur Buchung. Wer zuerst bucht, bekommt das Zimmer.</p>
         <form action={toggleSave} className="inline-form">
           {hidden}<input type="hidden" name="what" value="waitlist" />
           <label className="check"><input type="checkbox" name="enabled" defaultChecked={waitlistEnabled(d)} /> Warteliste anbieten</label>
@@ -211,7 +211,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
 
       <section className="card stack" id="abbruch">
         <h2>Erinnerung nach abgebrochener Buchung</h2>
-        <p className="muted small" style={{ margin: 0 }}>Hat ein Gast seine Daten eingegeben, aber nicht bezahlt, geht ihm etwa eine Stunde später einmalig eine Mail mit Link zurück zur Suche. Keine weitere Mail dazu. Nicht gesendet wird, wenn er inzwischen gebucht hat oder nichts mehr frei ist. Standardmässig aus: Bitte prüfen Sie mit Ihrer Datenschutzerklärung, dass Sie das so wollen (Vertragsanbahnung auf Wunsch des Gastes).</p>
+        <p className="muted small m0">Hat ein Gast seine Daten eingegeben, aber nicht bezahlt, geht ihm etwa eine Stunde später einmalig eine Mail mit Link zurück zur Suche. Keine weitere Mail dazu. Nicht gesendet wird, wenn er inzwischen gebucht hat oder nichts mehr frei ist. Standardmässig aus: Bitte prüfen Sie mit Ihrer Datenschutzerklärung, dass Sie das so wollen (Vertragsanbahnung auf Wunsch des Gastes).</p>
         <form action={toggleSave} className="inline-form">
           {hidden}<input type="hidden" name="what" value="recovery" />
           <label className="check"><input type="checkbox" name="enabled" defaultChecked={recoveryEnabled(d)} /> Erinnerung senden</label>
@@ -221,11 +221,11 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
 
       <section className="card stack" id="wiederkehr">
         <h2>Wiederkehr-Mail</h2>
-        <p className="muted small" style={{ margin: 0 }}>Rund ein Jahr nach dem Aufenthalt geht Gästen, die direkt gebucht und dem Erhalt von Angeboten zugestimmt haben, einmalig eine Einladung zu: mit ihren Daten vom letzten Mal, einem Link zur Buchung und Abmelde-Link. Wer sich abmeldet, bekommt nichts mehr. Es gibt höchstens eine Mail pro Adresse in 300 Tagen, und keine, wenn der Gast schon wieder gebucht hat. Standardmässig aus.</p>
+        <p className="muted small m0">Rund ein Jahr nach dem Aufenthalt geht Gästen, die direkt gebucht und dem Erhalt von Angeboten zugestimmt haben, einmalig eine Einladung zu: mit ihren Daten vom letzten Mal, einem Link zur Buchung und Abmelde-Link. Wer sich abmeldet, bekommt nichts mehr. Es gibt höchstens eine Mail pro Adresse in 300 Tagen, und keine, wenn der Gast schon wieder gebucht hat. Standardmässig aus.</p>
         <form action={winbackSave} className="inline-form">
           {hidden}
           <label className="check"><input type="checkbox" name="enabled" defaultChecked={winbackSettings(d).enabled} /> Einladung senden</label>
-          <label>Tage nach der Abreise <input name="days" type="number" min={WINBACK_MIN_DAYS} max={WINBACK_MAX_DAYS} defaultValue={winbackSettings(d).afterDays} style={{ width: 90 }} /></label>
+          <label>Tage nach der Abreise <input name="days" type="number" min={WINBACK_MIN_DAYS} max={WINBACK_MAX_DAYS} defaultValue={winbackSettings(d).afterDays} className="w90" /></label>
           <button className="btn secondary small">Speichern</button>
         </form>
       </section>

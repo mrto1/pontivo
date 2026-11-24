@@ -122,7 +122,7 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
                   return pp.kind === "deposit" ? <div className="small muted">{fill(d.depositNote, { a: formatChf(pp.depositRappen), b: formatChf(pp.balanceRappen), date: formatDay(pp.balanceDueOn, locale) })}</div> : null;
                 })()}
               </div>
-              <details style={{ gridColumn: "1 / -1" }}>
+              <details className="col-all">
                 <summary className="btn secondary">{d.choose}</summary>
                 <BookingForm
                   locale={locale}

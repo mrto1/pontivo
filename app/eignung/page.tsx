@@ -29,7 +29,7 @@ export default async function Eignung({ searchParams }: { searchParams: Promise<
       </form>
       {r ? (
         <section className="card stack" aria-live="polite">
-          <h2 style={{ margin: 0 }}>{r.title}</h2>
+          <h2 className="m0">{r.title}</h2>
           <p>{r.text}</p>
           {r.reasons.length ? <ul>{r.reasons.map((x) => <li key={x}>{x}</li>)}</ul> : null}
           <p className="small muted">Pontivo ist für Häuser bis etwa {MAX_ROOMS} Zimmer gedacht (Hotel garni, B&amp;B, Ferienwohnungen, Berggasthaus).</p>

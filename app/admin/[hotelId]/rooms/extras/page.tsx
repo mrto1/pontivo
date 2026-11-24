@@ -117,7 +117,7 @@ export default async function Extras({ params, searchParams }: { params: Promise
           <tbody>
             {list.map((e, i) => (
               <tr key={e.id}>
-                <td><strong>{e.name.de}</strong>{e.mandatory ? <span className="badge" style={{ marginLeft: 8 }}>obligatorisch</span> : null}{e.active ? null : <span className="badge warn" style={{ marginLeft: 8 }}>inaktiv</span>}
+                <td><strong>{e.name.de}</strong>{e.mandatory ? <span className="badge ml8">obligatorisch</span> : null}{e.active ? null : <span className="badge warn ml8">inaktiv</span>}
                   {e.description.de ? <div className="small muted">{e.description.de}</div> : null}</td>
                 <td>{formatChf(e.priceRappen)} {UNIT[e.unit]}{!perPerson(e.unit) && e.maxQuantity > 1 ? ` · bis ${e.maxQuantity}×` : ""}</td>
                 <td className="small">{e.roomTypeIds.length ? rooms.filter((r) => e.roomTypeIds.includes(r.roomType.id)).map((r) => r.roomType.name).join(", ") : "alle"}</td>
@@ -137,8 +137,8 @@ export default async function Extras({ params, searchParams }: { params: Promise
         {list.map((e) => (
           <details key={e.id} className="card">
             <summary><strong>{e.name.de}</strong> bearbeiten</summary>
-            <div style={{ marginTop: 12 }}>{form(e)}</div>
-            <form action={remove} style={{ marginTop: 12 }}>{hidden}<input type="hidden" name="id" value={e.id} /><button className="btn danger small">Löschen</button> <span className="small muted">Bestehende Buchungen behalten Name und Preis.</span></form>
+            <div className="mt12">{form(e)}</div>
+            <form action={remove} className="mt12">{hidden}<input type="hidden" name="id" value={e.id} /><button className="btn danger small">Löschen</button> <span className="small muted">Bestehende Buchungen behalten Name und Preis.</span></form>
           </details>
         ))}
         <section className="card">

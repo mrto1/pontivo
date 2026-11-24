@@ -17,7 +17,7 @@ export default async function Betriebe({ searchParams }: { searchParams: Promise
   const { hotels } = await platformOverview();
   const health = await healthByHotel();
   return (
-    <div className="stack" style={{ gap: 24 }}>
+    <div className="stack gap24">
       <PageHead title={`Betriebe (${hotels.length})`}>Status, Team und Ampel je Betrieb. Löschen ist endgültig und nimmt alle Daten mit (Buchungen, Rechnungen, Gäste, Mails). Zur Bestätigung den Namen eintippen.</PageHead>
       <Flash sp={sp} />
       {hotels.length === 0 ? <p className="muted">Noch keine Betriebe.</p> : null}
@@ -25,7 +25,7 @@ export default async function Betriebe({ searchParams }: { searchParams: Promise
         <article key={h.id} className="card stack">
           <div className="plat-head">
             <div>
-              <h3 style={{ margin: 0 }}><a href={`/admin/${h.id}`}>{h.name}</a> <span className={`badge${h.status === "live" ? "" : " warn"}`}>{STATUS[h.status] ?? h.status}</span>{health.get(h.id) ? <> <span className={`ampel ampel-${health.get(h.id)!.level}`} title={HEALTH_LABEL[health.get(h.id)!.level]}>{HEALTH_LABEL[health.get(h.id)!.level]}</span></> : null}</h3>
+              <h3 className="m0"><a href={`/admin/${h.id}`}>{h.name}</a> <span className={`badge${h.status === "live" ? "" : " warn"}`}>{STATUS[h.status] ?? h.status}</span>{health.get(h.id) ? <> <span className={`ampel ampel-${health.get(h.id)!.level}`} title={HEALTH_LABEL[health.get(h.id)!.level]}>{HEALTH_LABEL[health.get(h.id)!.level]}</span></> : null}</h3>
               {health.get(h.id)?.reasons.length ? <ul className="ampel-reasons small">{health.get(h.id)!.reasons.map((r) => <li key={r.text} className={`ampel-${r.level}`}>{r.text}</li>)}</ul> : null}
               <p className="muted small" style={{ margin: "4px 0 0" }}>{h.bookings} Buchungen · {h.invoices} Rechnungen · angelegt {fmt(h.createdAt)}</p>
             </div>
@@ -54,7 +54,7 @@ export default async function Betriebe({ searchParams }: { searchParams: Promise
                   </li>
                 ))}
               </ul>
-            ) : <p className="muted small" style={{ margin: 0 }}>Noch niemand.</p>}
+            ) : <p className="muted small m0">Noch niemand.</p>}
             <form action={memberAdd} className="form-row">
               <input type="hidden" name="to" value={TO} />
               <input type="hidden" name="hotelId" value={h.id} />

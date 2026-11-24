@@ -252,7 +252,7 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
                 <tr key={i}><td><input type="checkbox" name="pick" value={i} defaultChecked aria-label={`${x.name} übernehmen`} /></td>
                   <td><input name={`cat_${i}`} defaultValue={x.category} maxLength={60} aria-label={`Kategorie ${x.name}`} /></td>
                   <td><input name={`name_${i}`} defaultValue={x.name} maxLength={120} aria-label={`Name ${x.name}`} />{x.description ? <div className="small muted">{x.description}</div> : null}</td>
-                  <td><input name={`price_${i}`} defaultValue={(x.priceRappen / 100).toFixed(2)} inputMode="decimal" style={{ width: 90 }} aria-label={`Preis ${x.name}`} /></td></tr>
+                  <td><input name={`price_${i}`} defaultValue={(x.priceRappen / 100).toFixed(2)} inputMode="decimal" className="w90" aria-label={`Preis ${x.name}`} /></td></tr>
               ))}
             </tbody></table>
             <div><button className="btn">Ausgewählte übernehmen</button></div>
@@ -261,8 +261,8 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
           <>
             <p className="small muted">Noch {runsLeft} von {env().SETUP_RUNS_PER_MONTH} Läufen in diesem Monat. Höchstens {LIMITS.maxPages} Seiten Ihrer Website bzw. ein PDF bis {LIMITS.pdfBytes / 1_000_000} MB und {LIMITS.pdfPages} Seiten. Bitte nur eigene Speisekarten verwenden. Der gelesene Text wird nicht gespeichert, nur der Entwurf.</p>
             <div className="row">
-              <form action={menuUrl} className="stack" style={{ flex: 1 }}>{H}<div><label htmlFor="murl">Adresse der Speisekarte (https://…)</label><input id="murl" name="url" type="url" required placeholder="https://www.mein-restaurant.ch/speisekarte" /></div><div><button className="btn" disabled={runsLeft === 0}>Von der Website lesen</button></div></form>
-              <form action={menuPdf} className="stack" style={{ flex: 1 }} encType="multipart/form-data">{H}<div><label htmlFor="mpdf">PDF der Speisekarte</label><input id="mpdf" name="file" type="file" accept="application/pdf" required /></div><div><button className="btn" disabled={runsLeft === 0}>Aus dem PDF lesen</button></div></form>
+              <form action={menuUrl} className="stack flex1">{H}<div><label htmlFor="murl">Adresse der Speisekarte (https://…)</label><input id="murl" name="url" type="url" required placeholder="https://www.mein-restaurant.ch/speisekarte" /></div><div><button className="btn" disabled={runsLeft === 0}>Von der Website lesen</button></div></form>
+              <form action={menuPdf} className="stack flex1" encType="multipart/form-data">{H}<div><label htmlFor="mpdf">PDF der Speisekarte</label><input id="mpdf" name="file" type="file" accept="application/pdf" required /></div><div><button className="btn" disabled={runsLeft === 0}>Aus dem PDF lesen</button></div></form>
             </div>
           </>
         )}

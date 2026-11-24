@@ -82,7 +82,7 @@ export default async function Upsell({ params, searchParams }: { params: Promise
       {sp.msg ? <Notice text={sp.msg} /> : null}
 
       <section className="card stack">
-        <h2>Extras per E-Mail verkaufen {active ? <span className="badge" style={{ marginLeft: 8 }}>aktiv</span> : null}</h2>
+        <h2>Extras per E-Mail verkaufen {active ? <span className="badge ml8">aktiv</span> : null}</h2>
         <p className="small muted">
           Gäste, die dem Erhalt von Angeboten zugestimmt haben, bekommen 7 Tage vor der Anreise eine E-Mail mit Ihren Extras (z. B. Frühstück, Late Check-out, Ausflugspaket).
           Sie bezahlen direkt per TWINT oder Karte, das Geld geht an Ihr Stripe-Konto. Pontivo behält {pct} % der verkauften Extras. Keine Grundgebühr, kein Verkauf – keine Kosten.

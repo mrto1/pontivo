@@ -157,11 +157,11 @@ export function CheckinForm(props: {
               <div><label htmlFor={k("nationality")}>{x.nationality}</label>{countrySelect(k("nationality"), p.nationality, (v) => setP(i, "nationality", v))}</div>
             </div>
             {i > 0 ? (
-              <label className="check" style={{ marginTop: 12 }}><input type="checkbox" checked={p.sameAddress} onChange={(e) => setP(i, "sameAddress", e.target.checked)} {...inv(k("sameAddress"))} />{x.sameAddress}</label>
+              <label className="check mt12"><input type="checkbox" checked={p.sameAddress} onChange={(e) => setP(i, "sameAddress", e.target.checked)} {...inv(k("sameAddress"))} />{x.sameAddress}</label>
             ) : null}
             {i === 0 || !p.sameAddress ? (
               <div className="form-grid">
-                <div style={{ gridColumn: "1 / -1" }}><label htmlFor={k("street")}>{x.street}</label><input id={k("street")} value={p.street} onChange={(e) => setP(i, "street", e.target.value)} autoComplete={i === 0 ? "street-address" : "off"} required {...inv(k("street"))} /></div>
+                <div className="col-all"><label htmlFor={k("street")}>{x.street}</label><input id={k("street")} value={p.street} onChange={(e) => setP(i, "street", e.target.value)} autoComplete={i === 0 ? "street-address" : "off"} required {...inv(k("street"))} /></div>
                 <div><label htmlFor={k("postalCode")}>{x.postalCode}</label><input id={k("postalCode")} value={p.postalCode} onChange={(e) => setP(i, "postalCode", e.target.value)} autoComplete={i === 0 ? "postal-code" : "off"} required {...inv(k("postalCode"))} /></div>
                 <div><label htmlFor={k("city")}>{x.city}</label><input id={k("city")} value={p.city} onChange={(e) => setP(i, "city", e.target.value)} autoComplete={i === 0 ? "address-level2" : "off"} required {...inv(k("city"))} /></div>
                 <div><label htmlFor={k("country")}>{x.country}</label>{countrySelect(k("country"), p.country, (v) => setP(i, "country", v))}</div>

@@ -83,7 +83,7 @@ export default async function ApiPage({ params, searchParams }: { params: Promis
         <div><label htmlFor="label">Bezeichnung (z. B. Name der Agentur oder Website)</label><input id="label" name="label" required maxLength={80} /></div>
         <div className="row">
           <label>Gültig für<select name="days" defaultValue="365"><option value="90">90 Tage</option><option value="365">1 Jahr</option><option value="0">unbegrenzt</option></select></label>
-          <label style={{ flex: 1 }}>Nur diese IP-Adressen (optional, Komma)<input name="ips" placeholder="203.0.113.10" /></label>
+          <label className="flex1">Nur diese IP-Adressen (optional, Komma)<input name="ips" placeholder="203.0.113.10" /></label>
         </div>
         <div><button className="btn">Schlüssel erstellen</button></div>
       </form>
@@ -101,7 +101,7 @@ export default async function ApiPage({ params, searchParams }: { params: Promis
       <section className="card stack">
         <h2>Rückkehr nach der Zahlung</h2>
         <p className="small muted">Optional: Ihre Website kann bei der Buchung <code>return_url</code> mitgeben, dann kehrt der Gast nach der Zahlung dorthin zurück (mit <code>reference</code> und <code>result=paid|cancelled</code>). Erlaubt sind nur die hier eingetragenen Adressen (nur https, nur der Ursprung).</p>
-        <form action={origins} className="row"><input type="hidden" name="hotelId" value={hotel.id} /><input name="origins" style={{ flex: 1 }} defaultValue={(hotel.content.api?.returnOrigins ?? []).join(", ")} placeholder="https://www.beispiel.ch" /><button className="btn secondary">Speichern</button></form>
+        <form action={origins} className="row"><input type="hidden" name="hotelId" value={hotel.id} /><input name="origins" className="flex1" defaultValue={(hotel.content.api?.returnOrigins ?? []).join(", ")} placeholder="https://www.beispiel.ch" /><button className="btn secondary">Speichern</button></form>
       </section>
       <section className="card stack">
         <h2>Webhooks</h2>

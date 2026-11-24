@@ -12,7 +12,7 @@ export default async function Schulferien({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   const stats = await schoolHolidayStats(todayIn("Europe/Zurich"));
   return (
-    <div className="stack" style={{ gap: 24 }}>
+    <div className="stack gap24">
       <PageHead title="Schulferien importieren">Die Daten stammen von den kantonalen Erziehungsdirektionen und werden hier eingespielt, nicht im Code gepflegt. Je Zeile: <code>Kanton;Name;von;bis</code> (z. B. <code>ZH;Herbstferien;2027-10-02;2027-10-17</code>, Datum auch als TT.MM.JJJJ). Bestehende Einträge (gleicher Kanton, Name und Beginn) werden aktualisiert. Die Betriebe sehen die Ferien ihres Kantons als Vorschlag in der Preisempfehlung.</PageHead>
       <Flash sp={sp} />
       <section className="card stack">

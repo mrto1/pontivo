@@ -17,7 +17,7 @@ export default async function Rechnungen({ searchParams }: { searchParams: Promi
   const [invoices, open, billing] = await Promise.all([listPlatformInvoices(), listOpenQrInvoices(), getPlatformBilling()]);
   const To = <input type="hidden" name="to" value={TO} />;
   return (
-    <div className="stack" style={{ gap: 24 }}>
+    <div className="stack gap24">
       <PageHead title="Rechnungen an die Betriebe">Der Worker erstellt sie am 1. des Monats für den Vormonat. Weg Karte: Belastung der hinterlegten Karte, Fehlversuche lassen sich hier wiederholen. Weg QR-Rechnung: Mail mit Zahlteil, Erinnerung und Mahnungen 5, 20 und 35 Tage nach Fälligkeit.</PageHead>
       <Flash sp={sp} />
       {!billing.iban && open.length ? <p className="notice warn">Keine Zahlungsverbindung hinterlegt: Die QR-Rechnungen haben keinen Zahlteil. <a href="/plattform/zahlungsverbindung">Jetzt erfassen</a></p> : null}

@@ -123,7 +123,7 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
             {ai ? <form action={aiAction}><input type="hidden" name="hotelId" value={hotel.id} /><button className="btn" disabled={aiLeft === 0}>Mit KI neu berechnen</button></form> : null}
           </div>
         ) : null}
-        {ai ? <p className="small muted" style={{ margin: 0 }}>KI-Preisempfehlung ist an: Sie schlägt Preise innerhalb Ihres Preiskorridors vor, stützt sich nur auf Ihre Zahlen (keine Konkurrenzpreise) und ändert nichts ohne Ihre Bestätigung, ausser «automatisch übernehmen» ist bei der Regel eingeschaltet. Heute noch {aiLeft} Berechnungen. Läuft ausserdem täglich nachts.</p> : null}
+        {ai ? <p className="small muted m0">KI-Preisempfehlung ist an: Sie schlägt Preise innerhalb Ihres Preiskorridors vor, stützt sich nur auf Ihre Zahlen (keine Konkurrenzpreise) und ändert nichts ohne Ihre Bestätigung, ausser «automatisch übernehmen» ist bei der Regel eingeschaltet. Heute noch {aiLeft} Berechnungen. Läuft ausserdem täglich nachts.</p> : null}
         {proposals.length ? (
           <form action={decideAction} className="stack">
             <input type="hidden" name="hotelId" value={hotel.id} />
@@ -201,7 +201,7 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
 
       <section className="card stack" id="kalender">
         <h2>Feiertage und Schulferien ({hotel.canton})</h2>
-        <p className="muted small" style={{ margin: 0 }}>Vorschläge für die nächsten 13 Monate. Die Feiertage sind berechnet und können je nach Gemeinde abweichen, bitte prüfen. Schulferien erscheinen, sobald die Plattform sie für Ihren Kanton eingespielt hat. Gewählte Einträge werden zu Ereignissen oben und fliessen in die Preisempfehlung ein (die Preise ändern sich nicht von selbst).</p>
+        <p className="muted small m0">Vorschläge für die nächsten 13 Monate. Die Feiertage sind berechnet und können je nach Gemeinde abweichen, bitte prüfen. Schulferien erscheinen, sobald die Plattform sie für Ihren Kanton eingespielt hat. Gewählte Einträge werden zu Ereignissen oben und fliessen in die Preisempfehlung ein (die Preise ändern sich nicht von selbst).</p>
         {suggested.length === 0 ? <p className="muted">Keine neuen Vorschläge.</p> : manage ? (
           <form action={adoptAction} className="stack">
             <input type="hidden" name="hotelId" value={hotel.id} />

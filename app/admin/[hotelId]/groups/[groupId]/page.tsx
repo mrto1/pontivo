@@ -81,7 +81,7 @@ export default async function GroupPage({ params, searchParams }: { params: Prom
         {active ? (
           <form action={block} className="inline-form">{hid}
             <div><label htmlFor="f77db1">Zimmertyp</label><select id="f77db1" name="roomTypeId">{types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
-            <div><label htmlFor="f77db2">Zimmer</label><input id="f77db2" name="delta" type="number" min={1} max={200} defaultValue={1} style={{ width: 90 }} /></div>
+            <div><label htmlFor="f77db2">Zimmer</label><input id="f77db2" name="delta" type="number" min={1} max={200} defaultValue={1} className="w90" /></div>
             <button className="btn small">Reservieren</button>
           </form>
         ) : null}
@@ -101,7 +101,7 @@ export default async function GroupPage({ params, searchParams }: { params: Prom
         {d.rooming.length ? <p><DownloadLink href={`/admin/${hotel.id}/groups/${g.id}/rooming`}>Als CSV (Excel)</DownloadLink></p> : null}
         {active && d.blocks.length ? (
           <form action={member} className="stack">{hid}
-            <h3 style={{ margin: 0 }}>Teilnehmer hinzufügen</h3>
+            <h3 className="m0">Teilnehmer hinzufügen</h3>
             <div className="form-grid">
               <div><label htmlFor="f77db3">Vorname</label><input id="f77db3" name="firstName" required /></div>
               <div><label htmlFor="f77db4">Nachname</label><input id="f77db4" name="lastName" required /></div>

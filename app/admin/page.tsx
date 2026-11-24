@@ -25,7 +25,7 @@ export default async function AdminHome() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.hotelId}>
-                <td><a href={`/admin/${r.hotelId}`}>{r.name}</a>{r.setupOpen ? <span className="badge warn" style={{ marginLeft: 8 }}>Einrichtung offen</span> : null}</td>
+                <td><a href={`/admin/${r.hotelId}`}>{r.name}</a>{r.setupOpen ? <span className="badge warn ml8">Einrichtung offen</span> : null}</td>
                 <td>{STATUS[r.status] ?? r.status}</td>
                 <td>{r.arrivals}</td><td>{r.departures}</td><td>{r.inHouse}</td>
                 <td>{r.newInquiries > 0 ? <a href={`/admin/${r.hotelId}/inbox?quelle=web`}><strong>{r.newInquiries}</strong></a> : 0}</td>
@@ -42,8 +42,8 @@ export default async function AdminHome() {
       <p className="small muted">Umsatz = bestätigte Buchungen dieses Monats (nach Bestätigungsdatum), ohne Abzüge.</p>
       {canAdd ? <p><a className="btn secondary small" href="/admin/neu">Weiteren Betrieb anlegen</a></p> : null}
       {user.isPlatformAdmin ? <p style={{ marginTop: 24 }}><a href="/plattform">Plattform-Verwaltung</a></p> : null}
-      <p style={{ marginTop: 8 }}><a href="/admin/konto">Sicherheit: Passkey und Authenticator</a></p>
-      <form action="/api/auth/logout" method="post" style={{ marginTop: 8 }}><button className="btn secondary small">Abmelden</button></form>
+      <p className="mt8"><a href="/admin/konto">Sicherheit: Passkey und Authenticator</a></p>
+      <form action="/api/auth/logout" method="post" className="mt8"><button className="btn secondary small">Abmelden</button></form>
     </main>
   );
 }

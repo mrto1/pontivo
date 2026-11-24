@@ -52,9 +52,9 @@ export default async function Umschalten({ params, searchParams }: { params: Pro
       <ol className="stack" style={{ paddingLeft: 0, listStyle: "none" }}>
         {v.items.map((i, n) => (
           <li key={i.key} className="card stack">
-            <h2 style={{ margin: 0 }}>{n + 1}. {i.title} {i.done ? <span className="badge">erledigt</span> : <span className="badge warn">offen</span>}{i.required ? null : <span className="muted small"> (freiwillig)</span>}</h2>
-            <p style={{ margin: 0 }}>{i.help}</p>
-            <p className="small muted" style={{ margin: 0 }}>{i.hint}</p>
+            <h2 className="m0">{n + 1}. {i.title} {i.done ? <span className="badge">erledigt</span> : <span className="badge warn">offen</span>}{i.required ? null : <span className="muted small"> (freiwillig)</span>}</h2>
+            <p className="m0">{i.help}</p>
+            <p className="small muted m0">{i.hint}</p>
             {i.key === "reservierungen" ? (
               <form action={oldCount} className="inline-form">{H}
                 <div><label htmlFor="n">Künftige Reservierungen in der alten Software</label><input id="n" name="n" type="number" min={0} defaultValue={v.state.oldFuture ?? ""} required /></div>

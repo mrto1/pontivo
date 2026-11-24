@@ -1137,3 +1137,17 @@ button.plan-table { font: inherit; cursor: pointer; }
 .bk-filter { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; }
 .bk-filter input, .bk-filter select { width: 100%; }
 @media (max-width: 520px) { .bk-filter .btn { width: 100%; } }
+
+/* Hilfsklassen für Abstände und Breiten (ersetzen häufige Inline-Styles; !important wie zuvor das style-Attribut) */
+.m0 { margin: 0 !important; }
+.mt8 { margin-top: 8px !important; }
+.mt12 { margin-top: 12px !important; }
+.mt16 { margin-top: 16px !important; }
+.ml8 { margin-left: 8px !important; }
+.gap24 { gap: 24px !important; }
+.flex1 { flex: 1 !important; }
+.col-all { grid-column: 1 / -1 !important; }
+.ta-r { text-align: right !important; }
+.w70 { width: 70px !important; }
+.w80 { width: 80px !important; }
+.w90 { width: 90px !important; }

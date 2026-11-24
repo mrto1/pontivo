@@ -46,19 +46,19 @@ export default async function DayClosePage({ params, searchParams }: { params: P
       <section className="card stack">
         <h2>{formatDay(day, "de")} {closed ? "· abgeschlossen" : "· offen"}</h2>
         <table className="table">
-          <thead><tr><th>Zahlungen vor Ort</th><th style={{ textAlign: "right" }}>Betrag</th></tr></thead>
+          <thead><tr><th>Zahlungen vor Ort</th><th className="ta-r">Betrag</th></tr></thead>
           <tbody>
-            {Object.entries(t.onsite).map(([m, v]) => <tr key={m}><td>{METHOD[m] ?? m}</td><td style={{ textAlign: "right" }}>{formatChf(v)}</td></tr>)}
+            {Object.entries(t.onsite).map(([m, v]) => <tr key={m}><td>{METHOD[m] ?? m}</td><td className="ta-r">{formatChf(v)}</td></tr>)}
             {Object.keys(t.onsite).length === 0 ? <tr><td colSpan={2} className="muted">Keine Zahlungen vor Ort.</td></tr> : null}
-            <tr><td><strong>Summe vor Ort</strong></td><td style={{ textAlign: "right" }}><strong>{formatChf(onsiteTotal)}</strong></td></tr>
-            <tr><td>Online-Zahlungen (Stripe, nach Rückerstattung)</td><td style={{ textAlign: "right" }}>{formatChf(t.online)}</td></tr>
+            <tr><td><strong>Summe vor Ort</strong></td><td className="ta-r"><strong>{formatChf(onsiteTotal)}</strong></td></tr>
+            <tr><td>Online-Zahlungen (Stripe, nach Rückerstattung)</td><td className="ta-r">{formatChf(t.online)}</td></tr>
           </tbody>
         </table>
         <table className="table">
-          <thead><tr><th>Rechnungen</th><th style={{ textAlign: "right" }}>Betrag</th></tr></thead>
+          <thead><tr><th>Rechnungen</th><th className="ta-r">Betrag</th></tr></thead>
           <tbody>
-            <tr><td>{t.invoices.count} Rechnung(en), {t.invoices.creditNotes} Gutschrift(en), Total brutto</td><td style={{ textAlign: "right" }}>{formatChf(t.invoices.grossRappen)}</td></tr>
-            {Object.entries(t.invoices.vatByBps).map(([bps, v]) => <tr key={bps}><td>darin MWST {(Number(bps) / 100).toFixed(1)} %</td><td style={{ textAlign: "right" }}>{formatChf(v)}</td></tr>)}
+            <tr><td>{t.invoices.count} Rechnung(en), {t.invoices.creditNotes} Gutschrift(en), Total brutto</td><td className="ta-r">{formatChf(t.invoices.grossRappen)}</td></tr>
+            {Object.entries(t.invoices.vatByBps).map(([bps, v]) => <tr key={bps}><td>darin MWST {(Number(bps) / 100).toFixed(1)} %</td><td className="ta-r">{formatChf(v)}</td></tr>)}
           </tbody>
         </table>
         {closed ? (
@@ -75,7 +75,7 @@ export default async function DayClosePage({ params, searchParams }: { params: P
             <p>Erwartetes Bargeld aus Zahlungen vor Ort: <strong>{formatChf(t.onsite.cash ?? 0)}</strong></p>
             <div className="inline-form">
               <div><label htmlFor="counted">Gezähltes Bargeld (CHF, leer = nicht gezählt)</label><input id="counted" name="counted" inputMode="decimal" /></div>
-              <div style={{ flex: 1 }}><label htmlFor="note">Notiz</label><input id="note" name="note" maxLength={500} /></div>
+              <div className="flex1"><label htmlFor="note">Notiz</label><input id="note" name="note" maxLength={500} /></div>
             </div>
             <p className="muted small">Nach dem Abschluss lässt sich auf diesen Tag nichts mehr buchen und keine Rechnung mehr ausstellen.</p>
             <div><button className="btn">Tag abschliessen</button></div>

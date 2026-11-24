@@ -28,15 +28,15 @@ export function WaitlistForm(props: { locale: Locale; hotelSlug: string; checkin
   if (state === "done") return <p className="notice" role="status">{m.waitDone}</p>;
   return (
     <form onSubmit={submit} className="card stack waitlist-form">
-      <h3 style={{ margin: 0 }}>{m.waitTitle}</h3>
-      <p className="muted" style={{ margin: 0 }}>{m.waitText}</p>
+      <h3 className="m0">{m.waitTitle}</h3>
+      <p className="muted m0">{m.waitText}</p>
       <div className="form-grid">
         <div><label>{m.waitName}</label><input name="name" autoComplete="name" /></div>
         <div><label>{m.waitEmail}</label><input name="email" type="email" required autoComplete="email" /></div>
       </div>
       {state === "error" ? <p className="notice warn" role="alert">{m.waitError}</p> : null}
       <div><button className="btn" type="submit" disabled={state === "busy" || !ready}>{m.waitButton}</button></div>
-      <p className="muted small" style={{ margin: 0 }}>{m.waitNote}</p>
+      <p className="muted small m0">{m.waitNote}</p>
     </form>
   );
 }

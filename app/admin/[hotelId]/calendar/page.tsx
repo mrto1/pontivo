@@ -121,7 +121,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
         </PeriodNav>
       </div>
       {sp.msg ? <Notice text={sp.msg} /> : null}
-      <p className="small muted" style={{ margin: 0 }}>
+      <p className="small muted m0">
         Zahl = freie Zimmer pro Nacht · rot = ausgebucht
         <InfoTip title="So lesen Sie den Kalender">
           <p>Die Zahl ist die Anzahl <strong>freier Zimmer</strong> je Nacht, rot bedeutet ausgebucht.</p>
@@ -204,9 +204,9 @@ export default async function Calendar({ params, searchParams }: { params: Promi
 
       {canEdit ? (
         <div className="grid">
-          <form action={saveRates} className="card stack" style={{ gridColumn: "1 / -1" }}>
+          <form action={saveRates} className="card stack col-all">
             <h3>Preise und Regeln setzen</h3>
-            <p className="muted small" style={{ margin: 0 }}>
+            <p className="muted small m0">
               Mehrere Zeilen werden zusammen gespeichert. Leere Felder bleiben unverändert, Zeilen ohne Rateplan werden ignoriert.
             </p>
             <input type="hidden" name="hotelId" value={hotel.id} />
@@ -227,7 +227,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
           <div className="cal-lower">
           <form action={saveBlock} className="card stack">
             <h3>Zimmer sperren / freigeben</h3>
-            <p className="muted small" style={{ margin: 0 }}>
+            <p className="muted small m0">
               Sperrt Zimmer für einen Zeitraum, zum Beispiel für Renovation oder Eigenbedarf. Mit Anzahl 0 geben Sie gesperrte Zimmer wieder frei.
             </p>
             <input type="hidden" name="hotelId" value={hotel.id} />
@@ -250,7 +250,7 @@ export default async function Calendar({ params, searchParams }: { params: Promi
 
           <aside className="card stack">
             <h3>Zimmer & Tarife</h3>
-            <p className="muted small" style={{ margin: 0 }}>
+            <p className="muted small m0">
               Zimmertypen, Anzahl Zimmer, Fotos, Tarife und Extras ändern oder neu anlegen Sie unter «Einstellungen → Zimmer & Tarife». Der Kalender zeigt dann automatisch die neuen Zeilen.
             </p>
             <div><a className="btn secondary" href={`/admin/${hotel.id}/rooms`}>Zimmer anpassen</a></div>

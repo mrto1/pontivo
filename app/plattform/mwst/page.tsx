@@ -13,7 +13,7 @@ export default async function Mwst({ searchParams }: { searchParams: Promise<Rec
   const sp = await searchParams;
   const vat = await getPlatformVat();
   return (
-    <div className="stack" style={{ gap: 24 }}>
+    <div className="stack gap24">
       <PageHead title="MWST der Plattform">Ab wann ist Lynxora MWST-pflichtig? Ab diesem Datum weisen neue Rechnungen an die Betriebe die MWST aus und belasten sie zusätzlich (die Preise verstehen sich ohne MWST, Bedingungen für Gastgeber Ziffer 2). Massgebend ist der letzte Tag des Leistungsmonats; beginnt die Pflicht mitten im Monat, gilt sie für den ganzen Monat. Bereits ausgestellte Rechnungen ändern sich nicht.</PageHead>
       <Flash sp={sp} />
       <section className="card stack">

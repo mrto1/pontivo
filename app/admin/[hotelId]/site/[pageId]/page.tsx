@@ -575,7 +575,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
     <div className="stack editor-main">
       <a href={`/admin/${hotel.id}/site`}>← Website</a>
       <div style={{ display: "flex", gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>
-        <h1 style={{ margin: 0 }}>{isHome ? "Startseite" : page.title.de || page.title.en}</h1>
+        <h1 className="m0">{isHome ? "Startseite" : page.title.de || page.title.en}</h1>
         <a href={url} target="_blank">Seite ansehen</a>
       </div>
       {sp.msg ? <Notice text={sp.msg} /> : null}
@@ -591,7 +591,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
               <form action={translateAction}>{ids}<input type="hidden" name="mode" value="all" /><button className="btn secondary small" disabled={!left} title="Überschreibt auch angepasste Übersetzungen">Alles neu übersetzen</button></form>
               <span className="small muted">aus dem Deutschen in alle Sprachen · noch {left} diesen Monat</span>
             </div>
-          ) : extra.length && canEdit && !translationEnabled() ? <p className="small muted" style={{ margin: 0 }}>Automatische Übersetzung ist noch nicht eingerichtet. Felder können Sie von Hand ausfüllen; leere Felder zeigen Englisch, dann Deutsch.</p> : null}
+          ) : extra.length && canEdit && !translationEnabled() ? <p className="small muted m0">Automatische Übersetzung ist noch nicht eingerichtet. Felder können Sie von Hand ausfüllen; leere Felder zeigen Englisch, dann Deutsch.</p> : null}
         </div>
       ) : (
         <p className="small muted">Die Website ist nur auf Deutsch. Weitere Sprachen wählen Sie unter <a href={`/admin/${hotel.id}/site#sprachen`}>Website → Sprachen</a>.</p>
@@ -600,7 +600,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
 
       <details className="card" open={!isHome && sp.msg === undefined}>
         <summary><strong>Seiten-Einstellungen</strong> <span className="muted small">Titel, Menü, Adresse, Google</span></summary>
-        <form action={saveMeta} className="stack" style={{ marginTop: 12 }}>
+        <form action={saveMeta} className="stack mt12">
           {ids}
           <LField name="title" label="Titel" value={page.title} max={120} langs={langs} />
           {!isHome ? (<>
@@ -630,7 +630,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
       {page.blocks.map((b, i) => (
         <section key={b.id} id={`b-${b.id}`} className="card stack">
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-            <h3 style={{ margin: 0 }}>{i + 1}. {label(b.type)}</h3>
+            <h3 className="m0">{i + 1}. {label(b.type)}</h3>
             {canEdit ? (
               <div className="inline-form" style={{ gap: 4 }}>
                 {(["up", "down", "delete"] as const).map((a) => (

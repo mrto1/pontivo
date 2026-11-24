@@ -43,7 +43,7 @@ export function InvoiceSheet({ hotel, v }: { hotel: Hotel; v: InvoiceView }) {
           {hotel.contactPhone ? <>{hotel.contactPhone}<br /></> : null}{hotel.contactEmail}
           {set.vatLiable && set.vatNumber ? <><br />{set.vatNumber}</> : null}
         </div>
-        <div style={{ textAlign: "right" }}>
+        <div className="ta-r">
           <h1>{title}</h1>
           Nr. {inv.number}<br />Datum {inv.issuedOn ? formatDay(inv.issuedOn, "de") : ""}
           {!credit && inv.dueOn && v.openRappen > 0 ? <><br />Zahlbar bis {formatDay(inv.dueOn, "de")}</> : null}
@@ -78,7 +78,7 @@ export function InvoiceSheet({ hotel, v }: { hotel: Hotel; v: InvoiceView }) {
           <table style={{ width: "auto" }}><tbody>{v.payments.map((p, i) => <tr key={i}><td>{formatDay(p.date, "de")}</td><td>{p.label}</td><td className="n">{formatChf(p.amountRappen)}</td></tr>)}</tbody></table>
         </>
       ) : null}
-      {!credit ? <p style={{ marginTop: 8 }}><strong>{v.openRappen > 0 ? `Offener Betrag ${formatChf(v.openRappen)}` : "Der Betrag ist vollständig bezahlt. Vielen Dank."}</strong></p> : null}
+      {!credit ? <p className="mt8"><strong>{v.openRappen > 0 ? `Offener Betrag ${formatChf(v.openRappen)}` : "Der Betrag ist vollständig bezahlt. Vielen Dank."}</strong></p> : null}
       {inv.note ? <p>{inv.note}</p> : null}
       {set.footer ? <p className="muted">{set.footer}</p> : null}
 
@@ -99,7 +99,7 @@ export function InvoiceSheet({ hotel, v }: { hotel: Hotel; v: InvoiceView }) {
               <div className="lbl">Währung / Betrag</div><p>{formatChf(v.openRappen)}</p>
             </div>
             <div>
-              <div className="lbl" style={{ marginTop: 8 }}>Konto / Zahlbar an</div>
+              <div className="lbl mt8">Konto / Zahlbar an</div>
               <p>{account.replace(/(.{4})/g, "$1 ").trim()}<br />{hotel.name}<br />{hotel.addressLine}<br />{hotel.postalCode} {hotel.city}</p>
               {qrRef ? <><div className="lbl">Referenz</div><p>{qrRef}</p></> : null}
               <div className="lbl">Zusätzliche Informationen</div><p>Rechnung {inv.number}</p>

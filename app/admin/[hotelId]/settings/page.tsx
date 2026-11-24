@@ -138,7 +138,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
         {isManager ? (
           <details>
             <summary className="btn secondary small">Satz bestätigen / korrigieren</summary>
-            <form action={saveTax} className="stack" style={{ marginTop: 12 }}>
+            <form action={saveTax} className="stack mt12">
               {hidden}
               <div className="inline-form">
                 <div><label htmlFor="fe5a611">Erwachsene CHF/Nacht</label><input id="fe5a611" name="adult" required inputMode="decimal" defaultValue={rule?.adultRappen != null ? (rule.adultRappen / 100).toFixed(2) : ""} /></div>

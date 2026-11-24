@@ -113,7 +113,7 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
             {sources.map((x) => <a key={x.k} href={q(x.k)} className={x.k === quelle ? "on" : ""}>{x.label}</a>)}
           </div>
         ) : null}
-        <p className="muted small" style={{ margin: 0 }}>
+        <p className="muted small m0">
           {webOn ? <>Anfragen von der Website und aus dem Chat kommen auch per E-Mail an {hotel.contactEmail}. {openInq ? <strong>{openInq} offen. </strong> : null}</> : null}
           {portalOn ? <>Portal-Nachrichten beantworten Sie hier, die Antwort geht über den Channel-Manager ans Portal. {unread ? <strong>{unread} ungelesen.</strong> : null}</> : null}
         </p>
@@ -127,11 +127,11 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
               {wishList.map(({ r, reference, checkin, checkout, bookingId }) => (
                 <article key={r.id} className="card stack" style={{ opacity: r.status === "done" ? 0.65 : 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
-                    <h3 style={{ margin: 0 }}>{r.label} · <a href={`/admin/${hotel.id}/bookings/${bookingId}`}>{reference}</a></h3>
+                    <h3 className="m0">{r.label} · <a href={`/admin/${hotel.id}/bookings/${bookingId}`}>{reference}</a></h3>
                     <span className="small muted">{fmt(r.createdAt)} · Aufenthalt {formatDay(checkin, "de")} – {formatDay(checkout, "de")}</span>
                   </div>
                   {r.message ? <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{r.message}</p> : null}
-                  {r.status === "done" && r.note ? <p className="small muted" style={{ margin: 0 }}>Antwort an den Gast: {r.note}</p> : null}
+                  {r.status === "done" && r.note ? <p className="small muted m0">Antwort an den Gast: {r.note}</p> : null}
                   <form action={wishDone} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                     <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={r.id} />
                     <input type="hidden" name="done" value={r.status === "open" ? "1" : "0"} />
@@ -153,7 +153,7 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
               {list.map((x) => (
                 <article key={x.id} className="card stack" style={{ opacity: x.status === "done" ? 0.65 : 1 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
-                    <h3 style={{ margin: 0 }}>{KIND[x.kind] ?? x.kind} · {x.name}</h3>
+                    <h3 className="m0">{KIND[x.kind] ?? x.kind} · {x.name}</h3>
                     <span className="small muted">{x.createdAt.toLocaleString("de-CH", { timeZone: hotel.timezone })} · Sprache {x.language.toUpperCase()}{x.pageSlug ? ` · Seite /${x.pageSlug}` : ""}</span>
                   </div>
                   <div className="kv small">
@@ -163,7 +163,7 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
                     {x.persons ? (<><span className="muted">Personen</span><span>{x.persons}</span></>) : null}
                   </div>
                   {x.message ? <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{x.message}</p> : null}
-                  {offersOf(x.id).map((o) => <p key={o.id} className="small" style={{ margin: 0 }}>Angebot: <a href={`/admin/${hotel.id}/offers/${o.id}`}>{o.title}</a> · {OFFER_STATUS_LABEL[o.status]}</p>)}
+                  {offersOf(x.id).map((o) => <p key={o.id} className="small m0">Angebot: <a href={`/admin/${hotel.id}/offers/${o.id}`}>{o.title}</a> · {OFFER_STATUS_LABEL[o.status]}</p>)}
                   {canEdit && x.kind !== "table" ? (
                     <form action={makeOffer}>
                       <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={x.id} />

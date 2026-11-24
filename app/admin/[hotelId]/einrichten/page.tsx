@@ -239,7 +239,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           <form action={saveRestaurantBasics} className="stack">{H}
             <div><label htmlFor="name">Name des Betriebs (so erscheint er auf der Website)</label><input id="name" name="name" defaultValue={hotel.name} required /></div>
             <div className="form-grid">
-              <div style={{ gridColumn: "1 / -1" }}><label htmlFor="addressLine">Strasse und Nr.</label><input id="addressLine" name="addressLine" defaultValue={hotel.addressLine ?? ""} required autoComplete="street-address" /></div>
+              <div className="col-all"><label htmlFor="addressLine">Strasse und Nr.</label><input id="addressLine" name="addressLine" defaultValue={hotel.addressLine ?? ""} required autoComplete="street-address" /></div>
               <div><label htmlFor="postalCode">PLZ</label><input id="postalCode" name="postalCode" defaultValue={hotel.postalCode ?? ""} required inputMode="numeric" maxLength={4} /></div>
               <div><label htmlFor="city">Ort</label><input id="city" name="city" defaultValue={hotel.city ?? ""} required /></div>
               <div><label htmlFor="phone">Telefon für Gäste (optional)</label><input id="phone" name="phone" defaultValue={hotel.contactPhone ?? ""} type="tel" /></div>
@@ -260,7 +260,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
         <form action={saveBasics} className="stack">{H}
           <div><label htmlFor="name">Name des Betriebs (so erscheint er auf der Website)</label><input id="name" name="name" defaultValue={hotel.name} required /></div>
           <div className="form-grid">
-            <div style={{ gridColumn: "1 / -1" }}><label htmlFor="addressLine">Strasse und Nr.</label><input id="addressLine" name="addressLine" defaultValue={hotel.addressLine ?? ""} required autoComplete="street-address" /></div>
+            <div className="col-all"><label htmlFor="addressLine">Strasse und Nr.</label><input id="addressLine" name="addressLine" defaultValue={hotel.addressLine ?? ""} required autoComplete="street-address" /></div>
             <div><label htmlFor="postalCode">PLZ</label><input id="postalCode" name="postalCode" defaultValue={hotel.postalCode ?? ""} required inputMode="numeric" maxLength={4} /></div>
             <div><label htmlFor="city">Ort</label><input id="city" name="city" defaultValue={hotel.city ?? ""} required /></div>
             <div><label htmlFor="phone">Telefon für Gäste (optional)</label><input id="phone" name="phone" defaultValue={hotel.contactPhone ?? ""} type="tel" /></div>
@@ -279,7 +279,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       const rows = await moduleRows(hotel.id);
       body = (
         <form action={saveModules} className="stack">{H}
-          <p className="muted" style={{ margin: 0 }}>Kreuzen Sie an, was auf Sie zutrifft. Alles andere bleibt ausgeblendet und lässt sich jederzeit unter «Funktionen» ändern.</p>
+          <p className="muted m0">Kreuzen Sie an, was auf Sie zutrifft. Alles andere bleibt ausgeblendet und lässt sich jederzeit unter «Funktionen» ändern.</p>
           {(resto ? CHOICES.filter((c) => RESTAURANT_CHOICES.includes(c.key)) : CHOICES).map((c) => (
             <label key={c.key} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
               <input type="checkbox" name={`c_${c.key}`} value="1" defaultChecked={choiceOn(rows, c, isOn)} style={{ width: "auto", marginTop: 4 }} />
@@ -298,7 +298,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           {tables.length ? <p className="notice">✓ {tables.length} Tische mit zusammen {tables.reduce((a, t) => a + t.seats, 0)} Plätzen. Plätze, Form und Lage im Plan ändern Sie unter <a href={`/admin/${hotel.id}/restaurant/tische`}>Tischplan</a>.</p> : null}
           <form action={saveTablesStep} className="stack">{H}
             {tables.length ? <input type="hidden" name="stay" value="1" /> : null}
-            <p className="muted" style={{ margin: 0 }}>Für den Anfang genügt die Zahl der Tische. Sie heissen «Tisch 1», «Tisch 2» …; Namen, Plätze und Lage passen Sie später im Tischplan an.</p>
+            <p className="muted m0">Für den Anfang genügt die Zahl der Tische. Sie heissen «Tisch 1», «Tisch 2» …; Namen, Plätze und Lage passen Sie später im Tischplan an.</p>
             <div className="form-grid">
               <div><label htmlFor="count">Anzahl Tische</label><input id="count" name="count" type="number" min={1} max={100} defaultValue={tables.length ? 1 : 10} required /></div>
               <div><label htmlFor="seats">Plätze je Tisch</label><input id="seats" name="seats" type="number" min={1} max={50} defaultValue={4} required /></div>
@@ -343,7 +343,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             </div>
           ) : null}
           <p>Gäste reservieren auf Ihrer Website, über einen Link oder QR-Code selbst und bekommen eine Bestätigung mit Storno-Link. Das geht sofort, ohne auf Stripe zu warten; die Anzahlung bleibt aus, bis Stripe freigegeben ist.</p>
-          <p className="small muted" style={{ margin: 0 }}>Zeitfenster, in denen ein Tisch beginnen kann (im Raster von 30 Minuten):</p>
+          <p className="small muted m0">Zeitfenster, in denen ein Tisch beginnen kann (im Raster von 30 Minuten):</p>
           <div className="form-grid">
             {[1, 2].map((n) => { const w = cfg.windows[n - 1]; return (
               <div key={n} className="inline-form"><label htmlFor={`from${n}`}>{n === 1 ? "Mittag" : "Abend"} von</label><input id={`from${n}`} name={`from${n}`} type="time" defaultValue={w?.from ?? ""} /><label htmlFor={`to${n}`}>bis</label><input id={`to${n}`} name={`to${n}`} type="time" defaultValue={w?.to ?? ""} /></div>
@@ -362,7 +362,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
     case "umstieg":
       body = (
         <form action={saveUmstieg} className="stack">{H}
-          <p className="muted" style={{ margin: 0 }}>Haben Sie bereits eine Hotelsoftware oder Buchungsverwaltung?</p>
+          <p className="muted m0">Haben Sie bereits eine Hotelsoftware oder Buchungsverwaltung?</p>
           <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
             <input type="radio" name="answer" value="none" defaultChecked={hotel.onboarding.previousSoftware !== "yes"} style={{ width: "auto", marginTop: 4 }} />
             <span>Nein, ich starte neu mit Pontivo.</span>
@@ -371,7 +371,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             <input type="radio" name="answer" value="yes" defaultChecked={hotel.onboarding.previousSoftware === "yes"} style={{ width: "auto", marginTop: 4 }} />
             <span>Ja, ich wechsle von einer anderen Software und möchte meine Reservierungen übernehmen.</span>
           </label>
-          <p className="small muted" style={{ margin: 0 }}>Bei «Ja» läuft Ihre alte Software zunächst parallel weiter. Unter «Datenübernahme» finden Sie dann den Import, die Umschalt-Checkliste und Hinweise zum Parallelbetrieb.</p>
+          <p className="small muted m0">Bei «Ja» läuft Ihre alte Software zunächst parallel weiter. Unter «Datenübernahme» finden Sie dann den Import, die Umschalt-Checkliste und Hinweise zum Parallelbetrieb.</p>
           <div><button className="btn">Speichern und weiter</button></div>
         </form>
       );
@@ -390,7 +390,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           ) : <p className="notice warn">Für Ihre Gemeinde kennen wir den Satz noch nicht. Bitte tragen Sie ihn ein – er steht im Kurtaxenreglement der Gemeinde oder auf der Website der Tourismusorganisation.</p>}
           <details open={!known}>
             <summary>{known ? "Anderen Satz eintragen" : "Satz eintragen"}</summary>
-            <form action={saveTax} className="stack" style={{ marginTop: 12 }}>{H}
+            <form action={saveTax} className="stack mt12">{H}
               <div className="form-grid">
                 <div><label htmlFor="f02041">Erwachsene, CHF pro Nacht</label><input id="f02041" name="adult" inputMode="decimal" required placeholder="3.50" /></div>
                 <div><label htmlFor="f02042">Kinder frei unter (Jahren)</label><input id="f02042" name="freeUnder" type="number" min={0} max={18} defaultValue={6} /></div>
@@ -399,7 +399,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
               </div>
               <div><button className="btn">Satz bestätigen</button></div>
             </form>
-            <form action={saveTax} style={{ marginTop: 8 }}>{H}<input type="hidden" name="none" value="1" /><button className="btn secondary small">In meiner Gemeinde gibt es keine Kurtaxe</button></form>
+            <form action={saveTax} className="mt8">{H}<input type="hidden" name="none" value="1" /><button className="btn secondary small">In meiner Gemeinde gibt es keine Kurtaxe</button></form>
           </details>
           {known ? <form action={skip}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value="unterkunft" /><button className="btn">Stimmt so, weiter</button></form> : null}
         </div>
@@ -429,7 +429,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           {ex.some((e) => e.mandatory) ? <p className="small muted">Im Preis enthalten: {ex.filter((e) => e.mandatory).map((e) => `${e.name.de} ${formatChf(e.priceRappen)}`).join(", ")}</p> : null}
           <details className="card" open={!rooms.length}>
             <summary><strong>{rooms.length ? (whole ? `Weitere ${unit} hinzufügen` : "Weiteren Zimmertyp hinzufügen") : (whole ? `${unit} erfassen` : "Zimmertyp erfassen")}</strong></summary>
-            <form action={saveUnit} className="stack" style={{ marginTop: 12 }}>{H}
+            <form action={saveUnit} className="stack mt12">{H}
               {rooms.length ? <input type="hidden" name="stay" value="1" /> : null}
               <div className="form-grid">
                 <div><label htmlFor="f02045">Name</label><input id="f02045" name="name" required placeholder={whole ? "z. B. Wohnung Säntisblick" : "z. B. Doppelzimmer"} /></div>

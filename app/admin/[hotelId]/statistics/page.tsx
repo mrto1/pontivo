@@ -39,16 +39,16 @@ export default async function Statistik({ params, searchParams }: { params: Prom
       {o ? (
         <>
           <section className="card hero-stat">
-            <p className="muted small" style={{ margin: 0 }}>{PERIOD_LABEL[period]}: gespart gegenüber Buchungsportalen</p>
+            <p className="muted small m0">{PERIOD_LABEL[period]}: gespart gegenüber Buchungsportalen</p>
             <p className="hero-num">{chf0(o.savedRappen)}</p>
             {o.direct.bookings ? (
-              <p className="muted small" style={{ margin: 0 }}>
+              <p className="muted small m0">
                 {o.direct.bookings} Direktbuchung{o.direct.bookings === 1 ? "" : "en"} · {o.direct.nights} Nächte · Zimmerumsatz {formatChf(o.direct.roomsRappen)}.
                 {" "}Bei {(o.commissionBps / 100).toLocaleString("de-CH")} % Portal-Provision wären {formatChf(bpsOf(o.direct.roomsRappen, o.commissionBps))} angefallen, die Pontivo-Gebühr betrug {formatChf(o.direct.feeRappen)}.
                 {" "}<a href={`/admin/${hotel.id}/channex#provision`}>Provision ändern</a>
               </p>
             ) : (
-              <p className="muted small" style={{ margin: 0 }}>Noch keine Direktbuchungen in diesem Zeitraum.</p>
+              <p className="muted small m0">Noch keine Direktbuchungen in diesem Zeitraum.</p>
             )}
           </section>
           <div className="tiles">

@@ -221,7 +221,7 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
       {manager ? (
         <section className="card stack">
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
-            <h2 style={{ margin: 0 }}>Zimmer verwalten</h2>
+            <h2 className="m0">Zimmer verwalten</h2>
             <Link className="btn" href={`${base}?from=${from}&room=neu`} scroll={false}>+ Zimmer hinzufügen</Link>
           </div>
           <p className="small muted">Tippen Sie auf ein Zimmer, um Nummer, Etage oder Notiz zu ändern, es zu sperren (z. B. wegen Renovation) oder zu löschen. Verfügbarkeit und Portale ändern sich dadurch nicht.</p>
@@ -240,7 +240,7 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
             const rs = rms.filter((r) => r.roomTypeId === t.id);
             return rs.length ? (
               <div key={t.id} className="stack" style={{ gap: 6 }}>
-                <h3 className="small muted" style={{ margin: 0 }}>{t.name}</h3>
+                <h3 className="small muted m0">{t.name}</h3>
                 <ul className="plan-list">
                   {rs.map((r) => (
                     <li key={r.id}>

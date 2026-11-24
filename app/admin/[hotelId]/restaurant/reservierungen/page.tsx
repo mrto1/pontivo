@@ -96,7 +96,7 @@ export default async function ReservationsPage({ params, searchParams }: { param
       <PeriodNav prev={`?day=${addDays(day, -1)}`} next={`?day=${addDays(day, 1)}`} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }}>
         <span className="small muted">{formatDay(day, "de")} · {live.length} Reservierungen, {guests} Gäste{peak ? `, gleichzeitig bis zu ${peak} von ${cfg.capacity} Plätzen` : ""}</span>
       </PeriodNav>
-      {!tables.length ? <p className="notice">Noch keine Tische angelegt. {atLeast(role, "manager") ? <a href={`/admin/${hotel.id}/restaurant/tische`}>Tische anlegen</a> : "Bitte die Leitung, Tische anzulegen."}</p> : atLeast(role, "manager") ? <p className="small muted" style={{ margin: 0 }}><a href={`/admin/${hotel.id}/restaurant/tische`}>Tische bearbeiten</a></p> : null}
+      {!tables.length ? <p className="notice">Noch keine Tische angelegt. {atLeast(role, "manager") ? <a href={`/admin/${hotel.id}/restaurant/tische`}>Tische anlegen</a> : "Bitte die Leitung, Tische anzulegen."}</p> : atLeast(role, "manager") ? <p className="small muted m0"><a href={`/admin/${hotel.id}/restaurant/tische`}>Tische bearbeiten</a></p> : null}
       <section className="card">
         {list.length ? (
           <table className="table" data-testid="res-list"><thead><tr><th>Zeit</th><th>Pers.</th><th>Gast</th><th>Tisch</th><th>Status</th><th /></tr></thead><tbody>
@@ -113,7 +113,7 @@ export default async function ReservationsPage({ params, searchParams }: { param
                       <form action={profile} className="stack" style={{ marginTop: 6 }}>{H}{D}<input type="hidden" name="email" value={r.email} />
                         <div><label htmlFor={`tags-${r.id}`}>Tags (Komma)</label><input id={`tags-${r.id}`} name="tags" defaultValue={prof.get(r.email.toLowerCase())?.tags.join(", ") ?? ""} placeholder="Stammgast, Fensterplatz" maxLength={200} /></div>
                         <div><label htmlFor={`note-${r.id}`}>Notiz</label><input id={`note-${r.id}`} name="note" defaultValue={prof.get(r.email.toLowerCase())?.note ?? ""} maxLength={1000} placeholder="z. B. ohne Nüsse, mag Ecktisch" /></div>
-                        <p className="muted" style={{ margin: 0 }}>Allergien nur als kurzer Hinweis für die Küche, keine Gesundheitsangaben.</p>
+                        <p className="muted m0">Allergien nur als kurzer Hinweis für die Küche, keine Gesundheitsangaben.</p>
                         <div><button className="btn secondary small">Speichern</button></div>
                       </form>
                     </details>
@@ -140,7 +140,7 @@ export default async function ReservationsPage({ params, searchParams }: { param
         <h2>Neue Reservierung</h2>
         <div className="inline-form">
           <div><label htmlFor="time">Zeit</label><input id="time" name="time" type="time" step={900} required /></div>
-          <div><label htmlFor="party">Personen</label><input id="party" name="party" type="number" min={1} max={50} defaultValue={2} required style={{ width: 80 }} /></div>
+          <div><label htmlFor="party">Personen</label><input id="party" name="party" type="number" min={1} max={50} defaultValue={2} required className="w80" /></div>
           <div><label htmlFor="tableId">Tisch</label><select id="tableId" name="tableId"><option value="">noch offen</option>{tables.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.seats})</option>)}</select></div>
         </div>
         <div><label htmlFor="name">Name</label><input id="name" name="name" required maxLength={80} /></div>

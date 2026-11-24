@@ -98,8 +98,8 @@ export function BookingForm(props: {
   return (
     <form onSubmit={submit}>
       {extras.length ? (
-        <fieldset className="plain extras-pick" style={{ marginTop: 16 }}>
-          <legend><h3 style={{ margin: 0 }}>{d.extras}</h3></legend>
+        <fieldset className="plain extras-pick mt16">
+          <legend><h3 className="m0">{d.extras}</h3></legend>
           {extras.map((e) => {
             const max = extraMaxQuantity(e, persons);
             const q = qty[e.id] ?? 0;
@@ -110,7 +110,7 @@ export function BookingForm(props: {
                   {e.description ? <div className="small muted">{e.description}</div> : null}
                 </div>
                 {max === 1 ? (
-                  <label className="check" style={{ margin: 0 }}><input type="checkbox" checked={q === 1} onChange={(ev) => setQty({ ...qty, [e.id]: ev.target.checked ? 1 : 0 })} aria-label={e.name} /></label>
+                  <label className="check m0"><input type="checkbox" checked={q === 1} onChange={(ev) => setQty({ ...qty, [e.id]: ev.target.checked ? 1 : 0 })} aria-label={e.name} /></label>
                 ) : (
                   <select value={q} onChange={(ev) => setQty({ ...qty, [e.id]: Number(ev.target.value) })} aria-label={`${e.name}: ${perPerson(e.unit) ? d.extrasPersons : d.extrasQty}`} style={{ width: 130 }}>
                     {Array.from({ length: max + 1 }, (_, i) => <option key={i} value={i}>{i}{perPerson(e.unit) && i ? ` ${d.extrasPersons}` : ""}</option>)}
@@ -123,16 +123,16 @@ export function BookingForm(props: {
           {props.baseTotalRappen !== undefined ? <p className="extra-total"><span>{d.total}</span><strong>{formatChf(props.baseTotalRappen + extrasTotal)}</strong></p> : null}
         </fieldset>
       ) : null}
-      <h3 style={{ marginTop: 16 }}>{d.yourDetails}</h3>
+      <h3 className="mt16">{d.yourDetails}</h3>
       <div className="form-grid">
         <div><label>{d.firstName}</label><input name="first_name" required autoComplete="given-name" /></div>
         <div><label>{d.lastName}</label><input name="last_name" required autoComplete="family-name" /></div>
         <div><label>{d.email}</label><input name="email" type="email" required autoComplete="email" /></div>
         <div><label>{d.phone}</label><input name="phone" type="tel" autoComplete="tel" /></div>
       </div>
-      <div style={{ marginTop: 12 }}><label>{d.notes}</label><textarea name="notes" rows={2} /></div>
+      <div className="mt12"><label>{d.notes}</label><textarea name="notes" rows={2} /></div>
       {props.vouchers && !props.payOnInvoice ? (
-        <details className="voucher-redeem" style={{ marginTop: 12 }}>
+        <details className="voucher-redeem mt12">
           <summary className="small">{d.voucherHave}</summary>
           <div style={{ marginTop: 8, maxWidth: 320 }}>
             <label>{d.voucherCodeLabel}</label>
@@ -141,7 +141,7 @@ export function BookingForm(props: {
           </div>
         </details>
       ) : null}
-      <label className="check" style={{ marginTop: 12 }}><input type="checkbox" name="marketing" />{d.marketing}</label>
+      <label className="check mt12"><input type="checkbox" name="marketing" />{d.marketing}</label>
       <label className="check">
         <input type="checkbox" name="terms" required />
         <span>
@@ -153,7 +153,7 @@ export function BookingForm(props: {
         </span>
       </label>
       {error ? <p className="notice warn" role="alert">{error}</p> : null}
-      <button className="btn" type="submit" disabled={busy || !ready} style={{ marginTop: 12 }}>{props.payOnInvoice ? D[props.locale].payInvoice : d.payNow}</button>
+      <button className="btn mt12" type="submit" disabled={busy || !ready} >{props.payOnInvoice ? D[props.locale].payInvoice : d.payNow}</button>
       <p className="muted small">{props.payOnInvoice ? D[props.locale].invoiceNote : d.payMethods}</p>
     </form>
   );

@@ -57,7 +57,7 @@ export default async function PosDevicesPage({ params, searchParams }: { params:
           </>
         ) : null}
         <form action={link} className="inline-form">{H}
-          <div style={{ flex: 1 }}><label htmlFor="key">{conn ? "Neuer Schlüssel des Hotels" : "Schlüssel des Hotels"}</label><input id="key" name="key" required autoComplete="off" placeholder="pnt_…" /></div>
+          <div className="flex1"><label htmlFor="key">{conn ? "Neuer Schlüssel des Hotels" : "Schlüssel des Hotels"}</label><input id="key" name="key" required autoComplete="off" placeholder="pnt_…" /></div>
           <div><button className="btn">{conn ? "Ersetzen" : "Verbinden"}</button></div>
         </form>
         {totals.length ? (

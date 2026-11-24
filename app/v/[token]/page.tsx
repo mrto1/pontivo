@@ -50,7 +50,7 @@ export default async function VoucherView({ params, searchParams }: { params: Pr
               <p className="small muted">{d.vRedeem}</p>
               <p className="small muted">{hotel.name}{hotel.addressLine ? ` · ${hotel.addressLine}` : ""}{hotel.city ? ` · ${hotel.postalCode} ${hotel.city}` : ""} · {hotel.contactEmail}{hotel.contactPhone ? ` · ${hotel.contactPhone}` : ""}</p>
             </article>
-            <p className="no-print" style={{ marginTop: 16 }}><PrintButton label={d.vPrint} /></p>
+            <p className="no-print mt16"><PrintButton label={d.vPrint} /></p>
           </>
         ) : null}
       </section>

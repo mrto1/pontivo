@@ -41,7 +41,7 @@ export default async function Uebersicht() {
   // Rot zuerst, höchstens 8 Zeilen (die ganze Liste steht unter «Betriebe»)
   const shown = [...todo].sort((a, b) => Number(b.level === "red") - Number(a.level === "red")).slice(0, 8);
   return (
-    <div className="stack" style={{ gap: 24 }}>
+    <div className="stack gap24">
       <PageHead title="Plattform-Verwaltung">Nur für Pontivo-Admins. Hier siehst du den Stand der Plattform und was Aufmerksamkeit braucht. Die Bereiche findest du oben im Menü.</PageHead>
 
       <section className="tiles">
@@ -52,18 +52,18 @@ export default async function Uebersicht() {
       </section>
 
       <section className="card stack">
-        <h2 style={{ margin: 0 }}>Braucht Aufmerksamkeit</h2>
-        {todo.length === 0 ? <p className="muted small" style={{ margin: 0 }}>Alles in Ordnung.</p> : (
+        <h2 className="m0">Braucht Aufmerksamkeit</h2>
+        {todo.length === 0 ? <p className="muted small m0">Alles in Ordnung.</p> : (
           <>
-            <ul className="ampel-reasons small" style={{ margin: 0 }}>{shown.map((t) => <li key={t.key} className={`ampel-${t.level}`}>{t.text}</li>)}</ul>
-            {todo.length > shown.length ? <p className="small" style={{ margin: 0 }}>… und {todo.length - shown.length} weitere. <a href="/plattform/betriebe">Alle Betriebe ansehen</a></p> : null}
+            <ul className="ampel-reasons small m0">{shown.map((t) => <li key={t.key} className={`ampel-${t.level}`}>{t.text}</li>)}</ul>
+            {todo.length > shown.length ? <p className="small m0">… und {todo.length - shown.length} weitere. <a href="/plattform/betriebe">Alle Betriebe ansehen</a></p> : null}
           </>
         )}
-        <p className="muted small" style={{ margin: 0 }}>MWST: {vat.liableFrom ? `pflichtig ab ${vat.liableFrom}` : "nicht pflichtig"} · Schulferien eingespielt: {school.length ? school.map((x) => `${x.canton} ${x.n}`).join(", ") : "keine"}</p>
+        <p className="muted small m0">MWST: {vat.liableFrom ? `pflichtig ab ${vat.liableFrom}` : "nicht pflichtig"} · Schulferien eingespielt: {school.length ? school.map((x) => `${x.canton} ${x.n}`).join(", ") : "keine"}</p>
       </section>
 
       <section className="stack">
-        <h2 style={{ margin: 0 }}>Bereiche</h2>
+        <h2 className="m0">Bereiche</h2>
         <div className="tiles" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))" }}>
           {AREAS.map((a) => (
             <a key={a.href} className="card tile" href={a.href} style={{ textDecoration: "none", color: "inherit" }}>

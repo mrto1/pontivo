@@ -23,7 +23,7 @@ export default async function Zahlungsverbindung({ searchParams }: { searchParam
   const p = platformInfo();
   const addr = splitAddress(p.address);
   return (
-    <div className="stack" style={{ gap: 24 }}>
+    <div className="stack gap24">
       <PageHead title="Zahlungsverbindung">Konto für die QR-Rechnungen an Betriebe, die die Grundgebühr per QR-Rechnung bezahlen. Mit einer QR-IBAN erhalten die Rechnungen eine QR-Referenz, und Zahlungen lassen sich mit der Bankdatei (camt.054) automatisch zuordnen; mit einer gewöhnlichen IBAN steht die Rechnungsnummer als Mitteilung im Zahlteil.</PageHead>
       <Flash sp={sp} />
       <section className="card stack">

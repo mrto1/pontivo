@@ -79,7 +79,7 @@ export default async function DiningToday({ params, searchParams }: { params: Pr
         {wait.length ? <a className="hk-stat" href={`${base}/restaurant/warteliste`}><b>{wait.length}</b> auf der Warteliste</a> : null}
       </div>
       <section className="card stack">
-        <h2 style={{ margin: 0 }}>{isToday ? "Reservierungen heute" : "Reservierungen"}</h2>
+        <h2 className="m0">{isToday ? "Reservierungen heute" : "Reservierungen"}</h2>
         {live.length ? (
           <div className="scroll-x"><table className="table" data-testid="dining-today">
             <thead><tr><th>Zeit</th><th>Pers.</th><th>Gast</th><th>Tisch</th><th>Status</th></tr></thead>
@@ -87,13 +87,13 @@ export default async function DiningToday({ params, searchParams }: { params: Pr
               <tr key={r.id}><td>{r.time}</td><td>{r.party}</td><td>{r.name}{r.note ? <div className="small muted">{r.note}</div> : null}</td><td>{r.tableId ? tname.get(r.tableId) ?? "–" : "–"}</td><td>{STATUS[r.status]}</td></tr>
             ))}</tbody>
           </table></div>
-        ) : <p className="muted small" style={{ margin: 0 }}>Keine Reservierungen.</p>}
-        <p className="small" style={{ margin: 0 }}><Link href={`${base}/restaurant/reservierungen`}>Alle Reservierungen und neue erfassen →</Link></p>
+        ) : <p className="muted small m0">Keine Reservierungen.</p>}
+        <p className="small m0"><Link href={`${base}/restaurant/reservierungen`}>Alle Reservierungen und neue erfassen →</Link></p>
       </section>
       {orders ? (
         <section className="card stack" data-testid="dining-orders">
-          <h2 style={{ margin: 0 }}>Online-Bestellungen</h2>
-          <p style={{ margin: 0 }}>{orders.open.filter((o) => o.status === "new").length ? <span className="badge danger">{orders.open.filter((o) => o.status === "new").length} neu</span> : null} {orders.open.length} offen · {orders.done.filter((o) => o.status === "completed").length} erledigt · <Link href={`${base}/restaurant/bestellungen`}>Bestellbildschirm →</Link></p>
+          <h2 className="m0">Online-Bestellungen</h2>
+          <p className="m0">{orders.open.filter((o) => o.status === "new").length ? <span className="badge danger">{orders.open.filter((o) => o.status === "new").length} neu</span> : null} {orders.open.length} offen · {orders.done.filter((o) => o.status === "completed").length} erledigt · <Link href={`${base}/restaurant/bestellungen`}>Bestellbildschirm →</Link></p>
           {cash.length ? (
             <table className="table"><caption className="small muted" style={{ textAlign: "left" }}>Bargeld je Fahrer (Lieferungen bar, heute)</caption><tbody>
               {cash.map((c) => <tr key={c.driver}><td>{c.driver || "ohne Fahrer"}</td><td>{c.n} Lieferungen</td><td>{formatChf(c.total)}</td></tr>)}
@@ -103,10 +103,10 @@ export default async function DiningToday({ params, searchParams }: { params: Pr
       ) : null}
       {pos ? (
         <section className="card stack">
-          <h2 style={{ margin: 0 }}>Offene Tische</h2>
+          <h2 className="m0">Offene Tische</h2>
           {openTables.length ? (
             <ul className="list">{openTables.map((t) => <li key={t.table.id}><a href={`${base}/restaurant/bestellung/${t.orders[0].order.id}`}>{t.table.name}</a> · {formatChf(t.orders.reduce((a, o) => a + o.openRappen, 0))}</li>)}</ul>
-          ) : <p className="muted small" style={{ margin: 0 }}>Kein Tisch offen.</p>}
+          ) : <p className="muted small m0">Kein Tisch offen.</p>}
         </section>
       ) : null}
     </div>

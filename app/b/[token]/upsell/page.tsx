@@ -46,7 +46,7 @@ export default async function UpsellPage({ params, searchParams }: { params: Pro
                           {desc ? <><br /><span className="muted small">{desc}</span></> : null}
                           <br /><span className="small">{formatChf(it.priceRappen)} {unitLabel[it.unit]}</span>
                         </td>
-                        <td style={{ textAlign: "right" }}>
+                        <td className="ta-r">
                           <label className="small" htmlFor={`q_${it.id}`}>{u.qty}</label>{" "}
                           <select id={`q_${it.id}`} name={`q_${it.id}`} defaultValue="0">
                             {Array.from({ length: max + 1 }, (_, i) => <option key={i} value={i}>{i}</option>)}

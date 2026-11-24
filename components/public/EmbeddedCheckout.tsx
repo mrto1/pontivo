@@ -60,7 +60,7 @@ export function EmbeddedCheckout(props: { clientSecret: string; publishableKey: 
     <div style={{ gridColumn: "1 / -1", width: "100%", minWidth: 0 }}>
       {failed ? <p className="notice warn" role="alert">{props.errorText}</p> : null}
       <div ref={box} className="stripe-embed" />
-      {props.cancelHref ? <p className="small" style={{ marginTop: 16 }}><a href={props.cancelHref}>{props.cancelText}</a></p> : null}
+      {props.cancelHref ? <p className="small mt16"><a href={props.cancelHref}>{props.cancelText}</a></p> : null}
     </div>
   );
 }

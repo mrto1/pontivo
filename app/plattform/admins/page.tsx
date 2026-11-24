@@ -12,7 +12,7 @@ export default async function Admins({ searchParams }: { searchParams: Promise<R
   const { users } = await platformOverview();
   const admins = users.filter((u) => u.isPlatformAdmin);
   return (
-    <div className="stack" style={{ gap: 24 }}>
+    <div className="stack gap24">
       <PageHead title={`Plattform-Admins (${admins.length})`}>Alle hier eingetragenen Personen sehen diese Verwaltung und alle Betriebe. Jede Person meldet sich mit ihrer eigenen E-Mail an (empfohlen: Passkey oder Authenticator unter Mein Konto). Jede Änderung steht im Protokoll.</PageHead>
       <Flash sp={sp} />
       <section className="card stack">

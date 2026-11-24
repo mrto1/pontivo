@@ -197,13 +197,13 @@ export default async function Site({ params, searchParams }: { params: Promise<{
               <label>Hauptfarbe (Knöpfe, Links)</label>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                 <input name="color" type="color" defaultValue={brand.color ?? "#2f5d50"} style={{ width: 64, height: 42, padding: 2 }} disabled={!canEdit} />
-                <label className="check" style={{ margin: 0 }}><input type="checkbox" name="useColor" defaultChecked={!!brand.color} disabled={!canEdit} />verwenden</label>
+                <label className="check m0"><input type="checkbox" name="useColor" defaultChecked={!!brand.color} disabled={!canEdit} />verwenden</label>
               </div>
             </div>
           </div>
           {canEdit ? <button className="btn">Speichern</button> : null}
         </form>
-        <p className="muted small" style={{ margin: 0 }}>Je nach Auswahl zeigt diese Seite nur, was Sie brauchen: mit eigener Website die Einbindung in Ihre Seite, mit {env().PLATFORM_NAME} als Website zusätzlich Startseite, Seiten und Dokumente.</p>
+        <p className="muted small m0">Je nach Auswahl zeigt diese Seite nur, was Sie brauchen: mit eigener Website die Einbindung in Ihre Seite, mit {env().PLATFORM_NAME} als Website zusätzlich Startseite, Seiten und Dokumente.</p>
       </section>
 
       {bookingOnly ? (
@@ -246,7 +246,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
               ))}
             </div>
           </fieldset>
-          <fieldset className="plain" disabled={!canEdit} style={{ marginTop: 12 }}>
+          <fieldset className="plain mt12" disabled={!canEdit} >
             <legend className="small muted">Schrift (Titel / Text)</legend>
             <div className="choice-grid">
               {FONTS.map((f) => (
@@ -317,7 +317,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
           <>
             <form action={saveIntro} className="stack">
               {hidden}
-              <p className="small muted" style={{ margin: 0 }}>Einfache Startseite: Titel und Einleitung, darunter Ihre Zimmer.</p>
+              <p className="small muted m0">Einfache Startseite: Titel und Einleitung, darunter Ihre Zimmer.</p>
               <div className="form-grid">
                 <div><label htmlFor="f1c503">Titel (DE)</label><input id="f1c503" name="headlineDe" defaultValue={hotel.content?.de?.headline ?? ""} /></div>
                 <div><label htmlFor="f1c504">Titel (EN)</label><input id="f1c504" name="headlineEn" defaultValue={hotel.content?.en?.headline ?? ""} /></div>
@@ -328,7 +328,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
             </form>
             <form action={startHome} className="stack">
               {hidden}
-              <p className="small muted" style={{ margin: 0 }}>Mehr Freiheit: Mit dem Editor gestalten Sie die Startseite aus Bausteinen. Die bisherigen Texte werden übernommen.</p>
+              <p className="small muted m0">Mehr Freiheit: Mit dem Editor gestalten Sie die Startseite aus Bausteinen. Die bisherigen Texte werden übernommen.</p>
               <div><button className="btn secondary">Startseite gestalten</button></div>
             </form>
           </>

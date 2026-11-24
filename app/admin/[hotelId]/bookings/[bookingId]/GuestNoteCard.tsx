@@ -17,7 +17,7 @@ export async function GuestNoteCard({ hotelId, bookingId, email, msg }: { hotelI
   const p = await profileOf(hotelId, email);
   return (
     <section className="card stack" id="gastnotiz">
-      <h3 style={{ margin: 0 }}>Notiz zum Gast</h3>
+      <h3 className="m0">Notiz zum Gast</h3>
       {msg ? <p className="notice small">{msg}</p> : null}
       <form action={save} className="stack">
         <input type="hidden" name="hotelId" value={hotelId} /><input type="hidden" name="bookingId" value={bookingId} /><input type="hidden" name="email" value={email} />

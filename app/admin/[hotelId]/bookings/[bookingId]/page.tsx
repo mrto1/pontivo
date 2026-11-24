@@ -162,7 +162,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
       {b.status === "confirmed" && !isOta && b.checkout > todayIn(hotel.timezone) ? (
         <form action={moveAction} className="card stack">
           <h3>Aufenthalt verschieben</h3>
-          <p className="muted small" style={{ margin: 0 }}>Gleiche Anzahl Nächte ({nightsOf(b.checkin, b.checkout).length}) und gleiches Zimmer, die vereinbarten Preise bleiben. Die Portale erhalten die Verfügbarkeit für alte und neue Daten.</p>
+          <p className="muted small m0">Gleiche Anzahl Nächte ({nightsOf(b.checkin, b.checkout).length}) und gleiches Zimmer, die vereinbarten Preise bleiben. Die Portale erhalten die Verfügbarkeit für alte und neue Daten.</p>
           <input type="hidden" name="hotelId" value={hotel.id} />
           <input type="hidden" name="bookingId" value={b.id} />
           <div className="inline-form">

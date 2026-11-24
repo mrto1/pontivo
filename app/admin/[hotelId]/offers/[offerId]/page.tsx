@@ -71,7 +71,7 @@ export default async function OfferAdmin({ params, searchParams }: { params: Pro
           <div key={l?.id ?? `new${i}`} className="card stack">
             <div className="row">
               <label style={{ flex: 3 }}>Beschreibung<input name="desc" defaultValue={l?.description ?? ""} maxLength={200} /></label>
-              <label>Menge<input name="qty" type="number" min={1} defaultValue={l?.quantity ?? 1} style={{ width: 80 }} /></label>
+              <label>Menge<input name="qty" type="number" min={1} defaultValue={l?.quantity ?? 1} className="w80" /></label>
               <label>Preis CHF<input name="unit" defaultValue={l ? rappenToDecimal(l.unitRappen) : ""} style={{ width: 110 }} placeholder="0.00" /></label>
               <label>MWST<select name="vat" defaultValue={l?.vatKind ?? "standard"}><option value="standard">Normal</option><option value="stay">Beherbergung</option><option value="none">Keine</option></select></label>
             </div>
@@ -79,9 +79,9 @@ export default async function OfferAdmin({ params, searchParams }: { params: Pro
               <div className="row small">
                 <label>Raum / Angebot vor Ort<select name="res" defaultValue={l?.resourceId ?? ""}><option value="">– keine Reservation –</option>{rooms.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></label>
                 <label>Tag<input type="date" name="day" defaultValue={l?.day ?? ""} /></label>
-                <label>Von<input name="from" placeholder="09:00" defaultValue={l?.startMin != null ? hhmm(l.startMin) : ""} style={{ width: 80 }} /></label>
-                <label>Bis<input name="to" placeholder="17:00" defaultValue={l?.endMin != null ? (l.endMin === 1440 ? "24:00" : hhmm(l.endMin)) : ""} style={{ width: 80 }} /></label>
-                <label>Personen<input name="pers" type="number" min={1} defaultValue={l?.persons ?? ""} style={{ width: 80 }} /></label>
+                <label>Von<input name="from" placeholder="09:00" defaultValue={l?.startMin != null ? hhmm(l.startMin) : ""} className="w80" /></label>
+                <label>Bis<input name="to" placeholder="17:00" defaultValue={l?.endMin != null ? (l.endMin === 1440 ? "24:00" : hhmm(l.endMin)) : ""} className="w80" /></label>
+                <label>Personen<input name="pers" type="number" min={1} defaultValue={l?.persons ?? ""} className="w80" /></label>
               </div>
             ) : (<><input type="hidden" name="res" value="" /><input type="hidden" name="day" value="" /><input type="hidden" name="from" value="" /><input type="hidden" name="to" value="" /><input type="hidden" name="pers" value="" /></>)}
           </div>

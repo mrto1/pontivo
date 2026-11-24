@@ -55,7 +55,7 @@ export default async function Funktionen({ params, searchParams }: { params: Pro
       {isOn(rows, "restaurant") && hotel.propertyType !== "restaurant" ? (
         <section className="card stack" id="darstellung">
           <div>
-            <h2 style={{ margin: 0 }}>Darstellung</h2>
+            <h2 className="m0">Darstellung</h2>
             <p className="small muted" style={{ margin: "2px 0 0" }}>Wie der Restaurant-Bereich im Umschalter oben (Bett | Besteck) heisst.</p>
           </div>
           <form action={saveLook} className="stack">
@@ -69,7 +69,7 @@ export default async function Funktionen({ params, searchParams }: { params: Pro
       {MODULE_GROUPS.map((g) => (
         <section key={g.title} className="card stack">
           <div>
-            <h2 style={{ margin: 0 }}>{g.title}</h2>
+            <h2 className="m0">{g.title}</h2>
             <p className="small muted" style={{ margin: "2px 0 0" }}>{g.lead}</p>
           </div>
           {g.keys.map((key) => {

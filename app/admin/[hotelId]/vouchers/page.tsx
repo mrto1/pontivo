@@ -107,7 +107,7 @@ export default async function Vouchers({ params, searchParams }: { params: Promi
         <form action={saveSettings} className="stack">
           {hidden}
           <fieldset className="plain stack" disabled={!canEdit}>
-            <label className="check"><input type="checkbox" name="enabled" defaultChecked={set.enabled} />Gutscheine online verkaufen {vouchersAvailable(hotel) ? <span className="badge" style={{ marginLeft: 8 }}>aktiv</span> : null}</label>
+            <label className="check"><input type="checkbox" name="enabled" defaultChecked={set.enabled} />Gutscheine online verkaufen {vouchersAvailable(hotel) ? <span className="badge ml8">aktiv</span> : null}</label>
             <div className="form-grid">
               <div><label htmlFor="f92f75">Beträge zur Auswahl (CHF, mit Komma getrennt)</label><input id="f92f75" name="amounts" defaultValue={set.amounts.map((a) => a / 100).join(", ")} /></div>
               <div><label htmlFor="f92f76">Eigener Betrag: mindestens CHF</label><input id="f92f76" name="min" inputMode="decimal" defaultValue={set.minRappen / 100} /></div>

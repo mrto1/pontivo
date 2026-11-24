@@ -27,7 +27,7 @@ export function FloorPlan({ tables }: { tables: PlanTable[] }) {
           {(cur.detail ?? (cur.info ? [cur.info] : [])).map((l, i) => <div key={i} className="small">{l}</div>)}
           {cur.href ? <div><a className="btn secondary small" href={cur.href}>{cur.hrefLabel ?? "Öffnen"}</a></div> : null}
         </div>
-      ) : placed.length ? <p className="small muted" style={{ margin: 0 }}>Tisch antippen für Einzelheiten.</p> : null}
+      ) : placed.length ? <p className="small muted m0">Tisch antippen für Einzelheiten.</p> : null}
     </div>
   );
 }

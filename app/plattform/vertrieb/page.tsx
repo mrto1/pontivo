@@ -52,10 +52,10 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
   const withEvents = await Promise.all(leads.map(async (l) => ({ l, events: await leadEvents(l.id, 8) })));
   return (
     <div>
-      <div className="stack" style={{ gap: 24 }}>
+      <div className="stack gap24">
         <header className="stack" style={{ gap: 6 }}>
-          <h1 style={{ margin: 0 }}>Vertriebs-Cockpit</h1>
-          <p className="muted small" style={{ margin: 0 }}>Interessenten, Status und persönliche Nachrichten. Selbst registrierte Betriebe erscheinen automatisch; wird ein Betrieb online geschaltet, gilt der Lead als gewonnen. Nachrichten gehen einzeln an eine Person, kein Massenversand.</p>
+          <h1 className="m0">Vertriebs-Cockpit</h1>
+          <p className="muted small m0">Interessenten, Status und persönliche Nachrichten. Selbst registrierte Betriebe erscheinen automatisch; wird ein Betrieb online geschaltet, gilt der Lead als gewonnen. Nachrichten gehen einzeln an eine Person, kein Massenversand.</p>
         </header>
         {sp.done ? <p className="notice">{sp.done}</p> : null}
         {sp.error ? <p className="notice warn">{sp.error}</p> : null}
@@ -84,7 +84,7 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
             </div>
             <div className="form-row">
               <div><label htmlFor="f57684">Website</label><input id="f57684" name="website" placeholder="https://" /></div>
-              <div><label htmlFor="f57685">Kanton</label><input id="f57685" name="canton" maxLength={2} placeholder="GR" style={{ width: 70 }} /></div>
+              <div><label htmlFor="f57685">Kanton</label><input id="f57685" name="canton" maxLength={2} placeholder="GR" className="w70" /></div>
               <div><label htmlFor="f57686">Quelle</label><select id="f57686" name="source">{LEAD_SOURCES.map((s) => <option key={s} value={s}>{LEAD_SOURCE_LABEL[s]}</option>)}</select></div>
               <div><label htmlFor="f57687">Nächster Schritt am</label><input id="f57687" name="next" type="date" /></div>
             </div>
@@ -99,7 +99,7 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
             <article key={l.id} className="card stack" id={`lead-${l.id}`}>
               <div className="plat-head">
                 <div>
-                  <h3 style={{ margin: 0 }}>{l.name} <span className="badge">{LEAD_STATUS_LABEL[l.status as LeadStatus]}</span>
+                  <h3 className="m0">{l.name} <span className="badge">{LEAD_STATUS_LABEL[l.status as LeadStatus]}</span>
                     {h ? <> <span className={`ampel ampel-${h.level}`}>{HEALTH_LABEL[h.level]}</span></> : null}
                     {isDue({ status: l.status as LeadStatus, nextActionAt: l.nextActionAt }, k.today) ? <> <span className="badge warn">Schritt fällig</span></> : null}</h3>
                   <p className="muted small" style={{ margin: "4px 0 0" }}>
@@ -117,7 +117,7 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
 
               <details>
                 <summary>Bearbeiten, Mail senden, Verlauf</summary>
-                <div className="stack" style={{ marginTop: 12 }}>
+                <div className="stack mt12">
                   <form action={saveLead} className="stack" style={{ maxWidth: 560 }}>
                     <input type="hidden" name="id" value={l.id} /><input type="hidden" name="filter" value={filter} />
                     <div className="form-row">

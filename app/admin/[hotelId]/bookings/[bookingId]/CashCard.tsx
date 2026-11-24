@@ -42,14 +42,14 @@ export async function CashCard({ hotel, bookingId, status }: { hotel: Hotel; boo
         <form action={addGoodAction} className="inline-form">
           {hid}
           <div style={{ minWidth: 200 }}><label htmlFor="f14271">Ware aus dem Shop</label><select id="f14271" name="goodId" required>{goodsList.map((x) => <option key={x.id} value={x.id}>{x.name} · {formatChf(x.priceRappen)}</option>)}</select></div>
-          <div><label htmlFor="f14272">Menge</label><input id="f14272" name="quantity" type="number" min={1} defaultValue={1} style={{ width: 70 }} /></div>
+          <div><label htmlFor="f14272">Menge</label><input id="f14272" name="quantity" type="number" min={1} defaultValue={1} className="w70" /></div>
           <button className="btn secondary small">Ware buchen</button>
         </form>
       ) : null}
       <form action={addFolioAction} className="inline-form">
         {hid}
         <div style={{ minWidth: 200 }}><label htmlFor="f14273">Beschreibung</label><input id="f14273" name="description" required maxLength={200} placeholder="z. B. Abendessen" /></div>
-        <div><label htmlFor="f14274">Menge</label><input id="f14274" name="quantity" type="number" defaultValue={1} style={{ width: 70 }} /></div>
+        <div><label htmlFor="f14274">Menge</label><input id="f14274" name="quantity" type="number" defaultValue={1} className="w70" /></div>
         <div><label htmlFor="f14275">Preis CHF (Rabatt: negativ)</label><input id="f14275" name="price" required inputMode="decimal" style={{ width: 110 }} /></div>
         <div><label htmlFor="f14276">MWST</label><select id="f14276" name="vatKind" defaultValue="standard"><option value="standard">übrige Leistungen</option><option value="stay">Beherbergung</option><option value="none">ohne MWST</option></select></div>
         <button className="btn secondary small">Posten hinzufügen</button>

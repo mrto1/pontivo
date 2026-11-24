@@ -132,7 +132,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           <table className="table"><thead><tr><th>Posten</th><th>Preis</th><th>Offen</th><th>Jetzt</th></tr></thead><tbody>
             {v.lines.map(({ line, openQuantity }) => (
               <tr key={line.id}><td>{line.description}</td><td>{formatChf(line.unitPriceRappen)}</td><td>{openQuantity}</td>
-                <td>{openQuantity ? <input name={`q_${line.id}`} type="number" min={0} max={openQuantity} defaultValue={openQuantity} style={{ width: 70 }} /> : "bezahlt"}</td></tr>
+                <td>{openQuantity ? <input name={`q_${line.id}`} type="number" min={0} max={openQuantity} defaultValue={openQuantity} className="w70" /> : "bezahlt"}</td></tr>
             ))}
           </tbody></table>
         ) : <p className="muted">Noch nichts bestellt.</p>}
@@ -159,7 +159,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             <form key={line.id} action={storno} className="stack">
               {H}{O}<input type="hidden" name="lineId" value={line.id} />
               <div><label>«{line.description}» stornieren (offen {openQuantity})</label>
-                <input name="quantity" type="number" min={1} max={openQuantity} defaultValue={1} style={{ width: 70 }} /> <input name="reason" placeholder="Grund" required maxLength={200} /> <button className="btn secondary small">Stornieren</button></div>
+                <input name="quantity" type="number" min={1} max={openQuantity} defaultValue={1} className="w70" /> <input name="reason" placeholder="Grund" required maxLength={200} /> <button className="btn secondary small">Stornieren</button></div>
             </form>
           ))}
         </section>

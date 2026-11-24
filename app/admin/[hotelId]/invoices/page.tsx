@@ -80,7 +80,7 @@ export default async function Invoices({ params, searchParams }: { params: Promi
               <div><label htmlFor="fc2826">Zahlungsfrist (Tage)</label><input id="fc2826" name="days" type="number" min={0} max={120} defaultValue={set.paymentDays} /></div>
               <div><label htmlFor="fc2827">Fusszeile (optional)</label><input id="fc2827" name="footer" defaultValue={set.footer} maxLength={500} placeholder="z. B. Danke für Ihren Besuch" /></div>
             </div>
-            <p className="muted small" style={{ margin: 0 }}>Nur wenn Ihre Bank Ihnen eine QR-IBAN gegeben hat. Dann trägt jede Rechnung eine QR-Referenz, und Zahlungen lassen sich automatisch zuordnen.</p>
+            <p className="muted small m0">Nur wenn Ihre Bank Ihnen eine QR-IBAN gegeben hat. Dann trägt jede Rechnung eine QR-Referenz, und Zahlungen lassen sich automatisch zuordnen.</p>
           </fieldset>
           {manager ? <div><button className="btn small">Speichern</button></div> : null}
         </form>

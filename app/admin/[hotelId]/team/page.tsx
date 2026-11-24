@@ -131,12 +131,12 @@ export default async function Team({ params, searchParams }: { params: Promise<{
           <div><label htmlFor="fb48d2">Rolle</label><select id="fb48d2" name="role" defaultValue="staff">{roleOptions}</select></div>
           <button className="btn">Hinzufügen</button>
         </form>
-        <p className="muted small" style={{ margin: 0 }}>Die Person meldet sich mit dieser E-Mail-Adresse an (Link per Mail oder Passkey).</p>
+        <p className="muted small m0">Die Person meldet sich mit dieser E-Mail-Adresse an (Link per Mail oder Passkey).</p>
       </section>
 
       <section className="card stack" id="rollen">
         <h2>Rollen und Seiten</h2>
-        <p className="muted small" style={{ margin: 0 }}>
+        <p className="muted small m0">
           <strong>Inhaber</strong>: alles. <strong>Manager</strong>: alles ausser Team und Zahlungskonto. <strong>Mitarbeitende</strong>: Kalender und Buchungen lesen, No-Show.
           Die Standardrollen können Sie für Ihren Betrieb anpassen (Name und Seiten), eigene Rollen legen Sie dazu.
           Seiten zum Ändern von Preisen, Einstellungen und Team bleiben Inhaber und Manager vorbehalten.
@@ -147,14 +147,14 @@ export default async function Team({ params, searchParams }: { params: Promise<{
             <summary>
               <strong>{t.name}</strong> <span className="muted small">· Standardrolle{t.custom ? ", angepasst" : ""} · {t.areas.length} Seiten · {members.filter((m) => m.role === t.key).length} Person(en)</span>
             </summary>
-            <form action={standardSave} className="stack" style={{ marginTop: 12 }}>
+            <form action={standardSave} className="stack mt12">
               {hidden}<input type="hidden" name="role" value={t.key} />
               <div style={{ maxWidth: 320 }}><label htmlFor={`fb48dm1-${t.key}`}>Name der Rolle</label><input id={`fb48dm1-${t.key}`} name="name" defaultValue={t.name} required maxLength={40} /></div>
               <AreaChecks selected={t.areas} />
               <div className="inline-form"><button className="btn small">Speichern</button></div>
             </form>
             {t.custom ? (
-              <form action={standardReset} style={{ marginTop: 8 }}>{hidden}<input type="hidden" name="role" value={t.key} /><button className="btn secondary small">Auf Vorgabe zurücksetzen</button></form>
+              <form action={standardReset} className="mt8">{hidden}<input type="hidden" name="role" value={t.key} /><button className="btn secondary small">Auf Vorgabe zurücksetzen</button></form>
             ) : null}
           </details>
         ))}
@@ -162,22 +162,22 @@ export default async function Team({ params, searchParams }: { params: Promise<{
         {roles.map((r) => (
           <details key={r.id} className="card">
             <summary><strong>{r.name}</strong> <span className="muted small">· {r.areas.length} Seite{r.areas.length === 1 ? "" : "n"} · {members.filter((m) => m.role === `custom:${r.id}`).length} Person(en)</span></summary>
-            <form action={roleSave} className="stack" style={{ marginTop: 12 }}>
+            <form action={roleSave} className="stack mt12">
               {hidden}<input type="hidden" name="roleId" value={r.id} />
               <div style={{ maxWidth: 320 }}><label htmlFor={`fb48dm2-${r.id}`}>Name der Rolle</label><input id={`fb48dm2-${r.id}`} name="name" defaultValue={r.name} required maxLength={40} /></div>
               <AreaChecks selected={r.areas} />
               <div className="inline-form"><button className="btn small">Rolle speichern</button></div>
             </form>
-            <form action={roleDelete} style={{ marginTop: 8 }}>{hidden}<input type="hidden" name="roleId" value={r.id} /><button className="btn secondary small">Rolle löschen</button></form>
+            <form action={roleDelete} className="mt8">{hidden}<input type="hidden" name="roleId" value={r.id} /><button className="btn secondary small">Rolle löschen</button></form>
           </details>
         ))}
 
         <details className="card" id="neu" open={!!template || undefined}>
           <summary><strong>+ Eigene Rolle anlegen</strong></summary>
-          <form action={roleSave} className="stack" style={{ marginTop: 12 }}>
+          <form action={roleSave} className="stack mt12">
             {hidden}
             <div style={{ maxWidth: 320 }}><label htmlFor="fb48d3">Name der Rolle</label><input id="fb48d3" name="name" required maxLength={40} placeholder="z. B. Nachtportier" defaultValue={template ? `${template.label} (angepasst)` : ""} /></div>
-            <p className="muted small" style={{ margin: 0 }}>
+            <p className="muted small m0">
               Vorlage übernehmen: {ROLE_TEMPLATES.map((t, i) => <span key={t.key}>{i ? " · " : ""}<a href={`?vorlage=${t.key}#neu`}>{t.label}</a></span>)}. Danach Seiten an- oder abhaken.
             </p>
             <AreaChecks selected={template?.areas ?? []} />

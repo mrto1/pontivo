@@ -111,8 +111,8 @@ export function OrderCart(p: {
                 {it.photoUrl ? <img src={it.photoUrl} alt="" loading="lazy" className="order-photo" /> : null}
                 <div className="stack" style={{ flex: 1, gap: 6 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><strong>{it.name}</strong><span>{formatChf(it.priceRappen)}</span></div>
-                  {it.description ? <p className="small muted" style={{ margin: 0 }}>{it.description}</p> : null}
-                  {it.allergens.length ? <p className="small" style={{ margin: 0 }}>{t.allergens}: {it.allergens.map((a) => ALLERGEN_LABEL[a as Allergen]?.[p.locale] ?? a).join(", ")}</p> : null}
+                  {it.description ? <p className="small muted m0">{it.description}</p> : null}
+                  {it.allergens.length ? <p className="small m0">{t.allergens}: {it.allergens.map((a) => ALLERGEN_LABEL[a as Allergen]?.[p.locale] ?? a).join(", ")}</p> : null}
                   {open === it.id ? (
                     <div className="stack">
                       {it.groups.map((g) => (
@@ -157,7 +157,7 @@ export function OrderCart(p: {
               const opts = it.groups.flatMap((g) => g.options).filter((o) => l.optionIds.includes(o.id)).map((o) => o.name);
               return (
                 <li key={l.key} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{ flex: 1 }}>{l.quantity} × {it.name}{opts.length ? <span className="small"> ({opts.join(", ")})</span> : null}{l.note ? <span className="small muted"> – {l.note}</span> : null}</span>
+                  <span className="flex1">{l.quantity} × {it.name}{opts.length ? <span className="small"> ({opts.join(", ")})</span> : null}{l.note ? <span className="small muted"> – {l.note}</span> : null}</span>
                   <button type="button" className="btn secondary small" onClick={() => qty(l.key, -1)} aria-label={t.remove}>−</button>
                   <button type="button" className="btn secondary small" onClick={() => qty(l.key, 1)} aria-label="+">+</button>
                   <span className="small">{formatChf(price(l))}</span>
@@ -188,7 +188,7 @@ export function OrderCart(p: {
         </div>
         <div className="inline-form">{F("name", { req: true, ac: "name" })}{F("phone", { req: true, type: "tel", ac: "tel" })}</div>
         {F("email", { type: "email", ac: "email" })}
-        <p className="small muted" style={{ margin: 0 }}>{t.emailHint}</p>
+        <p className="small muted m0">{t.emailHint}</p>
         <div><label htmlFor="o-note">{t.note}</label><input id="o-note" name="note" maxLength={300} /></div>
 
         <div className="kv small">

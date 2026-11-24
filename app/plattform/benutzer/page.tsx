@@ -12,7 +12,7 @@ export default async function Benutzer({ searchParams }: { searchParams: Promise
   const sp = await searchParams;
   const { users } = await platformOverview();
   return (
-    <div className="stack" style={{ gap: 24 }}>
+    <div className="stack gap24">
       <PageHead title={`Benutzer (${users.length})`}>Ein gelöschter Benutzer verliert seine Zugänge. Seine Betriebe bleiben bestehen (vorher ggf. den Betrieb löschen).</PageHead>
       <Flash sp={sp} />
       <div className="card" style={{ padding: 0 }}>
