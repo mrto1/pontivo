@@ -11,6 +11,7 @@ export const CHOICES: Choice[] = [
   { key: "restaurant", question: "Wir haben ein Restaurant oder Café (Tischreservierung, Speisekarte, Küche)", modules: ["restaurant"] },
   { key: "pos", question: "Wir wollen die Kasse von Pontivo nutzen (Bestellen, Kassieren, aufs Zimmer; CHF 29 pro Monat)", modules: ["pos"] },
   { key: "posbridge", question: "Unsere eigene Restaurantkasse soll Posten aufs Zimmer buchen", modules: ["posbridge"] },
+  { key: "shop", question: "Wir verkaufen Waren (Getränke, Snacks, Minibar) oder führen ein Lager", modules: ["shop"] },
   { key: "debtors", question: "Firmenkunden bezahlen auf Rechnung", modules: ["debtors"] },
   { key: "owners", question: "Wir verwalten Wohnungen für Eigentümer", modules: ["owners"] },
   { key: "resources", question: "Wellness, Sauna, Seminarraum oder Tennisplatz zum Buchen", modules: ["resources"] },
@@ -31,7 +32,7 @@ export function startModules(wholeUnit: boolean, restaurant = false): Record<str
 }
 
 /** Fragen im Assistenten für reine Restaurants (ohne Zimmer-Fragen) */
-export const RESTAURANT_CHOICES = ["pos", "marketing", "debtors"];
+export const RESTAURANT_CHOICES = ["pos", "shop", "marketing", "debtors"];
 
 /** Ist die Auswahl an? (alle Funktionen dahinter laufen) */
 export const choiceOn = (rows: ModuleRow[], c: Choice, isOn: (rows: ModuleRow[], key: string) => boolean) => c.modules.every((k) => isOn(rows, k));
