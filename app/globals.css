@@ -958,7 +958,7 @@ pre { overflow-x: auto; }
 .hk-stat b { font-size: 1.05rem; }
 .hk-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--muted)); flex: none; }
 .hk-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-.hk-card { --c: var(--hk-clean); border-top: 5px solid var(--c); padding: 16px; display: grid; gap: 10px; align-content: start; }
+.hk-card { --c: var(--hk-clean); position: relative; overflow: hidden; border-radius: 8px; padding: 16px; display: grid; gap: 10px; align-content: start; }
 .hk-card.dirty { --c: var(--hk-dirty); }
 .hk-card.inspected { --c: var(--hk-inspected); }
 .hk-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -1128,11 +1128,6 @@ button.plan-table { font: inherit; cursor: pointer; }
 @media (max-width: 520px) { .cal-export-range { width: 100%; } .btn-dl { width: 100%; justify-content: center; } }
 
 .hk-report { justify-self: start; }
-.hk-kind { display: grid; gap: 8px; border: 0; padding: 0; margin: 0; }
-.hk-kind-opt { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; margin: 0; }
-.hk-kind-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-.hk-kind-opt input { width: auto; margin-top: 4px; flex: none; }
-.hk-kind-opt span { display: grid; gap: 2px; }
 .bk-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .bk-filter { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; }
 .bk-filter input, .bk-filter select { width: 100%; }
@@ -1178,3 +1173,18 @@ button.plan-table { font: inherit; cursor: pointer; }
 .pad32{padding:32px 0 !important}
 .d-inline{display:inline !important}
 .gap6{gap:6px !important}
+
+/* Reinigung: Mängel kompakt, Bearbeiten in der Seitenleiste */
+.hk-issues { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.hk-issues li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 12px; border-radius: 10px; background: var(--warn-soft, rgba(217,119,6,.15)); border: 1px solid color-mix(in srgb, var(--warn, #d97706) 40%, transparent); }
+.hk-issues li form { margin: 0; flex: none; }
+.hk-issue-text { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: .92rem; }
+.hk-issues .btn { min-height: 38px; }
+.hk-edit { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.hk-edit textarea { width: 100%; }
+.hk-edit-actions { display: flex; gap: 8px; }
+.hk-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--c); }
+.hk-done summary { cursor: pointer; color: var(--muted); }
+.hk-done ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.hk-done li { display: flex; justify-content: space-between; gap: 10px; text-decoration: line-through; text-decoration-color: var(--muted); }
+.hk-done li .small { text-decoration: none; flex: none; }

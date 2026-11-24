@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
 import { bookingRooms, bookings, guests, housekeepingTasks, roomIssues, rooms, roomTypes, type HousekeepingTask, type RoomIssue } from "../db/schema";
 import { audit } from "./audit";
@@ -97,4 +97,24 @@ export async function resolveIssue(hotelId: string, issueId: string, actor: stri
   const r = await db().update(roomIssues).set({ status: "done", doneAt: new Date(), doneBy: actor }).where(and(eq(roomIssues.id, issueId), eq(roomIssues.hotelId, hotelId), eq(roomIssues.status, "open"))).returning({ id: roomIssues.id });
   if (!r.length) throw new HousekeepingError("Meldung nicht gefunden.");
   await audit(db(), { hotelId, actor, action: "housekeeping.issue_done", entity: "room_issue", entityId: issueId, details: {} });
+}
+
+/** Text eines offenen Mangels ändern (Bearbeiten in der Seitenleiste) */
+export async function updateIssue(hotelId: string, issueId: string, description: string, actor: string): Promise<void> {
+  const text = description.trim().slice(0, 300);
+  if (!text) throw new HousekeepingError("Bitte den Mangel kurz beschreiben.");
+  const r = await db().update(roomIssues).set({ description: text }).where(and(eq(roomIssues.id, issueId), eq(roomIssues.hotelId, hotelId), eq(roomIssues.status, "open"))).returning({ id: roomIssues.id });
+  if (!r.length) throw new HousekeepingError("Meldung nicht gefunden.");
+  await audit(db(), { hotelId, actor, action: "housekeeping.issue_edit", entity: "room_issue", entityId: issueId, details: {} });
+}
+
+/** Zuletzt erledigte Mängel eines Zimmers (für die Seitenleiste) */
+export async function doneIssues(hotelId: string, roomId: string, limit = 10): Promise<RoomIssue[]> {
+  return db().select().from(roomIssues).where(and(eq(roomIssues.hotelId, hotelId), eq(roomIssues.roomId, roomId), eq(roomIssues.status, "done"))).orderBy(desc(roomIssues.doneAt)).limit(limit);
+}
+
+/** Extra-Auftrag eines Tages entfernen */
+export async function removeTask(hotelId: string, roomId: string, day: string, actor: string): Promise<void> {
+  await db().delete(housekeepingTasks).where(and(eq(housekeepingTasks.hotelId, hotelId), eq(housekeepingTasks.roomId, roomId), eq(housekeepingTasks.day, day), eq(housekeepingTasks.kind, "other")));
+  await audit(db(), { hotelId, actor, action: "housekeeping.task_remove", entity: "room", entityId: roomId, details: { day } });
 }

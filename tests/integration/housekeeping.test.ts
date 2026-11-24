@@ -4,7 +4,7 @@ import { closeDb, db } from "../../src/db/client";
 import { bookingRooms, bookings, housekeepingTasks } from "../../src/db/schema";
 import { confirmBooking, createDirectBooking } from "../../src/services/bookings";
 import { assignRoom, listRooms, seedRooms } from "../../src/services/frontdesk";
-import { addTask, board, generateTasks, HousekeepingError, reportIssue, resolveIssue, setCleanStatus } from "../../src/services/housekeeping";
+import { addTask, board, generateTasks, HousekeepingError, reportIssue, resolveIssue, setCleanStatus, updateIssue } from "../../src/services/housekeeping";
 import { addDays, todayIn } from "../../src/domain/dates";
 import { guest, inDays, makeHotel } from "../helpers";
 
@@ -63,6 +63,10 @@ describe("Housekeeping (SPEC 17.1)", () => {
     await addTask(s.hotel.id, s.rs[1].id, today, "Fenster putzen", "t");
     b = await board(s.hotel.id, today);
     expect(b.find((x) => x.roomId === s.rs[1].id)!.task?.note).toBe("Fenster putzen");
+    await updateIssue(s.hotel.id, issue.id, "  Glühbirne Nachttisch defekt ", "t");
+    expect((await board(s.hotel.id, today)).flatMap((x) => x.issues)[0].description).toBe("Glühbirne Nachttisch defekt");
+    await expect(updateIssue(s.hotel.id, issue.id, " ", "t")).rejects.toThrow(HousekeepingError);
+    await expect(updateIssue(other.hotel.id, issue.id, "fremd", "t")).rejects.toThrow(HousekeepingError);
     await resolveIssue(s.hotel.id, issue.id, "t");
     expect((await board(s.hotel.id, today)).every((x) => x.issues.length === 0)).toBe(true);
     await expect(resolveIssue(other.hotel.id, issue.id, "t")).rejects.toThrow(HousekeepingError);

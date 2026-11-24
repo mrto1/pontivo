@@ -7,7 +7,7 @@ import { DrawerKeys } from "@/components/admin/DrawerKeys";
 import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { moduleOn, requireModule } from "@/src/services/modules";
 import { GoodsError, countMinibar, markRefilled, minibarGoods, refillList } from "@/src/services/goods";
-import { addTask, board, generateTasks, HousekeepingError, reportIssue, resolveIssue, setCleanStatus, type CleanStatus } from "@/src/services/housekeeping";
+import { addTask, board, generateTasks, HousekeepingError, reportIssue, doneIssues, removeTask, resolveIssue, updateIssue, setCleanStatus, type CleanStatus } from "@/src/services/housekeeping";
 import { addDays, isDay, todayIn } from "@/src/domain/dates";
 import { formatDay } from "@/src/i18n/dict";
 import { s } from "@/src/lib/form";
@@ -55,6 +55,14 @@ async function refilled(f: FormData) {
     await markRefilled(c.hotel.id, s(f, "roomId"), c.actor);
   });
 }
+async function dropTask(f: FormData) {
+  "use server";
+  await act(f, (c) => removeTask(c.hotel.id, s(f, "roomId"), s(f, "day"), c.actor));
+}
+async function editIssue(f: FormData) {
+  "use server";
+  await act(f, (c) => updateIssue(c.hotel.id, s(f, "issueId"), s(f, "text"), c.actor));
+}
 async function fix(f: FormData) {
   "use server";
   await act(f, (c) => resolveIssue(c.hotel.id, s(f, "issueId"), c.actor));
@@ -77,6 +85,7 @@ export default async function Housekeeping({ params, searchParams }: { params: P
   const open = sp.room ? sorted.find((r) => r.roomId === sp.room) : undefined;
   const mini = open && hotel.propertyType !== "restaurant" && (await moduleOn(hotel.id, "shop")) ? await minibarGoods(hotel.id) : [];
   const shopOn = hotel.propertyType !== "restaurant" && (await moduleOn(hotel.id, "shop"));
+  const done = open ? await doneIssues(hotel.id, open.roomId) : [];
   const refills = shopOn ? await refillList(hotel.id) : [];
   const n = (st: CleanStatus) => rooms.filter((r) => r.active && r.status === st).length;
   return (
@@ -125,21 +134,27 @@ export default async function Housekeeping({ params, searchParams }: { params: P
             <div className="hk-tags">
               {r.departing ? <span className="chip">Abreise</span> : null}{r.arriving ? <span className="chip">Anreise</span> : null}
               {r.occupied ? <span className="chip">belegt{r.guest ? ` · ${r.guest}` : ""}</span> : null}
-              {r.task?.kind === "stay" ? <span className="chip">Zwischenreinigung</span> : null}{r.task?.kind === "other" && r.task.note ? <span className="chip">{r.task.note}</span> : null}
+              {r.task?.kind === "stay" ? <span className="chip">Zwischenreinigung</span> : null}{r.task?.kind === "other" && r.task.note ? <span className="chip">Auftrag: {r.task.note}</span> : null}
             </div>
-            {r.issues.map((i) => (
-              <form key={i.id} action={fix} className="inline-form">
-                <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="day" value={day} /><input type="hidden" name="issueId" value={i.id} />
-                <span className="notice warn small flex1">Mangel: {i.description}</span>
-                <button className="btn secondary small">Erledigt</button>
-              </form>
-            ))}
+            {r.issues.length ? (
+              <ul className="hk-issues" aria-label="Offene Mängel">
+                {r.issues.map((i) => (
+                  <li key={i.id}>
+                    <span className="hk-issue-text">{i.description}</span>
+                    <form action={fix}>
+                      <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="day" value={day} /><input type="hidden" name="issueId" value={i.id} />
+                      <button className="btn secondary small">Erledigt</button>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             <div className={`hk-seg${editable ? "" : " ro"}`} role="group" aria-label={`Status Zimmer ${r.number}`}>
               {(["dirty", "clean", "inspected"] as CleanStatus[]).map((x) => (
                 <form key={x} action={status}>{hid(r.roomId)}<input type="hidden" name="to" value={x} /><button className={`s-${x}`} disabled={r.status === x} aria-pressed={r.status === x}>{LABEL_BTN[x]}</button></form>
               ))}
             </div>
-            <Link className="btn secondary small hk-report" href={`?day=${day}&room=${r.roomId}`} scroll={false}>Mangel melden / Auftrag</Link>
+            <Link className="btn secondary small hk-report" href={`?day=${day}&room=${r.roomId}`} scroll={false}>{r.issues.length || r.task?.kind === "other" ? "Bearbeiten / hinzufügen" : "Mangel melden / Auftrag"}</Link>
           </section>
         ))}
       </div>
@@ -156,14 +171,22 @@ export default async function Housekeeping({ params, searchParams }: { params: P
                 <div className="stack gap8">
                   <h3 className="m0">Offene Mängel</h3>
                   {open.issues.map((i) => (
-                    <form key={i.id} action={fix} className="inline-form">
-                      <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="day" value={day} /><input type="hidden" name="issueId" value={i.id} />
-                      <span className="notice warn small flex1">{i.description}</span>
-                      <button className="btn secondary small">Erledigt</button>
+                    <form key={i.id} action={editIssue} className="hk-edit">
+                      <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="day" value={day} /><input type="hidden" name="issueId" value={i.id} /><input type="hidden" name="roomId" value={open.roomId} />
+                      <label htmlFor={`is-${i.id}`} className="sr-only">Mangel</label>
+                      <textarea id={`is-${i.id}`} name="text" rows={2} maxLength={300} required defaultValue={i.description} />
+                      <div className="hk-edit-actions"><button className="btn small">Speichern</button><button className="btn secondary small" formAction={fix} formNoValidate>Erledigt</button></div>
                     </form>
                   ))}
                 </div>
               ) : null}
+              <form action={report} className="hk-edit">
+                {hid(open.roomId)}<input type="hidden" name="kind" value="task" />
+                <h3 className="m0">Extra-Auftrag heute</h3>
+                <label htmlFor="hk-task" className="sr-only">Extra-Auftrag</label>
+                <textarea id="hk-task" name="text" rows={2} maxLength={200} required defaultValue={open.task?.kind === "other" ? open.task.note ?? "" : ""} placeholder="z. B. Fenster putzen" />
+                <div className="hk-edit-actions"><button className="btn small">Speichern</button>{open.task?.kind === "other" ? <button className="btn secondary small" formAction={dropTask} formNoValidate>Entfernen</button> : null}</div>
+              </form>
               {mini.length ? (
                 <form action={minibar} className="stack">
                   {hid(open.roomId)}
@@ -175,16 +198,18 @@ export default async function Housekeeping({ params, searchParams }: { params: P
                   <div className="drawer-actions"><button className="btn secondary">Minibar buchen</button></div>
                 </form>
               ) : null}
-              <form action={report} className="stack">
-                {hid(open.roomId)}
-                <h3 className="m0">Neu erfassen</h3>
-                <fieldset className="plain hk-kind">
-                  <legend className="small muted">Was möchten Sie erfassen?</legend>
-                  <label className="hk-kind-opt"><input type="radio" name="kind" value="issue" defaultChecked /><span><strong>Mangel melden</strong><span className="small muted">Etwas ist defekt oder beschädigt, z. B. Glühbirne. Bleibt offen, bis es erledigt ist.</span></span></label>
-                  <label className="hk-kind-opt"><input type="radio" name="kind" value="task" /><span><strong>Extra-Auftrag</strong><span className="small muted">Zusätzliche Reinigung an diesem Tag, z. B. Fenster putzen.</span></span></label>
-                </fieldset>
-                <div><label htmlFor="f62bf1">Beschreibung</label><textarea id="f62bf1" name="text" rows={3} maxLength={300} required placeholder="z. B. Glühbirne Nachttisch defekt" /></div>
-                <div className="drawer-actions"><button className="btn">Speichern</button><Link className="btn secondary" href={`?day=${day}`} scroll={false}>Abbrechen</Link></div>
+              {done.length ? (
+                <details className="hk-done">
+                  <summary>Erledigte Mängel ({done.length})</summary>
+                  <ul>{done.map((i) => <li key={i.id}><span>{i.description}</span><span className="muted small">{i.doneAt ? formatDay(i.doneAt.toISOString().slice(0, 10), "de") : ""}</span></li>)}</ul>
+                </details>
+              ) : null}
+              <form action={report} className="hk-edit">
+                {hid(open.roomId)}<input type="hidden" name="kind" value="issue" />
+                <h3 className="m0">Mangel hinzufügen</h3>
+                <label htmlFor="hk-new" className="sr-only">Mangel</label>
+                <textarea id="hk-new" name="text" rows={2} maxLength={300} required placeholder="z. B. Glühbirne Nachttisch defekt" />
+                <div className="hk-edit-actions"><button className="btn small">Hinzufügen</button></div>
               </form>
             </div>
           </aside>

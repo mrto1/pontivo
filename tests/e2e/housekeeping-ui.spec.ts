@@ -33,10 +33,24 @@ test("Reinigung: Zähler, Statusschalter heute, an anderen Tagen gesperrt", asyn
   await page.keyboard.press("Escape");
   await first.getByRole("link", { name: "Mangel melden / Auftrag" }).click();
   const drawer = page.getByRole("dialog");
-  await drawer.locator("textarea[name=text]").fill("Glühbirne defekt");
-  await drawer.getByRole("button", { name: "Speichern" }).click();
+  await drawer.locator("#hk-new").fill("Glühbirne defekt");
+  await drawer.getByRole("button", { name: "Hinzufügen" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(first).toContainText("Mangel: Glühbirne defekt");
+  await expect(first).toContainText("Glühbirne defekt");
+
+  // Bearbeiten zeigt den bisherigen Text; Erledigt nimmt ihn von der Karte, er bleibt unter «Erledigte Mängel»
+  await first.getByRole("link", { name: "Bearbeiten / hinzufügen" }).click();
+  const edit = page.getByRole("dialog").locator("form", { has: page.locator("textarea[defaultValue], textarea") }).filter({ hasText: "Erledigt" }).first();
+  await expect(edit.locator("textarea")).toHaveValue("Glühbirne defekt");
+  await edit.locator("textarea").fill("Glühbirne Nachttisch defekt");
+  await edit.getByRole("button", { name: "Speichern" }).click();
+  await expect(first).toContainText("Glühbirne Nachttisch defekt");
+  await first.getByRole("button", { name: "Erledigt" }).click();
+  await expect(first).not.toContainText("Glühbirne Nachttisch defekt");
+  await first.getByRole("link", { name: "Mangel melden / Auftrag" }).click();
+  await page.getByRole("dialog").getByText("Erledigte Mängel (1)").click();
+  await expect(page.getByRole("dialog")).toContainText("Glühbirne Nachttisch defekt");
+  await page.keyboard.press("Escape");
 
   const tomorrow = addDays(todayIn("Europe/Zurich"), 1);
   await page.goto(`/admin/${h.hotel.id}/housekeeping?day=${tomorrow}`);
