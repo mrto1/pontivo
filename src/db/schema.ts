@@ -1318,6 +1318,17 @@ export const goods = pgTable("goods", {
 });
 export type Good = typeof goods.$inferSelect;
 
+/** Offene Nachfüllposten der Minibar je Zimmer (SPEC 19.51); entstehen bei der Zählung, erledigt = done_at */
+export const minibarRefills = pgTable("minibar_refills", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  roomId: uuid("room_id").notNull(),
+  goodId: uuid("good_id").notNull(),
+  quantity: integer("quantity").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  doneAt: ts("done_at"),
+});
+
 export const resources = pgTable("resources", {
   id: uuid("id").primaryKey().defaultRandom(),
   hotelId: uuid("hotel_id").notNull(),

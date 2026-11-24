@@ -53,4 +53,5 @@ test("Minibar: Zählung erscheint in der Reinigung nur mit Minibar-Ware", async 
   await expect(page.getByRole("heading", { name: "Minibar zählen" })).toBeVisible();
   await page.getByRole("button", { name: "Minibar buchen" }).click();
   await expect(page.getByText("Minibar vollständig.")).toBeVisible();
+  await expect(page.locator("#nachfuellen")).toHaveCount(0);
 });

@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { closeDb, db } from "../../src/db/client";
 import { folioItems, goods } from "../../src/db/schema";
 import { confirmBooking, createDirectBooking } from "../../src/services/bookings";
-import { GoodsError, adjustStock, countMinibar, deleteGood, listGoods, reorderList, saveGood, sellToBooking } from "../../src/services/goods";
+import { GoodsError, adjustStock, countMinibar, markRefilled, refillList, deleteGood, listGoods, reorderList, saveGood, sellToBooking } from "../../src/services/goods";
 import { seedRooms, listRooms, assignRoom } from "../../src/services/frontdesk";
 import { bookingRooms } from "../../src/db/schema";
 import { addDays, todayIn } from "../../src/domain/dates";
@@ -77,5 +77,11 @@ describe("Shop & Lager (SPEC 19.51)", () => {
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({ quantity: 2, unitPriceRappen: 500, source: `minibar:${g.id}` });
     expect((await db().select().from(goods).where(eq(goods.id, g.id)))[0].stock).toBe(8);
+    // Nachfüllliste: offener Posten; neue Zählung ersetzt ihn; «Aufgefüllt» erledigt ihn
+    expect(await refillList(h.hotel.id)).toEqual([{ roomId: room.id, number: room.number, items: [expect.objectContaining({ name: "Cola", quantity: 2 })] }]);
+    await countMinibar(h.hotel.id, room.id, today, [{ goodId: g.id, present: 0 }], "t");
+    expect((await refillList(h.hotel.id))[0].items).toEqual([expect.objectContaining({ quantity: 3 })]);
+    expect(await markRefilled(h.hotel.id, room.id, "t")).toBe(1);
+    expect(await refillList(h.hotel.id)).toEqual([]);
   });
 });

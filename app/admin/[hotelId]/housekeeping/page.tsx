@@ -6,7 +6,7 @@ import { InfoTip } from "@/components/admin/InfoTip";
 import { DrawerKeys } from "@/components/admin/DrawerKeys";
 import { requireHotel } from "@/src/auth/guard";
 import { moduleOn, requireModule } from "@/src/services/modules";
-import { GoodsError, countMinibar, minibarGoods } from "@/src/services/goods";
+import { GoodsError, countMinibar, markRefilled, minibarGoods, refillList } from "@/src/services/goods";
 import { addTask, board, generateTasks, HousekeepingError, reportIssue, resolveIssue, setCleanStatus, type CleanStatus } from "@/src/services/housekeeping";
 import { addDays, isDay, todayIn } from "@/src/domain/dates";
 import { formatDay } from "@/src/i18n/dict";
@@ -50,6 +50,13 @@ async function minibar(f: FormData) {
   }
   redirect(`/admin/${c.hotel.id}/housekeeping?day=${s(f, "day")}&room=${s(f, "roomId")}&msg=${encodeURIComponent(msg)}`);
 }
+async function refilled(f: FormData) {
+  "use server";
+  await act(f, async (c) => {
+    await requireModule(c.hotel.id, "shop");
+    await markRefilled(c.hotel.id, s(f, "roomId"), c.actor);
+  });
+}
 async function fix(f: FormData) {
   "use server";
   await act(f, (c) => resolveIssue(c.hotel.id, s(f, "issueId"), c.actor));
@@ -72,6 +79,8 @@ export default async function Housekeeping({ params, searchParams }: { params: P
   const editable = day === today; // ASSUMPTION: der Status gilt für das Zimmer jetzt, nicht je Tag; an anderen Tagen nur Vorschau/Rückblick
   const open = sp.room ? sorted.find((r) => r.roomId === sp.room) : undefined;
   const mini = open && hotel.propertyType !== "restaurant" && (await moduleOn(hotel.id, "shop")) ? await minibarGoods(hotel.id) : [];
+  const shopOn = hotel.propertyType !== "restaurant" && (await moduleOn(hotel.id, "shop"));
+  const refills = shopOn ? await refillList(hotel.id) : [];
   const n = (st: CleanStatus) => rooms.filter((r) => r.active && r.status === st).length;
   return (
     <div className="stack hk">
@@ -95,6 +104,19 @@ export default async function Housekeeping({ params, searchParams }: { params: P
       </div>
       {!editable ? <p className="notice small">{day > today ? "Vorschau: Anreisen und Abreisen dieses Tages." : "Rückblick."} Den Reinigungsstatus ändern Sie nur für heute.</p> : null}
       {sorted.length === 0 ? <p className="muted">Noch keine Zimmer. Zimmer legen Sie unter Kalender → Zimmerplan an.</p> : null}
+      {refills.length ? (
+        <section className="card stack" id="nachfuellen" aria-label="Minibar nachfüllen">
+          <h2 style={{ margin: 0 }}>Minibar nachfüllen</h2>
+          <ul className="plan-list">
+            {refills.map((r) => (
+              <li key={r.roomId} className="plan-row" style={{ cursor: "default" }}>
+                <span><strong>Zimmer {r.number}</strong><br /><span className="muted small">{r.items.map((i) => `${i.quantity} × ${i.name}`).join(", ")}</span></span>
+                <form action={refilled}>{hid(r.roomId)}<button className="btn secondary small">Aufgefüllt</button></form>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <div className="hk-grid">
         {sorted.map((r) => (
           <section key={r.roomId} className={`card hk-card ${r.status}`}>

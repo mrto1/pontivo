@@ -1,6 +1,6 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
-import { bookings, folioItems, goods, type FolioItem, type Good } from "../db/schema";
+import { bookings, folioItems, goods, minibarRefills, rooms, type FolioItem, type Good } from "../db/schema";
 import { folioVat, needsReorder } from "../domain/goods";
 import { audit } from "./audit";
 
@@ -120,6 +120,8 @@ export async function countMinibar(hotelId: string, roomId: string, day: string,
   }
   if (!missing.length) return { billed: [], bookingId: null };
   return db().transaction(async (tx) => {
+    const [room] = await tx.select({ id: rooms.id }).from(rooms).where(and(eq(rooms.id, roomId), eq(rooms.hotelId, hotelId)));
+    if (!room) throw new GoodsError("Zimmer nicht gefunden.");
     const found = rows<{ bookingId: string }>(await tx.execute(sql`
       SELECT rs.booking_id AS "bookingId" FROM room_stays rs JOIN bookings b ON b.id = rs.booking_id
        WHERE rs.hotel_id = ${hotelId} AND rs.room_id = ${roomId} AND b.status = 'confirmed' AND rs.from_day < ${day}::date AND rs.to_day >= ${day}::date
@@ -130,6 +132,36 @@ export async function countMinibar(hotelId: string, roomId: string, day: string,
       const it = await sellInTx(tx, hotelId, found[0].bookingId, m.goodId, m.qty, actor, "minibar");
       billed.push({ name: it.description, quantity: m.qty });
     }
+    // Nachfüllen: offener Posten je Ware; eine frühere offene Zeile derselben Ware wird ersetzt, denn die Zählung zeigt den aktuellen Fehlbestand
+    for (const m of missing) {
+      await tx.update(minibarRefills).set({ doneAt: new Date() }).where(and(eq(minibarRefills.hotelId, hotelId), eq(minibarRefills.roomId, roomId), eq(minibarRefills.goodId, m.goodId), isNull(minibarRefills.doneAt)));
+      await tx.insert(minibarRefills).values({ hotelId, roomId, goodId: m.goodId, quantity: m.qty });
+    }
+    await audit(tx, { hotelId, actor, action: "minibar.count", entity: "room", entityId: roomId, details: { missing } });
     return { billed, bookingId: found[0].bookingId };
   });
+}
+
+export type RefillRoom = { roomId: string; number: string; items: { id: string; name: string; quantity: number }[] };
+
+/** Nachfüllliste: offene Posten je Zimmer, sortiert nach Zimmernummer */
+export async function refillList(hotelId: string): Promise<RefillRoom[]> {
+  const r = await db().select({ id: minibarRefills.id, roomId: minibarRefills.roomId, number: rooms.number, name: goods.name, quantity: minibarRefills.quantity })
+    .from(minibarRefills).innerJoin(rooms, eq(rooms.id, minibarRefills.roomId)).innerJoin(goods, eq(goods.id, minibarRefills.goodId))
+    .where(and(eq(minibarRefills.hotelId, hotelId), isNull(minibarRefills.doneAt))).orderBy(asc(rooms.sortOrder), asc(rooms.number), asc(goods.name));
+  const out: RefillRoom[] = [];
+  for (const x of r) {
+    let g = out.find((o) => o.roomId === x.roomId);
+    if (!g) out.push((g = { roomId: x.roomId, number: x.number, items: [] }));
+    g.items.push({ id: x.id, name: x.name, quantity: x.quantity });
+  }
+  return out;
+}
+
+/** Zimmer ist aufgefüllt: alle offenen Posten des Zimmers erledigt */
+export async function markRefilled(hotelId: string, roomId: string, actor: string): Promise<number> {
+  const done = await db().update(minibarRefills).set({ doneAt: new Date() })
+    .where(and(eq(minibarRefills.hotelId, hotelId), eq(minibarRefills.roomId, roomId), isNull(minibarRefills.doneAt))).returning({ id: minibarRefills.id });
+  if (done.length) await audit(db(), { hotelId, actor, action: "minibar.refilled", entity: "room", entityId: roomId, details: { count: done.length } });
+  return done.length;
 }
