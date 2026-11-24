@@ -4,10 +4,9 @@ import { MODULES, moduleDef, type ModuleRow } from "./modules";
  * Funktionswahl in Alltagssprache (Wizard-Schritt «Was brauchen Sie?») und Auflösung der Abhängigkeiten.
  * Reine Logik ohne I/O.
  */
-export type Choice = { key: string; question: string; modules: string[] };
+export type Choice = { key: string; question: string; modules: string[]; /** angekreuzt, sobald eine der Funktionen läuft (bestehende Betriebe mit nur einer davon bleiben angekreuzt) */ anyOn?: boolean };
 export const CHOICES: Choice[] = [
-  { key: "frontdesk", question: "Wir haben eine Rezeption (Tagesliste, Zimmerplan, Zimmernummern)", modules: ["frontdesk"] },
-  { key: "housekeeping", question: "Reinigungspersonal arbeitet mit einer Liste am Handy", modules: ["housekeeping"] },
+  { key: "staff", question: "Wir arbeiten mit Personal in Rezeption und Reinigung (Tagesliste, Zimmerplan, Reinigungsliste am Handy)", modules: ["frontdesk", "housekeeping"], anyOn: true },
   { key: "restaurant", question: "Wir haben ein Restaurant oder Café (Tischreservierung, Speisekarte, Küche)", modules: ["restaurant"] },
   { key: "pos", question: "Wir wollen die Kasse von Pontivo nutzen (Bestellen, Kassieren, aufs Zimmer; CHF 29 pro Monat)", modules: ["pos"] },
   { key: "posbridge", question: "Unsere eigene Restaurantkasse soll Posten aufs Zimmer buchen", modules: ["posbridge"] },
@@ -35,7 +34,7 @@ export function startModules(wholeUnit: boolean, restaurant = false): Record<str
 export const RESTAURANT_CHOICES = ["pos", "shop", "marketing", "debtors"];
 
 /** Ist die Auswahl an? (alle Funktionen dahinter laufen) */
-export const choiceOn = (rows: ModuleRow[], c: Choice, isOn: (rows: ModuleRow[], key: string) => boolean) => c.modules.every((k) => isOn(rows, k));
+export const choiceOn = (rows: ModuleRow[], c: Choice, isOn: (rows: ModuleRow[], key: string) => boolean) => (c.anyOn ? c.modules.some((k) => isOn(rows, k)) : c.modules.every((k) => isOn(rows, k)));
 
 /**
  * Gewünschte Änderungen mit Abhängigkeiten auflösen: wer eingeschaltet wird, zieht seine Voraussetzungen mit;

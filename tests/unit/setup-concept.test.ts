@@ -55,3 +55,15 @@ describe("Funktionswahl", () => {
     expect(resolveModules({ ...base, invoicing: false }, { pos: true })).toEqual({ pos: true, invoicing: true, restaurant: true });
   });
 });
+
+describe("Funktionswahl «Personal»", () => {
+  it("eine Frage für Rezeption und Reinigung; angekreuzt, sobald eine davon läuft", async () => {
+    const { CHOICES, choiceOn } = await import("../../src/domain/module-choice");
+    const staff = CHOICES.find((c) => c.key === "staff")!;
+    expect(staff.modules).toEqual(["frontdesk", "housekeeping"]);
+    expect(CHOICES.some((c) => c.key === "housekeeping")).toBe(false);
+    const on = (keys: string[]) => (_: unknown, k: string) => keys.includes(k);
+    expect(choiceOn([], staff, on(["frontdesk"]))).toBe(true);
+    expect(choiceOn([], staff, on([]))).toBe(false);
+  });
+});

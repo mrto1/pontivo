@@ -10,7 +10,7 @@ import {
   addUnit, bookingOnly, CANCEL_TEMPLATES, chooseModules, detectEmbed, goLiveFromWizard, markEmbedded, isWholeUnit, nextOpenStep, onboardingSteps, OnboardingError, PROPERTY_LABEL,
   goLiveRestaurant, isRestaurant, markSetupCompleteIfDone, quickTables, setArrivalInfo, setGuestInfo, unitWord, updateBasics, type StepKey,
 } from "@/src/services/onboarding";
-import { CHOICES, RESTAURANT_CHOICES } from "@/src/domain/module-choice";
+import { CHOICES, RESTAURANT_CHOICES, choiceOn } from "@/src/domain/module-choice";
 import { WEEKDAYS_DE, hoursText, parseHoursText } from "@/src/domain/reservations";
 import { getSettings, saveOpeningHours, saveSettings } from "@/src/services/reservations";
 import { listItems, listTables, PosError } from "@/src/services/pos";
@@ -282,7 +282,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           <p className="muted" style={{ margin: 0 }}>Kreuzen Sie an, was auf Sie zutrifft. Alles andere bleibt ausgeblendet und lässt sich jederzeit unter «Funktionen» ändern.</p>
           {(resto ? CHOICES.filter((c) => RESTAURANT_CHOICES.includes(c.key)) : CHOICES).map((c) => (
             <label key={c.key} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
-              <input type="checkbox" name={`c_${c.key}`} value="1" defaultChecked={c.modules.every((m) => isOn(rows, m))} style={{ width: "auto", marginTop: 4 }} />
+              <input type="checkbox" name={`c_${c.key}`} value="1" defaultChecked={choiceOn(rows, c, isOn)} style={{ width: "auto", marginTop: 4 }} />
               <span>{c.question}</span>
             </label>
           ))}

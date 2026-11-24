@@ -34,9 +34,9 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
   await page.fill("#intro", "Helle 3½-Zimmer-Wohnung mit Balkon, 5 Minuten zur Parsennbahn.");
   await page.getByRole("button", { name: "Speichern und weiter" }).click();
 
-  // Was brauchen Sie? (Ferienwohnung: ohne Rezeption vorbelegt)
+  // Was brauchen Sie? (Ferienwohnung: ohne Personal vorbelegt)
   await expect(page.getByRole("heading", { name: "Was brauchen Sie?" })).toBeVisible();
-  await expect(page.getByLabel(/Wir haben eine Rezeption/)).not.toBeChecked();
+  await expect(page.getByLabel(/Wir arbeiten mit Personal in Rezeption/)).not.toBeChecked();
   await page.getByRole("button", { name: "Speichern und weiter" }).click();
 
   // Bisherige Software: Nein (Standard)
