@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, desc, eq, gte, lte, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, lte, or, sql, type SQL } from "drizzle-orm";
 import { db, rows, type Executor, type Tx } from "../db/client";
 import { auditLog, bookingExtras, bookingRooms, bookings, extras, guests, hotels, payments, ratePlans, roomTypes, type Booking, type Hotel } from "../db/schema";
 import { addDays, isDay, nightsOf, todayIn, zonedToUtc } from "../domain/dates";
@@ -16,12 +16,18 @@ import { enqueueUpsellOffer } from "./upsell";
 import { BookingError, lineTotals, priceRoomLines, releaseNights, reserveNights, resolveBookingExtras, RollbackSoldOut, roomLinesOf, type RoomLine } from "./bookings";
 
 /** Buchungsliste eines Hotels (immer nach hotel_id gefiltert, SPEC 0.5) */
-export async function listBookings(hotelId: string, f: { from?: string; to?: string; status?: string; source?: string }) {
+export async function listBookings(hotelId: string, f: { from?: string; to?: string; status?: string; source?: string; q?: string }) {
   const where: SQL[] = [eq(bookings.hotelId, hotelId)];
   if (f.from) where.push(gte(bookings.checkin, f.from));
   if (f.to) where.push(lte(bookings.checkin, f.to));
   if (f.status) where.push(eq(bookings.status, f.status));
   if (f.source) where.push(eq(bookings.source, f.source));
+  // Suche: Referenz, Name oder E-Mail des Gasts (Teiltext, ohne Gross-/Kleinschreibung); % und _ sind keine Platzhalter
+  const q = f.q?.trim().slice(0, 80);
+  if (q) {
+    const like = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    where.push(or(ilike(bookings.reference, like), ilike(guests.lastName, like), ilike(guests.firstName, like), ilike(guests.email, like), ilike(sql`${guests.firstName} || ' ' || ${guests.lastName}`, like))!);
+  }
   return db()
     .select({ b: bookings, g: guests, rt: roomTypes })
     .from(bookings)

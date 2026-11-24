@@ -26,6 +26,7 @@ export default async function Bookings({ params, searchParams }: { params: Promi
     to: sp.to && isDay(sp.to) ? sp.to : undefined,
     status: STATUS.includes(sp.status ?? "") ? sp.status || undefined : undefined,
     source: SOURCE.includes(sp.source ?? "") ? sp.source || undefined : undefined,
+    q: sp.q?.trim() || undefined,
   };
   const list = await listBookings(hotel.id, f);
   const base = `/admin/${hotel.id}/bookings`;
@@ -39,6 +40,7 @@ export default async function Bookings({ params, searchParams }: { params: Promi
         <Link className="btn" href={`${base}?neu=1`} scroll={false}>+ Buchung erfassen</Link>
       </div>
       <form className="card bk-filter" method="get">
+        <div><label htmlFor="bk-q">Suche</label><input id="bk-q" type="search" name="q" defaultValue={f.q} placeholder="Name, E-Mail oder Referenz" maxLength={80} /></div>
         <div><label htmlFor="f71ca1">Anreise ab</label><input id="f71ca1" type="date" name="from" defaultValue={f.from} /></div>
         <div><label htmlFor="f71ca2">Anreise bis</label><input id="f71ca2" type="date" name="to" defaultValue={f.to} /></div>
         <div><label htmlFor="f71ca3">Status</label><select id="f71ca3" name="status" defaultValue={f.status ?? ""}>{STATUS.map((s) => <option key={s} value={s}>{s || "alle"}</option>)}</select></div>
