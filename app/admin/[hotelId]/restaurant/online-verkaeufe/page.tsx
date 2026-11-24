@@ -1,6 +1,5 @@
-import { requireHotel } from "@/src/auth/guard";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { DownloadLink } from "@/components/admin/DownloadLink";
-import { requireModule } from "@/src/services/modules";
 import { onlineSalesDays } from "@/src/services/online-sales";
 import { salesTotal } from "@/src/domain/online-sales";
 import { shiftMonth } from "@/src/services/overview";
@@ -18,8 +17,7 @@ const fmt = (d: string) => `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}`
 export default async function OnlineSales({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "onlinesales");
-  await requireModule(hotel.id, "restaurant");
+  const { hotel } = await requireHotelModule("restaurant", hotelId, "staff", "onlinesales");
   const cur = todayIn(hotel.timezone).slice(0, 7);
   const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(sp.month ?? "") ? sp.month! : cur;
   const from = `${month}-01`, to = monthEnd(month);

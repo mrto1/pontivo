@@ -1,8 +1,7 @@
 import { PeriodNav } from "@/components/admin/PeriodNav";
 import { DownloadLink } from "@/components/admin/DownloadLink";
 import { InfoTip } from "@/components/admin/InfoTip";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { hestaMonth } from "@/src/services/hesta";
 import { countryName } from "@/src/domain/countries";
 import { shiftMonth } from "@/src/services/overview";
@@ -14,8 +13,7 @@ const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "A
 export default async function Hesta({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "statistics");
-  await requireModule(hotel.id, "statistics");
+  const { hotel } = await requireHotelModule("statistics", hotelId, "staff", "statistics");
   const thisMonth = todayIn(hotel.timezone).slice(0, 7);
   const month = sp.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(sp.month) ? sp.month : shiftMonth(thisMonth, -1);
   const r = await hestaMonth(hotel.id, month);

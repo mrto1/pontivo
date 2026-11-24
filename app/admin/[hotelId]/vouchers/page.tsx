@@ -2,8 +2,7 @@ import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { feePercentText } from "@/src/domain/fee";
 import { ZodError } from "zod";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { listVouchers, redeemVoucher, updateVoucherSettings, voucherSettings, vouchersAvailable, VoucherError } from "@/src/services/vouchers";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
@@ -54,8 +53,7 @@ async function redeem(f: FormData) {
 export default async function Vouchers({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "vouchers");
-  await requireModule(hotel.id, "vouchers");
+  const { hotel, role } = await requireHotelModule("vouchers", hotelId, "staff", "vouchers");
   const canEdit = atLeast(role, "manager");
   const set = voucherSettings(hotel);
   const list = await listVouchers(hotel.id, sp.q);

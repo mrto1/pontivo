@@ -1,16 +1,14 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { AccessError, issueCodes, revokeCodes } from "@/src/services/door-access";
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>, bookingId: string) => Promise<string>) {
   const hotelId = s(f, "hotelId"), bookingId = s(f, "bookingId");
-  const c = await requireHotel(hotelId, "staff", "bookings");
-  await requireModule(c.hotel.id, "access");
+  const c = await requireHotelModule("access", hotelId, "staff", "bookings");
   let msg: string;
   try { msg = await fn(c, bookingId); } catch (e) { if (!(e instanceof AccessError)) throw e; msg = e.message; }
   redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}#zutritt`);

@@ -1,5 +1,4 @@
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { allTags, kartei, REGULAR_VISITS } from "@/src/services/guest-notes";
 import { moduleRows } from "@/src/services/modules";
 import { isOn } from "@/src/domain/modules";
@@ -11,8 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function Guestbook({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "guestbook");
-  await requireModule(hotel.id, "guestnotes");
+  const { hotel } = await requireHotelModule("guestnotes", hotelId, "staff", "guestbook");
   const q = (sp.q ?? "").slice(0, 80);
   const tag = (sp.tag ?? "").slice(0, 24);
   const [rows, tags, mods] = await Promise.all([kartei(hotel.id, q, tag), allTags(hotel.id), moduleRows(hotel.id)]);

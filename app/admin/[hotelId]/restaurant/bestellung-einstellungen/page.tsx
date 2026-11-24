@@ -4,8 +4,7 @@ import { FormSwitch } from "@/components/admin/FormSwitch";
 import { CopyBox } from "@/components/admin/CopyBox";
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError } from "@/src/services/pos";
 import { listZones, orderReadiness, orderSettings, pilotSlotsLeft, publicUrl, saveOrderSettings, saveZone, screensOf, setOrdersEnabled, startTestOrder } from "@/src/services/online-orders";
 import { parsePostalCodes } from "@/src/domain/online-order";
@@ -22,8 +21,7 @@ const chf = (v: string) => Math.round(Number(v.replace(",", ".")) * 100);
 const here = (h: string, msg: string): never => redirect(`/admin/${h}/restaurant/bestellung-einstellungen?msg=${encodeURIComponent(msg)}`);
 
 async function guard(f: FormData) {
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "restaurant");
+  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "manager");
   return c;
 }
 async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof guard>>) => Promise<string>) {
@@ -67,8 +65,7 @@ async function toggle(f: FormData) {
 export default async function OrderSettingsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager");
-  await requireModule(hotel.id, "restaurant");
+  const { hotel } = await requireHotelModule("restaurant", hotelId, "manager");
   const [cfg, problems, zones, screens, model] = await Promise.all([orderSettings(hotel.id), orderReadiness(hotel), listZones(hotel.id), screensOf(hotel.id), orderFeeModel()]);
   const slotsLeft = cfg.startedOn ? 0 : await pilotSlotsLeft();
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;

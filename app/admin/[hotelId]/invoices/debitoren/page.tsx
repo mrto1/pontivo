@@ -1,6 +1,6 @@
 import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { InvoiceError } from "@/src/services/invoicing";
 import {
@@ -15,8 +15,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const BUCKETS: Bucket[] = ["not_due", "d1_30", "d31_60", "d60_plus"];
 
 async function guard(f: FormData) {
-  const c = await requireHotel(s(f, "hotelId"), "staff", "debtors");
-  await requireModule(c.hotel.id, "invoicing");
+  const c = await requireHotelModule("invoicing", s(f, "hotelId"), "staff", "debtors");
   await requireModule(c.hotel.id, "debtors");
   return c;
 }
@@ -64,8 +63,7 @@ async function company(f: FormData) {
 export default async function Debtors({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "debtors");
-  await requireModule(hotel.id, "invoicing");
+  const { hotel } = await requireHotelModule("invoicing", hotelId, "staff", "debtors");
   await requireModule(hotel.id, "debtors");
   const [open, firms] = await Promise.all([listOpenInvoices(hotel), listCompanies(hotel.id)]);
   const aging = agingTotals(open);

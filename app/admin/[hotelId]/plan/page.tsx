@@ -5,9 +5,8 @@ import Link from "next/link";
 import { InfoTip } from "@/components/admin/InfoTip";
 import { Drawer, DrawerActions } from "@/components/admin/Drawer";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
-import { requireHotel } from "@/src/auth/guard";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
-import { requireModule } from "@/src/services/modules";
 import { assignRoom, autoAssign, createRoom, deleteRoom, FrontdeskError, listRooms, moveRoom, planBookings, seedRooms, updateRoom, type PlanBooking } from "@/src/services/frontdesk";
 import { addDays, diffDays, isDay, todayIn, weekday } from "@/src/domain/dates";
 import { formatDay } from "@/src/i18n/dict";
@@ -22,8 +21,7 @@ const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<string>, reopen = "") {
-  const c = await requireHotel(s(f, "hotelId"), "staff", "plan");
-  await requireModule(c.hotel.id, "frontdesk");
+  const c = await requireHotelModule("frontdesk", s(f, "hotelId"), "staff", "plan");
   let msg: string;
   try {
     msg = await fn(c);
@@ -97,8 +95,7 @@ function cells(bs: PlanBooking[], from: string, hotelId: string) {
 export default async function Plan({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "plan");
-  await requireModule(hotel.id, "frontdesk");
+  const { hotel, role } = await requireHotelModule("frontdesk", hotelId, "staff", "plan");
   const today = todayIn(hotel.timezone);
   const from = sp.from && isDay(sp.from) ? sp.from : today;
   const manager = atLeast(role, "manager");

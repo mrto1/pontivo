@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { InfoTip } from "@/components/admin/InfoTip";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { saveMailTexts } from "@/src/services/mail-texts";
 import { cleanMailText, isMailTemplate, LIMITS, MAIL_TEMPLATES, type MailText } from "@/src/domain/mail-texts";
 import { hotelLocales, LOCALE_NAMES, type Locale } from "@/src/i18n/dict";
@@ -15,8 +14,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "");
 
 async function save(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "mailtexts");
+  const c = await requireHotelModule("mailtexts", s(f, "hotelId"), "manager");
   const template = s(f, "template");
   if (!isMailTemplate(template)) redirect(`/admin/${c.hotel.id}/mail-texte`);
   const per: Record<string, MailText> = {};
@@ -47,8 +45,7 @@ function preview(hotel: Hotel, template: string, lang: Locale): string {
 export default async function MailTexte({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager");
-  await requireModule(hotel.id, "mailtexts");
+  const { hotel } = await requireHotelModule("mailtexts", hotelId, "manager");
   const template = isMailTemplate(sp.t ?? "") ? sp.t! : MAIL_TEMPLATES[0].key;
   const langs = hotelLocales(hotel);
   const mine = hotel.content.mailTexts?.[template] ?? {};

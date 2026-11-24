@@ -2,8 +2,7 @@ import { Notice } from "@/components/admin/Notice";
 import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { db } from "@/src/db/client";
 import { rooms } from "@/src/db/schema";
 import { AccessError, listLocks, nukiConfigured, saveNukiToken, setLockRoom, syncLocks } from "@/src/services/door-access";
@@ -12,8 +11,7 @@ export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<string>) {
-  const c = await requireHotel(s(f, "hotelId"), "manager", "access");
-  await requireModule(c.hotel.id, "access");
+  const c = await requireHotelModule("access", s(f, "hotelId"), "manager", "access");
   let msg: string;
   try { msg = await fn(c); } catch (e) { if (!(e instanceof AccessError)) throw e; msg = e.message; }
   redirect(`/admin/${c.hotel.id}/zutritt?msg=${encodeURIComponent(msg)}`);
@@ -25,8 +23,7 @@ async function assign(f: FormData) { "use server"; await act(f, async (c) => { a
 export default async function Zutritt({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager", "access");
-  await requireModule(hotel.id, "access");
+  const { hotel } = await requireHotelModule("access", hotelId, "manager", "access");
   const locks = await listLocks(hotel.id);
   const rs = (await db().select().from(rooms).where(eq(rooms.hotelId, hotel.id))).filter((r) => r.active).sort((a, b) => a.number.localeCompare(b.number, "de", { numeric: true }));
   const hid = <input type="hidden" name="hotelId" value={hotel.id} />;

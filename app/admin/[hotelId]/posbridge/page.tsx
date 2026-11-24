@@ -1,8 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosBridgeError, bridgeTotals, createApiKey, listApiKeys, revokeApiKey } from "@/src/services/posbridge";
 import { formatChf } from "@/src/domain/money";
 import { env } from "@/src/env";
@@ -12,8 +11,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function create(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  await requireModule(c.hotel.id, "posbridge");
+  const c = await requireHotelModule("posbridge", s(f, "hotelId"), "owner");
   try {
     const { key } = await createApiKey(c.hotel.id, s(f, "label"), c.actor);
     // Der Schlüssel wird nur dieses eine Mal angezeigt (Adresse, nicht gespeichert)
@@ -25,8 +23,7 @@ async function create(f: FormData) {
 }
 async function revoke(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  await requireModule(c.hotel.id, "posbridge");
+  const c = await requireHotelModule("posbridge", s(f, "hotelId"), "owner");
   await revokeApiKey(c.hotel.id, s(f, "id"), c.actor);
   redirect(`/admin/${c.hotel.id}/posbridge?msg=${encodeURIComponent("Schlüssel widerrufen.")}`);
 }
@@ -34,8 +31,7 @@ async function revoke(f: FormData) {
 export default async function PosBridgePage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "owner");
-  await requireModule(hotel.id, "posbridge");
+  const { hotel } = await requireHotelModule("posbridge", hotelId, "owner");
   const [keys, totals] = await Promise.all([listApiKeys(hotel.id), bridgeTotals(hotel.id)]);
   const keyLabel = new Map(keys.map((k) => [k.id, k.label]));
   const url = `${env().APP_BASE_URL}/api/v1/folio-items`;

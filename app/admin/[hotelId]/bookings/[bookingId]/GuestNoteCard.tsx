@@ -1,13 +1,11 @@
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { GuestNoteError, MAX_NOTE, profileOf, saveProfile } from "@/src/services/guest-notes";
 
 async function save(f: FormData) {
   "use server";
   const hotelId = String(f.get("hotelId")), bookingId = String(f.get("bookingId")), email = String(f.get("email"));
-  const c = await requireHotel(hotelId, "staff", "bookings");
-  await requireModule(c.hotel.id, "guestnotes");
+  const c = await requireHotelModule("guestnotes", hotelId, "staff", "bookings");
   let msg = "Notiz gespeichert.";
   try { await saveProfile(c.hotel.id, email, { note: String(f.get("note") ?? ""), tags: String(f.get("tags") ?? "") }, c.actor); } catch (e) { if (!(e instanceof GuestNoteError)) throw e; msg = e.message; }
   redirect(`/admin/${c.hotel.id}/bookings/${bookingId}?note=${encodeURIComponent(msg)}#gastnotiz`);

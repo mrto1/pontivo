@@ -1,7 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { DownloadLink } from "@/components/admin/DownloadLink";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { moduleOn, requireModule } from "@/src/services/modules";
 import { GoodsError, linkPosItem, listGoods } from "@/src/services/goods";
 import { PosError, importItems, listItems, listOptionGroups, saveItem, saveOption, saveOptionGroup, setGroupItems, setOptionActive } from "@/src/services/pos";
@@ -22,8 +22,7 @@ const here = (h: string, msg: string) => redirect(`/admin/${h}/restaurant/artike
 const bps = (v: string) => Math.round(Number(v.replace(",", ".")) * 100);
 
 async function guard(f: FormData) {
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "restaurant");
+  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "manager");
   return c;
 }
 async function item(f: FormData) {
@@ -147,8 +146,7 @@ async function csvImport(f: FormData) {
 export default async function PosItemsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager");
-  await requireModule(hotel.id, "restaurant");
+  const { hotel } = await requireHotelModule("restaurant", hotelId, "manager");
   const [items, groups, photos] = await Promise.all([listItems(hotel.id), listOptionGroups(hotel.id), photoLibrary(hotel)]);
   const gate = setupImportGate(hotel, setupImportEnabled());
   const runsLeft = Math.max(0, env().SETUP_RUNS_PER_MONTH - (await importsThisMonth(hotel.id, new Date(), "menu")));

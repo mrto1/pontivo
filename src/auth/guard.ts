@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getHotelById } from "../services/hotels";
 import { getUser, readSessionValue, roleIn, SESSION_COOKIE } from "./session";
 import { canAccess, type FullRole } from "../domain/roles";
+import { requireModule } from "../services/modules";
 
 export async function currentUserId(): Promise<string | null> {
   return readSessionValue((await cookies()).get(SESSION_COOKIE)?.value);
@@ -26,6 +27,16 @@ export async function requireHotel(hotelId: string, min: FullRole = "staff", are
   const hotel = await getHotelById(hotelId);
   if (!hotel) notFound();
   return { user, role: role!, hotel, actor: `user:${user.id}` };
+}
+
+/**
+ * Wie `requireHotel`, dazu muss die Funktion (Modul) des Betriebs eingeschaltet sein, sonst 404.
+ * Der Normalfall für Seiten und Server Actions einer Funktion: Zugriff, Rolle, Mandant und Modul in einem Aufruf.
+ */
+export async function requireHotelModule(module: string, hotelId: string, min: FullRole = "staff", area?: string) {
+  const c = await requireHotel(hotelId, min, area);
+  await requireModule(c.hotel.id, module);
+  return c;
 }
 
 /** Nur Plattform-Admin (Betreiber von Pontivo), sonst 404 */

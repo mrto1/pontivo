@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 import { Notice } from "@/components/admin/Notice";
 import { OrderScreen } from "@/components/admin/OrderScreen";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError } from "@/src/services/pos";
 import { acceptOrder, completeOrder, heartbeat, orderSettings, pauseOrders, readyOrder, rejectOrder, screenOrders } from "@/src/services/online-orders";
 import { addressKey } from "@/src/domain/online-order";
@@ -17,8 +16,7 @@ const back = (h: string, msg?: string): never => redirect(`/admin/${h}/restauran
 
 async function act(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff", "onlineorders");
-  await requireModule(c.hotel.id, "restaurant");
+  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "staff", "onlineorders");
   const id = s(f, "id");
   try {
     switch (s(f, "do")) {
@@ -44,8 +42,7 @@ const REASONS = ["Zu viel Betrieb", "Artikel ausverkauft", "Ausserhalb des Liefe
 export default async function OrdersScreenPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "onlineorders");
-  await requireModule(hotel.id, "restaurant");
+  const { hotel } = await requireHotelModule("restaurant", hotelId, "staff", "onlineorders");
   const [{ open, done, flagged }, cfg] = await Promise.all([screenOrders(hotel.id), orderSettings(hotel.id)]);
   const tz = hotel.timezone;
   const hm = (d: Date | null) => (d ? formatInTimeZone(d, tz, "HH:mm") : "");

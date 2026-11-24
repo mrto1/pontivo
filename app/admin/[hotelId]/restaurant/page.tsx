@@ -1,8 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError, openOrder, tablesOverview, webDevice } from "@/src/services/pos";
 import { formatChf } from "@/src/domain/money";
 import { FloorPlan } from "@/components/admin/FloorPlan";
@@ -16,8 +15,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function open(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff", "restaurant");
-  await requireModule(c.hotel.id, "pos");
+  const c = await requireHotelModule("pos", s(f, "hotelId"), "staff", "restaurant");
   const dev = await webDevice(c.hotel.id);
   try {
     const o = await openOrder(c.hotel.id, { tableId: s(f, "tableId") || null, deviceId: dev.id, label: s(f, "label") }, c.actor);
@@ -31,8 +29,7 @@ async function open(f: FormData) {
 export default async function RestaurantPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "restaurant");
-  await requireModule(hotel.id, "pos");
+  const { hotel } = await requireHotelModule("pos", hotelId, "staff", "restaurant");
   const tables = await tablesOverview(hotel.id);
   const today = todayIn(hotel.timezone);
   const nowMin = Number(formatInTimeZone(new Date(), hotel.timezone, "H")) * 60 + Number(formatInTimeZone(new Date(), hotel.timezone, "m"));

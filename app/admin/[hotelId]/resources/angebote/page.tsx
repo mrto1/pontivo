@@ -4,8 +4,7 @@ import { Drawer, DrawerActions } from "@/components/admin/Drawer";
 import { RowList } from "@/components/admin/RowList";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { ResourceError, listResources, saveResource } from "@/src/services/resources";
 import { hhmm } from "@/src/domain/resources";
 import { formatChf } from "@/src/domain/money";
@@ -15,8 +14,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function saveRes(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "resources");
+  const c = await requireHotelModule("resources", s(f, "hotelId"), "manager");
   const id = s(f, "id");
   let msg = "Angebot gespeichert.";
   let ok = true;
@@ -40,8 +38,7 @@ const KINDS = { wellness: "Wellness / Sauna", seminar: "Seminarraum (exklusiv)",
 export default async function ResourceSettings({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager");
-  await requireModule(hotel.id, "resources");
+  const { hotel } = await requireHotelModule("resources", hotelId, "manager");
   const list = await listResources(hotel.id);
   const base = `/admin/${hotel.id}/resources/angebote`;
   const creating = sp.r === "neu";

@@ -2,7 +2,7 @@ import { SeenMark } from "@/components/admin/SeenMark";
 import { Notice } from "@/components/admin/Notice";
 import { PeriodNav } from "@/components/admin/PeriodNav";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { atLeast } from "@/src/domain/roles";
 import { requireModule } from "@/src/services/modules";
 import { PosError, listTables } from "@/src/services/pos";
@@ -24,8 +24,7 @@ const here = (h: string, day: string, msg: string) => redirect(`/admin/${h}/rest
 const STATUS = { pending: "Zahlung offen", confirmed: "bestätigt", seated: "am Tisch", cancelled: "storniert", noshow: "nicht erschienen" } as const;
 
 async function guard(f: FormData) {
-  const c = await requireHotel(s(f, "hotelId"), "staff", "reservations");
-  await requireModule(c.hotel.id, "restaurant");
+  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "staff", "reservations");
   return c;
 }
 async function create(f: FormData) {
@@ -71,8 +70,7 @@ async function profile(f: FormData) {
 export default async function ReservationsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "reservations");
-  await requireModule(hotel.id, "restaurant");
+  const { hotel, role } = await requireHotelModule("restaurant", hotelId, "staff", "reservations");
   const today = todayIn(hotel.timezone);
   const day = sp.day && isDay(sp.day) ? sp.day : today;
   const [list, tables, cfg, wait] = await Promise.all([reservationsOfDay(hotel.id, day), listTables(hotel.id), getSettings(hotel.id), waitlistOfDay(hotel.id, day)]);

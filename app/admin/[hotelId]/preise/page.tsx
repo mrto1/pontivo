@@ -2,8 +2,7 @@ import { Notice } from "@/components/admin/Notice";
 import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { aiPricingActive, refreshProposals, runsToday } from "@/src/services/ai-pricing";
 import { env } from "@/src/env";
 import { atLeast } from "@/src/auth/session";
@@ -23,8 +22,7 @@ const chf = (r: number) => (r / 100).toLocaleString("de-CH", { minimumFractionDi
 const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
 async function guard(f: FormData) {
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "pricing_rules");
+  const c = await requireHotelModule("pricing_rules", s(f, "hotelId"), "manager");
   return c;
 }
 const back = (id: string, msg: string) => redirect(`/admin/${id}/preise?msg=${encodeURIComponent(msg)}`);
@@ -101,8 +99,7 @@ async function decideAction(f: FormData) {
 export default async function PricingAdmin({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "pricing");
-  await requireModule(hotel.id, "pricing_rules");
+  const { hotel, role } = await requireHotelModule("pricing_rules", hotelId, "staff", "pricing");
   const today = todayIn(hotel.timezone);
   const manage = atLeast(role, "manager");
   const [plans, rules, events, proposals, suggested] = await Promise.all([

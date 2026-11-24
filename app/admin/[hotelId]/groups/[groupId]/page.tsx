@@ -3,8 +3,7 @@ import { DownloadLink } from "@/components/admin/DownloadLink";
 import { notFound, redirect } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { ZodError } from "zod";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { addMember, changeBlock, GroupError, groupDetail, releaseGroup } from "@/src/services/groups";
 import { BookingError } from "@/src/services/bookings";
 import { bookingErrorText } from "@/src/services/admin-bookings";
@@ -18,8 +17,7 @@ export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>, groupId: string) => Promise<string>) {
-  const c = await requireHotel(s(f, "hotelId"), "staff", "groups");
-  await requireModule(c.hotel.id, "groups");
+  const c = await requireHotelModule("groups", s(f, "hotelId"), "staff", "groups");
   const id = s(f, "groupId");
   let msg: string;
   try { msg = await fn(c, id); } catch (e) {
@@ -53,8 +51,7 @@ async function member(f: FormData) {
 export default async function GroupPage({ params, searchParams }: { params: Promise<{ hotelId: string; groupId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId, groupId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "groups");
-  await requireModule(hotel.id, "groups");
+  const { hotel } = await requireHotelModule("groups", hotelId, "staff", "groups");
   let d: Awaited<ReturnType<typeof groupDetail>>;
   try { d = await groupDetail(hotel.id, groupId); } catch (e) { if (e instanceof GroupError) notFound(); throw e; }
   const { group: g } = d;

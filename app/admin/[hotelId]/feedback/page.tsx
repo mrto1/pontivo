@@ -1,8 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { FeedbackError, feedbackSettings, feedbackSummary, listFeedback, saveFeedbackSettings } from "@/src/services/feedback";
 import { formatDay } from "@/src/i18n/dict";
@@ -12,8 +11,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function save(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "feedback");
+  const c = await requireHotelModule("feedback", s(f, "hotelId"), "manager");
   let msg = "Einstellungen gespeichert.";
   try {
     await saveFeedbackSettings(c.hotel, { reviewUrl: s(f, "reviewUrl"), minScore: Number(s(f, "minScore")) }, c.actor);
@@ -27,8 +25,7 @@ async function save(f: FormData) {
 export default async function FeedbackAdmin({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "feedback");
-  await requireModule(hotel.id, "feedback");
+  const { hotel, role } = await requireHotelModule("feedback", hotelId, "staff", "feedback");
   const set = feedbackSettings(hotel);
   const [list, sum] = await Promise.all([listFeedback(hotel.id), feedbackSummary(hotel.id)]);
   return (

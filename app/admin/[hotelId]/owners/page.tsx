@@ -1,8 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { OwnerError, addCost, deleteCost, listOwners, ownerStatement, saveOwner, sendStatement } from "@/src/services/owners";
 import { listRooms } from "@/src/services/rooms";
 import { formatChf } from "@/src/domain/money";
@@ -17,8 +16,7 @@ const prevMonth = (tz: string) => { const t = todayIn(tz); const [y, m] = t.spli
 
 async function save(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "owners");
+  const c = await requireHotelModule("owners", s(f, "hotelId"), "manager");
   let msg = "Eigentümer gespeichert.";
   try {
     await saveOwner(c.hotel.id, s(f, "id") || null, { name: s(f, "name"), email: s(f, "email"), commissionPercent: Number(s(f, "commission").replace(",", ".") || 0), roomTypeIds: f.getAll("roomTypeIds").map(String), note: s(f, "note"), active: f.get("active") === "on" }, c.actor);
@@ -30,8 +28,7 @@ async function save(f: FormData) {
 }
 async function cost(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "owners");
+  const c = await requireHotelModule("owners", s(f, "hotelId"), "manager");
   let msg = "Kosten erfasst.";
   try {
     await addCost(c.hotel.id, s(f, "ownerId"), s(f, "month"), s(f, "description"), Math.round(Number(s(f, "amount").replace(",", ".")) * 100), c.actor);
@@ -43,15 +40,13 @@ async function cost(f: FormData) {
 }
 async function delCost(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "owners");
+  const c = await requireHotelModule("owners", s(f, "hotelId"), "manager");
   await deleteCost(c.hotel.id, s(f, "costId"), c.actor);
   back(c.hotel.id, s(f, "month"), "Kosten gelöscht.");
 }
 async function send(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "owners");
+  const c = await requireHotelModule("owners", s(f, "hotelId"), "manager");
   let msg = "Abrechnung wird versendet.";
   try {
     await sendStatement(c.hotel, s(f, "ownerId"), s(f, "month"), c.actor);
@@ -65,8 +60,7 @@ async function send(f: FormData) {
 export default async function OwnersPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "owners");
-  await requireModule(hotel.id, "owners");
+  const { hotel, role } = await requireHotelModule("owners", hotelId, "staff", "owners");
   const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(sp.month ?? "") ? sp.month! : prevMonth(hotel.timezone);
   const [list, types] = await Promise.all([listOwners(hotel.id), listRooms(hotel.id).then((r) => r.map((x) => x.roomType))]);
   const stmts = await Promise.all(list.filter((o) => o.active).map((o) => ownerStatement(hotel.id, o.id, month)));

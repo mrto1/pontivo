@@ -2,8 +2,7 @@ import { Notice } from "@/components/admin/Notice";
 import { InfoTip } from "@/components/admin/InfoTip";
 import net from "node:net";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosBridgeError, createApiKey, listApiKeys, revokeApiKey } from "@/src/services/posbridge";
 import { WebhookError, createEndpoint, deleteEndpoint, listEndpoints, recentDeliveries, saveReturnOrigins, sendPing } from "@/src/services/webhooks";
 import { WEBHOOK_EVENTS } from "@/src/domain/webhooks";
@@ -14,8 +13,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function create(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  await requireModule(c.hotel.id, "api");
+  const c = await requireHotelModule("api", s(f, "hotelId"), "owner");
   try {
     const days = Number(s(f, "days") || 0);
     const ips = s(f, "ips").split(/[\s,;]+/).filter(Boolean);
@@ -29,16 +27,14 @@ async function create(f: FormData) {
 }
 async function revoke(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  await requireModule(c.hotel.id, "api");
+  const c = await requireHotelModule("api", s(f, "hotelId"), "owner");
   await revokeApiKey(c.hotel.id, s(f, "id"), c.actor);
   redirect(`/admin/${c.hotel.id}/api?msg=${encodeURIComponent("Schlüssel widerrufen.")}`);
 }
 
 async function addHook(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  await requireModule(c.hotel.id, "api");
+  const c = await requireHotelModule("api", s(f, "hotelId"), "owner");
   try {
     const { secret } = await createEndpoint(c.hotel.id, s(f, "url"), f.getAll("events").map(String), c.actor);
     redirect(`/admin/${c.hotel.id}/api?secret=${encodeURIComponent(secret)}`);
@@ -49,16 +45,14 @@ async function addHook(f: FormData) {
 }
 async function hookAction(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  await requireModule(c.hotel.id, "api");
+  const c = await requireHotelModule("api", s(f, "hotelId"), "owner");
   if (s(f, "do") === "delete") await deleteEndpoint(c.hotel.id, s(f, "id"), c.actor);
   else await sendPing(c.hotel.id, s(f, "id"), c.actor);
   redirect(`/admin/${c.hotel.id}/api?msg=${encodeURIComponent(s(f, "do") === "delete" ? "Webhook-Adresse gelöscht." : "Testereignis wird gesendet (innerhalb einer Minute).")}`);
 }
 async function origins(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  await requireModule(c.hotel.id, "api");
+  const c = await requireHotelModule("api", s(f, "hotelId"), "owner");
   try { await saveReturnOrigins(c.hotel, s(f, "origins"), c.actor); redirect(`/admin/${c.hotel.id}/api?msg=${encodeURIComponent("Gespeichert.")}`); }
   catch (e) { if (!(e instanceof WebhookError)) throw e; redirect(`/admin/${c.hotel.id}/api?msg=${encodeURIComponent(`Nicht gespeichert: ${e.message}`)}`); }
 }
@@ -66,8 +60,7 @@ async function origins(f: FormData) {
 export default async function ApiPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "owner");
-  await requireModule(hotel.id, "api");
+  const { hotel } = await requireHotelModule("api", hotelId, "owner");
   const keys = await listApiKeys(hotel.id, "website");
   const hooks = await listEndpoints(hotel.id);
   const deliveries = await recentDeliveries(hotel.id, 15);

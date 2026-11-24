@@ -1,6 +1,5 @@
 import { PeriodNav } from "@/components/admin/PeriodNav";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { waitlistOfDay } from "@/src/services/reservations";
 import { addDays, isDay, todayIn } from "@/src/domain/dates";
 import { formatDay } from "@/src/i18n/dict";
@@ -11,8 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function WaitlistPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "waitlist");
-  await requireModule(hotel.id, "restaurant");
+  const { hotel } = await requireHotelModule("restaurant", hotelId, "staff", "waitlist");
   const today = todayIn(hotel.timezone);
   const day = sp.day && isDay(sp.day) ? sp.day : today;
   const list = await waitlistOfDay(hotel.id, day);

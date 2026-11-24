@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { OwnerError, ownerStatement } from "@/src/services/owners";
 import { formatChf } from "@/src/domain/money";
 
@@ -9,8 +8,7 @@ export const dynamic = "force-dynamic";
 /** Druckansicht der Abrechnung (im Browser «Drucken» → als PDF speichern) */
 export default async function StatementPrint({ params }: { params: Promise<{ hotelId: string; ownerId: string; month: string }> }) {
   const { hotelId, ownerId, month } = await params;
-  const { hotel } = await requireHotel(hotelId, "staff", "owners");
-  await requireModule(hotel.id, "owners");
+  const { hotel } = await requireHotelModule("owners", hotelId, "staff", "owners");
   let x;
   try { x = await ownerStatement(hotel.id, ownerId, month); } catch (e) { if (e instanceof OwnerError) notFound(); throw e; }
   return (

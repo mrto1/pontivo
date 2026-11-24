@@ -1,8 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
-import { requireModule } from "@/src/services/modules";
 import { InvoiceError, invoicingSettings, listInvoices, updateInvoicingSettings } from "@/src/services/invoicing";
 import { formatChf } from "@/src/domain/money";
 import { formatDay } from "@/src/i18n/dict";
@@ -14,8 +13,7 @@ const bps = (v: string) => Math.round(Number(v.replace(",", ".")) * 100);
 
 async function save(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "invoicing");
+  const c = await requireHotelModule("invoicing", s(f, "hotelId"), "manager");
   let msg = "Einstellungen gespeichert.";
   try {
     await updateInvoicingSettings(c.hotel, {
@@ -32,8 +30,7 @@ async function save(f: FormData) {
 export default async function Invoices({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "invoices");
-  await requireModule(hotel.id, "invoicing");
+  const { hotel, role } = await requireHotelModule("invoicing", hotelId, "staff", "invoices");
   const manager = atLeast(role, "manager");
   const set = invoicingSettings(hotel);
   const list = await listInvoices(hotel.id, sp.filter === "draft" ? "draft" : sp.filter === "issued" ? "issued" : "all");

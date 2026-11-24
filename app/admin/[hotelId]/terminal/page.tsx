@@ -1,8 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { InvoiceError } from "@/src/services/invoicing";
 import { listReaders, listTerminalPayments, registerReader } from "@/src/services/terminal";
 import { formatChf } from "@/src/domain/money";
@@ -13,8 +12,7 @@ const STATUS: Record<string, string> = { pending: "läuft", succeeded: "bezahlt"
 
 async function register(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager", "terminal");
-  await requireModule(c.hotel.id, "terminal");
+  const c = await requireHotelModule("terminal", s(f, "hotelId"), "manager", "terminal");
   let msg = "Kartenleser registriert.";
   try { await registerReader(c.hotel, { registrationCode: s(f, "code"), label: s(f, "label") }, c.actor); } catch (e) { if (!(e instanceof InvoiceError)) throw e; msg = e.message; }
   redirect(`/admin/${c.hotel.id}/terminal?msg=${encodeURIComponent(msg)}`);
@@ -23,8 +21,7 @@ async function register(f: FormData) {
 export default async function TerminalPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager", "terminal");
-  await requireModule(hotel.id, "terminal");
+  const { hotel } = await requireHotelModule("terminal", hotelId, "manager", "terminal");
   const readers = await listReaders(hotel.id);
   const pays = await listTerminalPayments(hotel.id);
   return (

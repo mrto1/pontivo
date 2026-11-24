@@ -5,8 +5,7 @@ import { RowList } from "@/components/admin/RowList";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { GoodsError, adjustStock, deleteGood, listGoods, saveGood } from "@/src/services/goods";
 import { VAT_LABEL, needsReorder } from "@/src/domain/goods";
 import { formatChf } from "@/src/domain/money";
@@ -17,8 +16,7 @@ const int = (v: string) => (v === "" ? 0 : Number(v));
 const hasMinibar = (type: string) => type !== "restaurant"; // reine Restaurants haben keine Minibar
 
 async function guard(f: FormData) {
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "shop");
+  const c = await requireHotelModule("shop", s(f, "hotelId"), "manager");
   return c;
 }
 const back = (hotelId: string, q: string) => redirect(`/admin/${hotelId}/shop${q}`);
@@ -68,8 +66,7 @@ async function removeAction(f: FormData) {
 export default async function ShopPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager");
-  await requireModule(hotel.id, "shop");
+  const { hotel } = await requireHotelModule("shop", hotelId, "manager");
   const list = await listGoods(hotel.id);
   const mini = hasMinibar(hotel.propertyType);
   const base = `/admin/${hotel.id}/shop`;

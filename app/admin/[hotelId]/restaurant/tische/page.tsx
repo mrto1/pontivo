@@ -2,8 +2,7 @@ import { Notice } from "@/components/admin/Notice";
 import { DownloadLink } from "@/components/admin/DownloadLink";
 import { TableEditor } from "@/components/admin/TableEditor";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError, importTables, listTables, saveTable, saveTableDetails, saveTablePlan } from "@/src/services/pos";
 import { parsePosTables } from "@/src/domain/pos-import";
 
@@ -12,8 +11,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const here = (h: string, msg: string) => redirect(`/admin/${h}/restaurant/tische?msg=${encodeURIComponent(msg)}`);
 
 async function guard(f: FormData) {
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "restaurant");
+  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "manager");
   return c;
 }
 async function table(f: FormData) {
@@ -49,8 +47,7 @@ async function csvTables(f: FormData) {
 export default async function TablesSettingsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager");
-  await requireModule(hotel.id, "restaurant");
+  const { hotel } = await requireHotelModule("restaurant", hotelId, "manager");
   const tables = await listTables(hotel.id);
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   return (

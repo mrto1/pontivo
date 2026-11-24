@@ -1,8 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { FormSwitch } from "@/components/admin/FormSwitch";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError } from "@/src/services/pos";
 import { getSettings, saveSettings } from "@/src/services/reservations";
 import { publicBase } from "@/src/services/brand";
@@ -13,8 +12,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const here = (h: string, msg: string) => redirect(`/admin/${h}/restaurant/einstellungen?msg=${encodeURIComponent(msg)}`);
 
 async function guard(f: FormData) {
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "restaurant");
+  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "manager");
   return c;
 }
 async function settings(f: FormData) {
@@ -31,8 +29,7 @@ async function settings(f: FormData) {
 export default async function RestaurantSettingsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager");
-  await requireModule(hotel.id, "restaurant");
+  const { hotel } = await requireHotelModule("restaurant", hotelId, "manager");
   const cfg = await getSettings(hotel.id);
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   const publicUrl = `${publicBase(hotel)}/${hotel.defaultLanguage}/tisch`;

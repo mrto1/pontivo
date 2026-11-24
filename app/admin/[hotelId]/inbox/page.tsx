@@ -2,8 +2,8 @@ import { SeenMark } from "@/components/admin/SeenMark";
 import { Notice } from "@/components/admin/Notice";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { moduleRows, requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
+import { moduleRows } from "@/src/services/modules";
 import { isOn } from "@/src/domain/modules";
 import { atLeast } from "@/src/auth/session";
 import { InboxError, closeThread, listThreads, openThread, replyToThread } from "@/src/services/inbox";
@@ -21,8 +21,7 @@ const fmt = (d: Date) => d.toLocaleString("de-CH", { timeZone: "Europe/Zurich", 
 
 async function reply(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff", "inbox");
-  await requireModule(c.hotel.id, "inbox");
+  const c = await requireHotelModule("inbox", s(f, "hotelId"), "staff", "inbox");
   const id = s(f, "threadId");
   let msg = "Antwort gesendet.";
   try {
@@ -36,8 +35,7 @@ async function reply(f: FormData) {
 
 async function close(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff", "inbox");
-  await requireModule(c.hotel.id, "inbox");
+  const c = await requireHotelModule("inbox", s(f, "hotelId"), "staff", "inbox");
   let msg = "Unterhaltung abgeschlossen.";
   try {
     await closeThread(c.hotel.id, s(f, "threadId"), c.actor);
@@ -65,8 +63,7 @@ async function wishDone(f: FormData) {
 
 async function makeOffer(f: FormData) {
   "use server";
-  const c = await requireHotel(String(f.get("hotelId")), "manager");
-  await requireModule(c.hotel.id, "inquiries");
+  const c = await requireHotelModule("inquiries", String(f.get("hotelId")), "manager");
   try {
     const o = await createOfferFromInquiry(c.hotel, String(f.get("id")), c.actor);
     redirect(`/admin/${c.hotel.id}/offers/${o.id}`);

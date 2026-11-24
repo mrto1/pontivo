@@ -1,7 +1,6 @@
 import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { closeDay, DayCloseError, dayTotals, getDayClose, listDayCloses } from "@/src/services/day-close";
 import { addDays, todayIn } from "@/src/domain/dates";
 import { PeriodNav } from "@/components/admin/PeriodNav";
@@ -17,8 +16,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function close(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff", "dayclose");
-  await requireModule(c.hotel.id, "invoicing");
+  const c = await requireHotelModule("invoicing", s(f, "hotelId"), "staff", "dayclose");
   const day = s(f, "day");
   let msg = `Tag ${day} abgeschlossen.`;
   try {
@@ -34,8 +32,7 @@ async function close(f: FormData) {
 export default async function DayClosePage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "dayclose");
-  await requireModule(hotel.id, "invoicing");
+  const { hotel } = await requireHotelModule("invoicing", hotelId, "staff", "dayclose");
   const today = todayIn(hotel.timezone);
   const day = sp.day && /^\d{4}-\d{2}-\d{2}$/.test(sp.day) && sp.day <= today ? sp.day : today;
   const [closed, totals, history] = await Promise.all([getDayClose(hotel.id, day), dayTotals(db(), hotel, day), listDayCloses(hotel.id, 30)]);

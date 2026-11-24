@@ -1,7 +1,6 @@
 import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { NewsletterError, listNewsletters, previewRecipients, saveDraft, sendNewsletter, sendTest } from "@/src/services/newsletter";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +10,7 @@ const seg = (f: FormData) => ({ language: s(f, "language"), tag: s(f, "tag"), st
 
 async function save(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "marketing");
+  const c = await requireHotelModule("marketing", s(f, "hotelId"), "manager");
   try {
     const n = await saveDraft(c.hotel.id, s(f, "id") || null, { subject: s(f, "subject"), body: String(f.get("body") ?? ""), segment: seg(f) }, c.actor);
     back(c.hotel.id, "Entwurf gespeichert.", n.id);
@@ -23,16 +21,14 @@ async function save(f: FormData) {
 }
 async function test(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "marketing");
+  const c = await requireHotelModule("marketing", s(f, "hotelId"), "manager");
   let msg = "Testmail wird versendet.";
   try { await sendTest(c.hotel, s(f, "id"), s(f, "to"), c.actor); } catch (e) { if (!(e instanceof NewsletterError)) throw e; msg = `Nicht gesendet: ${e.message}`; }
   back(c.hotel.id, msg, s(f, "id"));
 }
 async function send(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "marketing");
+  const c = await requireHotelModule("marketing", s(f, "hotelId"), "manager");
   let msg: string;
   try { msg = `Versand an ${await sendNewsletter(c.hotel, s(f, "id"), c.actor)} Gäste gestartet.`; } catch (e) { if (!(e instanceof NewsletterError)) throw e; msg = `Nicht versendet: ${e.message}`; }
   back(c.hotel.id, msg);
@@ -41,8 +37,7 @@ async function send(f: FormData) {
 export default async function MarketingPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager");
-  await requireModule(hotel.id, "marketing");
+  const { hotel } = await requireHotelModule("marketing", hotelId, "manager");
   const list = await listNewsletters(hotel.id);
   const cur = list.find((n) => n.id === sp.edit && n.status === "draft") ?? null;
   const count = (await previewRecipients(hotel.id, cur?.segment ?? {})).length;

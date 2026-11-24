@@ -1,8 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { notFound, redirect } from "next/navigation";
 import { atLeast } from "@/src/auth/session";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { createCreditNote, deleteDraft, InvoiceError, invoiceView, issueInvoice, sendInvoiceEmail, updateDraft } from "@/src/services/invoicing";
 import { formatChf } from "@/src/domain/money";
 import { formatBps } from "@/src/domain/invoice";
@@ -13,8 +12,7 @@ export const dynamic = "force-dynamic";
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>, id: string) => Promise<string | { to: string }>) {
-  const c = await requireHotel(s(f, "hotelId"), "staff", "invoices");
-  await requireModule(c.hotel.id, "invoicing");
+  const c = await requireHotelModule("invoicing", s(f, "hotelId"), "staff", "invoices");
   const id = s(f, "invoiceId");
   let out: string | { to: string };
   try {
@@ -51,8 +49,7 @@ async function discard(f: FormData) {
 }
 async function credit(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "invoicing");
+  const c = await requireHotelModule("invoicing", s(f, "hotelId"), "manager");
   let to: string;
   try {
     const cn = await createCreditNote(c.hotel, s(f, "invoiceId"), c.actor);
@@ -67,8 +64,7 @@ async function credit(f: FormData) {
 export default async function InvoicePage({ params, searchParams }: { params: Promise<{ hotelId: string; invoiceId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId, invoiceId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "invoices");
-  await requireModule(hotel.id, "invoicing");
+  const { hotel, role } = await requireHotelModule("invoicing", hotelId, "staff", "invoices");
   const v = await invoiceView(hotel, invoiceId);
   if (!v) notFound();
   const { invoice: inv } = v;

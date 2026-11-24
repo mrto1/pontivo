@@ -1,7 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { notFound, redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule, moduleOn } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
+import { moduleOn } from "@/src/services/modules";
 import { OfferError, offerWithLines, saveOffer, sendOffer } from "@/src/services/offers";
 import { listResources } from "@/src/services/resources";
 import { decimalToRappen, rappenToDecimal } from "@/src/domain/money";
@@ -15,8 +15,7 @@ const val = (f: FormData, k: string) => f.getAll(k).map((x) => String(x ?? "").t
 
 async function save(f: FormData) {
   "use server";
-  const c = await requireHotel(String(f.get("hotelId")), "manager", "inquiries");
-  await requireModule(c.hotel.id, "inquiries");
+  const c = await requireHotelModule("inquiries", String(f.get("hotelId")), "manager", "inquiries");
   const id = String(f.get("id"));
   const [desc, qty, unit, vat, res, day, from, to, pers] = ["desc", "qty", "unit", "vat", "res", "day", "from", "to", "pers"].map((k) => val(f, k));
   const lines = desc.map((d, i) => d ? {
@@ -37,8 +36,7 @@ async function save(f: FormData) {
 export default async function OfferAdmin({ params, searchParams }: { params: Promise<{ hotelId: string; offerId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId, offerId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager", "inquiries");
-  await requireModule(hotel.id, "inquiries");
+  const { hotel } = await requireHotelModule("inquiries", hotelId, "manager", "inquiries");
   const d = await offerWithLines(hotel.id, offerId);
   if (!d) notFound();
   const { offer, lines } = d;

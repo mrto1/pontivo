@@ -1,7 +1,6 @@
 import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError, createDevice, listDevices, releaseDevice } from "@/src/services/pos";
 import { RoomLinkError, activeLink, connectRoomLink, disconnectRoomLink, roomLinkTotals } from "@/src/services/room-link";
 import { formatChf } from "@/src/domain/money";
@@ -11,8 +10,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const here = (h: string, msg: string) => redirect(`/admin/${h}/restaurant/geraete?msg=${encodeURIComponent(msg)}`);
 
 async function guard(f: FormData) {
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  await requireModule(c.hotel.id, "pos");
+  const c = await requireHotelModule("pos", s(f, "hotelId"), "manager");
   return c;
 }
 async function release(f: FormData) {
@@ -30,8 +28,7 @@ async function device(f: FormData) {
 
 async function link(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  await requireModule(c.hotel.id, "pos");
+  const c = await requireHotelModule("pos", s(f, "hotelId"), "owner");
   if (s(f, "do") === "off") { await disconnectRoomLink(c.hotel.id, c.actor); here(c.hotel.id, "Verbindung zum Hotel getrennt."); }
   try { const l = await connectRoomLink(c.hotel.id, s(f, "key"), c.actor); here(c.hotel.id, `Verbunden mit ${l.label}. «Aufs Zimmer» bucht jetzt auf die Hotelrechnung.`); }
   catch (e) { if (!(e instanceof RoomLinkError)) throw e; here(c.hotel.id, `Nicht verbunden: ${e.message}`); }
@@ -41,8 +38,7 @@ async function link(f: FormData) {
 export default async function PosDevicesPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "manager");
-  await requireModule(hotel.id, "pos");
+  const { hotel } = await requireHotelModule("pos", hotelId, "manager");
   const [devices, conn, totals] = await Promise.all([listDevices(hotel.id), activeLink(hotel.id), roomLinkTotals(hotel.id)]);
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   return (

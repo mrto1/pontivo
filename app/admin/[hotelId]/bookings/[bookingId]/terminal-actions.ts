@@ -1,8 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { InvoiceError } from "@/src/services/invoicing";
 import { cancelTerminalPayment, checkTerminalPayment, startTerminalPayment } from "@/src/services/terminal";
 import { decimalToRappen } from "@/src/domain/money";
@@ -11,8 +10,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>, bookingId: string) => Promise<string>) {
   const hotelId = s(f, "hotelId"), bookingId = s(f, "bookingId");
-  const c = await requireHotel(hotelId, "staff", "bookings");
-  await requireModule(c.hotel.id, "terminal");
+  const c = await requireHotelModule("terminal", hotelId, "staff", "bookings");
   let msg: string;
   try { msg = await fn(c, bookingId); } catch (e) { if (!(e instanceof InvoiceError)) throw e; msg = e.message; }
   redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}#kasse`);

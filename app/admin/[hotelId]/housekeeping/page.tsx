@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { InfoTip } from "@/components/admin/InfoTip";
 import { DrawerKeys } from "@/components/admin/DrawerKeys";
-import { requireHotel } from "@/src/auth/guard";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { moduleOn, requireModule } from "@/src/services/modules";
 import { GoodsError, countMinibar, markRefilled, minibarGoods, refillList } from "@/src/services/goods";
 import { addTask, board, generateTasks, HousekeepingError, reportIssue, resolveIssue, setCleanStatus, type CleanStatus } from "@/src/services/housekeeping";
@@ -18,8 +18,7 @@ const LABEL: Record<CleanStatus, string> = { dirty: "Schmutzig", clean: "Sauber"
 const LABEL_BTN = LABEL;
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<void>) {
-  const c = await requireHotel(s(f, "hotelId"), "staff", "housekeeping");
-  await requireModule(c.hotel.id, "housekeeping");
+  const c = await requireHotelModule("housekeeping", s(f, "hotelId"), "staff", "housekeeping");
   let msg = "";
   try { await fn(c); } catch (e) { if (!(e instanceof HousekeepingError)) throw e; msg = e.message; }
   redirect(`/admin/${c.hotel.id}/housekeeping?day=${s(f, "day")}${msg ? `&msg=${encodeURIComponent(msg)}` : ""}`);
@@ -36,8 +35,7 @@ async function report(f: FormData) {
 }
 async function minibar(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff", "housekeeping");
-  await requireModule(c.hotel.id, "housekeeping");
+  const c = await requireHotelModule("housekeeping", s(f, "hotelId"), "staff", "housekeeping");
   await requireModule(c.hotel.id, "shop");
   let msg: string;
   try {
@@ -65,8 +63,7 @@ async function fix(f: FormData) {
 export default async function Housekeeping({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "housekeeping");
-  await requireModule(hotel.id, "housekeeping");
+  const { hotel } = await requireHotelModule("housekeeping", hotelId, "staff", "housekeeping");
   const today = todayIn(hotel.timezone);
   const day = sp.day && isDay(sp.day) ? sp.day : today;
   const stayEvery = Number((hotel.content as { housekeeping?: { stayEvery?: number } } | null)?.housekeeping?.stayEvery ?? 0) || 0;

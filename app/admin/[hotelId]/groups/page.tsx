@@ -1,7 +1,6 @@
 import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { createGroup, GroupError, listGroups } from "@/src/services/groups";
 import { formatDay } from "@/src/i18n/dict";
 import { ZodError } from "zod";
@@ -13,8 +12,7 @@ const STATUS = { active: "Block aktiv", released: "Block freigegeben", cancelled
 
 async function create(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff", "groups");
-  await requireModule(c.hotel.id, "groups");
+  const c = await requireHotelModule("groups", s(f, "hotelId"), "staff", "groups");
   let to: string;
   try {
     const g = await createGroup(c.hotel, { name: s(f, "name"), company: s(f, "company"), contactName: s(f, "contactName"), contactEmail: s(f, "contactEmail"), street: s(f, "street"), zip: s(f, "zip"), city: s(f, "city"), arrival: s(f, "arrival"), departure: s(f, "departure"), releaseOn: s(f, "releaseOn") }, c.actor);
@@ -30,8 +28,7 @@ async function create(f: FormData) {
 export default async function Groups({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "groups");
-  await requireModule(hotel.id, "groups");
+  const { hotel } = await requireHotelModule("groups", hotelId, "staff", "groups");
   const list = await listGroups(hotel.id);
   return (
     <div className="stack">

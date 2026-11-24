@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError, markDone, openTickets, type Station } from "@/src/services/pos";
 import { KitchenBell } from "@/components/admin/KitchenBell";
 
@@ -10,8 +9,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function done(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff", "kitchen");
-  await requireModule(c.hotel.id, "restaurant");
+  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "staff", "kitchen");
   const st = s(f, "station") === "bar" ? "bar" : "kitchen";
   try { await markDone(c.hotel.id, f.getAll("lineId").map(String), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; }
   redirect(`/admin/${c.hotel.id}/restaurant/kueche?station=${st}`);
@@ -21,8 +19,7 @@ async function done(f: FormData) {
 export default async function KitchenPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel } = await requireHotel(hotelId, "staff", "kitchen");
-  await requireModule(hotel.id, "restaurant");
+  const { hotel } = await requireHotelModule("restaurant", hotelId, "staff", "kitchen");
   const station: Station = sp.station === "bar" ? "bar" : "kitchen";
   const tickets = await openTickets(hotel.id, station);
   const now = Date.now();

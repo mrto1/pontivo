@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
 import { addFolioItem, createInvoiceDraft, deleteFolioItem, InvoiceError, recordOnsitePayment } from "@/src/services/invoicing";
 import { GoodsError, sellToBooking } from "@/src/services/goods";
@@ -11,8 +11,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function run(f: FormData, min: "staff" | "manager", fn: (c: Awaited<ReturnType<typeof requireHotel>>, bookingId: string) => Promise<string | { to: string }>) {
   const hotelId = s(f, "hotelId"), bookingId = s(f, "bookingId");
-  const c = await requireHotel(hotelId, min, "bookings");
-  await requireModule(c.hotel.id, "invoicing");
+  const c = await requireHotelModule("invoicing", hotelId, min, "bookings");
   let out: string | { to: string };
   try {
     out = await fn(c, bookingId);

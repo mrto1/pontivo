@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule, moduleRows } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
+import { moduleRows } from "@/src/services/modules";
 import { isOn } from "@/src/domain/modules";
 import { listTables, tablesOverview } from "@/src/services/pos";
 import { reservationsOfDay, waitlistOfDay } from "@/src/services/reservations";
@@ -19,8 +19,7 @@ const STATUS = { pending: "Zahlung offen", confirmed: "erwartet", seated: "am Ti
 export default async function DiningToday({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "dininghome");
-  await requireModule(hotel.id, "restaurant");
+  const { hotel, role } = await requireHotelModule("restaurant", hotelId, "staff", "dininghome");
   const base = `/admin/${hotel.id}`;
   const realToday = todayIn(hotel.timezone);
   const today = sp.day && isDay(sp.day) ? sp.day : realToday; // Tag wählbar wie in der Tagesliste des Hotels

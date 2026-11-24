@@ -1,7 +1,6 @@
 import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { ResourceError, cancelResourceBooking, createResourceBooking, listDay, listResources } from "@/src/services/resources";
 import { hhmm } from "@/src/domain/resources";
 import { formatChf } from "@/src/domain/money";
@@ -15,8 +14,7 @@ const back = (h: string, day: string, msg: string) => redirect(`/admin/${h}/reso
 
 async function book(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff", "resources");
-  await requireModule(c.hotel.id, "resources");
+  const c = await requireHotelModule("resources", s(f, "hotelId"), "staff", "resources");
   let msg = "Gebucht.";
   try {
     await createResourceBooking(c.hotel.id, { resourceId: s(f, "resourceId"), day: s(f, "day"), start: s(f, "start"), end: s(f, "end"), persons: Number(s(f, "persons")), guestName: s(f, "guestName"), bookingReference: s(f, "reference"), note: s(f, "note") }, c.actor);
@@ -28,8 +26,7 @@ async function book(f: FormData) {
 }
 async function cancel(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff", "resources");
-  await requireModule(c.hotel.id, "resources");
+  const c = await requireHotelModule("resources", s(f, "hotelId"), "staff", "resources");
   let msg = "Storniert.";
   try {
     await cancelResourceBooking(c.hotel.id, s(f, "id"), c.actor);
@@ -43,8 +40,7 @@ async function cancel(f: FormData) {
 export default async function ResourcesPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "resources");
-  await requireModule(hotel.id, "resources");
+  const { hotel, role } = await requireHotelModule("resources", hotelId, "staff", "resources");
   const day = /^\d{4}-\d{2}-\d{2}$/.test(sp.day ?? "") ? sp.day! : todayIn(hotel.timezone);
   const [list, bookingsToday] = await Promise.all([listResources(hotel.id), listDay(hotel.id, day)]);
   const active = list.filter((r) => r.active);

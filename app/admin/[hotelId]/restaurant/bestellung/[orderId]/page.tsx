@@ -1,7 +1,6 @@
 import { Notice } from "@/components/admin/Notice";
 import { notFound, redirect } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotelModule } from "@/src/auth/guard";
 import { remoteGuests } from "@/src/services/room-link";
 import { PosError, addDiscount, addLines, groupsOfItem, listItems, orderView, pay, reverseLine, reverseReceipt, webDevice } from "@/src/services/pos";
 import { METHODS, METHOD_LABEL, selectionTotal, type Method } from "@/src/domain/pos";
@@ -15,8 +14,7 @@ const chf = (v: string) => Math.round(Number(v.replace(",", ".")) * 100);
 const back = (h: string, o: string, msg: string) => redirect(`/admin/${h}/restaurant/bestellung/${o}?msg=${encodeURIComponent(msg)}`);
 
 async function guard(f: FormData, manager = false) {
-  const c = manager ? await requireHotel(s(f, "hotelId"), "manager") : await requireHotel(s(f, "hotelId"), "staff", "restaurant");
-  await requireModule(c.hotel.id, "pos");
+  const c = manager ? await requireHotelModule("pos", s(f, "hotelId"), "manager") : await requireHotelModule("pos", s(f, "hotelId"), "staff", "restaurant");
   return c;
 }
 async function add(f: FormData) {
@@ -86,8 +84,7 @@ async function gegenbon(f: FormData) {
 export default async function OrderPage({ params, searchParams }: { params: Promise<{ hotelId: string; orderId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId, orderId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "restaurant");
-  await requireModule(hotel.id, "pos");
+  const { hotel, role } = await requireHotelModule("pos", hotelId, "staff", "restaurant");
   const v = await orderView(hotel.id, orderId);
   if (!v) notFound();
   const items = (await listItems(hotel.id, true));

@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { exportLimited } from "@/src/lib/export-limit";
 import { exportCsv } from "@/src/services/pos";
 
@@ -9,8 +8,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function GET(req: Request, { params }: { params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
-  const c = await requireHotel(hotelId, "manager");
-  await requireModule(c.hotel.id, "pos");
+  const c = await requireHotelModule("pos", hotelId, "manager");
   const limited = await exportLimited(c.user.id, c.hotel.id);
   if (limited) return limited;
   const u = new URL(req.url);

@@ -1,8 +1,8 @@
 import { FloorPlan } from "@/components/admin/FloorPlan";
 import { PeriodNav } from "@/components/admin/PeriodNav";
 import { formatInTimeZone } from "date-fns-tz";
-import { requireHotel } from "@/src/auth/guard";
-import { moduleRows, requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
+import { moduleRows } from "@/src/services/modules";
 import { isOn } from "@/src/domain/modules";
 import { listTables, tablesOverview } from "@/src/services/pos";
 import { getSettings, reservationsOfDay } from "@/src/services/reservations";
@@ -19,8 +19,7 @@ const SOON_MIN = 30;
 export default async function ReservationPlan({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, role } = await requireHotel(hotelId, "staff", "resplan");
-  await requireModule(hotel.id, "restaurant");
+  const { hotel, role } = await requireHotelModule("restaurant", hotelId, "staff", "resplan");
   const base = `/admin/${hotel.id}`;
   const today = todayIn(hotel.timezone);
   const day = sp.day && isDay(sp.day) ? sp.day : today;

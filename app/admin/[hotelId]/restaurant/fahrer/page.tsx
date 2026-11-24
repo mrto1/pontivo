@@ -2,8 +2,7 @@ import { redirect } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 import { Notice } from "@/components/admin/Notice";
 import { AutoRefresh } from "@/components/public/AutoRefresh";
-import { requireHotel } from "@/src/auth/guard";
-import { requireModule } from "@/src/services/modules";
+import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError } from "@/src/services/pos";
 import { completeOrder, notAccepted, outForDelivery, screenOrders } from "@/src/services/online-orders";
 import { addressKey } from "@/src/domain/online-order";
@@ -14,8 +13,7 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function act(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff", "driver");
-  await requireModule(c.hotel.id, "restaurant");
+  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "staff", "driver");
   const id = s(f, "id");
   const name = c.user.name || c.user.email;
   try {
@@ -30,8 +28,7 @@ async function act(f: FormData) {
 export default async function DriverPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
-  const { hotel, user } = await requireHotel(hotelId, "staff", "driver");
-  await requireModule(hotel.id, "restaurant");
+  const { hotel, user } = await requireHotelModule("restaurant", hotelId, "staff", "driver");
   const { open, flagged } = await screenOrders(hotel.id);
   const me = user.name || user.email;
   const list = open.filter((o) => o.kind === "delivery" && ["accepted", "ready", "out"].includes(o.status) && (o.status !== "out" || o.driver === me || !o.driver));
