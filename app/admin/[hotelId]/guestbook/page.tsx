@@ -20,9 +20,9 @@ export default async function Guestbook({ params, searchParams }: { params: Prom
     <div className="stack">
       <h1 className="sr-only">Kartei</h1>
       <form method="get" className="inline-form">
-        <input name="q" defaultValue={q} placeholder="Name, E-Mail, Tag oder Notiz suchen" />
+        <input name="q" type="search" aria-label="Suche" defaultValue={q} placeholder="Name, E-Mail, Tag oder Notiz suchen" maxLength={80} />
         {tags.length ? (
-          <select name="tag" defaultValue={tag}><option value="">alle Tags</option>{tags.map((t) => <option key={t} value={t}>{t}</option>)}</select>
+          <select name="tag" aria-label="Tag" defaultValue={tag}><option value="">alle Tags</option>{tags.map((t) => <option key={t} value={t}>{t}</option>)}</select>
         ) : null}
         <button className="btn secondary small">Suchen</button>
       </form>
@@ -43,6 +43,7 @@ export default async function Guestbook({ params, searchParams }: { params: Prom
             </tbody>
           </table></div>
         ) : <p className="muted small">Keine Treffer.</p>}
+        {rows.length >= 200 ? <p className="muted small">Es werden die neuesten 200 gezeigt. Mit der Suche finden Sie weitere.</p> : null}
       </section>
       <p className="small muted">Notizen und Tags bearbeiten Sie bei der Buchung{dining ? " oder bei der Tischreservierung" : ""} des Gastes. Sie gelten für die E-Mail-Adresse und nur in diesem Betrieb.{dining ? ` Ab ${REGULAR_VISITS} Restaurantbesuchen steht «Stammgast». Allergien nur als kurzer Hinweis für die Küche (z. B. «ohne Nüsse»), keine Gesundheitsangaben.` : ""}</p>
     </div>
