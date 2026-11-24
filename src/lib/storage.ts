@@ -38,9 +38,9 @@ export function isPdf(b: Uint8Array): boolean {
 
 async function store(hotelId: string, bytes: Uint8Array, ext: Ext): Promise<string> {
   const name = `${crypto.randomBytes(12).toString("base64url")}.${ext}`;
-  const dir = path.join(root(), hotelId);
+  const dir = path.join(/* turbopackIgnore: true */ root(), hotelId);
   await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, name), bytes, { flag: "wx" });
+  await fs.writeFile(path.join(/* turbopackIgnore: true */ dir, name), bytes, { flag: "wx" });
   return `/media/${hotelId}/${name}`;
 }
 
@@ -66,7 +66,7 @@ export async function saveImage(hotelId: string, bytes: Uint8Array): Promise<str
 export function mediaPath(hotelId: string, file: string): { file: string; type: string } | null {
   if (!UUID.test(hotelId) || !FILE.test(file)) return null;
   const ext = file.split(".").pop() as Ext;
-  return { file: path.join(root(), hotelId, file), type: TYPES[ext] };
+  return { file: path.join(/* turbopackIgnore: true */ root(), hotelId, file), type: TYPES[ext] };
 }
 
 export async function deleteImage(url: string) {
