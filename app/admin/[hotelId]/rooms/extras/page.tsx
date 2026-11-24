@@ -1,5 +1,9 @@
 import { Notice } from "@/components/admin/Notice";
 import { InfoTip } from "@/components/admin/InfoTip";
+import { Drawer, DrawerActions } from "@/components/admin/Drawer";
+import { RowList } from "@/components/admin/RowList";
+import { ConfirmButton } from "@/components/admin/ConfirmButton";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
@@ -36,7 +40,9 @@ async function run(f: FormData, fn: (hotelId: string, actor: string) => Promise<
     if (!(e instanceof ZodError) && !(e instanceof ExtraAdminError) && !(e instanceof Error && /Betrag/.test(e.message))) throw e;
     msg = `Nicht gespeichert: ${e instanceof ZodError ? e.issues.map((i) => i.message).join(", ") : e.message}`;
   }
-  redirect(`/admin/${c.hotel.id}/rooms/extras?msg=${encodeURIComponent(msg)}`);
+  // bei einem Fehler bleibt die Seitenleiste offen
+  const reopen = msg.startsWith("Nicht gespeichert") ? `e=${s(f, "id") || "neu"}&` : "";
+  redirect(`/admin/${c.hotel.id}/rooms/extras?${reopen}msg=${encodeURIComponent(msg)}`);
 }
 
 async function save(f: FormData) {
@@ -73,6 +79,10 @@ export default async function Extras({ params, searchParams }: { params: Promise
   const rooms = await listRooms(hotel.id);
   const langs = hotelLocales(hotel);
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
+  const base = `/admin/${hotel.id}/rooms/extras`;
+  const open = canEdit ? list.find((x) => x.id === sp.e) : undefined;
+  const creating = canEdit && sp.e === "neu";
+  const drawerOpen = creating || !!open;
 
   const form = (e: Extra | null) => (
     <form action={save} className="stack">
@@ -80,12 +90,12 @@ export default async function Extras({ params, searchParams }: { params: Promise
       {e ? <input type="hidden" name="id" value={e.id} /> : null}
       <div className="form-grid">
         {langs.map((l) => (
-          <div key={l}><label>Name {l === "de" ? "" : LOCALE_NAMES[l]}</label><input name={`name.${l}`} defaultValue={e?.name[l] ?? ""} required={l === "de"} maxLength={80} placeholder={l === "de" ? "z. B. Hund" : ""} /></div>
+          <div key={l}><label htmlFor={`ex-name-${l}`}>Name {l === "de" ? "" : LOCALE_NAMES[l]}</label><input id={`ex-name-${l}`} name={`name.${l}`} defaultValue={e?.name[l] ?? ""} required={l === "de"} maxLength={80} placeholder={l === "de" ? "z. B. Hund" : ""} /></div>
         ))}
       </div>
       <div className="form-grid">
         {langs.map((l) => (
-          <div key={l}><label>Beschreibung {l === "de" ? "(optional)" : LOCALE_NAMES[l]}</label><input name={`description.${l}`} defaultValue={e?.description[l] ?? ""} maxLength={300} /></div>
+          <div key={l}><label htmlFor={`ex-desc-${l}`}>Beschreibung {l === "de" ? "(optional)" : LOCALE_NAMES[l]}</label><input id={`ex-desc-${l}`} name={`description.${l}`} defaultValue={e?.description[l] ?? ""} maxLength={300} /></div>
         ))}
       </div>
       <div className="form-grid">
@@ -100,52 +110,41 @@ export default async function Extras({ params, searchParams }: { params: Promise
       ) : null}
       <label className="check"><input type="checkbox" name="mandatory" defaultChecked={e?.mandatory} />Obligatorisch – immer im Preis enthalten (z. B. Endreinigung)</label>
       {e ? <label className="check"><input type="checkbox" name="active" defaultChecked={e.active} />Aktiv (Gäste können es buchen)</label> : <input type="hidden" name="active" value="on" />}
-      <div><button className="btn small">{e ? "Speichern" : "Hinzufügen"}</button></div>
+      <DrawerActions submit={e ? "Speichern" : "Hinzufügen"} cancelHref={base} />
     </form>
   );
 
   return (
     <div className="stack">
             <h1>Zusatzleistungen</h1>
-      {sp.msg ? <Notice text={sp.msg} /> : null}
       <div><InfoTip label="Worum geht es hier?">Gäste wählen Zusatzleistungen bei der Online-Buchung dazu, der Betrag wird gleich mitbezahlt. Obligatorische Leistungen sind im angezeigten Gesamtpreis bereits enthalten (Preisbekanntgabe). Bei einer Stornierung werden Zusatzleistungen immer zurückerstattet; die Stornogebühr gilt nur für den Zimmerpreis.</InfoTip></div>
       {hotel.channexEnabled ? <p className="notice warn small">Buchungen über Booking.com &amp; Co. enthalten diese Zusatzleistungen nicht. Obligatorische Gebühren wie eine Endreinigung bitte zusätzlich im Extranet des Portals eintragen.</p> : null}
 
+      {sp.msg && !drawerOpen ? <Notice text={sp.msg} /> : null}
       {list.length ? (
-        <table className="table">
-          <thead><tr><th>Leistung</th><th>Preis</th><th>Zimmer</th><th></th></tr></thead>
-          <tbody>
-            {list.map((e, i) => (
-              <tr key={e.id}>
-                <td><strong>{e.name.de}</strong>{e.mandatory ? <span className="badge ml8">obligatorisch</span> : null}{e.active ? null : <span className="badge warn ml8">inaktiv</span>}
-                  {e.description.de ? <div className="small muted">{e.description.de}</div> : null}</td>
-                <td>{formatChf(e.priceRappen)} {UNIT[e.unit]}{!perPerson(e.unit) && e.maxQuantity > 1 ? ` · bis ${e.maxQuantity}×` : ""}</td>
-                <td className="small">{e.roomTypeIds.length ? rooms.filter((r) => e.roomTypeIds.includes(r.roomType.id)).map((r) => r.roomType.name).join(", ") : "alle"}</td>
-                <td style={{ whiteSpace: "nowrap" }}>
-                  {canEdit ? (<>
-                    <form action={move} style={{ display: "inline" }}>{hidden}<input type="hidden" name="id" value={e.id} /><input type="hidden" name="dir" value="up" /><button className="btn secondary small" disabled={i === 0} aria-label="nach oben">↑</button></form>{" "}
-                    <form action={move} style={{ display: "inline" }}>{hidden}<input type="hidden" name="id" value={e.id} /><input type="hidden" name="dir" value="down" /><button className="btn secondary small" disabled={i === list.length - 1} aria-label="nach unten">↓</button></form>
-                  </>) : null}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <RowList rows={list.map((e) => ({
+          id: e.id, href: canEdit ? `${base}?e=${e.id}` : base, label: `${e.name.de} bearbeiten`, title: e.name.de ?? "",
+          detail: `${formatChf(e.priceRappen)} ${UNIT[e.unit]}${!perPerson(e.unit) && e.maxQuantity > 1 ? ` · bis ${e.maxQuantity}×` : ""} · ${e.roomTypeIds.length ? rooms.filter((r) => e.roomTypeIds.includes(r.roomType.id)).map((r) => r.roomType.name).join(", ") : "alle Zimmer"}`,
+          badges: [...(e.mandatory ? [{ text: "obligatorisch" }] : []), ...(e.active ? [] : [{ text: "inaktiv" }])],
+        }))} />
       ) : <p className="notice">Noch keine Zusatzleistungen. Beispiele: {EXAMPLES.map((x) => `${x.name} (CHF ${x.price} ${x.note})`).join(", ")}.</p>}
+      {canEdit ? <div><Link className="btn secondary" href={`${base}?e=neu`} scroll={false}>+ Neue Zusatzleistung</Link></div> : null}
 
-      {canEdit ? (<>
-        {list.map((e) => (
-          <details key={e.id} className="card">
-            <summary><strong>{e.name.de}</strong> bearbeiten</summary>
-            <div className="mt12">{form(e)}</div>
-            <form action={remove} className="mt12">{hidden}<input type="hidden" name="id" value={e.id} /><button className="btn danger small">Löschen</button> <span className="small muted">Bestehende Buchungen behalten Name und Preis.</span></form>
-          </details>
-        ))}
-        <section className="card">
-          <h2 style={{ fontSize: "1.15rem" }}>Neue Zusatzleistung</h2>
-          {form(null)}
-        </section>
-      </>) : null}
+      {drawerOpen ? (
+        <Drawer title={open ? (open.name.de ?? "") : "Neue Zusatzleistung"} closeHref={base}>
+          {sp.msg ? <Notice text={sp.msg} /> : null}
+          {form(open ?? null)}
+          {open ? (
+            <div className="stack">
+              <div className="inline-form">
+                <form action={move}>{hidden}<input type="hidden" name="id" value={open.id} /><input type="hidden" name="dir" value="up" /><button className="btn secondary small" disabled={list[0]?.id === open.id}>▲ Weiter oben anzeigen</button></form>
+                <form action={move}>{hidden}<input type="hidden" name="id" value={open.id} /><input type="hidden" name="dir" value="down" /><button className="btn secondary small" disabled={list[list.length - 1]?.id === open.id}>▼ Weiter unten anzeigen</button></form>
+              </div>
+              <form action={remove}>{hidden}<input type="hidden" name="id" value={open.id} /><ConfirmButton ask={`«${open.name.de}» wirklich löschen?`} className="btn secondary small danger-text">Löschen</ConfirmButton> <span className="small muted">Bestehende Buchungen behalten Name und Preis.</span></form>
+            </div>
+          ) : null}
+        </Drawer>
+      ) : null}
     </div>
   );
 }
