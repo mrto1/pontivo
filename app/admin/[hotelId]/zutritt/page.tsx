@@ -35,7 +35,7 @@ export default async function Zutritt({ params, searchParams }: { params: Promis
       <div className="card stack">
         <h3>1. Nuki-Token</h3>
         <p className="small muted">{nukiConfigured(hotel) ? "Token ist hinterlegt (verschlüsselt). Zum Ersetzen neu eingeben." : "Noch kein Token."} Erzeugen in Nuki Web unter «API &amp; Integrationen».</p>
-        <form action={token} className="inline-form">{hid}<div style={{ minWidth: 280 }}><label>API-Token</label><input name="token" type="password" autoComplete="off" required /></div><button className="btn small">Prüfen und speichern</button></form>
+        <form action={token} className="inline-form">{hid}<div style={{ minWidth: 280 }}><label htmlFor="f1bcd1">API-Token</label><input id="f1bcd1" name="token" type="password" autoComplete="off" required /></div><button className="btn small">Prüfen und speichern</button></form>
       </div>
       {nukiConfigured(hotel) ? (
         <div className="card stack">
@@ -45,7 +45,7 @@ export default async function Zutritt({ params, searchParams }: { params: Promis
             <form key={l.id} action={assign} className="inline-form">
               {hid}<input type="hidden" name="lockId" value={l.id} />
               <div style={{ minWidth: 180 }}><strong>{l.name}</strong></div>
-              <div><label>Gehört zu</label><select name="roomId" defaultValue={l.roomId ?? ""}><option value="">Eingangstür (alle Gäste)</option>{rs.map((r) => <option key={r.id} value={r.id}>Zimmer {r.number}</option>)}</select></div>
+              <div><label htmlFor={`f1bcdm1-${l.id}`}>Gehört zu</label><select id={`f1bcdm1-${l.id}`} name="roomId" defaultValue={l.roomId ?? ""}><option value="">Eingangstür (alle Gäste)</option>{rs.map((r) => <option key={r.id} value={r.id}>Zimmer {r.number}</option>)}</select></div>
               <button className="btn secondary small">Speichern</button>
             </form>
           )) : <p className="muted small">Noch keine Schlösser geladen.</p>}

@@ -149,10 +149,10 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           <h2>Manager</h2>
           <form action={discount} className="stack">
             {H}{O}
-            <div><label>Rabatt (Text)</label><input name="description" maxLength={80} defaultValue="Rabatt" /></div>
-            <div><label>Betrag CHF</label><input name="amount" inputMode="decimal" required /></div>
-            <div><label>MWST-Satz in Basispunkten (810 = 8,1 %)</label><input name="vat" type="number" defaultValue={810} /></div>
-            <div><label>Grund (Pflicht)</label><input name="reason" required maxLength={200} /></div>
+            <div><label htmlFor="fcb081">Rabatt (Text)</label><input id="fcb081" name="description" maxLength={80} defaultValue="Rabatt" /></div>
+            <div><label htmlFor="fcb082">Betrag CHF</label><input id="fcb082" name="amount" inputMode="decimal" required /></div>
+            <div><label htmlFor="fcb083">MWST-Satz in Basispunkten (810 = 8,1 %)</label><input id="fcb083" name="vat" type="number" defaultValue={810} /></div>
+            <div><label htmlFor="fcb084">Grund (Pflicht)</label><input id="fcb084" name="reason" required maxLength={200} /></div>
             <div><button className="btn secondary">Rabatt buchen</button></div>
           </form>
           {v.lines.filter((l) => l.openQuantity > 0 && l.line.quantity > 0).map(({ line, openQuantity }) => (

@@ -392,10 +392,10 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             <summary>{known ? "Anderen Satz eintragen" : "Satz eintragen"}</summary>
             <form action={saveTax} className="stack" style={{ marginTop: 12 }}>{H}
               <div className="form-grid">
-                <div><label>Erwachsene, CHF pro Nacht</label><input name="adult" inputMode="decimal" required placeholder="3.50" /></div>
-                <div><label>Kinder frei unter (Jahren)</label><input name="freeUnder" type="number" min={0} max={18} defaultValue={6} /></div>
-                <div><label>Reduziert, CHF (optional)</label><input name="reduced" inputMode="decimal" /></div>
-                <div><label>Reduziert unter (Jahren, optional)</label><input name="reducedUnder" type="number" min={0} max={18} /></div>
+                <div><label htmlFor="f02041">Erwachsene, CHF pro Nacht</label><input id="f02041" name="adult" inputMode="decimal" required placeholder="3.50" /></div>
+                <div><label htmlFor="f02042">Kinder frei unter (Jahren)</label><input id="f02042" name="freeUnder" type="number" min={0} max={18} defaultValue={6} /></div>
+                <div><label htmlFor="f02043">Reduziert, CHF (optional)</label><input id="f02043" name="reduced" inputMode="decimal" /></div>
+                <div><label htmlFor="f02044">Reduziert unter (Jahren, optional)</label><input id="f02044" name="reducedUnder" type="number" min={0} max={18} /></div>
               </div>
               <div><button className="btn">Satz bestätigen</button></div>
             </form>
@@ -432,20 +432,20 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             <form action={saveUnit} className="stack" style={{ marginTop: 12 }}>{H}
               {rooms.length ? <input type="hidden" name="stay" value="1" /> : null}
               <div className="form-grid">
-                <div><label>Name</label><input name="name" required placeholder={whole ? "z. B. Wohnung Säntisblick" : "z. B. Doppelzimmer"} /></div>
-                {whole ? <input type="hidden" name="count" value="1" /> : <div><label>Anzahl gleiche Zimmer</label><input name="count" type="number" min={1} max={200} defaultValue={1} required /></div>}
-                <div><label>Max. Personen</label><input name="maxPersons" type="number" min={1} max={30} defaultValue={whole ? 4 : 2} required /></div>
+                <div><label htmlFor="f02045">Name</label><input id="f02045" name="name" required placeholder={whole ? "z. B. Wohnung Säntisblick" : "z. B. Doppelzimmer"} /></div>
+                {whole ? <input type="hidden" name="count" value="1" /> : <div><label htmlFor="f02046">Anzahl gleiche Zimmer</label><input id="f02046" name="count" type="number" min={1} max={200} defaultValue={1} required /></div>}
+                <div><label htmlFor="f02047">Max. Personen</label><input id="f02047" name="maxPersons" type="number" min={1} max={30} defaultValue={whole ? 4 : 2} required /></div>
               </div>
-              <div><label>Beschreibung (optional)</label><textarea name="description" rows={3} maxLength={2000} placeholder={whole ? "Zimmer, Betten, Küche, Balkon, Parkplatz …" : "Bett, Grösse, Aussicht, Bad …"} /></div>
+              <div><label htmlFor="f02048">Beschreibung (optional)</label><textarea id="f02048" name="description" rows={3} maxLength={2000} placeholder={whole ? "Zimmer, Betten, Küche, Balkon, Parkplatz …" : "Bett, Grösse, Aussicht, Bad …"} /></div>
               <div className="form-grid">
                 <div><label>Preis pro Nacht CHF{whole ? " (ganze Unterkunft)" : " (für 2 Personen)"}</label><input name="price" inputMode="decimal" required placeholder={whole ? "180" : "160"} /></div>
-                <div><label>Mindestaufenthalt (Nächte)</label><input name="minNights" type="number" min={1} max={60} defaultValue={whole ? 3 : 1} /></div>
-                {whole ? <div><label>Endreinigung CHF (im Preis ausgewiesen)</label><input name="cleaning" inputMode="decimal" placeholder="80" /></div> : null}
+                <div><label htmlFor="f02049">Mindestaufenthalt (Nächte)</label><input id="f02049" name="minNights" type="number" min={1} max={60} defaultValue={whole ? 3 : 1} /></div>
+                {whole ? <div><label htmlFor="f020410">Endreinigung CHF (im Preis ausgewiesen)</label><input id="f020410" name="cleaning" inputMode="decimal" placeholder="80" /></div> : null}
               </div>
               <fieldset className="plain"><legend className="small muted">Anreise nur an (keiner gewählt = jeder Tag)</legend>
                 <div className="weekdays">{[1, 2, 3, 4, 5, 6, 0].map((w) => <label key={w}><input type="checkbox" name="arrival" value={w} />{WD[w]}</label>)}</div>
               </fieldset>
-              <div><label>Stornoregel</label><select name="cancel" defaultValue={whole ? "moderat" : "flexibel"}>{Object.entries(CANCEL_TEMPLATES).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}</select></div>
+              <div><label htmlFor="f020411">Stornoregel</label><select id="f020411" name="cancel" defaultValue={whole ? "moderat" : "flexibel"}>{Object.entries(CANCEL_TEMPLATES).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}</select></div>
               {whole ? null : <label className="check"><input type="checkbox" name="breakfast" defaultChecked={hotel.propertyType !== "group_house"} />Frühstück im Preis inbegriffen</label>}
               <div><button className="btn">{rooms.length ? "Hinzufügen" : "Speichern und weiter"}</button></div>
             </form>
@@ -465,9 +465,9 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           {photos.length ? <PhotoGrid key={photos.map((p) => p.url).join("|")} photos={photos} canEdit action={photoAction} hidden={{ hotelId: hotel.id, roomTypeId: "", page: "einrichten" }} /> : null}
           {photos.length < MAX_PHOTOS ? (
             <form action={`/api/admin/hotels/${hotel.id}/photos?from=wizard`} method="post" encType="multipart/form-data" className="stack card">
-              <div><label>Fotos hochladen (JPG, PNG, WebP, max. 8 MB, bis 3 aufs Mal)</label><input type="file" name="file" accept="image/jpeg,image/png,image/webp" multiple required /></div>
+              <div><label htmlFor="f020412">Fotos hochladen (JPG, PNG, WebP, max. 8 MB, bis 3 aufs Mal)</label><input id="f020412" type="file" name="file" accept="image/jpeg,image/png,image/webp" multiple required /></div>
               {rooms.length > 1 ? (
-                <div><label>Gehört zu</label><select name="roomTypeId" defaultValue=""><option value="">{whole ? "Allgemein (Startseite)" : "Haus allgemein (Startseite)"}</option>{rooms.map((r) => <option key={r.roomType.id} value={r.roomType.id}>{r.roomType.name}</option>)}</select></div>
+                <div><label htmlFor="f020413">Gehört zu</label><select id="f020413" name="roomTypeId" defaultValue=""><option value="">{whole ? "Allgemein (Startseite)" : "Haus allgemein (Startseite)"}</option>{rooms.map((r) => <option key={r.roomType.id} value={r.roomType.id}>{r.roomType.name}</option>)}</select></div>
               ) : null}
               <div><button className="btn">Hochladen</button></div>
             </form>

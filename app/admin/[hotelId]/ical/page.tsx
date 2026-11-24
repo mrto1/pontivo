@@ -126,8 +126,8 @@ export default async function IcalPage({ params, searchParams }: { params: Promi
               <form action={add} className="stack">
                 {hidden}
                 <input type="hidden" name="roomTypeId" value={rt.id} />
-                <div><label>Name (z. B. Airbnb)</label><input name="name" maxLength={80} required /></div>
-                <div><label>Kalenderadresse (https://…)</label><input name="url" type="url" maxLength={2000} required placeholder="https://www.airbnb.ch/calendar/ical/….ics" /></div>
+                <div><label htmlFor={`fa49bm1-${rt.id}`}>Name (z. B. Airbnb)</label><input id={`fa49bm1-${rt.id}`} name="name" maxLength={80} required /></div>
+                <div><label htmlFor={`fa49bm2-${rt.id}`}>Kalenderadresse (https://…)</label><input id={`fa49bm2-${rt.id}`} name="url" type="url" maxLength={2000} required placeholder="https://www.airbnb.ch/calendar/ical/….ics" /></div>
                 <button className="btn">Kalender hinzufügen</button>
               </form>
             ) : null}

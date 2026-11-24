@@ -137,8 +137,8 @@ export default async function Zahlungen({ params, searchParams }: { params: Prom
           {hidden}
           <p className="small muted">Der Gast zahlt bei der Buchung nur einen Teil, den Rest zahlt er online vor der Anreise (er bekommt dafür eine Mail mit Link). Liegt die Anreise näher als die Fälligkeit des Rests, muss er gleich alles zahlen. 100 % = ganze Summe sofort, wie bisher. Bei einer Stornierung wird höchstens zurückerstattet, was der Gast bezahlt hat, abzüglich der Stornogebühr.</p>
           <div className="form-grid">
-            <div><label>Anzahlung in Prozent</label><input name="percent" type="number" min={10} max={100} step={1} defaultValue={Math.round(hotel.depositBps / 100)} required /></div>
-            <div><label>Rest fällig (Tage vor Anreise)</label><input name="dueDays" type="number" min={1} max={60} step={1} defaultValue={hotel.balanceDueDays} required /></div>
+            <div><label htmlFor="fcfdc1">Anzahlung in Prozent</label><input id="fcfdc1" name="percent" type="number" min={10} max={100} step={1} defaultValue={Math.round(hotel.depositBps / 100)} required /></div>
+            <div><label htmlFor="fcfdc2">Rest fällig (Tage vor Anreise)</label><input id="fcfdc2" name="dueDays" type="number" min={1} max={60} step={1} defaultValue={hotel.balanceDueDays} required /></div>
           </div>
           <button className="btn">Speichern</button>
         </form>

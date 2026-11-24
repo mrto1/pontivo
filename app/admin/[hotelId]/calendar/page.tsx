@@ -235,14 +235,14 @@ export default async function Calendar({ params, searchParams }: { params: Promi
             <input type="hidden" name="viewDays" value={span} />
             <div className="form-row">
               <div>
-                <label>Zimmertyp</label>
-                <select name="roomTypeId" required>
+                <label htmlFor="f470e1">Zimmertyp</label>
+                <select id="f470e1" name="roomTypeId" required>
                   {cal.roomTypes.map((r) => <option key={r.id} value={r.id}>{r.name} ({r.roomCount})</option>)}
                 </select>
               </div>
-              <div><label>Von</label><input type="date" name="from" defaultValue={from} required /></div>
-              <div><label>Bis (inkl.)</label><input type="date" name="to" defaultValue={from} required /></div>
-              <div><label>Gesperrte Zimmer</label><input name="blocked" type="number" min={0} defaultValue={1} required title="0 = freigeben" /></div>
+              <div><label htmlFor="f470e2">Von</label><input id="f470e2" type="date" name="from" defaultValue={from} required /></div>
+              <div><label htmlFor="f470e3">Bis (inkl.)</label><input id="f470e3" type="date" name="to" defaultValue={from} required /></div>
+              <div><label htmlFor="f470e4">Gesperrte Zimmer</label><input id="f470e4" name="blocked" type="number" min={0} defaultValue={1} required title="0 = freigeben" /></div>
             </div>
             <Weekdays />
             <div><button className="btn">Speichern</button></div>

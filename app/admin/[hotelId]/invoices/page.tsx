@@ -72,13 +72,13 @@ export default async function Invoices({ params, searchParams }: { params: Promi
             <label className="check"><input type="checkbox" name="vatLiable" defaultChecked={set.vatLiable} />Wir sind MWST-pflichtig (Rechnungen mit MWST)</label>
             <label className="check"><input type="checkbox" name="autoSend" defaultChecked={set.autoSend} />Rechnung beim Ausstellen automatisch per E-Mail senden (wenn eine Adresse bekannt ist)</label>
             <div className="form-grid">
-              <div><label>MWST-Nummer</label><input name="vatNumber" defaultValue={set.vatNumber} placeholder="CHE-123.456.789 MWST" /></div>
-              <div><label>Satz Beherbergung %</label><input name="stay" inputMode="decimal" defaultValue={(set.stayBps / 100).toString()} /></div>
-              <div><label>Satz übrige Leistungen %</label><input name="standard" inputMode="decimal" defaultValue={(set.standardBps / 100).toString()} /></div>
-              <div><label>IBAN (für die QR-Rechnung)</label><input name="iban" defaultValue={set.iban} placeholder="CH93 0076 2011 6238 5295 7" /></div>
-              <div><label>QR-IBAN (optional)</label><input name="qrIban" defaultValue={set.qrIban} placeholder="CH44 3199 9123 0008 8901 2" /></div>
-              <div><label>Zahlungsfrist (Tage)</label><input name="days" type="number" min={0} max={120} defaultValue={set.paymentDays} /></div>
-              <div><label>Fusszeile (optional)</label><input name="footer" defaultValue={set.footer} maxLength={500} placeholder="z. B. Danke für Ihren Besuch" /></div>
+              <div><label htmlFor="fc2821">MWST-Nummer</label><input id="fc2821" name="vatNumber" defaultValue={set.vatNumber} placeholder="CHE-123.456.789 MWST" /></div>
+              <div><label htmlFor="fc2822">Satz Beherbergung %</label><input id="fc2822" name="stay" inputMode="decimal" defaultValue={(set.stayBps / 100).toString()} /></div>
+              <div><label htmlFor="fc2823">Satz übrige Leistungen %</label><input id="fc2823" name="standard" inputMode="decimal" defaultValue={(set.standardBps / 100).toString()} /></div>
+              <div><label htmlFor="fc2824">IBAN (für die QR-Rechnung)</label><input id="fc2824" name="iban" defaultValue={set.iban} placeholder="CH93 0076 2011 6238 5295 7" /></div>
+              <div><label htmlFor="fc2825">QR-IBAN (optional)</label><input id="fc2825" name="qrIban" defaultValue={set.qrIban} placeholder="CH44 3199 9123 0008 8901 2" /></div>
+              <div><label htmlFor="fc2826">Zahlungsfrist (Tage)</label><input id="fc2826" name="days" type="number" min={0} max={120} defaultValue={set.paymentDays} /></div>
+              <div><label htmlFor="fc2827">Fusszeile (optional)</label><input id="fc2827" name="footer" defaultValue={set.footer} maxLength={500} placeholder="z. B. Danke für Ihren Besuch" /></div>
             </div>
             <p className="muted small" style={{ margin: 0 }}>Nur wenn Ihre Bank Ihnen eine QR-IBAN gegeben hat. Dann trägt jede Rechnung eine QR-Referenz, und Zahlungen lassen sich automatisch zuordnen.</p>
           </fieldset>

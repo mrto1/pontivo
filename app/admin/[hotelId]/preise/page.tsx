@@ -148,23 +148,23 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
             <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="ratePlanId" value={p.id} />
             <h2>{p.name}</h2>
             <div className="row">
-              <div><label>Basispreis (CHF)</label><input name="base" type="number" min={1} defaultValue={r ? r.baseRappen / 100 : ""} required /></div>
-              <div><label>Mindestpreis (CHF)</label><input name="min" type="number" min={1} defaultValue={r ? r.minRappen / 100 : ""} required /></div>
-              <div><label>Höchstpreis (CHF)</label><input name="max" type="number" min={1} defaultValue={r ? r.maxRappen / 100 : ""} required /></div>
+              <div><label htmlFor={`f35a8m1-${p.id}`}>Basispreis (CHF)</label><input id={`f35a8m1-${p.id}`} name="base" type="number" min={1} defaultValue={r ? r.baseRappen / 100 : ""} required /></div>
+              <div><label htmlFor={`f35a8m2-${p.id}`}>Mindestpreis (CHF)</label><input id={`f35a8m2-${p.id}`} name="min" type="number" min={1} defaultValue={r ? r.minRappen / 100 : ""} required /></div>
+              <div><label htmlFor={`f35a8m3-${p.id}`}>Höchstpreis (CHF)</label><input id={`f35a8m3-${p.id}`} name="max" type="number" min={1} defaultValue={r ? r.maxRappen / 100 : ""} required /></div>
             </div>
             <fieldset><legend>Auslastung des Zimmertyps (ab … % gebucht → Zu-/Abschlag in %)</legend>
               {[1, 2, 3].map((i) => (
                 <div className="row" key={i}>
-                  <div><label>ab % Auslastung</label><input name={`st${i}p`} type="number" min={0} max={100} defaultValue={st[i - 1]?.fromPct ?? ""} /></div>
-                  <div><label>Zu-/Abschlag %</label><input name={`st${i}b`} type="number" min={-100} max={100} defaultValue={st[i - 1] ? st[i - 1].bps / 100 : ""} /></div>
+                  <div><label htmlFor={`f35a8m4-${i}`}>ab % Auslastung</label><input id={`f35a8m4-${i}`} name={`st${i}p`} type="number" min={0} max={100} defaultValue={st[i - 1]?.fromPct ?? ""} /></div>
+                  <div><label htmlFor={`f35a8m5-${i}`}>Zu-/Abschlag %</label><input id={`f35a8m5-${i}`} name={`st${i}b`} type="number" min={-100} max={100} defaultValue={st[i - 1] ? st[i - 1].bps / 100 : ""} /></div>
                 </div>
               ))}
             </fieldset>
             <fieldset><legend>Last Minute (leer lassen = aus)</legend>
               <div className="row">
-                <div><label>innerhalb Tage</label><input name="lmDays" type="number" min={0} defaultValue={r?.lastMinute?.withinDays ?? ""} /></div>
-                <div><label>bei Auslastung unter %</label><input name="lmBelow" type="number" min={0} max={100} defaultValue={r?.lastMinute?.belowPct ?? ""} /></div>
-                <div><label>Zu-/Abschlag %</label><input name="lmBps" type="number" min={-100} max={100} defaultValue={r?.lastMinute ? r.lastMinute.bps / 100 : ""} /></div>
+                <div><label htmlFor={`f35a8m6-${p.id}`}>innerhalb Tage</label><input id={`f35a8m6-${p.id}`} name="lmDays" type="number" min={0} defaultValue={r?.lastMinute?.withinDays ?? ""} /></div>
+                <div><label htmlFor={`f35a8m7-${p.id}`}>bei Auslastung unter %</label><input id={`f35a8m7-${p.id}`} name="lmBelow" type="number" min={0} max={100} defaultValue={r?.lastMinute?.belowPct ?? ""} /></div>
+                <div><label htmlFor={`f35a8m8-${p.id}`}>Zu-/Abschlag %</label><input id={`f35a8m8-${p.id}`} name="lmBps" type="number" min={-100} max={100} defaultValue={r?.lastMinute ? r.lastMinute.bps / 100 : ""} /></div>
               </div>
             </fieldset>
             <fieldset><legend>Wochentag (Zu-/Abschlag %)</legend>
@@ -182,10 +182,10 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
         {manage ? (
           <form action={eventAction} className="row">
             <input type="hidden" name="hotelId" value={hotel.id} />
-            <div><label>Name</label><input name="name" required /></div>
-            <div><label>Von</label><input name="from" type="date" required /></div>
-            <div><label>Bis (inkl.)</label><input name="to" type="date" /></div>
-            <div><label>Zu-/Abschlag %</label><input name="pct" type="number" min={-100} max={100} required /></div>
+            <div><label htmlFor="f35a81">Name</label><input id="f35a81" name="name" required /></div>
+            <div><label htmlFor="f35a82">Von</label><input id="f35a82" name="from" type="date" required /></div>
+            <div><label htmlFor="f35a83">Bis (inkl.)</label><input id="f35a83" name="to" type="date" /></div>
+            <div><label htmlFor="f35a84">Zu-/Abschlag %</label><input id="f35a84" name="pct" type="number" min={-100} max={100} required /></div>
             <div><button className="btn">Hinzufügen</button></div>
           </form>
         ) : null}
@@ -206,8 +206,8 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
           <form action={adoptAction} className="stack">
             <input type="hidden" name="hotelId" value={hotel.id} />
             <div className="row">
-              <div><label>Zuschlag Feiertage %</label><input name="pctFeiertag" type="number" min={-100} max={100} placeholder="z. B. 10" /></div>
-              <div><label>Zuschlag Schulferien %</label><input name="pctSchule" type="number" min={-100} max={100} placeholder="z. B. 10" /></div>
+              <div><label htmlFor="f35a85">Zuschlag Feiertage %</label><input id="f35a85" name="pctFeiertag" type="number" min={-100} max={100} placeholder="z. B. 10" /></div>
+              <div><label htmlFor="f35a86">Zuschlag Schulferien %</label><input id="f35a86" name="pctSchule" type="number" min={-100} max={100} placeholder="z. B. 10" /></div>
             </div>
             <table className="table"><tbody>
               {suggested.map((x) => (

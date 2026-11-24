@@ -64,11 +64,11 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
   const png = await img.screenshot();
   await img.close();
   await page.setInputFiles("input[type=file]", { name: "aussicht.png", mimeType: "image/png", buffer: png });
-  await page.getByRole("button", { name: "Hochladen" }).click();
+  await page.getByRole("button", { name: "Hochladen", exact: true }).click();
   await expect(page.getByText("1 Foto(s) hochgeladen")).toBeVisible();
   // Zweites Foto hochladen und per Drag & Drop an die erste Stelle ziehen (wird automatisch Titelbild)
   await page.setInputFiles("input[type=file]", { name: "zimmer.png", mimeType: "image/png", buffer: png });
-  await page.getByRole("button", { name: "Hochladen" }).click();
+  await page.getByRole("button", { name: "Hochladen", exact: true }).click();
   await expect(page.locator("figure.photo")).toHaveCount(2);
   await expect(page.locator("figure.photo").nth(0).locator(".badge")).toHaveText("Titelbild");
   await page.waitForLoadState("networkidle"); // Seite ist bedienbar (Handler angehängt), bevor gezogen wird

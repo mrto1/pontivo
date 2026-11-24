@@ -139,18 +139,18 @@ function CompanyForm({ f, hid }: { f?: Awaited<ReturnType<typeof listCompanies>>
     <form action={company} className="stack">
       {hid}{f ? <input type="hidden" name="id" value={f.id} /> : null}
       <div className="inline-form">
-        <div><label>Firma</label><input name="name" required maxLength={120} defaultValue={f?.name} /></div>
-        <div><label>E-Mail für Rechnungen</label><input type="email" name="email" maxLength={200} defaultValue={f?.email} /></div>
-        <div><label>Zahlungsfrist (Tage, leer = Standard)</label><input type="number" name="days" min={0} max={365} defaultValue={f?.paymentDays ?? ""} style={{ width: 90 }} /></div>
+        <div><label htmlFor="fb0551">Firma</label><input id="fb0551" name="name" required maxLength={120} defaultValue={f?.name} /></div>
+        <div><label htmlFor="fb0552">E-Mail für Rechnungen</label><input id="fb0552" type="email" name="email" maxLength={200} defaultValue={f?.email} /></div>
+        <div><label htmlFor="fb0553">Zahlungsfrist (Tage, leer = Standard)</label><input id="fb0553" type="number" name="days" min={0} max={365} defaultValue={f?.paymentDays ?? ""} style={{ width: 90 }} /></div>
       </div>
       <div className="inline-form">
-        <div><label>Strasse</label><input name="street" maxLength={100} defaultValue={f?.street} /></div>
-        <div><label>PLZ</label><input name="zip" maxLength={16} defaultValue={f?.zip} style={{ width: 90 }} /></div>
-        <div><label>Ort</label><input name="city" maxLength={60} defaultValue={f?.city} /></div>
-        <div><label>Land</label><input name="country" maxLength={2} defaultValue={f?.country ?? "CH"} style={{ width: 60 }} /></div>
-        <div><label>MWST-Nr.</label><input name="vatId" maxLength={40} defaultValue={f?.vatId} /></div>
+        <div><label htmlFor="fb0554">Strasse</label><input id="fb0554" name="street" maxLength={100} defaultValue={f?.street} /></div>
+        <div><label htmlFor="fb0555">PLZ</label><input id="fb0555" name="zip" maxLength={16} defaultValue={f?.zip} style={{ width: 90 }} /></div>
+        <div><label htmlFor="fb0556">Ort</label><input id="fb0556" name="city" maxLength={60} defaultValue={f?.city} /></div>
+        <div><label htmlFor="fb0557">Land</label><input id="fb0557" name="country" maxLength={2} defaultValue={f?.country ?? "CH"} style={{ width: 60 }} /></div>
+        <div><label htmlFor="fb0558">MWST-Nr.</label><input id="fb0558" name="vatId" maxLength={40} defaultValue={f?.vatId} /></div>
       </div>
-      <div><label>Notiz</label><input name="note" maxLength={500} defaultValue={f?.note} /></div>
+      <div><label htmlFor="fb0559">Notiz</label><input id="fb0559" name="note" maxLength={500} defaultValue={f?.note} /></div>
       <label className="check"><input type="checkbox" name="active" defaultChecked={f?.active ?? true} />Aktiv</label>
       <div><button className="btn small">Speichern</button></div>
     </form>

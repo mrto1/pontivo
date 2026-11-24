@@ -212,7 +212,7 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
           <p className="small">Oder bestehende IDs aus Channex eintragen:</p>
           <form action={mappingAction} className="stack">
             {hidden}
-            <div><label>Property-ID</label><input name="propertyId" defaultValue={hotel.channexPropertyId ?? ""} placeholder="UUID" /></div>
+            <div><label htmlFor="fa4981">Property-ID</label><input id="fa4981" name="propertyId" defaultValue={hotel.channexPropertyId ?? ""} placeholder="UUID" /></div>
             {rts.map((rt) => (
               <div key={rt.id} className="card stack">
                 <div><label>{rt.name} – Room Type ID</label><input name={`rt:${rt.id}`} defaultValue={rt.channexRoomTypeId ?? ""} placeholder="UUID" /></div>

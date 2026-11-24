@@ -69,9 +69,9 @@ export default async function Vouchers({ params, searchParams }: { params: Promi
         <h2>Einlösen</h2>
         <form action={redeem} className="inline-form">
           {hidden}
-          <div><label>Code</label><input name="code" required placeholder="GS-XXXX-XXXX" defaultValue={sp.q ?? ""} style={{ textTransform: "uppercase" }} /></div>
-          <div><label>Betrag CHF</label><input name="amount" required inputMode="decimal" placeholder="z. B. 120" /></div>
-          <div style={{ minWidth: 220 }}><label>Notiz (optional)</label><input name="note" maxLength={200} placeholder="z. B. Abendessen 12.3." /></div>
+          <div><label htmlFor="f92f71">Code</label><input id="f92f71" name="code" required placeholder="GS-XXXX-XXXX" defaultValue={sp.q ?? ""} style={{ textTransform: "uppercase" }} /></div>
+          <div><label htmlFor="f92f72">Betrag CHF</label><input id="f92f72" name="amount" required inputMode="decimal" placeholder="z. B. 120" /></div>
+          <div style={{ minWidth: 220 }}><label htmlFor="f92f73">Notiz (optional)</label><input id="f92f73" name="note" maxLength={200} placeholder="z. B. Abendessen 12.3." /></div>
           <button className="btn">Einlösen</button>
         </form>
         <p className="muted small">Teilbeträge sind möglich, der Restwert bleibt auf dem Gutschein. Abgelaufene oder unbezahlte Gutscheine werden abgelehnt.</p>
@@ -79,7 +79,7 @@ export default async function Vouchers({ params, searchParams }: { params: Promi
 
       <section className="card stack">
         <h2>Verkaufte Gutscheine</h2>
-        <form className="inline-form" method="get"><div><label>Suchen (Code oder Name)</label><input name="q" defaultValue={sp.q ?? ""} /></div><button className="btn secondary small">Suchen</button></form>
+        <form className="inline-form" method="get"><div><label htmlFor="f92f74">Suchen (Code oder Name)</label><input id="f92f74" name="q" defaultValue={sp.q ?? ""} /></div><button className="btn secondary small">Suchen</button></form>
         <p className="small muted">Offener Restwert aller bezahlten Gutscheine: <strong>{formatChf(open)}</strong></p>
         {list.length ? (
           <div className="scroll-x"><table className="table">
@@ -109,10 +109,10 @@ export default async function Vouchers({ params, searchParams }: { params: Promi
           <fieldset className="plain stack" disabled={!canEdit}>
             <label className="check"><input type="checkbox" name="enabled" defaultChecked={set.enabled} />Gutscheine online verkaufen {vouchersAvailable(hotel) ? <span className="badge" style={{ marginLeft: 8 }}>aktiv</span> : null}</label>
             <div className="form-grid">
-              <div><label>Beträge zur Auswahl (CHF, mit Komma getrennt)</label><input name="amounts" defaultValue={set.amounts.map((a) => a / 100).join(", ")} /></div>
-              <div><label>Eigener Betrag: mindestens CHF</label><input name="min" inputMode="decimal" defaultValue={set.minRappen / 100} /></div>
-              <div><label>höchstens CHF</label><input name="max" inputMode="decimal" defaultValue={set.maxRappen / 100} /></div>
-              <div><label>Gültigkeit (Jahre)</label><input name="years" type="number" min={1} max={10} defaultValue={set.validityYears} /></div>
+              <div><label htmlFor="f92f75">Beträge zur Auswahl (CHF, mit Komma getrennt)</label><input id="f92f75" name="amounts" defaultValue={set.amounts.map((a) => a / 100).join(", ")} /></div>
+              <div><label htmlFor="f92f76">Eigener Betrag: mindestens CHF</label><input id="f92f76" name="min" inputMode="decimal" defaultValue={set.minRappen / 100} /></div>
+              <div><label htmlFor="f92f77">höchstens CHF</label><input id="f92f77" name="max" inputMode="decimal" defaultValue={set.maxRappen / 100} /></div>
+              <div><label htmlFor="f92f78">Gültigkeit (Jahre)</label><input id="f92f78" name="years" type="number" min={1} max={10} defaultValue={set.validityYears} /></div>
             </div>
           </fieldset>
           {canEdit ? <div><button className="btn small">Speichern</button></div> : null}

@@ -128,13 +128,13 @@ export default async function Upsell({ params, searchParams }: { params: Promise
             {hidden}
             <h3>Neues Angebot</h3>
             <div className="form-grid">
-              <div><label>Name (Deutsch)</label><input name="nameDe" required maxLength={120} placeholder="z. B. Frühstück" /></div>
-              <div><label>Name (Englisch, optional)</label><input name="nameEn" maxLength={120} /></div>
-              <div><label>Beschreibung (Deutsch, optional)</label><input name="descDe" maxLength={400} /></div>
-              <div><label>Beschreibung (Englisch, optional)</label><input name="descEn" maxLength={400} /></div>
-              <div><label>Preis CHF</label><input name="price" required inputMode="decimal" placeholder="z. B. 18" /></div>
-              <div><label>Preis gilt</label><select name="unit" defaultValue="per_person_night">{Object.entries(UNITS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
-              <div><label>Höchstmenge (bei «pro Buchung/Nacht»)</label><input name="max" type="number" min={1} max={20} defaultValue={1} /></div>
+              <div><label htmlFor="fb3e11">Name (Deutsch)</label><input id="fb3e11" name="nameDe" required maxLength={120} placeholder="z. B. Frühstück" /></div>
+              <div><label htmlFor="fb3e12">Name (Englisch, optional)</label><input id="fb3e12" name="nameEn" maxLength={120} /></div>
+              <div><label htmlFor="fb3e13">Beschreibung (Deutsch, optional)</label><input id="fb3e13" name="descDe" maxLength={400} /></div>
+              <div><label htmlFor="fb3e14">Beschreibung (Englisch, optional)</label><input id="fb3e14" name="descEn" maxLength={400} /></div>
+              <div><label htmlFor="fb3e15">Preis CHF</label><input id="fb3e15" name="price" required inputMode="decimal" placeholder="z. B. 18" /></div>
+              <div><label htmlFor="fb3e16">Preis gilt</label><select id="fb3e16" name="unit" defaultValue="per_person_night">{Object.entries(UNITS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+              <div><label htmlFor="fb3e17">Höchstmenge (bei «pro Buchung/Nacht»)</label><input id="fb3e17" name="max" type="number" min={1} max={20} defaultValue={1} /></div>
             </div>
             <div><button className="btn small">Angebot speichern</button></div>
             <p className="muted small">Weitere Sprachen (FR, IT, NL) fallen auf Englisch bzw. Deutsch zurück.</p>

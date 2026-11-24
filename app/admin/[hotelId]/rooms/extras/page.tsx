@@ -89,9 +89,9 @@ export default async function Extras({ params, searchParams }: { params: Promise
         ))}
       </div>
       <div className="form-grid">
-        <div><label>Preis CHF</label><input name="price" inputMode="decimal" required defaultValue={e ? (e.priceRappen / 100).toFixed(2) : ""} placeholder="15.00" /></div>
-        <div><label>Berechnung</label><select name="unit" defaultValue={e?.unit ?? "per_booking"}>{EXTRA_UNITS.map((u) => <option key={u} value={u}>{UNIT[u]}</option>)}</select></div>
-        <div><label>Höchstens wählbar (nicht bei «pro Person»)</label><input name="max" type="number" min={1} max={20} defaultValue={e?.maxQuantity ?? 1} /></div>
+        <div><label htmlFor="f08441">Preis CHF</label><input id="f08441" name="price" inputMode="decimal" required defaultValue={e ? (e.priceRappen / 100).toFixed(2) : ""} placeholder="15.00" /></div>
+        <div><label htmlFor="f08442">Berechnung</label><select id="f08442" name="unit" defaultValue={e?.unit ?? "per_booking"}>{EXTRA_UNITS.map((u) => <option key={u} value={u}>{UNIT[u]}</option>)}</select></div>
+        <div><label htmlFor="f08443">Höchstens wählbar (nicht bei «pro Person»)</label><input id="f08443" name="max" type="number" min={1} max={20} defaultValue={e?.maxQuantity ?? 1} /></div>
       </div>
       {rooms.length > 1 ? (
         <fieldset className="plain"><legend className="small muted">Nur für diese Zimmer (keines gewählt = alle)</legend>

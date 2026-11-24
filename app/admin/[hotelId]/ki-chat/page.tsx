@@ -140,7 +140,7 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
               <p className="small">Ist das Kontingent aufgebraucht, macht der Chat standardmässig Pause bis Monatsende. Wenn er weiterlaufen soll, buchen Sie bei Bedarf Zusatzpakete: <strong>{t.packSize} Gespräche für {formatChf(t.packPriceRappen)}</strong> (angebrochene Pakete zählen voll). Sie bestimmen ein Monatsbudget, mehr wird nie berechnet. 0 = Pause bei Limit.</p>
               <form action={budget} className="inline-form">
                 {hidden}
-                <div><label>Monatsbudget CHF</label><input name="budget" inputMode="decimal" defaultValue={((m.settings.overageBudgetRappen ?? 0) / 100).toFixed(0)} disabled={!isOwner} /></div>
+                <div><label htmlFor="f17871">Monatsbudget CHF</label><input id="f17871" name="budget" inputMode="decimal" defaultValue={((m.settings.overageBudgetRappen ?? 0) / 100).toFixed(0)} disabled={!isOwner} /></div>
                 <button className="btn secondary small" disabled={!isOwner}>Speichern</button>
               </form>
               {(m.settings.overageBudgetRappen ?? 0) >= t.packPriceRappen ? <p className="muted small">Mit diesem Budget laufen höchstens {t.included + Math.floor((m.settings.overageBudgetRappen ?? 0) / t.packPriceRappen) * t.packSize} Gespräche pro Monat.</p> : null}

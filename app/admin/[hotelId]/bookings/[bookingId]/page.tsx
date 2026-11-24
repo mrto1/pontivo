@@ -166,7 +166,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
           <input type="hidden" name="hotelId" value={hotel.id} />
           <input type="hidden" name="bookingId" value={b.id} />
           <div className="inline-form">
-            <div><label>Neue Anreise</label><input type="date" name="checkin" required min={todayIn(hotel.timezone)} defaultValue={addDays(b.checkin, 7)} /></div>
+            <div><label htmlFor="f37391">Neue Anreise</label><input id="f37391" type="date" name="checkin" required min={todayIn(hotel.timezone)} defaultValue={addDays(b.checkin, 7)} /></div>
             <label className="check"><input type="checkbox" name="notify" defaultChecked={!!g?.email} /> Gast per E-Mail informieren</label>
           </div>
           <button className="btn secondary">Verschieben</button>
@@ -180,7 +180,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
           {guestQuote ? <p className="muted small">Zum Vergleich: Bei Stornierung durch den Gast jetzt {formatChf(guestQuote.refundRappen)} (Gebühr {formatChf(guestQuote.feeRappen)}).</p> : null}
           <input type="hidden" name="hotelId" value={hotel.id} />
           <input type="hidden" name="bookingId" value={b.id} />
-          <div><label>Grund (intern)</label><input name="reason" placeholder="z. B. Wasserschaden" /></div>
+          <div><label htmlFor="f37392">Grund (intern)</label><input id="f37392" name="reason" placeholder="z. B. Wasserschaden" /></div>
           <button className="btn danger">Verbindlich stornieren</button>
         </form>
       ) : null}

@@ -87,8 +87,8 @@ export default async function OwnersPage({ params, searchParams }: { params: Pro
             <>
               <form action={cost} className="stack">
                 <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="ownerId" value={x.owner.id} /><input type="hidden" name="month" value={month} />
-                <div><label>Kosten (z. B. Reinigung, Reparatur)</label><input name="description" required /></div>
-                <div><label>Betrag CHF</label><input name="amount" inputMode="decimal" required /></div>
+                <div><label htmlFor={`fd5acm1-${x.owner.id}`}>Kosten (z. B. Reinigung, Reparatur)</label><input id={`fd5acm1-${x.owner.id}`} name="description" required /></div>
+                <div><label htmlFor={`fd5acm2-${x.owner.id}`}>Betrag CHF</label><input id={`fd5acm2-${x.owner.id}`} name="amount" inputMode="decimal" required /></div>
                 <div><button className="btn secondary">Kosten erfassen</button></div>
               </form>
               {!x.sentAt && x.owner.email ? <form action={send}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="ownerId" value={x.owner.id} /><input type="hidden" name="month" value={month} /><button className="btn">Per Mail senden</button></form> : null}
@@ -100,11 +100,11 @@ export default async function OwnersPage({ params, searchParams }: { params: Pro
         <form key={o?.id ?? "new"} action={save} className="card stack">
           <h2>{o ? `Eigentümer: ${o.name}` : "Neuer Eigentümer"}</h2>
           <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="month" value={month} />{o ? <input type="hidden" name="id" value={o.id} /> : null}
-          <div><label>Name</label><input name="name" defaultValue={o?.name ?? ""} required /></div>
-          <div><label>E-Mail für die Abrechnung</label><input name="email" type="email" defaultValue={o?.email ?? ""} /></div>
-          <div><label>Kommission des Hauses in %</label><input name="commission" inputMode="decimal" defaultValue={o ? o.commissionBps / 100 : 20} /></div>
+          <div><label htmlFor={`fd5acm3-${o?.id ?? "new"}`}>Name</label><input id={`fd5acm3-${o?.id ?? "new"}`} name="name" defaultValue={o?.name ?? ""} required /></div>
+          <div><label htmlFor={`fd5acm4-${o?.id ?? "new"}`}>E-Mail für die Abrechnung</label><input id={`fd5acm4-${o?.id ?? "new"}`} name="email" type="email" defaultValue={o?.email ?? ""} /></div>
+          <div><label htmlFor={`fd5acm5-${o?.id ?? "new"}`}>Kommission des Hauses in %</label><input id={`fd5acm5-${o?.id ?? "new"}`} name="commission" inputMode="decimal" defaultValue={o ? o.commissionBps / 100 : 20} /></div>
           <fieldset><legend>Objekte</legend>{types.map((t) => <label key={t.id} style={{ display: "block" }}><input type="checkbox" name="roomTypeIds" value={t.id} defaultChecked={o?.roomTypeIds.includes(t.id)} /> {t.name}</label>)}</fieldset>
-          <div><label>Notiz</label><input name="note" defaultValue={o?.note ?? ""} /></div>
+          <div><label htmlFor={`fd5acm6-${o?.id ?? "new"}`}>Notiz</label><input id={`fd5acm6-${o?.id ?? "new"}`} name="note" defaultValue={o?.note ?? ""} /></div>
           <label><input type="checkbox" name="active" defaultChecked={o?.active ?? true} /> aktiv</label>
           <div><button className="btn">Speichern</button></div>
         </form>

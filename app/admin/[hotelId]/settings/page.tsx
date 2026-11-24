@@ -91,17 +91,17 @@ export default async function Settings({ params, searchParams }: { params: Promi
           <h2>Name und Adresse</h2>
           {hidden}
           <div className="form-grid">
-            <div><label>Name</label><input name="name" defaultValue={hotel.name} required /></div>
-            <div><label>Firma (Rechnungsname)</label><input name="legalName" defaultValue={hotel.legalName ?? ""} /></div>
-            <div><label>Adresse</label><input name="addressLine" defaultValue={hotel.addressLine ?? ""} /></div>
-            <div><label>PLZ</label><input name="postalCode" defaultValue={hotel.postalCode ?? ""} /></div>
-            <div><label>Ort</label><input name="city" defaultValue={hotel.city ?? ""} /></div>
-            <div><label>E-Mail (Buchungen)</label><input name="contactEmail" type="email" defaultValue={hotel.contactEmail} required /></div>
-            <div><label>Telefon</label><input name="contactPhone" defaultValue={hotel.contactPhone ?? ""} /></div>
+            <div><label htmlFor="fe5a61">Name</label><input id="fe5a61" name="name" defaultValue={hotel.name} required /></div>
+            <div><label htmlFor="fe5a62">Firma (Rechnungsname)</label><input id="fe5a62" name="legalName" defaultValue={hotel.legalName ?? ""} /></div>
+            <div><label htmlFor="fe5a63">Adresse</label><input id="fe5a63" name="addressLine" defaultValue={hotel.addressLine ?? ""} /></div>
+            <div><label htmlFor="fe5a64">PLZ</label><input id="fe5a64" name="postalCode" defaultValue={hotel.postalCode ?? ""} /></div>
+            <div><label htmlFor="fe5a65">Ort</label><input id="fe5a65" name="city" defaultValue={hotel.city ?? ""} /></div>
+            <div><label htmlFor="fe5a66">E-Mail (Buchungen)</label><input id="fe5a66" name="contactEmail" type="email" defaultValue={hotel.contactEmail} required /></div>
+            <div><label htmlFor="fe5a67">Telefon</label><input id="fe5a67" name="contactPhone" defaultValue={hotel.contactPhone ?? ""} /></div>
             {restaurantKind ? <><input type="hidden" name="checkinTime" value={hotel.checkinTime.slice(0, 5)} /><input type="hidden" name="checkoutTime" value={hotel.checkoutTime.slice(0, 5)} /></> : <>
-            <div><label>Check-in ab</label><input name="checkinTime" type="time" defaultValue={hotel.checkinTime.slice(0, 5)} required /></div>
-            <div><label>Check-out bis</label><input name="checkoutTime" type="time" defaultValue={hotel.checkoutTime.slice(0, 5)} required /></div></>}
-            <div><label>Standardsprache</label><select name="defaultLanguage" defaultValue={hotel.defaultLanguage}><option value="de">Deutsch</option><option value="en">Englisch</option></select></div>
+            <div><label htmlFor="fe5a68">Check-in ab</label><input id="fe5a68" name="checkinTime" type="time" defaultValue={hotel.checkinTime.slice(0, 5)} required /></div>
+            <div><label htmlFor="fe5a69">Check-out bis</label><input id="fe5a69" name="checkoutTime" type="time" defaultValue={hotel.checkoutTime.slice(0, 5)} required /></div></>}
+            <div><label htmlFor="fe5a610">Standardsprache</label><select id="fe5a610" name="defaultLanguage" defaultValue={hotel.defaultLanguage}><option value="de">Deutsch</option><option value="en">Englisch</option></select></div>
           </div>
           {restaurantKind ? null : <label className="check"><input type="checkbox" name="taxIncluded" defaultChecked={hotel.touristTaxIncludedInPrice} />Kurtaxe ist im Zimmerpreis inbegriffen</label>}
           <button className="btn">Speichern</button>
@@ -141,10 +141,10 @@ export default async function Settings({ params, searchParams }: { params: Promi
             <form action={saveTax} className="stack" style={{ marginTop: 12 }}>
               {hidden}
               <div className="inline-form">
-                <div><label>Erwachsene CHF/Nacht</label><input name="adult" required inputMode="decimal" defaultValue={rule?.adultRappen != null ? (rule.adultRappen / 100).toFixed(2) : ""} /></div>
-                <div><label>Reduziert CHF</label><input name="reduced" inputMode="decimal" defaultValue={rule?.reducedRappen != null ? (rule.reducedRappen / 100).toFixed(2) : ""} /></div>
-                <div><label>Reduziert unter Alter</label><input name="reducedUnder" type="number" min={0} defaultValue={rule?.reducedUnderAge ?? ""} /></div>
-                <div><label>Befreit unter Alter</label><input name="freeUnder" type="number" min={0} defaultValue={rule?.freeUnderAge ?? 0} /></div>
+                <div><label htmlFor="fe5a611">Erwachsene CHF/Nacht</label><input id="fe5a611" name="adult" required inputMode="decimal" defaultValue={rule?.adultRappen != null ? (rule.adultRappen / 100).toFixed(2) : ""} /></div>
+                <div><label htmlFor="fe5a612">Reduziert CHF</label><input id="fe5a612" name="reduced" inputMode="decimal" defaultValue={rule?.reducedRappen != null ? (rule.reducedRappen / 100).toFixed(2) : ""} /></div>
+                <div><label htmlFor="fe5a613">Reduziert unter Alter</label><input id="fe5a613" name="reducedUnder" type="number" min={0} defaultValue={rule?.reducedUnderAge ?? ""} /></div>
+                <div><label htmlFor="fe5a614">Befreit unter Alter</label><input id="fe5a614" name="freeUnder" type="number" min={0} defaultValue={rule?.freeUnderAge ?? 0} /></div>
               </div>
               <button className="btn">Bestätigen (gültig ab heute)</button>
             </form>

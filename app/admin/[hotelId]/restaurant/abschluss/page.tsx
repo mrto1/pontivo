@@ -48,8 +48,8 @@ export default async function PosClosePage({ params, searchParams }: { params: P
         {closed ? <p>Gezählt: {formatChf(closed.countedCashRappen)}, Differenz {formatChf(closed.differenceRappen)}{closed.note ? ` (${closed.note})` : ""}. Abgeschlossen von {closed.closedBy}.</p> : (
           <form action={close} className="stack">
             <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="day" value={day} />
-            <div><label>Gezähltes Bargeld CHF</label><input name="counted" inputMode="decimal" required /></div>
-            <div><label>Bemerkung</label><input name="note" maxLength={300} /></div>
+            <div><label htmlFor="f51db1">Gezähltes Bargeld CHF</label><input id="f51db1" name="counted" inputMode="decimal" required /></div>
+            <div><label htmlFor="f51db2">Bemerkung</label><input id="f51db2" name="note" maxLength={300} /></div>
             <div><button className="btn">Tag abschliessen</button></div>
           </form>
         )}

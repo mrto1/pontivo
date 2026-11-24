@@ -162,11 +162,11 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
       <form action={item} className="card stack">
         {H}
         <h2>Neuer Artikel</h2>
-        <div><label>Name</label><input name="name" required maxLength={120} /></div>
-        <div><label>Kategorie</label><input name="category" maxLength={60} placeholder="Essen, Getränke …" /></div>
-        <div><label>Preis CHF</label><input name="price" inputMode="decimal" required /></div>
-        <div><label>MWST im Haus %</label><input name="vatDineIn" inputMode="decimal" defaultValue="8.1" /></div>
-        <div><label>MWST Take-away %</label><input name="vatTakeaway" inputMode="decimal" defaultValue="2.6" /></div>
+        <div><label htmlFor="ff1561">Name</label><input id="ff1561" name="name" required maxLength={120} /></div>
+        <div><label htmlFor="ff1562">Kategorie</label><input id="ff1562" name="category" maxLength={60} placeholder="Essen, Getränke …" /></div>
+        <div><label htmlFor="ff1563">Preis CHF</label><input id="ff1563" name="price" inputMode="decimal" required /></div>
+        <div><label htmlFor="ff1564">MWST im Haus %</label><input id="ff1564" name="vatDineIn" inputMode="decimal" defaultValue="8.1" /></div>
+        <div><label htmlFor="ff1565">MWST Take-away %</label><input id="ff1565" name="vatTakeaway" inputMode="decimal" defaultValue="2.6" /></div>
         <div><label htmlFor="nstation">Station (Küchenbildschirm)</label><select id="nstation" name="station" defaultValue="kitchen">{Object.entries(STATION).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
         <div><label><input type="checkbox" name="dailySpecial" /> Tagesangebot</label></div>
         <div><button className="btn">Speichern</button></div>

@@ -263,12 +263,12 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
               {sp.msg ? <Notice text={sp.msg} /> : null}
               <form action={saveRoom} className="stack">
                 {hid}{fromField}<input type="hidden" name="roomId" value={editRoom?.id ?? ""} />
-                <div><label>Zimmertyp</label><select name="roomTypeId" defaultValue={editRoom?.roomTypeId ?? types[0]?.id}>{types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
+                <div><label htmlFor="fca501">Zimmertyp</label><select id="fca501" name="roomTypeId" defaultValue={editRoom?.roomTypeId ?? types[0]?.id}>{types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
                 <div className="form-grid">
-                  <div><label>Nummer</label><input name="number" required maxLength={20} defaultValue={editRoom?.number} placeholder="z. B. 12" /></div>
-                  <div><label>Etage (optional)</label><input name="floor" maxLength={40} defaultValue={editRoom?.floor} placeholder="z. B. 2. OG" /></div>
+                  <div><label htmlFor="fca502">Nummer</label><input id="fca502" name="number" required maxLength={20} defaultValue={editRoom?.number} placeholder="z. B. 12" /></div>
+                  <div><label htmlFor="fca503">Etage (optional)</label><input id="fca503" name="floor" maxLength={40} defaultValue={editRoom?.floor} placeholder="z. B. 2. OG" /></div>
                 </div>
-                <div><label>Notiz (optional)</label><input name="note" maxLength={200} defaultValue={editRoom?.note} placeholder="z. B. Balkon, ruhig gelegen" /></div>
+                <div><label htmlFor="fca504">Notiz (optional)</label><input id="fca504" name="note" maxLength={200} defaultValue={editRoom?.note} placeholder="z. B. Balkon, ruhig gelegen" /></div>
                 {editRoom ? <label className="check"><input type="checkbox" name="active" defaultChecked={editRoom.active} />Zimmer ist in Betrieb (abwählen = gesperrt, z. B. wegen Renovation)</label> : null}
                 <DrawerActions submit={editRoom ? "Speichern" : "Zimmer anlegen"} cancelHref={`${base}?from=${from}`} />
               </form>

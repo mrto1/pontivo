@@ -65,13 +65,13 @@ export default async function ResourcesPage({ params, searchParams }: { params: 
         <form action={book} className="card stack">
           <h2>Neu buchen</h2>
           <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="day" value={day} />
-          <div><label>Angebot</label><select name="resourceId">{active.map((r) => <option key={r.id} value={r.id}>{r.name} ({hhmm(r.openFrom)}–{hhmm(r.openTo)}, {r.slotMinutes} Min.)</option>)}</select></div>
-          <div><label>Von (HH:MM)</label><input name="start" placeholder="14:00" required /></div>
-          <div><label>Bis (HH:MM)</label><input name="end" placeholder="15:00" required /></div>
-          <div><label>Personen</label><input name="persons" type="number" min={1} defaultValue={1} required /></div>
-          <div><label>Buchungsnummer (Hausgast, Preis kommt aufs Zimmer – sonst leer lassen)</label><input name="reference" /></div>
-          <div><label>Name (bei Hausgast optional)</label><input name="guestName" /></div>
-          <div><label>Notiz</label><input name="note" /></div>
+          <div><label htmlFor="f001f1">Angebot</label><select id="f001f1" name="resourceId">{active.map((r) => <option key={r.id} value={r.id}>{r.name} ({hhmm(r.openFrom)}–{hhmm(r.openTo)}, {r.slotMinutes} Min.)</option>)}</select></div>
+          <div><label htmlFor="f001f2">Von (HH:MM)</label><input id="f001f2" name="start" placeholder="14:00" required /></div>
+          <div><label htmlFor="f001f3">Bis (HH:MM)</label><input id="f001f3" name="end" placeholder="15:00" required /></div>
+          <div><label htmlFor="f001f4">Personen</label><input id="f001f4" name="persons" type="number" min={1} defaultValue={1} required /></div>
+          <div><label htmlFor="f001f5">Buchungsnummer (Hausgast, Preis kommt aufs Zimmer – sonst leer lassen)</label><input id="f001f5" name="reference" /></div>
+          <div><label htmlFor="f001f6">Name (bei Hausgast optional)</label><input id="f001f6" name="guestName" /></div>
+          <div><label htmlFor="f001f7">Notiz</label><input id="f001f7" name="note" /></div>
           <div><button className="btn">Buchen</button></div>
         </form>
       ) : null}

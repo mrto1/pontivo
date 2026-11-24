@@ -28,8 +28,8 @@ export async function TerminalCard({ hotel, bookingId }: { hotel: Hotel; booking
       {!readers.length ? <p className="muted small">Noch kein Kartenleser registriert (Einstellungen → Technik → Geräte → Kartenterminal).</p> : open > 0 ? (
         <form action={terminalStartAction} className="inline-form">
           {hid}
-          <div><label>Leser</label><select name="readerId">{readers.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></div>
-          <div><label>Betrag CHF</label><input name="amount" inputMode="decimal" required defaultValue={(open / 100).toFixed(2)} style={{ width: 110 }} /></div>
+          <div><label htmlFor="fd7161">Leser</label><select id="fd7161" name="readerId">{readers.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></div>
+          <div><label htmlFor="fd7162">Betrag CHF</label><input id="fd7162" name="amount" inputMode="decimal" required defaultValue={(open / 100).toFixed(2)} style={{ width: 110 }} /></div>
           <button className="btn small">Am Terminal bezahlen</button>
         </form>
       ) : <p className="muted small">Nichts offen.</p>}

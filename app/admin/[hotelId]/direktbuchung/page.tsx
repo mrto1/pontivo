@@ -98,7 +98,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
             <div key={i} className="stack" style={{ gap: 6 }}>
               <div className="row">
                 <div style={{ flex: "1 1 320px" }}><label>Vorteil {i + 1} (Deutsch)</label><input name={`text_${i}_de`} defaultValue={b?.text.de ?? ""} maxLength={90} placeholder={i === 0 ? "z. B. Late Check-out bis 14 Uhr" : ""} /></div>
-                <div style={{ width: 150 }}><label>ab Nächten</label><input name={`min_${i}`} type="number" min={1} max={30} defaultValue={b?.minNights ?? ""} placeholder="alle" /></div>
+                <div style={{ width: 150 }}><label htmlFor={`fbe24m1-${i}`}>ab Nächten</label><input id={`fbe24m1-${i}`} name={`min_${i}`} type="number" min={1} max={30} defaultValue={b?.minNights ?? ""} placeholder="alle" /></div>
               </div>
               {langs.length > 1 ? (
                 <details><summary className="small muted">Übersetzungen</summary>
@@ -137,10 +137,10 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
                         <details><summary className="small">Ändern</summary>
                           <form action={codeSave} className="stack" style={{ marginTop: 8, minWidth: 260 }}>
                             {hidden}<input type="hidden" name="codeId" value={c.id} /><input type="hidden" name="companyId" value={c.companyId} />
-                            <div><label>Code</label><input name="code" defaultValue={c.code} /></div>
-                            <div><label>Rabatt %</label><input name="discount" type="number" min={0} max={50} step="0.5" defaultValue={c.discountBps / 100} /></div>
+                            <div><label htmlFor={`fbe24m2-${c.id}`}>Code</label><input id={`fbe24m2-${c.id}`} name="code" defaultValue={c.code} /></div>
+                            <div><label htmlFor={`fbe24m3-${c.id}`}>Rabatt %</label><input id={`fbe24m3-${c.id}`} name="discount" type="number" min={0} max={50} step="0.5" defaultValue={c.discountBps / 100} /></div>
                             <label className="check"><input type="checkbox" name="invoice" defaultChecked={c.payOnInvoice} /> Auf Rechnung buchen</label>
-                            <div className="row"><div><label>Gültig ab</label><input name="from" type="date" defaultValue={c.validFrom ?? ""} /></div><div><label>bis</label><input name="until" type="date" defaultValue={c.validUntil ?? ""} /></div></div>
+                            <div className="row"><div><label htmlFor={`fbe24m4-${c.id}`}>Gültig ab</label><input id={`fbe24m4-${c.id}`} name="from" type="date" defaultValue={c.validFrom ?? ""} /></div><div><label htmlFor={`fbe24m5-${c.id}`}>bis</label><input id={`fbe24m5-${c.id}`} name="until" type="date" defaultValue={c.validUntil ?? ""} /></div></div>
                             <label className="check"><input type="checkbox" name="active" defaultChecked={c.active} /> Aktiv</label>
                             <div className="inline-form"><button className="btn small">Speichern</button></div>
                           </form>
@@ -156,13 +156,13 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
               <details className="card"><summary><strong>+ Neuer Code</strong></summary>
                 <form action={codeSave} className="stack" style={{ marginTop: 12 }}>
                   {hidden}
-                  <div style={{ maxWidth: 360 }}><label>Firma</label><select name="companyId" required>{companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+                  <div style={{ maxWidth: 360 }}><label htmlFor="fbe241">Firma</label><select id="fbe241" name="companyId" required>{companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
                   <div className="row">
-                    <div><label>Code (leer = wird erzeugt)</label><input name="code" maxLength={24} style={{ textTransform: "uppercase" }} /></div>
-                    <div><label>Rabatt %</label><input name="discount" type="number" min={0} max={50} step="0.5" defaultValue={10} /></div>
+                    <div><label htmlFor="fbe242">Code (leer = wird erzeugt)</label><input id="fbe242" name="code" maxLength={24} style={{ textTransform: "uppercase" }} /></div>
+                    <div><label htmlFor="fbe243">Rabatt %</label><input id="fbe243" name="discount" type="number" min={0} max={50} step="0.5" defaultValue={10} /></div>
                   </div>
                   <label className="check"><input type="checkbox" name="invoice" /> Auf Rechnung buchen (keine Kartenzahlung)</label>
-                  <div className="row"><div><label>Gültig ab (Anreise)</label><input name="from" type="date" /></div><div><label>bis</label><input name="until" type="date" /></div></div>
+                  <div className="row"><div><label htmlFor="fbe244">Gültig ab (Anreise)</label><input id="fbe244" name="from" type="date" /></div><div><label htmlFor="fbe245">bis</label><input id="fbe245" name="until" type="date" /></div></div>
                   <div><button className="btn small">Code anlegen</button></div>
                 </form>
               </details>
@@ -178,8 +178,8 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
           {hidden}
           <label className="check"><input type="checkbox" name="enabled" defaultChecked={gaps.enabled} /> Lückenfüller einschalten</label>
           <div className="row">
-            <div><label>Lücke höchstens</label><select name="maxNights" defaultValue={gaps.maxNights}>{Array.from({ length: MAX_GAP_NIGHTS }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n} {n === 1 ? "Nacht" : "Nächte"}</option>)}</select></div>
-            <div><label>Rabatt %</label><input name="discount" type="number" min={0} max={30} step="0.5" defaultValue={gaps.discountBps / 100} /></div>
+            <div><label htmlFor="fbe246">Lücke höchstens</label><select id="fbe246" name="maxNights" defaultValue={gaps.maxNights}>{Array.from({ length: MAX_GAP_NIGHTS }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n} {n === 1 ? "Nacht" : "Nächte"}</option>)}</select></div>
+            <div><label htmlFor="fbe247">Rabatt %</label><input id="fbe247" name="discount" type="number" min={0} max={30} step="0.5" defaultValue={gaps.discountBps / 100} /></div>
           </div>
           <label className="check"><input type="checkbox" name="relax" defaultChecked={gaps.relaxMinStay} /> Mindestaufenthalt in der Lücke aufheben</label>
           <div><button className="btn">Speichern</button></div>

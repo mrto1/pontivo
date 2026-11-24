@@ -192,7 +192,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
             </label>
           </div>
           <div className="form-grid">
-            <div><label>Adresse der eigenen Website</label><input name="websiteUrl" type="url" placeholder="https://www.hotel.ch" defaultValue={brand.websiteUrl ?? ""} disabled={!canEdit} /></div>
+            <div><label htmlFor="f1c501">Adresse der eigenen Website</label><input id="f1c501" name="websiteUrl" type="url" placeholder="https://www.hotel.ch" defaultValue={brand.websiteUrl ?? ""} disabled={!canEdit} /></div>
             <div>
               <label>Hauptfarbe (Knöpfe, Links)</label>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -270,7 +270,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
           <div className="inline-form">
             <form action={`/api/admin/hotels/${hotel.id}/photos`} method="post" encType="multipart/form-data" className="inline-form">
               <input type="hidden" name="target" value="logo" />
-              <div><label>Logo hochladen (PNG mit transparentem Hintergrund, JPG oder WebP)</label><input type="file" name="file" accept="image/png,image/jpeg,image/webp" required /></div>
+              <div><label htmlFor="f1c502">Logo hochladen (PNG mit transparentem Hintergrund, JPG oder WebP)</label><input id="f1c502" type="file" name="file" accept="image/png,image/jpeg,image/webp" required /></div>
               <button className="btn small">Hochladen</button>
             </form>
             {brand.logoUrl ? <form action={removeLogo}>{hidden}<button className="btn secondary small">Logo entfernen</button></form> : null}
@@ -319,10 +319,10 @@ export default async function Site({ params, searchParams }: { params: Promise<{
               {hidden}
               <p className="small muted" style={{ margin: 0 }}>Einfache Startseite: Titel und Einleitung, darunter Ihre Zimmer.</p>
               <div className="form-grid">
-                <div><label>Titel (DE)</label><input name="headlineDe" defaultValue={hotel.content?.de?.headline ?? ""} /></div>
-                <div><label>Titel (EN)</label><input name="headlineEn" defaultValue={hotel.content?.en?.headline ?? ""} /></div>
-                <div><label>Einleitung (DE)</label><textarea name="introDe" rows={3} defaultValue={hotel.content?.de?.intro ?? ""} /></div>
-                <div><label>Einleitung (EN)</label><textarea name="introEn" rows={3} defaultValue={hotel.content?.en?.intro ?? ""} /></div>
+                <div><label htmlFor="f1c503">Titel (DE)</label><input id="f1c503" name="headlineDe" defaultValue={hotel.content?.de?.headline ?? ""} /></div>
+                <div><label htmlFor="f1c504">Titel (EN)</label><input id="f1c504" name="headlineEn" defaultValue={hotel.content?.en?.headline ?? ""} /></div>
+                <div><label htmlFor="f1c505">Einleitung (DE)</label><textarea id="f1c505" name="introDe" rows={3} defaultValue={hotel.content?.de?.intro ?? ""} /></div>
+                <div><label htmlFor="f1c506">Einleitung (EN)</label><textarea id="f1c506" name="introEn" rows={3} defaultValue={hotel.content?.en?.intro ?? ""} /></div>
               </div>
               <div><button className="btn">Speichern</button></div>
             </form>
@@ -354,7 +354,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
         ) : <p className="muted small">Noch keine Dokumente.</p>}
         {canEdit ? (
           <form action={`/api/admin/hotels/${hotel.id}/documents`} method="post" encType="multipart/form-data" className="inline-form">
-            <div><label>PDF-Datei (max. 15 MB)</label><input type="file" name="file" accept="application/pdf,.pdf" required /></div>
+            <div><label htmlFor="f1c507">PDF-Datei (max. 15 MB)</label><input id="f1c507" type="file" name="file" accept="application/pdf,.pdf" required /></div>
             {langs.map((l) => (
               <div key={l}><label>Titel {l.toUpperCase()}</label><input name={`title.${l}`} placeholder={l === "de" ? "z. B. Speisekarte" : l === "en" ? "z. B. Menu" : ""} maxLength={120} /></div>
             ))}
@@ -391,7 +391,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
         ) : <p className="muted small">Noch keine weiteren Seiten. Typisch sind z. B. Restaurant, Lage & Anreise, Angebote, Seminare.</p>}
         {canEdit ? (
           <div className="inline-form">
-            <form action={newPage} className="inline-form">{hidden}<div><label>Neue Seite</label><input name="title" placeholder="z. B. Restaurant" required /></div><button className="btn small">Anlegen</button></form>
+            <form action={newPage} className="inline-form">{hidden}<div><label htmlFor="f1c508">Neue Seite</label><input id="f1c508" name="title" placeholder="z. B. Restaurant" required /></div><button className="btn small">Anlegen</button></form>
             {!others.some((p) => p.slug === "impressum") ? <form action={newImprint}>{hidden}<button className="btn secondary small">Impressum anlegen</button></form> : null}
           </div>
         ) : null}

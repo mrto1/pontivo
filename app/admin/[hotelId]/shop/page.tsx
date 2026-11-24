@@ -99,31 +99,31 @@ export default async function ShopPage({ params, searchParams }: { params: Promi
               {sp.msg ? <Notice text={sp.msg} /> : null}
               <form action={saveAction} className="stack">
                 <input type="hidden" name="hotelId" value={hotel.id} />{g ? <input type="hidden" name="id" value={g.id} /> : null}
-                <div><label>Name</label><input name="name" defaultValue={g?.name ?? ""} required maxLength={100} placeholder="z. B. Mineralwasser 5 dl" /></div>
+                <div><label htmlFor="f01b21">Name</label><input id="f01b21" name="name" defaultValue={g?.name ?? ""} required maxLength={100} placeholder="z. B. Mineralwasser 5 dl" /></div>
                 <div className="form-grid">
-                  <div><label>Kategorie</label><input name="category" defaultValue={g?.category ?? ""} maxLength={60} placeholder="z. B. Getränke" /></div>
-                  <div><label>Preis CHF</label><input name="price" inputMode="decimal" defaultValue={g ? g.priceRappen / 100 : 0} /></div>
-                  <div><label>MWST</label><select name="vat" defaultValue={g?.vat ?? "standard"}>{Object.entries(VAT_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+                  <div><label htmlFor="f01b22">Kategorie</label><input id="f01b22" name="category" defaultValue={g?.category ?? ""} maxLength={60} placeholder="z. B. Getränke" /></div>
+                  <div><label htmlFor="f01b23">Preis CHF</label><input id="f01b23" name="price" inputMode="decimal" defaultValue={g ? g.priceRappen / 100 : 0} /></div>
+                  <div><label htmlFor="f01b24">MWST</label><select id="f01b24" name="vat" defaultValue={g?.vat ?? "standard"}>{Object.entries(VAT_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
                 </div>
                 <label className="check"><input type="checkbox" name="sellable" defaultChecked={g?.sellable ?? true} />Verkäuflich (sonst reiner Vorrat)</label>
                 <label className="check"><input type="checkbox" name="active" defaultChecked={g?.active ?? true} />Aktiv</label>
                 {mini ? (
                   <div className="form-grid">
                     <label className="check"><input type="checkbox" name="minibar" defaultChecked={g?.minibar} />In der Minibar</label>
-                    <div><label>Sollmenge pro Zimmer</label><input name="minibarPar" type="number" min={0} max={99} defaultValue={g?.minibarPar || 2} /></div>
+                    <div><label htmlFor="f01b25">Sollmenge pro Zimmer</label><input id="f01b25" name="minibarPar" type="number" min={0} max={99} defaultValue={g?.minibarPar || 2} /></div>
                   </div>
                 ) : null}
                 <label className="check"><input type="checkbox" name="trackStock" defaultChecked={g?.trackStock} />Lagerbestand führen</label>
                 <div className="form-grid">
-                  <div><label>Bestand</label><input name="stock" type="number" defaultValue={g?.stock ?? 0} /></div>
-                  <div><label>Mindestbestand</label><input name="minStock" type="number" min={0} defaultValue={g?.minStock ?? 0} /></div>
+                  <div><label htmlFor="f01b26">Bestand</label><input id="f01b26" name="stock" type="number" defaultValue={g?.stock ?? 0} /></div>
+                  <div><label htmlFor="f01b27">Mindestbestand</label><input id="f01b27" name="minStock" type="number" min={0} defaultValue={g?.minStock ?? 0} /></div>
                 </div>
                 <DrawerActions submit={g ? "Speichern" : "Ware anlegen"} cancelHref={base} />
               </form>
               {g?.trackStock ? (
                 <form action={receiveAction} className="inline-form">
                   <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={g.id} />
-                  <div><label>Wareneingang (negativ = Korrektur)</label><input name="delta" type="number" required style={{ width: 120 }} /></div>
+                  <div><label htmlFor="f01b28">Wareneingang (negativ = Korrektur)</label><input id="f01b28" name="delta" type="number" required style={{ width: 120 }} /></div>
                   <button className="btn secondary small">Buchen</button>
                 </form>
               ) : null}

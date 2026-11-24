@@ -183,7 +183,7 @@ export default async function Housekeeping({ params, searchParams }: { params: P
                   <label className="hk-kind-opt"><input type="radio" name="kind" value="issue" defaultChecked /><span><strong>Mangel melden</strong><span className="small muted">Etwas ist defekt oder beschädigt, z. B. Glühbirne. Bleibt offen, bis es erledigt ist.</span></span></label>
                   <label className="hk-kind-opt"><input type="radio" name="kind" value="task" /><span><strong>Extra-Auftrag</strong><span className="small muted">Zusätzliche Reinigung an diesem Tag, z. B. Fenster putzen.</span></span></label>
                 </fieldset>
-                <div><label>Beschreibung</label><textarea name="text" rows={3} maxLength={300} required placeholder="z. B. Glühbirne Nachttisch defekt" /></div>
+                <div><label htmlFor="f62bf1">Beschreibung</label><textarea id="f62bf1" name="text" rows={3} maxLength={300} required placeholder="z. B. Glühbirne Nachttisch defekt" /></div>
                 <div className="drawer-actions"><button className="btn">Speichern</button><Link className="btn secondary" href={`?day=${day}`} scroll={false}>Abbrechen</Link></div>
               </form>
             </div>

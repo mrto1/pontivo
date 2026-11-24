@@ -136,15 +136,15 @@ function RoomForm({ hotelId, rt, canEdit, nextOrder = 0, langs, cancelHref }: { 
       <input type="hidden" name="hotelId" value={hotelId} />
       <input type="hidden" name="roomTypeId" value={rt?.id ?? ""} />
       <div className="form-grid">
-        <div><label>Name</label><input name="name" defaultValue={rt?.name} required disabled={!canEdit} placeholder="z. B. Doppelzimmer Seesicht" /></div>
-        <div><label>Anzahl Zimmer dieses Typs</label><input name="roomCount" type="number" min={0} defaultValue={rt?.roomCount ?? 1} required disabled={!canEdit} /></div>
-        <div><label>Max. Erwachsene</label><input name="maxAdults" type="number" min={1} defaultValue={rt?.maxAdults ?? 2} required disabled={!canEdit} /></div>
-        <div><label>Max. Kinder</label><input name="maxChildren" type="number" min={0} defaultValue={rt?.maxChildren ?? 0} required disabled={!canEdit} /></div>
-        <div><label>Max. Personen total</label><input name="maxOccupancy" type="number" min={1} defaultValue={rt?.maxOccupancy ?? 2} required disabled={!canEdit} /></div>
-        <div><label>Reihenfolge auf der Website</label><input name="sortOrder" type="number" min={0} defaultValue={rt?.sortOrder ?? nextOrder} disabled={!canEdit} /></div>
+        <div><label htmlFor="f23831">Name</label><input id="f23831" name="name" defaultValue={rt?.name} required disabled={!canEdit} placeholder="z. B. Doppelzimmer Seesicht" /></div>
+        <div><label htmlFor="f23832">Anzahl Zimmer dieses Typs</label><input id="f23832" name="roomCount" type="number" min={0} defaultValue={rt?.roomCount ?? 1} required disabled={!canEdit} /></div>
+        <div><label htmlFor="f23833">Max. Erwachsene</label><input id="f23833" name="maxAdults" type="number" min={1} defaultValue={rt?.maxAdults ?? 2} required disabled={!canEdit} /></div>
+        <div><label htmlFor="f23834">Max. Kinder</label><input id="f23834" name="maxChildren" type="number" min={0} defaultValue={rt?.maxChildren ?? 0} required disabled={!canEdit} /></div>
+        <div><label htmlFor="f23835">Max. Personen total</label><input id="f23835" name="maxOccupancy" type="number" min={1} defaultValue={rt?.maxOccupancy ?? 2} required disabled={!canEdit} /></div>
+        <div><label htmlFor="f23836">Reihenfolge auf der Website</label><input id="f23836" name="sortOrder" type="number" min={0} defaultValue={rt?.sortOrder ?? nextOrder} disabled={!canEdit} /></div>
       </div>
-      <div><label>Beschreibung</label><textarea name="description" rows={2} defaultValue={rt?.description ?? ""} disabled={!canEdit} placeholder="Grösse, Bett, Aussicht, Ausstattung" /></div>
-      <div><label>Ankunftsinfos für diese Wohnung/dieses Zimmer (optional)</label><textarea name="arrivalInfo" rows={3} maxLength={2000} defaultValue={rt?.arrivalInfo ?? ""} disabled={!canEdit} placeholder="z. B. Schlüsselbox-Code, WLAN. Überschreibt die allgemeinen Infos zur Ankunft. Gäste sehen es nur während ihres Aufenthalts." /></div>
+      <div><label htmlFor="f23837">Beschreibung</label><textarea id="f23837" name="description" rows={2} defaultValue={rt?.description ?? ""} disabled={!canEdit} placeholder="Grösse, Bett, Aussicht, Ausstattung" /></div>
+      <div><label htmlFor="f23838">Ankunftsinfos für diese Wohnung/dieses Zimmer (optional)</label><textarea id="f23838" name="arrivalInfo" rows={3} maxLength={2000} defaultValue={rt?.arrivalInfo ?? ""} disabled={!canEdit} placeholder="z. B. Schlüsselbox-Code, WLAN. Überschreibt die allgemeinen Infos zur Ankunft. Gäste sehen es nur während ihres Aufenthalts." /></div>
       {EXTRA.map((l) => langs.includes(l) ? (
         <div key={l} className="form-grid">
           <div><label>Name {LOCALE_NAMES[l]}</label><input name={`name.${l}`} defaultValue={rt?.i18n?.[l]?.name ?? ""} disabled={!canEdit} placeholder={l === "en" ? "z. B. Double room with lake view" : ""} /></div>
@@ -158,7 +158,7 @@ function RoomForm({ hotelId, rt, canEdit, nextOrder = 0, langs, cancelHref }: { 
       ))}
       {!rt && canEdit ? (
         <div className="form-grid">
-          <div><label>Startpreis CHF pro Nacht (optional)</label><input name="startPrice" inputMode="decimal" placeholder="z. B. 180" title="Legt gleich den Tarif «Standard» an. Weitere Tarife und Tagespreise später." /></div>
+          <div><label htmlFor="f23839">Startpreis CHF pro Nacht (optional)</label><input id="f23839" name="startPrice" inputMode="decimal" placeholder="z. B. 180" title="Legt gleich den Tarif «Standard» an. Weitere Tarife und Tagespreise später." /></div>
         </div>
       ) : null}
       <label className="check"><input type="checkbox" name="active" defaultChecked={rt?.active ?? true} disabled={!canEdit} />Buchbar (auf der Website und bei Portalen)</label>
@@ -175,41 +175,41 @@ function PlanForm({ hotelId, roomTypeId, p, canEdit, langs, cancelHref }: { hote
       <input type="hidden" name="roomTypeId" value={roomTypeId} />
       <input type="hidden" name="ratePlanId" value={p?.id ?? ""} />
       <div className="form-grid">
-        <div><label>Name des Tarifs</label><input name="name" defaultValue={p?.name ?? "Flexibel"} required disabled={!canEdit} /></div>
+        <div><label htmlFor="f238310">Name des Tarifs</label><input id="f238310" name="name" defaultValue={p?.name ?? "Flexibel"} required disabled={!canEdit} /></div>
         {EXTRA.map((l) => langs.includes(l) ? (
           <div key={l}><label>Name {LOCALE_NAMES[l]}</label><input name={`name.${l}`} defaultValue={p?.i18n?.[l]?.name ?? (p ? "" : l === "en" ? "Flexible" : "")} disabled={!canEdit} /></div>
         ) : p?.i18n?.[l]?.name ? <input key={l} type="hidden" name={`name.${l}`} value={p.i18n[l]!.name} /> : null)}
-        {!p ? <div><label>Startpreis CHF pro Nacht</label><input name="price" inputMode="decimal" required placeholder="z. B. 180" disabled={!canEdit} /></div> : null}
-        <div><label>Preis gilt für Personen</label><input name="baseOccupancy" type="number" min={1} defaultValue={p?.baseOccupancy ?? 2} required disabled={!canEdit} /></div>
-        <div><label>Zuschlag je weitere erw. Person CHF</label><input name="extraAdult" inputMode="decimal" defaultValue={p ? rappenToDecimal(p.extraAdultRappen) : "0"} disabled={!canEdit} /></div>
-        <div><label>Rabatt bei 1 Person CHF</label><input name="singleDiscount" inputMode="decimal" defaultValue={p ? rappenToDecimal(p.singleDiscountRappen) : "0"} disabled={!canEdit} /></div>
-        <div><label>Mindestaufenthalt (Nächte)</label><input name="minNights" type="number" min={1} max={60} defaultValue={p?.minNights ?? 1} disabled={!canEdit} title="Für Pakete wie «3 Nächte mit Halbpension». Gilt immer, zusätzlich zu den Regeln im Kalender." /></div>
+        {!p ? <div><label htmlFor="f238311">Startpreis CHF pro Nacht</label><input id="f238311" name="price" inputMode="decimal" required placeholder="z. B. 180" disabled={!canEdit} /></div> : null}
+        <div><label htmlFor="f238312">Preis gilt für Personen</label><input id="f238312" name="baseOccupancy" type="number" min={1} defaultValue={p?.baseOccupancy ?? 2} required disabled={!canEdit} /></div>
+        <div><label htmlFor="f238313">Zuschlag je weitere erw. Person CHF</label><input id="f238313" name="extraAdult" inputMode="decimal" defaultValue={p ? rappenToDecimal(p.extraAdultRappen) : "0"} disabled={!canEdit} /></div>
+        <div><label htmlFor="f238314">Rabatt bei 1 Person CHF</label><input id="f238314" name="singleDiscount" inputMode="decimal" defaultValue={p ? rappenToDecimal(p.singleDiscountRappen) : "0"} disabled={!canEdit} /></div>
+        <div><label htmlFor="f238315">Mindestaufenthalt (Nächte)</label><input id="f238315" name="minNights" type="number" min={1} max={60} defaultValue={p?.minNights ?? 1} disabled={!canEdit} title="Für Pakete wie «3 Nächte mit Halbpension». Gilt immer, zusätzlich zu den Regeln im Kalender." /></div>
       </div>
       <fieldset className="plain"><legend className="small muted">Anreise nur an (keiner gewählt = jeder Tag; z. B. Ferienwohnung nur Samstag)</legend>
         <div className="weekdays">{[1, 2, 3, 4, 5, 6, 0].map((w) => <label key={w}><input type="checkbox" name="arrivalWeekdays" value={w} defaultChecked={p?.arrivalWeekdays.includes(w)} disabled={!canEdit} />{["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][w]}</label>)}</div>
       </fieldset>
       <div className="form-grid">
         <div>
-          <label>Stornierung</label>
-          <select name="cancelMode" defaultValue={free ? "free" : "none"} disabled={!canEdit}>
+          <label htmlFor="f238316">Stornierung</label>
+          <select id="f238316" name="cancelMode" defaultValue={free ? "free" : "none"} disabled={!canEdit}>
             <option value="free">Kostenlos bis … Tage vor Anreise</option>
             <option value="none">Nicht kostenlos stornierbar</option>
           </select>
         </div>
-        <div><label>Tage vor Anreise (bei kostenlos)</label><input name="freeCancelDays" type="number" min={0} step="0.5" defaultValue={p?.freeCancelHours != null ? p.freeCancelHours / 24 : 2} disabled={!canEdit} /></div>
-        <div><label>Gebühr danach in % des Zimmerpreises</label><input name="cancelFeePct" type="number" min={0} max={100} defaultValue={p ? p.cancelFeeBps / 100 : 100} disabled={!canEdit} /></div>
+        <div><label htmlFor="f238317">Tage vor Anreise (bei kostenlos)</label><input id="f238317" name="freeCancelDays" type="number" min={0} step="0.5" defaultValue={p?.freeCancelHours != null ? p.freeCancelHours / 24 : 2} disabled={!canEdit} /></div>
+        <div><label htmlFor="f238318">Gebühr danach in % des Zimmerpreises</label><input id="f238318" name="cancelFeePct" type="number" min={0} max={100} defaultValue={p ? p.cancelFeeBps / 100 : 100} disabled={!canEdit} /></div>
       </div>
       <div className="grid">
         <div>
-          <label>Verpflegung</label>
-          <select name="board" defaultValue={p?.board ?? "breakfast"} disabled={!canEdit}>
+          <label htmlFor="f238319">Verpflegung</label>
+          <select id="f238319" name="board" defaultValue={p?.board ?? "breakfast"} disabled={!canEdit}>
             <option value="none">Nur Übernachtung</option>
             <option value="breakfast">Mit Frühstück</option>
             <option value="half">Halbpension</option>
             <option value="full">Vollpension</option>
           </select>
         </div>
-        <div><label>Wert der Verpflegung je Person und Nacht (CHF, nur Halb-/Vollpension)</label><input name="mealChf" type="number" min={0} step="0.05" defaultValue={p ? p.mealRappen / 100 : 0} disabled={!canEdit} /></div>
+        <div><label htmlFor="f238320">Wert der Verpflegung je Person und Nacht (CHF, nur Halb-/Vollpension)</label><input id="f238320" name="mealChf" type="number" min={0} step="0.05" defaultValue={p ? p.mealRappen / 100 : 0} disabled={!canEdit} /></div>
       </div>
       <p className="muted small">Bei Halb-/Vollpension weist die Rechnung die Verpflegung zum Normalsatz aus (Beherbergung zum Sondersatz).</p>
       <label className="check"><input type="checkbox" name="active" defaultChecked={p?.active ?? true} disabled={!canEdit} />Buchbar</label>

@@ -49,17 +49,17 @@ export default async function MarketingPage({ params, searchParams }: { params: 
       <form action={save} className="card stack">
         <h2>{cur ? "Entwurf bearbeiten" : "Neuer Newsletter"}</h2>
         <input type="hidden" name="hotelId" value={hotel.id} />{cur ? <input type="hidden" name="id" value={cur.id} /> : null}
-        <div><label>Betreff</label><input name="subject" defaultValue={cur?.subject ?? ""} required maxLength={150} /></div>
-        <div><label>Text (Absätze mit Leerzeile)</label><textarea name="body" rows={8} defaultValue={cur?.body ?? ""} required /></div>
-        <div><label>Nur Sprache (leer = alle)</label><select name="language" defaultValue={cur?.segment.language ?? ""}><option value="">alle</option><option value="de">Deutsch</option><option value="en">Englisch</option><option value="fr">Französisch</option><option value="it">Italienisch</option></select></div>
-        <div><label>Nur Gäste mit Stichwort (aus der Gästekartei)</label><input name="tag" defaultValue={cur?.segment.tag ?? ""} /></div>
-        <div><label>Nur Gäste mit Aufenthalt seit (Abreise ab Datum)</label><input name="stayedSince" type="date" defaultValue={cur?.segment.stayedSince ?? ""} /></div>
-        <div><label>Mindestens so viele Aufenthalte</label><input name="minStays" type="number" min={0} max={99} defaultValue={cur?.segment.minStays ?? 0} /></div>
+        <div><label htmlFor="f84301">Betreff</label><input id="f84301" name="subject" defaultValue={cur?.subject ?? ""} required maxLength={150} /></div>
+        <div><label htmlFor="f84302">Text (Absätze mit Leerzeile)</label><textarea id="f84302" name="body" rows={8} defaultValue={cur?.body ?? ""} required /></div>
+        <div><label htmlFor="f84303">Nur Sprache (leer = alle)</label><select id="f84303" name="language" defaultValue={cur?.segment.language ?? ""}><option value="">alle</option><option value="de">Deutsch</option><option value="en">Englisch</option><option value="fr">Französisch</option><option value="it">Italienisch</option></select></div>
+        <div><label htmlFor="f84304">Nur Gäste mit Stichwort (aus der Gästekartei)</label><input id="f84304" name="tag" defaultValue={cur?.segment.tag ?? ""} /></div>
+        <div><label htmlFor="f84305">Nur Gäste mit Aufenthalt seit (Abreise ab Datum)</label><input id="f84305" name="stayedSince" type="date" defaultValue={cur?.segment.stayedSince ?? ""} /></div>
+        <div><label htmlFor="f84306">Mindestens so viele Aufenthalte</label><input id="f84306" name="minStays" type="number" min={0} max={99} defaultValue={cur?.segment.minStays ?? 0} /></div>
         <div><button className="btn">Entwurf speichern</button></div>
       </form>
       {cur ? (
         <section className="card stack">
-          <form action={test} className="stack"><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={cur.id} /><label>Testmail an</label><input name="to" type="email" required /><div><button className="btn secondary">Testmail senden</button></div></form>
+          <form action={test} className="stack"><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={cur.id} /><label htmlFor="f84307">Testmail an</label><input id="f84307" name="to" type="email" required /><div><button className="btn secondary">Testmail senden</button></div></form>
           <form action={send}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={cur.id} /><button className="btn">An {count} Gäste senden</button></form>
         </section>
       ) : null}

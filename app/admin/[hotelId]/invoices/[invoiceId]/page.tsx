@@ -88,16 +88,16 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
           <form action={save} className="stack">
             {hid}
             <div className="form-grid">
-              <div><label>Name</label><input name="name" defaultValue={r.name ?? ""} /></div>
-              <div><label>Firma (optional)</label><input name="company" defaultValue={r.company ?? ""} /></div>
-              <div><label>Strasse und Nr.</label><input name="street" defaultValue={r.street ?? ""} /></div>
-              <div><label>PLZ</label><input name="zip" defaultValue={r.zip ?? ""} /></div>
-              <div><label>Ort</label><input name="city" defaultValue={r.city ?? ""} /></div>
-              <div><label>Land (2 Buchstaben)</label><input name="country" maxLength={2} defaultValue={r.country ?? "CH"} /></div>
-              <div><label>MWST-/UID-Nr. des Empfängers (optional)</label><input name="vatId" defaultValue={r.vatId ?? ""} /></div>
-              <div><label>E-Mail (optional)</label><input name="email" defaultValue={r.email ?? ""} /></div>
+              <div><label htmlFor="f77531">Name</label><input id="f77531" name="name" defaultValue={r.name ?? ""} /></div>
+              <div><label htmlFor="f77532">Firma (optional)</label><input id="f77532" name="company" defaultValue={r.company ?? ""} /></div>
+              <div><label htmlFor="f77533">Strasse und Nr.</label><input id="f77533" name="street" defaultValue={r.street ?? ""} /></div>
+              <div><label htmlFor="f77534">PLZ</label><input id="f77534" name="zip" defaultValue={r.zip ?? ""} /></div>
+              <div><label htmlFor="f77535">Ort</label><input id="f77535" name="city" defaultValue={r.city ?? ""} /></div>
+              <div><label htmlFor="f77536">Land (2 Buchstaben)</label><input id="f77536" name="country" maxLength={2} defaultValue={r.country ?? "CH"} /></div>
+              <div><label htmlFor="f77537">MWST-/UID-Nr. des Empfängers (optional)</label><input id="f77537" name="vatId" defaultValue={r.vatId ?? ""} /></div>
+              <div><label htmlFor="f77538">E-Mail (optional)</label><input id="f77538" name="email" defaultValue={r.email ?? ""} /></div>
             </div>
-            <div><label>Bemerkung auf der Rechnung (optional)</label><input name="note" defaultValue={inv.note} maxLength={500} /></div>
+            <div><label htmlFor="f77539">Bemerkung auf der Rechnung (optional)</label><input id="f77539" name="note" defaultValue={inv.note} maxLength={500} /></div>
             <p className="muted small">Mit vollständiger Adresse (Strasse, PLZ, Ort) erscheint der Empfänger auch im Zahlteil der QR-Rechnung.</p>
             <div className="inline-form">
               <button className="btn secondary small">Speichern</button>

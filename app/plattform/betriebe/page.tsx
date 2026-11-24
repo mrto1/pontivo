@@ -58,8 +58,8 @@ export default async function Betriebe({ searchParams }: { searchParams: Promise
             <form action={memberAdd} className="form-row">
               <input type="hidden" name="to" value={TO} />
               <input type="hidden" name="hotelId" value={h.id} />
-              <div><label>E-Mail</label><input name="email" type="email" placeholder="name@beispiel.ch" required /></div>
-              <div><label>Rolle</label><select name="role">{(Object.keys(ROLE_LABEL) as (keyof typeof ROLE_LABEL)[]).map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}</select></div>
+              <div><label htmlFor={`f5e64m1-${h.id}`}>E-Mail</label><input id={`f5e64m1-${h.id}`} name="email" type="email" placeholder="name@beispiel.ch" required /></div>
+              <div><label htmlFor={`f5e64m2-${h.id}`}>Rolle</label><select id={`f5e64m2-${h.id}`} name="role">{(Object.keys(ROLE_LABEL) as (keyof typeof ROLE_LABEL)[]).map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}</select></div>
               <div><button className="btn small">Hinzufügen</button></div>
             </form>
           </div>
@@ -69,7 +69,7 @@ export default async function Betriebe({ searchParams }: { searchParams: Promise
             <form action={removeHotel} className="form-row" style={{ marginTop: 10 }}>
               <input type="hidden" name="to" value={TO} />
               <input type="hidden" name="id" value={h.id} />
-              <div><label>Zur Bestätigung den Namen eintippen</label><input name="confirm" placeholder={h.name} aria-label={`Namen von ${h.name} zur Bestätigung`} required /></div>
+              <div><label htmlFor={`f5e64m3-${h.id}`}>Zur Bestätigung den Namen eintippen</label><input id={`f5e64m3-${h.id}`} name="confirm" placeholder={h.name} aria-label={`Namen von ${h.name} zur Bestätigung`} required /></div>
               <div><button className="btn secondary small">Endgültig löschen</button></div>
             </form>
             {h.status === "live" || h.invoices > 0 ? <p className="small muted" style={{ margin: "8px 0 0" }}>Achtung: Rechnungen müssen in der Schweiz 10 Jahre aufbewahrt werden.</p> : null}

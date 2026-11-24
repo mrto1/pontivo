@@ -26,8 +26,8 @@ export default async function Admins({ searchParams }: { searchParams: Promise<R
         </ul>
         <form action={adminAdd} className="form-row">
           <input type="hidden" name="to" value={TO} />
-          <div><label>E-Mail</label><input name="email" type="email" placeholder="name@pontivo.ch" required /></div>
-          <div><label>Name (optional)</label><input name="name" /></div>
+          <div><label htmlFor="febd01">E-Mail</label><input id="febd01" name="email" type="email" placeholder="name@pontivo.ch" required /></div>
+          <div><label htmlFor="febd02">Name (optional)</label><input id="febd02" name="name" /></div>
           <div><button className="btn small">Als Plattform-Admin hinzufügen</button></div>
         </form>
       </section>

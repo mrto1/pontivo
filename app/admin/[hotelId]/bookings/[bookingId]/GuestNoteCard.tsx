@@ -21,8 +21,8 @@ export async function GuestNoteCard({ hotelId, bookingId, email, msg }: { hotelI
       {msg ? <p className="notice small">{msg}</p> : null}
       <form action={save} className="stack">
         <input type="hidden" name="hotelId" value={hotelId} /><input type="hidden" name="bookingId" value={bookingId} /><input type="hidden" name="email" value={email} />
-        <div><label>Tags (mit Komma trennen)</label><input name="tags" defaultValue={(p?.tags ?? []).join(", ")} placeholder="Stammgast, VIP" /></div>
-        <div><label>Notiz (nur intern)</label><textarea name="note" rows={3} maxLength={MAX_NOTE} defaultValue={p?.note ?? ""} placeholder="z. B. mag ruhiges Zimmer oben" /></div>
+        <div><label htmlFor="f8cd91">Tags (mit Komma trennen)</label><input id="f8cd91" name="tags" defaultValue={(p?.tags ?? []).join(", ")} placeholder="Stammgast, VIP" /></div>
+        <div><label htmlFor="f8cd92">Notiz (nur intern)</label><textarea id="f8cd92" name="note" rows={3} maxLength={MAX_NOTE} defaultValue={p?.note ?? ""} placeholder="z. B. mag ruhiges Zimmer oben" /></div>
         <p className="small muted">Gilt für diese E-Mail-Adresse bei allen Buchungen. Bitte keine Gesundheitsangaben oder andere heikle Daten notieren.</p>
         <div><button className="btn secondary small">Speichern</button></div>
       </form>

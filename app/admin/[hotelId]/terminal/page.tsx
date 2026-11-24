@@ -34,8 +34,8 @@ export default async function TerminalPage({ params, searchParams }: { params: P
         {readers.length ? <ul>{readers.map((r) => <li key={r.id}>{r.label}</li>)}</ul> : <p className="muted small">Noch kein Gerät.</p>}
         <form action={register} className="inline-form">
           <input type="hidden" name="hotelId" value={hotel.id} />
-          <div><label>Registrierungscode (am Gerät anzeigen)</label><input name="code" required placeholder="z. B. sepia-cheese-orchid" /></div>
-          <div><label>Bezeichnung</label><input name="label" maxLength={60} placeholder="Empfang" /></div>
+          <div><label htmlFor="f4d331">Registrierungscode (am Gerät anzeigen)</label><input id="f4d331" name="code" required placeholder="z. B. sepia-cheese-orchid" /></div>
+          <div><label htmlFor="f4d332">Bezeichnung</label><input id="f4d332" name="label" maxLength={60} placeholder="Empfang" /></div>
           <button className="btn small">Gerät registrieren</button>
         </form>
       </div>

@@ -20,7 +20,7 @@ test("Shop: Ware anlegen, Minibar und Nachbestellen", async ({ page, context, ba
   await page.goto(`/admin/${h.hotel.id}/shop`);
   await page.getByRole("link", { name: "+ Neue Ware" }).click();
   const drawer = page.getByRole("dialog");
-  await drawer.locator("input[name=name]").fill("Mineralwasser");
+  await drawer.getByLabel("Name", { exact: true }).fill("Mineralwasser"); // Beschriftung ist mit dem Feld verknüpft
   await drawer.locator("input[name=price]").fill("4.50");
   await drawer.locator("input[name=minibar]").check();
   await drawer.locator("input[name=trackStock]").check();

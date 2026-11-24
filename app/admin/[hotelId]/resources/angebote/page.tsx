@@ -59,15 +59,15 @@ export default async function ResourceSettings({ params, searchParams }: { param
               {sp.msg ? <Notice text={sp.msg} /> : null}
               <form action={saveRes} className="stack">
                 <input type="hidden" name="hotelId" value={hotel.id} />{r ? <input type="hidden" name="id" value={r.id} /> : null}
-                <div><label>Name</label><input name="name" defaultValue={r?.name ?? ""} required placeholder="z. B. Sauna" /></div>
-                <div><label>Art</label><select name="kind" defaultValue={r?.kind ?? "wellness"}>{Object.entries(KINDS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
+                <div><label htmlFor="fd1c91">Name</label><input id="fd1c91" name="name" defaultValue={r?.name ?? ""} required placeholder="z. B. Sauna" /></div>
+                <div><label htmlFor="fd1c92">Art</label><select id="fd1c92" name="kind" defaultValue={r?.kind ?? "wellness"}>{Object.entries(KINDS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
                 <div className="form-grid">
-                  <div><label>Plätze pro Zeitfenster</label><input name="capacity" type="number" min={1} defaultValue={r?.capacity ?? 4} /></div>
-                  <div><label>Zeitfenster (Minuten)</label><input name="slotMinutes" type="number" min={15} step={15} defaultValue={r?.slotMinutes ?? 60} /></div>
-                  <div><label>Geöffnet von</label><input name="openFrom" defaultValue={r ? hhmm(r.openFrom) : "08:00"} /></div>
-                  <div><label>Geöffnet bis</label><input name="openTo" defaultValue={r ? hhmm(r.openTo) : "20:00"} /></div>
-                  <div><label>Preis CHF je Zeitfenster</label><input name="price" inputMode="decimal" defaultValue={r ? r.priceRappen / 100 : 0} /></div>
-                  <div><label>MWST</label><select name="vatKind" defaultValue={r?.vatKind ?? "standard"}><option value="standard">Normalsatz</option><option value="stay">Beherbergungssatz</option><option value="none">keine</option></select></div>
+                  <div><label htmlFor="fd1c93">Plätze pro Zeitfenster</label><input id="fd1c93" name="capacity" type="number" min={1} defaultValue={r?.capacity ?? 4} /></div>
+                  <div><label htmlFor="fd1c94">Zeitfenster (Minuten)</label><input id="fd1c94" name="slotMinutes" type="number" min={15} step={15} defaultValue={r?.slotMinutes ?? 60} /></div>
+                  <div><label htmlFor="fd1c95">Geöffnet von</label><input id="fd1c95" name="openFrom" defaultValue={r ? hhmm(r.openFrom) : "08:00"} /></div>
+                  <div><label htmlFor="fd1c96">Geöffnet bis</label><input id="fd1c96" name="openTo" defaultValue={r ? hhmm(r.openTo) : "20:00"} /></div>
+                  <div><label htmlFor="fd1c97">Preis CHF je Zeitfenster</label><input id="fd1c97" name="price" inputMode="decimal" defaultValue={r ? r.priceRappen / 100 : 0} /></div>
+                  <div><label htmlFor="fd1c98">MWST</label><select id="fd1c98" name="vatKind" defaultValue={r?.vatKind ?? "standard"}><option value="standard">Normalsatz</option><option value="stay">Beherbergungssatz</option><option value="none">keine</option></select></div>
                 </div>
                 <label className="check"><input type="checkbox" name="pricePerPerson" defaultChecked={r?.pricePerPerson} />Preis gilt pro Person</label>
                 <label className="check"><input type="checkbox" name="active" defaultChecked={r?.active ?? true} />Aktiv (buchbar)</label>

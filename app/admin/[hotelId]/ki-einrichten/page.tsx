@@ -73,13 +73,13 @@ export default async function KiEinrichten({ params, searchParams }: { params: P
             <form action={fromUrl} className="card stack" style={{ flex: 1 }}>
               {hidden}
               <h2>Aus Ihrer Website</h2>
-              <div><label>Adresse (https://…)</label><input name="url" type="url" placeholder="https://www.mein-hotel.ch" required /></div>
+              <div><label htmlFor="fff281">Adresse (https://…)</label><input id="fff281" name="url" type="url" placeholder="https://www.mein-hotel.ch" required /></div>
               <div><button className="btn" disabled={left === 0}>Entwurf erstellen</button></div>
             </form>
             <form action={fromPdf} className="card stack" style={{ flex: 1 }} encType="multipart/form-data">
               {hidden}
               <h2>Aus einem PDF</h2>
-              <div><label>Datei (Prospekt, Zimmerliste)</label><input name="file" type="file" accept="application/pdf" required /></div>
+              <div><label htmlFor="fff282">Datei (Prospekt, Zimmerliste)</label><input id="fff282" name="file" type="file" accept="application/pdf" required /></div>
               <div><button className="btn" disabled={left === 0}>Entwurf erstellen</button></div>
             </form>
           </div>

@@ -80,8 +80,8 @@ export default async function GroupPage({ params, searchParams }: { params: Prom
         ) : <p className="muted small">Noch kein Block.</p>}
         {active ? (
           <form action={block} className="inline-form">{hid}
-            <div><label>Zimmertyp</label><select name="roomTypeId">{types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
-            <div><label>Zimmer</label><input name="delta" type="number" min={1} max={200} defaultValue={1} style={{ width: 90 }} /></div>
+            <div><label htmlFor="f77db1">Zimmertyp</label><select id="f77db1" name="roomTypeId">{types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
+            <div><label htmlFor="f77db2">Zimmer</label><input id="f77db2" name="delta" type="number" min={1} max={200} defaultValue={1} style={{ width: 90 }} /></div>
             <button className="btn small">Reservieren</button>
           </form>
         ) : null}
@@ -103,13 +103,13 @@ export default async function GroupPage({ params, searchParams }: { params: Prom
           <form action={member} className="stack">{hid}
             <h3 style={{ margin: 0 }}>Teilnehmer hinzufügen</h3>
             <div className="form-grid">
-              <div><label>Vorname</label><input name="firstName" required /></div>
-              <div><label>Nachname</label><input name="lastName" required /></div>
-              <div><label>E-Mail (optional)</label><input name="email" type="email" /></div>
-              <div><label>Zimmertyp</label><select name="roomTypeId">{d.blocks.map((b) => <option key={b.roomTypeId} value={b.roomTypeId}>{b.name}</option>)}</select></div>
-              <div><label>Anreise</label><input name="checkin" type="date" defaultValue={g.arrival} min={g.arrival} max={g.departure} required /></div>
-              <div><label>Abreise</label><input name="checkout" type="date" defaultValue={g.departure} min={g.arrival} max={g.departure} required /></div>
-              <div><label>Personen</label><input name="adults" type="number" min={1} max={10} defaultValue={1} /></div>
+              <div><label htmlFor="f77db3">Vorname</label><input id="f77db3" name="firstName" required /></div>
+              <div><label htmlFor="f77db4">Nachname</label><input id="f77db4" name="lastName" required /></div>
+              <div><label htmlFor="f77db5">E-Mail (optional)</label><input id="f77db5" name="email" type="email" /></div>
+              <div><label htmlFor="f77db6">Zimmertyp</label><select id="f77db6" name="roomTypeId">{d.blocks.map((b) => <option key={b.roomTypeId} value={b.roomTypeId}>{b.name}</option>)}</select></div>
+              <div><label htmlFor="f77db7">Anreise</label><input id="f77db7" name="checkin" type="date" defaultValue={g.arrival} min={g.arrival} max={g.departure} required /></div>
+              <div><label htmlFor="f77db8">Abreise</label><input id="f77db8" name="checkout" type="date" defaultValue={g.departure} min={g.arrival} max={g.departure} required /></div>
+              <div><label htmlFor="f77db9">Personen</label><input id="f77db9" name="adults" type="number" min={1} max={10} defaultValue={1} /></div>
             </div>
             <div><button className="btn small">Hinzufügen</button></div>
           </form>

@@ -39,10 +39,10 @@ export default async function Bookings({ params, searchParams }: { params: Promi
         <Link className="btn" href={`${base}?neu=1`} scroll={false}>+ Buchung erfassen</Link>
       </div>
       <form className="card bk-filter" method="get">
-        <div><label>Anreise ab</label><input type="date" name="from" defaultValue={f.from} /></div>
-        <div><label>Anreise bis</label><input type="date" name="to" defaultValue={f.to} /></div>
-        <div><label>Status</label><select name="status" defaultValue={f.status ?? ""}>{STATUS.map((s) => <option key={s} value={s}>{s || "alle"}</option>)}</select></div>
-        <div><label>Quelle</label><select name="source" defaultValue={f.source ?? ""}>{SOURCE.map((s) => <option key={s} value={s}>{s || "alle"}</option>)}</select></div>
+        <div><label htmlFor="f71ca1">Anreise ab</label><input id="f71ca1" type="date" name="from" defaultValue={f.from} /></div>
+        <div><label htmlFor="f71ca2">Anreise bis</label><input id="f71ca2" type="date" name="to" defaultValue={f.to} /></div>
+        <div><label htmlFor="f71ca3">Status</label><select id="f71ca3" name="status" defaultValue={f.status ?? ""}>{STATUS.map((s) => <option key={s} value={s}>{s || "alle"}</option>)}</select></div>
+        <div><label htmlFor="f71ca4">Quelle</label><select id="f71ca4" name="source" defaultValue={f.source ?? ""}>{SOURCE.map((s) => <option key={s} value={s}>{s || "alle"}</option>)}</select></div>
         <button className="btn small">Filtern</button>
       </form>
       <div className="scroll-x">

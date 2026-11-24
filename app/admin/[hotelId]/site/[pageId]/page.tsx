@@ -275,8 +275,8 @@ function Look({ b }: { b: { align: string; size: string } }) {
       <summary className="small">Erweitert: Ausrichtung und Textgrösse{b.align !== "auto" || b.size !== "normal" ? " (angepasst)" : ""}</summary>
       <p className="muted small">Nur wenn nötig. Das gewählte Layout ist auf gute Lesbarkeit abgestimmt, besonders auf dem Handy.</p>
       <div className="inline-form">
-        <div><label>Ausrichtung</label><select name="align" defaultValue={b.align}><option value="auto">wie Layout (empfohlen)</option><option value="left">links</option><option value="center">zentriert</option></select></div>
-        <div><label>Textgrösse</label><select name="size" defaultValue={b.size}><option value="normal">normal (empfohlen)</option><option value="large">gross</option></select></div>
+        <div><label htmlFor="fff081">Ausrichtung</label><select id="fff081" name="align" defaultValue={b.align}><option value="auto">wie Layout (empfohlen)</option><option value="left">links</option><option value="center">zentriert</option></select></div>
+        <div><label htmlFor="fff082">Textgrösse</label><select id="fff082" name="size" defaultValue={b.size}><option value="normal">normal (empfohlen)</option><option value="large">gross</option></select></div>
       </div>
     </details>
   );
@@ -311,7 +311,7 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
         <LField name="body" label="Text" value={b.body} rows={5} langs={langs} />
         <ImagePick name="image" lib={lib} value={b.image?.url} />
-        <div><label>Bild</label><select name="imageSide" defaultValue={b.imageSide}><option value="left">links</option><option value="right">rechts</option></select></div>
+        <div><label htmlFor="fff083">Bild</label><select id="fff083" name="imageSide" defaultValue={b.imageSide}><option value="left">links</option><option value="right">rechts</option></select></div>
         <Look b={b} />
       </>);
     case "gallery":
@@ -348,9 +348,9 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
     case "location":
       return (<>
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
-        <div><label>Adresse für die Route (leer = Hoteladresse)</label><input name="address" defaultValue={b.address} /></div>
+        <div><label htmlFor="fff084">Adresse für die Route (leer = Hoteladresse)</label><input id="fff084" name="address" defaultValue={b.address} /></div>
         <LField name="body" label="Anreise-Text" value={b.body} rows={4} langs={langs} />
-        <div><label>Koordinaten für die Karte (optional, z. B. 47.0405, 9.0679)</label><input name="coords" defaultValue={b.lat !== null && b.lng !== null ? `${b.lat}, ${b.lng}` : ""} placeholder="Breite, Länge" />
+        <div><label htmlFor="fff085">Koordinaten für die Karte (optional, z. B. 47.0405, 9.0679)</label><input id="fff085" name="coords" defaultValue={b.lat !== null && b.lng !== null ? `${b.lat}, ${b.lng}` : ""} placeholder="Breite, Länge" />
           <p className="muted small">In Google Maps: Rechtsklick auf das Hotel → die Zahlen oben anklicken (kopiert sie). Die Karte (OpenStreetMap) lädt für Gäste erst nach einem Klick.</p></div>
         <Look b={b} />
       </>);
@@ -367,16 +367,16 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
           return (<>
             <LField name={`${k}.quote`} label={`Bewertung ${i + 1}`} value={it?.quote} rows={3} max={800} langs={langs} />
             <div className="form-grid">
-              <div><label>Name</label><input name={`${k}.author`} defaultValue={it?.author ?? ""} placeholder="z. B. Sandra M." maxLength={80} /></div>
-              <div><label>Quelle</label><input name={`${k}.source`} defaultValue={it?.source ?? ""} placeholder="z. B. Google" list="review-sources" maxLength={60} /></div>
-              <div><label>Monat</label><input name={`${k}.date`} type="month" defaultValue={it?.date ?? ""} /></div>
-              <div><label>Sterne</label><select name={`${k}.rating`} defaultValue={it?.rating ?? ""}><option value="">–</option>{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}</option>)}</select></div>
-              <div><label>Link zur Bewertung (optional)</label><input name={`${k}.url`} defaultValue={it?.url ?? ""} placeholder="https://…" /></div>
+              <div><label htmlFor="fff086">Name</label><input id="fff086" name={`${k}.author`} defaultValue={it?.author ?? ""} placeholder="z. B. Sandra M." maxLength={80} /></div>
+              <div><label htmlFor="fff087">Quelle</label><input id="fff087" name={`${k}.source`} defaultValue={it?.source ?? ""} placeholder="z. B. Google" list="review-sources" maxLength={60} /></div>
+              <div><label htmlFor="fff088">Monat</label><input id="fff088" name={`${k}.date`} type="month" defaultValue={it?.date ?? ""} /></div>
+              <div><label htmlFor="fff089">Sterne</label><select id="fff089" name={`${k}.rating`} defaultValue={it?.rating ?? ""}><option value="">–</option>{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}</option>)}</select></div>
+              <div><label htmlFor="fff0810">Link zur Bewertung (optional)</label><input id="fff0810" name={`${k}.url`} defaultValue={it?.url ?? ""} placeholder="https://…" /></div>
             </div>
           </>);
         })}
         <datalist id="review-sources"><option value="Google" /><option value="Booking.com" /><option value="Tripadvisor" /><option value="Gästebuch" /><option value="E-Mail" /></datalist>
-        <div><label>Link «Alle Bewertungen ansehen» (z. B. Google)</label><input name="moreUrl" defaultValue={b.moreUrl ?? ""} placeholder="https://g.page/…" /></div>
+        <div><label htmlFor="fff0811">Link «Alle Bewertungen ansehen» (z. B. Google)</label><input id="fff0811" name="moreUrl" defaultValue={b.moreUrl ?? ""} placeholder="https://g.page/…" /></div>
       </>);
     case "labels":
       return (<>
@@ -387,7 +387,7 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
           return (<>
             <div className="form-grid">
               <div><label>Name des Labels {i + 1}</label><input name={`${k}.name`} defaultValue={it?.name ?? ""} placeholder="z. B. Swisstainable" maxLength={80} /></div>
-              <div><label>Link (optional)</label><input name={`${k}.url`} defaultValue={it?.url ?? ""} placeholder="https://…" /></div>
+              <div><label htmlFor="fff0812">Link (optional)</label><input id="fff0812" name={`${k}.url`} defaultValue={it?.url ?? ""} placeholder="https://…" /></div>
             </div>
             <LField name={`${k}.level`} label="Stufe (optional, z. B. «Level II – engaged»)" value={it?.level} max={60} langs={langs} />
             <LField name={`${k}.text`} label="Kurztext (optional)" value={it?.text} rows={2} max={400} langs={langs} />
@@ -416,10 +416,10 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
             <LField name={`${k}.includes`} label="Inklusive (eine Leistung pro Zeile, optional)" value={it?.includes} rows={3} max={800} langs={langs} />
             <LField name={`${k}.price`} label="Preis-Hinweis (optional)" value={it?.price} max={80} langs={langs} />
             <div className="form-grid">
-              <div><label>gültig von (optional)</label><input name={`${k}.validFrom`} type="date" defaultValue={it?.validFrom ?? ""} /></div>
-              <div><label>gültig bis (optional)</label><input name={`${k}.validTo`} type="date" defaultValue={it?.validTo ?? ""} /></div>
-              <div><label>Tarif</label><select name={`${k}.plan`} defaultValue={it?.ratePlanId ?? ""}><option value="">alle Tarife</option>{plans.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
-              <div><label>Nächte vorschlagen</label><input name={`${k}.nights`} type="number" min={1} max={60} defaultValue={it?.nights ?? 2} /></div>
+              <div><label htmlFor="fff0813">gültig von (optional)</label><input id="fff0813" name={`${k}.validFrom`} type="date" defaultValue={it?.validFrom ?? ""} /></div>
+              <div><label htmlFor="fff0814">gültig bis (optional)</label><input id="fff0814" name={`${k}.validTo`} type="date" defaultValue={it?.validTo ?? ""} /></div>
+              <div><label htmlFor="fff0815">Tarif</label><select id="fff0815" name={`${k}.plan`} defaultValue={it?.ratePlanId ?? ""}><option value="">alle Tarife</option>{plans.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
+              <div><label htmlFor="fff0816">Nächte vorschlagen</label><input id="fff0816" name={`${k}.nights`} type="number" min={1} max={60} defaultValue={it?.nights ?? 2} /></div>
             </div>
             <ImagePick name={`${k}.image`} lib={lib} value={it?.image?.url} />
           </>);
@@ -437,9 +437,9 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
             <LField name={`${k}.text`} label="Beschreibung" value={it?.text} rows={3} max={1000} langs={langs} />
             <LField name={`${k}.distance`} label="Entfernung / Dauer" value={it?.distance} max={80} langs={langs} />
             <div className="form-grid">
-              <div><label>Kategorie</label><select name={`${k}.category`} defaultValue={it?.category ?? "ausflug"}>{TIP_CATEGORIES.map((c) => <option key={c} value={c}>{TIP_LABEL[c]}</option>)}</select></div>
-              <div><label>Saison</label><select name={`${k}.season`} defaultValue={it?.season ?? "all"}><option value="all">ganzjährig</option><option value="summer">Sommer</option><option value="winter">Winter</option></select></div>
-              <div><label>Link (optional)</label><input name={`${k}.url`} defaultValue={it?.url ?? ""} placeholder="https://…" /></div>
+              <div><label htmlFor="fff0817">Kategorie</label><select id="fff0817" name={`${k}.category`} defaultValue={it?.category ?? "ausflug"}>{TIP_CATEGORIES.map((c) => <option key={c} value={c}>{TIP_LABEL[c]}</option>)}</select></div>
+              <div><label htmlFor="fff0818">Saison</label><select id="fff0818" name={`${k}.season`} defaultValue={it?.season ?? "all"}><option value="all">ganzjährig</option><option value="summer">Sommer</option><option value="winter">Winter</option></select></div>
+              <div><label htmlFor="fff0819">Link (optional)</label><input id="fff0819" name={`${k}.url`} defaultValue={it?.url ?? ""} placeholder="https://…" /></div>
             </div>
             <ImagePick name={`${k}.image`} lib={lib} value={it?.image?.url} />
           </>);
@@ -458,7 +458,7 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
       return (<>
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
         <LField name="intro" label="Einleitung (optional)" value={b.intro} rows={2} max={1000} langs={langs} />
-        <div><label>Gerichte</label><select name="source" defaultValue={b.source} data-testid="menu-source">
+        <div><label htmlFor="fff0820">Gerichte</label><select id="fff0820" name="source" defaultValue={b.source} data-testid="menu-source">
           <option value="items">Aus der Speisekarte (wie Online-Bestellung und Kasse)</option>
           <option value="manual">Hier von Hand erfassen</option>
         </select></div>
@@ -469,7 +469,7 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
           return (<>
             <div className="form-grid">
               <LField name={`${k}.section`} label="Rubrik" value={prevSection} max={80} langs={langs} />
-              <div><label>Preis CHF</label><input name={`${k}.price`} defaultValue={chf(it?.priceRappen)} inputMode="decimal" placeholder="28.50" style={{ maxWidth: 140 }} /></div>
+              <div><label htmlFor="fff0821">Preis CHF</label><input id="fff0821" name={`${k}.price`} defaultValue={chf(it?.priceRappen)} inputMode="decimal" placeholder="28.50" style={{ maxWidth: 140 }} /></div>
             </div>
             <LField name={`${k}.name`} label={`Gericht ${i + 1}`} value={it?.name} max={160} langs={langs} />
             <LField name={`${k}.text`} label="Beschreibung (optional)" value={it?.text} max={500} langs={langs} />
@@ -487,8 +487,8 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
     case "hours":
       return (<>
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
-        <div><label>Öffnungszeiten von</label><select name="place" defaultValue={b.place}>{HOURS_PLACES.map((p) => <option key={p} value={p}>{PLACE_LABEL[p]}</option>)}</select></div>
-        <div><label>Zeiten</label><select name="source" defaultValue={b.source}>
+        <div><label htmlFor="fff0822">Öffnungszeiten von</label><select id="fff0822" name="place" defaultValue={b.place}>{HOURS_PLACES.map((p) => <option key={p} value={p}>{PLACE_LABEL[p]}</option>)}</select></div>
+        <div><label htmlFor="fff0823">Zeiten</label><select id="fff0823" name="source" defaultValue={b.source}>
           <option value="opening">Aus den Öffnungszeiten der Betriebsdaten (wie Reservierung und Online-Bestellung)</option>
           <option value="manual">Hier von Hand erfassen</option>
         </select></div>
@@ -513,8 +513,8 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
         <fieldset className="plain"><legend className="small muted">Betriebsferien (vergangene werden automatisch ausgeblendet)</legend>
           {Array.from({ length: Math.min(10, b.closures.length + 2) }, (_, i) => (
             <div key={i} className="form-grid">
-              <div><label>von</label><input type="date" name={`c${i}.from`} defaultValue={b.closures[i]?.from ?? ""} /></div>
-              <div><label>bis</label><input type="date" name={`c${i}.to`} defaultValue={b.closures[i]?.to ?? ""} /></div>
+              <div><label htmlFor="fff0824">von</label><input id="fff0824" type="date" name={`c${i}.from`} defaultValue={b.closures[i]?.from ?? ""} /></div>
+              <div><label htmlFor="fff0825">bis</label><input id="fff0825" type="date" name={`c${i}.to`} defaultValue={b.closures[i]?.to ?? ""} /></div>
               <LField name={`c${i}.label`} label="Bemerkung (optional)" value={b.closures[i]?.label} max={120} langs={langs} />
             </div>
           ))}
@@ -605,16 +605,16 @@ export default async function EditPage({ params, searchParams }: { params: Promi
           <LField name="title" label="Titel" value={page.title} max={120} langs={langs} />
           {!isHome ? (<>
             <LField name="nav" label="Name im Menü (leer = Titel)" value={page.navLabel} max={40} langs={langs} />
-            <div><label>Adresse</label><input name="slug" defaultValue={page.slug} pattern="[a-z0-9-]+" /><p className="muted small">Nur Kleinbuchstaben, Ziffern und Bindestriche, z. B. «restaurant».</p></div>
+            <div><label htmlFor="fff0826">Adresse</label><input id="fff0826" name="slug" defaultValue={page.slug} pattern="[a-z0-9-]+" /><p className="muted small">Nur Kleinbuchstaben, Ziffern und Bindestriche, z. B. «restaurant».</p></div>
             <label className="check"><input type="checkbox" name="showInNav" defaultChecked={page.showInNav} />Im Menü anzeigen</label>
             <label className="check"><input type="checkbox" name="published" defaultChecked={page.published} />Sichtbar (sonst Entwurf)</label>
           </>) : null}
           <div className="lfield">
-            <div><label>Titel bei Google (DE, max. 70 Zeichen)</label><input name="seoTitle.de" maxLength={70} defaultValue={page.seo.de?.title ?? ""} /></div>
+            <div><label htmlFor="fff0827">Titel bei Google (DE, max. 70 Zeichen)</label><input id="fff0827" name="seoTitle.de" maxLength={70} defaultValue={page.seo.de?.title ?? ""} /></div>
             {editLang ? <div><label>Titel bei Google ({editLang.toUpperCase()})</label><input name={`seoTitle.${editLang}`} maxLength={70} defaultValue={page.seo[editLang]?.title ?? ""} /></div> : null}
           </div>
           <div className="lfield">
-            <div><label>Beschreibung bei Google (DE, max. 170 Zeichen)</label><textarea name="seoDesc.de" rows={2} maxLength={170} defaultValue={page.seo.de?.description ?? ""} /></div>
+            <div><label htmlFor="fff0828">Beschreibung bei Google (DE, max. 170 Zeichen)</label><textarea id="fff0828" name="seoDesc.de" rows={2} maxLength={170} defaultValue={page.seo.de?.description ?? ""} /></div>
             {editLang ? <div><label>Beschreibung bei Google ({editLang.toUpperCase()})</label><textarea name={`seoDesc.${editLang}`} rows={2} maxLength={170} defaultValue={page.seo[editLang]?.description ?? ""} /></div> : null}
           </div>
           {LOCALES.filter((l) => l !== "de" && l !== editLang).map((l) => (

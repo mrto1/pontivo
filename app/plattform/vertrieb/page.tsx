@@ -78,15 +78,15 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
           <form action={addLead} className="stack" style={{ marginTop: 12, maxWidth: 560 }}>
             <label>Betrieb<input name="name" required /></label>
             <div className="form-row">
-              <div><label>Kontaktperson</label><input name="contactName" /></div>
-              <div><label>E-Mail</label><input name="email" type="email" /></div>
-              <div><label>Telefon</label><input name="phone" /></div>
+              <div><label htmlFor="f57681">Kontaktperson</label><input id="f57681" name="contactName" /></div>
+              <div><label htmlFor="f57682">E-Mail</label><input id="f57682" name="email" type="email" /></div>
+              <div><label htmlFor="f57683">Telefon</label><input id="f57683" name="phone" /></div>
             </div>
             <div className="form-row">
-              <div><label>Website</label><input name="website" placeholder="https://" /></div>
-              <div><label>Kanton</label><input name="canton" maxLength={2} placeholder="GR" style={{ width: 70 }} /></div>
-              <div><label>Quelle</label><select name="source">{LEAD_SOURCES.map((s) => <option key={s} value={s}>{LEAD_SOURCE_LABEL[s]}</option>)}</select></div>
-              <div><label>Nächster Schritt am</label><input name="next" type="date" /></div>
+              <div><label htmlFor="f57684">Website</label><input id="f57684" name="website" placeholder="https://" /></div>
+              <div><label htmlFor="f57685">Kanton</label><input id="f57685" name="canton" maxLength={2} placeholder="GR" style={{ width: 70 }} /></div>
+              <div><label htmlFor="f57686">Quelle</label><select id="f57686" name="source">{LEAD_SOURCES.map((s) => <option key={s} value={s}>{LEAD_SOURCE_LABEL[s]}</option>)}</select></div>
+              <div><label htmlFor="f57687">Nächster Schritt am</label><input id="f57687" name="next" type="date" /></div>
             </div>
             <label>Notizen<textarea name="notes" rows={2} /></label>
             <div><button className="btn">Anlegen</button></div>
@@ -121,10 +121,10 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
                   <form action={saveLead} className="stack" style={{ maxWidth: 560 }}>
                     <input type="hidden" name="id" value={l.id} /><input type="hidden" name="filter" value={filter} />
                     <div className="form-row">
-                      <div><label>Kontaktperson</label><input name="contactName" defaultValue={l.contactName} /></div>
-                      <div><label>E-Mail</label><input name="email" type="email" defaultValue={l.email} /></div>
-                      <div><label>Telefon</label><input name="phone" defaultValue={l.phone} /></div>
-                      <div><label>Nächster Schritt am</label><input name="next" type="date" defaultValue={l.nextActionAt ?? ""} /></div>
+                      <div><label htmlFor={`f5768m1-${l.id}`}>Kontaktperson</label><input id={`f5768m1-${l.id}`} name="contactName" defaultValue={l.contactName} /></div>
+                      <div><label htmlFor={`f5768m2-${l.id}`}>E-Mail</label><input id={`f5768m2-${l.id}`} name="email" type="email" defaultValue={l.email} /></div>
+                      <div><label htmlFor={`f5768m3-${l.id}`}>Telefon</label><input id={`f5768m3-${l.id}`} name="phone" defaultValue={l.phone} /></div>
+                      <div><label htmlFor={`f5768m4-${l.id}`}>Nächster Schritt am</label><input id={`f5768m4-${l.id}`} name="next" type="date" defaultValue={l.nextActionAt ?? ""} /></div>
                     </div>
                     <label>Notizen<textarea name="notes" rows={3} defaultValue={l.notes} /></label>
                     <label className="check"><input type="checkbox" name="dnc" defaultChecked={l.doNotContact} /> Nicht mehr kontaktieren (blockiert den Mailversand)</label>
