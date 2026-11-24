@@ -8,9 +8,9 @@ import { atLeast } from "@/src/auth/session";
 import { IMPORT_COLUMNS, KIND_LABEL } from "@/src/domain/import-csv";
 import { todayIn } from "@/src/domain/dates";
 import { inParallel, setPreviousSoftware, createImportCheck, getImport, ImportError, invoiceCounter, listImports, runImport, setInvoiceStart, undoImport } from "@/src/services/migration";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (id: string, q: string) => { revalidatePath(`/admin/${id}`, "layout"); return redirect(`/admin/${id}/migration?${q}`); }; // Layout neu: Banner und Chip hängen vom Stand ab
 const err = (id: string, e: unknown, job?: string): never => {
   if (!(e instanceof ImportError)) throw e;

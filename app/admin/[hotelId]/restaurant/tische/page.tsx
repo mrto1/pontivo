@@ -5,9 +5,9 @@ import { redirect } from "next/navigation";
 import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError, importTables, listTables, saveTable, saveTableDetails, saveTablePlan } from "@/src/services/pos";
 import { parsePosTables } from "@/src/domain/pos-import";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const here = (h: string, msg: string) => redirect(`/admin/${h}/restaurant/tische?msg=${encodeURIComponent(msg)}`);
 
 async function guard(f: FormData) {

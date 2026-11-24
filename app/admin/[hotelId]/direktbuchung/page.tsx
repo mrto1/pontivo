@@ -8,10 +8,10 @@ import { gapSettings, MAX_BENEFITS, MAX_GAP_NIGHTS, recoveryEnabled, waitlistEna
 import { moduleOn } from "@/src/services/modules";
 import { listCompanies } from "@/src/services/debtors";
 import { cancelWaitlistEntry, deleteCode, DirectError, listCodes, listGaps, listWaitlist, saveCode, saveDirectSettings } from "@/src/services/direct-tools";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (hotelId: string, msg: string, anchor = ""): never => redirect(`/admin/${hotelId}/direktbuchung?msg=${encodeURIComponent(msg)}${anchor}`);
 
 async function run(f: FormData, ok: string, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<unknown>, anchor = "") {

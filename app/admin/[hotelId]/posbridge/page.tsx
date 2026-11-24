@@ -5,9 +5,9 @@ import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosBridgeError, bridgeTotals, createApiKey, listApiKeys, revokeApiKey } from "@/src/services/posbridge";
 import { formatChf } from "@/src/domain/money";
 import { env } from "@/src/env";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function create(f: FormData) {
   "use server";

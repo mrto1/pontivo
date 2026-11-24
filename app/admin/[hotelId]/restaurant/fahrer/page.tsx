@@ -7,9 +7,9 @@ import { PosError } from "@/src/services/pos";
 import { completeOrder, notAccepted, outForDelivery, screenOrders } from "@/src/services/online-orders";
 import { addressKey } from "@/src/domain/online-order";
 import { formatChf } from "@/src/domain/money";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function act(f: FormData) {
   "use server";

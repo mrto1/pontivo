@@ -6,9 +6,9 @@ import { hiddenNavKeys } from "@/src/domain/modules";
 import { GUIDE_ROLE_LABEL, guideRole, progress, tasksFor } from "@/src/domain/guide";
 import { moduleRows } from "@/src/services/modules";
 import { doneTasks, setTask } from "@/src/services/guide";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function toggle(f: FormData) {
   "use server";

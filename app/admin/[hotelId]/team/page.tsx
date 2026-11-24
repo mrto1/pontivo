@@ -5,10 +5,10 @@ import { requireHotel } from "@/src/auth/guard";
 import { CONFIGURABLE_AREAS, ROLE_LABEL } from "@/src/domain/roles";
 import { listMembers, removeMember } from "@/src/services/settings";
 import { changeMemberRole, deleteRole, listRoles, listStandardRoles, resetStandardRole, ROLE_TEMPLATES, saveRole, saveStandardRole, setMemberRole, STANDARD_ROLES, TeamError } from "@/src/services/team";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (hotelId: string, msg: string, anchor = ""): never => redirect(`/admin/${hotelId}/team?msg=${encodeURIComponent(msg)}${anchor}`);
 
 async function run(f: FormData, ok: string, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<void>, anchor = "") {

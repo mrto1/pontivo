@@ -3,8 +3,8 @@
 import { redirect } from "next/navigation";
 import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { AccessError, issueCodes, revokeCodes } from "@/src/services/door-access";
+import { s } from "@/src/lib/form";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>, bookingId: string) => Promise<string>) {
   const hotelId = s(f, "hotelId"), bookingId = s(f, "bookingId");

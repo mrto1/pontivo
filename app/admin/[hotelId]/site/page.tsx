@@ -17,10 +17,10 @@ import { ZodError } from "zod";
 import { tr } from "@/src/domain/blocks";
 
 import { goLiveProblems, setHotelStatus, updateHotelIntro } from "@/src/services/settings";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<string | { to: string }>) {
   const c = await requireHotel(s(f, "hotelId"), "manager");

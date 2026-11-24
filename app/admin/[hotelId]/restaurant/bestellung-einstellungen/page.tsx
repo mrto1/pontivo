@@ -14,9 +14,9 @@ import { orderFeeModel } from "@/src/services/platform-settings";
 import { orderPriceText } from "@/src/domain/order-fee";
 import { feePercentText } from "@/src/domain/fee";
 import { todayIn } from "@/src/domain/dates";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const chf = (v: string) => Math.round(Number(v.replace(",", ".")) * 100);
 const here = (h: string, msg: string): never => redirect(`/admin/${h}/restaurant/bestellung-einstellungen?msg=${encodeURIComponent(msg)}`);
 

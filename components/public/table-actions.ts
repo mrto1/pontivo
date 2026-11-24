@@ -4,8 +4,8 @@ import { getHotelById } from "@/src/services/hotels";
 import { PosError } from "@/src/services/pos";
 import { cancelByToken, createReservation, joinWaitlist } from "@/src/services/reservations";
 import { isLocale } from "@/src/i18n/dict";
+import { s } from "@/src/lib/form";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 /** Nur die beiden eigenen Pfadformen zulassen (kein Umleiten auf fremde Adressen) */
 const baseOf = (f: FormData) => (/^\/h\/[a-z0-9-]+$/.test(s(f, "base")) ? s(f, "base") : "");
 

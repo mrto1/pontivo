@@ -6,8 +6,8 @@ import { requireModule } from "@/src/services/modules";
 import { addFolioItem, createInvoiceDraft, deleteFolioItem, InvoiceError, recordOnsitePayment } from "@/src/services/invoicing";
 import { GoodsError, sellToBooking } from "@/src/services/goods";
 import { decimalToRappen } from "@/src/domain/money";
+import { s } from "@/src/lib/form";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function run(f: FormData, min: "staff" | "manager", fn: (c: Awaited<ReturnType<typeof requireHotel>>, bookingId: string) => Promise<string | { to: string }>) {
   const hotelId = s(f, "hotelId"), bookingId = s(f, "bookingId");

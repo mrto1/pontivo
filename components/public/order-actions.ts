@@ -4,8 +4,8 @@ import { getHotelById } from "@/src/services/hotels";
 import { PosError } from "@/src/services/pos";
 import { createOnlineOrder, type CartLine } from "@/src/services/online-orders";
 import { isLocale } from "@/src/i18n/dict";
+import { s } from "@/src/lib/form";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const baseOf = (f: FormData) => (/^\/h\/[a-z0-9-]+$/.test(s(f, "base")) ? s(f, "base") : "");
 const UUID = /^[0-9a-f-]{36}$/i;
 

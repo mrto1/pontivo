@@ -9,10 +9,10 @@ import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { formatDay } from "@/src/i18n/dict";
 import { env } from "@/src/env";
 import { isBookable } from "@/src/services/hotels";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const chf = (v: string) => decimalToRappen(v.replace(/[^\d.]/g, "") || "0");
 
 async function back(hotelId: string, msg: string, q = "") {

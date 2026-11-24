@@ -6,9 +6,9 @@ import { PosError } from "@/src/services/pos";
 import { getSettings, saveSettings } from "@/src/services/reservations";
 import { publicBase } from "@/src/services/brand";
 import QRCode from "qrcode";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const here = (h: string, msg: string) => redirect(`/admin/${h}/restaurant/einstellungen?msg=${encodeURIComponent(msg)}`);
 
 async function guard(f: FormData) {

@@ -9,10 +9,10 @@ import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { tr } from "@/src/domain/blocks";
 import { env } from "@/src/env";
 import { isBookable } from "@/src/services/hotels";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const UNITS = { per_booking: "pro Buchung", per_night: "pro Nacht", per_person: "pro Person", per_person_night: "pro Person und Nacht" } as const;
 
 function back(hotelId: string, msg: string): never {

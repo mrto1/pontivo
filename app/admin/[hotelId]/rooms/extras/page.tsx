@@ -10,11 +10,11 @@ import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { EXTRA_UNITS, perPerson } from "@/src/domain/extras";
 import { hotelLocales, LOCALE_NAMES } from "@/src/i18n/dict";
 import type { Extra } from "@/src/db/schema";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
 const UNIT: Record<string, string> = { per_booking: "pro Aufenthalt", per_night: "pro Nacht", per_person: "pro Person", per_person_night: "pro Person und Nacht" };
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 function input(f: FormData): ExtraInput {
   const price = s(f, "price").replace(",", ".").replace(/'/g, "").replace(/\.?[–-]+$/, "");

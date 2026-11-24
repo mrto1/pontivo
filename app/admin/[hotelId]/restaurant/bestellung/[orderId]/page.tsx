@@ -7,9 +7,9 @@ import { METHODS, METHOD_LABEL, selectionTotal, type Method } from "@/src/domain
 import { atLeast } from "@/src/domain/roles";
 import { formatChf } from "@/src/domain/money";
 import { db } from "@/src/db/client";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const chf = (v: string) => Math.round(Number(v.replace(",", ".")) * 100);
 const back = (h: string, o: string, msg: string) => redirect(`/admin/${h}/restaurant/bestellung/${o}?msg=${encodeURIComponent(msg)}`);
 

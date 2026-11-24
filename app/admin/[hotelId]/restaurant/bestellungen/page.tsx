@@ -9,9 +9,9 @@ import { acceptOrder, completeOrder, heartbeat, orderSettings, pauseOrders, read
 import { addressKey } from "@/src/domain/online-order";
 import { formatChf } from "@/src/domain/money";
 import type { OnlineOrder } from "@/src/db/schema";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (h: string, msg?: string): never => redirect(`/admin/${h}/restaurant/bestellungen${msg ? `?msg=${encodeURIComponent(msg)}` : ""}`);
 
 async function act(f: FormData) {

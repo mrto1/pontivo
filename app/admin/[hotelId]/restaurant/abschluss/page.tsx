@@ -7,9 +7,9 @@ import { offlineWarnings } from "@/src/services/pos-sync";
 import { METHODS, METHOD_LABEL, type DayReport } from "@/src/domain/pos";
 import { todayIn } from "@/src/domain/dates";
 import { formatChf } from "@/src/domain/money";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function close(f: FormData) {
   "use server";

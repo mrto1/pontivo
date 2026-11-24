@@ -9,9 +9,9 @@ import { reservationsOfDay } from "@/src/services/reservations";
 import { todayIn } from "@/src/domain/dates";
 import { toMin } from "@/src/domain/reservations";
 import { formatInTimeZone } from "date-fns-tz";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function open(f: FormData) {
   "use server";

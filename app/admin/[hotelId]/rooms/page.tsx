@@ -17,13 +17,13 @@ import { hotelLocales, LOCALE_NAMES, type Locale } from "@/src/i18n/dict";
 import { PhotoManager } from "@/components/admin/PhotoManager";
 import { DrawerKeys } from "@/components/admin/DrawerKeys";
 import { translateRooms, translationEnabled, translationsLeft, TranslateError } from "@/src/services/translate";
+import { s } from "@/src/lib/form";
 
 /** Sprachen ausser Deutsch (Deutsch steht im Hauptfeld) */
 const EXTRA = ["en", "fr", "it", "nl"] as const;
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const n = (f: FormData, k: string) => Number(s(f, k) || 0);
 const chf = (f: FormData, k: string) => (s(f, k) ? decimalToRappen(s(f, k).replace(",", ".").replace(/'/g, "")) : 0);
 

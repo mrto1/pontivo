@@ -13,9 +13,9 @@ import { createOfferFromInquiry, listOffers, OfferError } from "@/src/services/o
 import { OFFER_STATUS_LABEL } from "@/src/domain/offers";
 import { formatDay } from "@/src/i18n/dict";
 import { listGuestRequests, openGuestRequestCount, setGuestRequestDone } from "@/src/services/guest-requests";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const KIND: Record<string, string> = { table: "Tisch reservieren", group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
 const fmt = (d: Date) => d.toLocaleString("de-CH", { timeZone: "Europe/Zurich", dateStyle: "short", timeStyle: "short" });
 

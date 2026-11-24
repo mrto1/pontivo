@@ -11,10 +11,10 @@ import { db } from "@/src/db/client";
 import { ratePlans, roomTypes } from "@/src/db/schema";
 import { formatChf } from "@/src/domain/money";
 import { formatDay } from "@/src/i18n/dict";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>, groupId: string) => Promise<string>) {
   const c = await requireHotelModule("groups", s(f, "hotelId"), "staff", "groups");

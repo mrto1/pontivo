@@ -5,10 +5,10 @@ import { requireHotel } from "@/src/auth/guard";
 import { env } from "@/src/env";
 import { LIMITS, setupImportGate, type Draft } from "@/src/domain/setup-import";
 import { adoptImport, discardImport, getImport, importFromPdf, importFromUrl, importsThisMonth, listImports, setupImportEnabled, SetupImportError } from "@/src/services/setup-import";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (hotelId: string, q: string): never => redirect(`/admin/${hotelId}/ki-einrichten?${q}`);
 const msg = (hotelId: string, m: string, id?: string): never => back(hotelId, `msg=${encodeURIComponent(m)}${id ? `&draft=${id}` : ""}`);
 

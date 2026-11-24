@@ -5,9 +5,9 @@ import { revalidatePath } from "next/cache";
 import { requireHotel } from "@/src/auth/guard";
 import { rollbackUntil } from "@/src/domain/switchover";
 import { confirmSwitchItem, finishSwitchover, ImportError, setOldFuture, switchoverView } from "@/src/services/migration";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (id: string, q: string) => { revalidatePath(`/admin/${id}`, "layout"); return redirect(`/admin/${id}/migration/umschalten?${q}`); };
 async function guard<T>(id: string, fn: () => Promise<T>): Promise<void> {
   try { await fn(); } catch (e) {

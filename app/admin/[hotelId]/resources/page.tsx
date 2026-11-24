@@ -7,9 +7,9 @@ import { formatChf } from "@/src/domain/money";
 import { formatDay } from "@/src/i18n/dict";
 import { addDays, todayIn } from "@/src/domain/dates";
 import { PeriodNav } from "@/components/admin/PeriodNav";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (h: string, day: string, msg: string) => redirect(`/admin/${h}/resources?day=${day}&msg=${encodeURIComponent(msg)}`);
 
 async function book(f: FormData) {

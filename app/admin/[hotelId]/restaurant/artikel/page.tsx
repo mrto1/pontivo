@@ -15,9 +15,9 @@ import { parsePosItems } from "@/src/domain/pos-import";
 import { ALLERGENS, ALLERGEN_LABEL } from "@/src/domain/online-order";
 import { saveItemOnline } from "@/src/services/online-orders";
 import { photoLibrary } from "@/src/services/site";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const here = (h: string, msg: string) => redirect(`/admin/${h}/restaurant/artikel?msg=${encodeURIComponent(msg)}`);
 const bps = (v: string) => Math.round(Number(v.replace(",", ".")) * 100);
 

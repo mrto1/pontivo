@@ -5,9 +5,9 @@ import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { InvoiceError } from "@/src/services/invoicing";
 import { listReaders, listTerminalPayments, registerReader } from "@/src/services/terminal";
 import { formatChf } from "@/src/domain/money";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const STATUS: Record<string, string> = { pending: "läuft", succeeded: "bezahlt", failed: "fehlgeschlagen", canceled: "abgebrochen" };
 
 async function register(f: FormData) {

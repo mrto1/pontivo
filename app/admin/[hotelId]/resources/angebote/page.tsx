@@ -8,9 +8,9 @@ import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { ResourceError, listResources, saveResource } from "@/src/services/resources";
 import { hhmm } from "@/src/domain/resources";
 import { formatChf } from "@/src/domain/money";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function saveRes(f: FormData) {
   "use server";

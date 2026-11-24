@@ -8,9 +8,9 @@ import { formatChf } from "@/src/domain/money";
 import { todayIn } from "@/src/domain/dates";
 import { PeriodNav } from "@/components/admin/PeriodNav";
 import { shiftMonth } from "@/src/services/overview";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (h: string, month: string, msg: string) => redirect(`/admin/${h}/owners?month=${month}&msg=${encodeURIComponent(msg)}`);
 const prevMonth = (tz: string) => { const t = todayIn(tz); const [y, m] = t.split("-").map(Number); return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`; };
 

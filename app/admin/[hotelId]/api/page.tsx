@@ -7,9 +7,9 @@ import { PosBridgeError, createApiKey, listApiKeys, revokeApiKey } from "@/src/s
 import { WebhookError, createEndpoint, deleteEndpoint, listEndpoints, recentDeliveries, saveReturnOrigins, sendPing } from "@/src/services/webhooks";
 import { WEBHOOK_EVENTS } from "@/src/domain/webhooks";
 import { env } from "@/src/env";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function create(f: FormData) {
   "use server";

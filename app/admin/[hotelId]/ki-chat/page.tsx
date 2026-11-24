@@ -8,10 +8,10 @@ import { moduleActiveOn } from "@/src/domain/ai-plan";
 import { todayIn } from "@/src/domain/dates";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { env } from "@/src/env";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (hotelId: string, msg: string) => redirect(`/admin/${hotelId}/ki-chat?msg=${encodeURIComponent(msg)}`);
 
 async function enable(f: FormData) {

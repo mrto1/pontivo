@@ -10,10 +10,10 @@ import { GoodsError, countMinibar, markRefilled, minibarGoods, refillList } from
 import { addTask, board, generateTasks, HousekeepingError, reportIssue, resolveIssue, setCleanStatus, type CleanStatus } from "@/src/services/housekeeping";
 import { addDays, isDay, todayIn } from "@/src/domain/dates";
 import { formatDay } from "@/src/i18n/dict";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const LABEL: Record<CleanStatus, string> = { dirty: "Schmutzig", clean: "Sauber", inspected: "Geprüft" };
 const LABEL_BTN = LABEL;
 

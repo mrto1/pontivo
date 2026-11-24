@@ -7,9 +7,9 @@ import { moduleOn } from "@/src/services/modules";
 import { addPortalTip, deletePortalTip, savePortalSettings } from "@/src/services/portal-settings";
 import { STANDARD_WISHES, doorCodeEnabled, folioEnabled, requestsEnabled, selfCheckoutEnabled, wishOptions } from "@/src/domain/portal";
 import { tr } from "@/src/domain/blocks";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (id: string, msg: string): never => redirect(`/admin/${id}/gaesteportal?msg=${encodeURIComponent(msg)}`);
 
 async function save(f: FormData) {

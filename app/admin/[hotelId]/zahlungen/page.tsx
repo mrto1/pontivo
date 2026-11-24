@@ -13,11 +13,11 @@ import { formatChf } from "@/src/domain/money";
 import { env } from "@/src/env";
 import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
 import { setEmbeddedCheckout } from "@/src/services/payment-settings";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
 const back = (hotelId: string, msg: string) => redirect(`/admin/${hotelId}/zahlungen?msg=${encodeURIComponent(msg)}`);
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function saveDeposit(f: FormData) {
   "use server";

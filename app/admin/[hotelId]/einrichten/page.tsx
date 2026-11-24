@@ -32,10 +32,10 @@ import { publicBase } from "@/src/services/brand";
 import { CopyBox } from "@/components/admin/CopyBox";
 import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
 import QRCode from "qrcode";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const chf = (v: string) => decimalToRappen((v || "0").replace(",", ".").replace(/'/g, "").replace(/\.?[–-]+$/, "") || "0");
 const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 

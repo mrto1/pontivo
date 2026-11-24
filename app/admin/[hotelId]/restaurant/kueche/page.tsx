@@ -3,9 +3,9 @@ import Link from "next/link";
 import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError, markDone, openTickets, type Station } from "@/src/services/pos";
 import { KitchenBell } from "@/components/admin/KitchenBell";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function done(f: FormData) {
   "use server";

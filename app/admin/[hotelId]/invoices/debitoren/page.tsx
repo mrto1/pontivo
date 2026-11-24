@@ -9,9 +9,9 @@ import {
 import { BUCKET_LABEL, DUNNING_LABEL, type Bucket } from "@/src/domain/debtors";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { formatDay } from "@/src/i18n/dict";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const BUCKETS: Bucket[] = ["not_due", "d1_30", "d31_60", "d60_plus"];
 
 async function guard(f: FormData) {

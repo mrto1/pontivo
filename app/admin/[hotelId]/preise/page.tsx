@@ -14,9 +14,9 @@ import { adoptSuggestions, holidaySuggestions } from "@/src/services/holidays";
 import {
   PricingError, addEvent, applyProposals, deleteEvent, dismissProposals, generateProposals, listEvents, listProposals, listRules, saveRule,
 } from "@/src/services/pricing-rules";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const num = (f: FormData, k: string) => Math.round(Number(s(f, k).replace(",", ".")) || 0);
 const chf = (r: number) => (r / 100).toLocaleString("de-CH", { minimumFractionDigits: 0 });
 const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];

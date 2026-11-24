@@ -6,9 +6,9 @@ import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { db } from "@/src/db/client";
 import { rooms } from "@/src/db/schema";
 import { AccessError, listLocks, nukiConfigured, saveNukiToken, setLockRoom, syncLocks } from "@/src/services/door-access";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<string>) {
   const c = await requireHotelModule("access", s(f, "hotelId"), "manager", "access");

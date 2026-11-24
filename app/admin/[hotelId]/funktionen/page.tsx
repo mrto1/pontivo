@@ -7,10 +7,10 @@ import { isOn, MODULE_GROUPS, moduleDef } from "@/src/domain/modules";
 import { applyModules, ModuleError, moduleRows, setModule } from "@/src/services/modules";
 import { setDiningLabel } from "@/src/services/settings";
 import { DINING_LABEL, DINING_LABELS } from "@/src/admin/nav";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function toggle(f: FormData) {
   "use server";

@@ -13,12 +13,12 @@ import { formatDay } from "@/src/i18n/dict";
 import { db } from "@/src/db/client";
 import { roomTypes } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
 const DAYS = 14;
 const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<string>, reopen = "") {
   const c = await requireHotelModule("frontdesk", s(f, "hotelId"), "staff", "plan");

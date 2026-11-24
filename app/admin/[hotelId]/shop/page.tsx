@@ -9,9 +9,9 @@ import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { GoodsError, adjustStock, deleteGood, listGoods, saveGood } from "@/src/services/goods";
 import { VAT_LABEL, needsReorder } from "@/src/domain/goods";
 import { formatChf } from "@/src/domain/money";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const int = (v: string) => (v === "" ? 0 : Number(v));
 const hasMinibar = (type: string) => type !== "restaurant"; // reine Restaurants haben keine Minibar
 

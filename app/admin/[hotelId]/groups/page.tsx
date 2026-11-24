@@ -4,10 +4,10 @@ import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { createGroup, GroupError, listGroups } from "@/src/services/groups";
 import { formatDay } from "@/src/i18n/dict";
 import { ZodError } from "zod";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const STATUS = { active: "Block aktiv", released: "Block freigegeben", cancelled: "abgesagt" } as const;
 
 async function create(f: FormData) {

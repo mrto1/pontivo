@@ -6,10 +6,10 @@ import { createCreditNote, deleteDraft, InvoiceError, invoiceView, issueInvoice,
 import { formatChf } from "@/src/domain/money";
 import { formatBps } from "@/src/domain/invoice";
 import { formatDay } from "@/src/i18n/dict";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>, id: string) => Promise<string | { to: string }>) {
   const c = await requireHotelModule("invoicing", s(f, "hotelId"), "staff", "invoices");

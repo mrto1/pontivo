@@ -8,11 +8,11 @@ import { formatChf } from "@/src/domain/money";
 import { formatDay } from "@/src/i18n/dict";
 import { PrintButton } from "@/components/admin/PrintButton";
 import { db } from "@/src/db/client";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
 const METHOD: Record<string, string> = { cash: "Bar", card: "Karte", twint: "TWINT", bank: "Überweisung", other: "Andere" };
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function close(f: FormData) {
   "use server";

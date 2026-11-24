@@ -11,10 +11,10 @@ import { publicBase } from "@/src/services/brand";
 import { BLOCK_TYPES, HOURS_PLACES, INQUIRY_KINDS, TIME_RE, TIP_CATEGORIES, type Block, type BlockType, type L } from "@/src/domain/blocks";
 import { decimalToRappen } from "@/src/domain/money";
 import { listRooms } from "@/src/services/rooms";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const raw = (f: FormData, k: string) => String(f.get(k) ?? "").replace(/\r\n/g, "\n").trim();
 const l10n = (f: FormData, k: string): L => Object.fromEntries(LOCALES.map((l) => [l, raw(f, `${k}.${l}`) || undefined])) as L;
 

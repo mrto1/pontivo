@@ -11,11 +11,11 @@ import { WEEKDAYS_DE, hoursText, parseHoursText } from "@/src/domain/reservation
 import { getSettings, saveOpeningHours } from "@/src/services/reservations";
 import { todayIn } from "@/src/domain/dates";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
 const back = (hotelId: string, msg: string) => redirect(`/admin/${hotelId}/settings?msg=${encodeURIComponent(msg)}`);
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function saveHotel(f: FormData) {
   "use server";

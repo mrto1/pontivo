@@ -5,9 +5,9 @@ import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { FeedbackError, feedbackSettings, feedbackSummary, listFeedback, saveFeedbackSettings } from "@/src/services/feedback";
 import { formatDay } from "@/src/i18n/dict";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function save(f: FormData) {
   "use server";

@@ -17,9 +17,9 @@ import { GuestNoteError, REGULAR_VISITS, restaurantVisits, saveProfile } from "@
 import { guestProfiles } from "@/src/db/schema";
 import { db } from "@/src/db/client";
 import { and, eq, inArray } from "drizzle-orm";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const here = (h: string, day: string, msg: string) => redirect(`/admin/${h}/restaurant/reservierungen?day=${day}&msg=${encodeURIComponent(msg)}`);
 const STATUS = { pending: "Zahlung offen", confirmed: "bestätigt", seated: "am Tisch", cancelled: "storniert", noshow: "nicht erschienen" } as const;
 

@@ -10,10 +10,10 @@ import { eq, asc } from "drizzle-orm";
 import { env } from "@/src/env";
 import { addFeed, exportUrl, IcalError, listFeeds, regenerateToken, removeFeed, syncFeed } from "@/src/services/ical";
 import { CopyBox } from "@/components/admin/CopyBox";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (hotelId: string, msg: string) => redirect(`/admin/${hotelId}/ical?msg=${encodeURIComponent(msg)}`);
 const errText = (e: unknown) => {
   if (e instanceof ZodError) return e.issues.map((i) => i.message).join(", ");

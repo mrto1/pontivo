@@ -5,10 +5,10 @@ import { hotelsForUser } from "@/src/auth/session";
 import { CANTONS, PROPERTY_LABEL, PROPERTY_TYPES, addHotelForUser } from "@/src/services/onboarding";
 import { feePercentText } from "@/src/domain/fee";
 import { rateLimit } from "@/src/lib/rate-limit";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function create(f: FormData) {
   "use server";

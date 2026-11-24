@@ -4,9 +4,9 @@ import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError, createDevice, listDevices, releaseDevice } from "@/src/services/pos";
 import { RoomLinkError, activeLink, connectRoomLink, disconnectRoomLink, roomLinkTotals } from "@/src/services/room-link";
 import { formatChf } from "@/src/domain/money";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const here = (h: string, msg: string) => redirect(`/admin/${h}/restaurant/geraete?msg=${encodeURIComponent(msg)}`);
 
 async function guard(f: FormData) {

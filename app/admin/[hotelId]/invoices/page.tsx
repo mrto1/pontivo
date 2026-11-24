@@ -5,10 +5,10 @@ import { atLeast } from "@/src/auth/session";
 import { InvoiceError, invoicingSettings, listInvoices, updateInvoicingSettings } from "@/src/services/invoicing";
 import { formatChf } from "@/src/domain/money";
 import { formatDay } from "@/src/i18n/dict";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const bps = (v: string) => Math.round(Number(v.replace(",", ".")) * 100);
 
 async function save(f: FormData) {

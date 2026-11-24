@@ -2,9 +2,9 @@ import { Notice } from "@/components/admin/Notice";
 import { redirect } from "next/navigation";
 import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { NewsletterError, listNewsletters, previewRecipients, saveDraft, sendNewsletter, sendTest } from "@/src/services/newsletter";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const back = (h: string, msg: string, id?: string) => redirect(`/admin/${h}/marketing?${id ? `edit=${id}&` : ""}msg=${encodeURIComponent(msg)}`);
 const seg = (f: FormData) => ({ language: s(f, "language"), tag: s(f, "tag"), stayedSince: s(f, "stayedSince"), minStays: Number(s(f, "minStays") || 0) });
 

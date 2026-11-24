@@ -15,11 +15,11 @@ import { turnstileEnabled } from "@/src/integrations/turnstile";
 import { env } from "@/src/env";
 import { requestLoginLink } from "@/src/auth/session";
 import { currentUserId } from "@/src/auth/guard";
+import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Registrieren – Direktbuchung für Ihren Betrieb", robots: { index: true } };
 
-const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 async function register(f: FormData) {
   "use server";
