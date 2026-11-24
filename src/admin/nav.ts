@@ -26,14 +26,14 @@ export type NavKind = "hotel" | "restaurant";
 export type HotelRef = { id: string; slug: string; primaryDomain: string | null };
 
 /** Punkte, die es nur für Unterkünfte gibt; reine Restaurants sehen sie nicht (Zahnrad) */
-export const LODGING_ONLY = ["rooms", "extras", "channex", "ical", "gaesteportal", "upsell", "direct", "api", "access", "migration"] as const;
+export const LODGING_ONLY = ["rooms", "extras", "resourcelist", "channex", "ical", "gaesteportal", "upsell", "direct", "api", "access", "migration"] as const;
 
 /** Gruppen des Zahnrads (Reihenfolge und Erklärung) */
 export const SETTINGS_GROUPS: { title: string; lead: string }[] = [
-  { title: "Betrieb", lead: "Wer Sie sind, was Sie anbieten und wer im Team mitarbeitet." },
+  { title: "Betrieb", lead: "Wer Sie sind, wer mitarbeitet, Zahlungen, Geräte, Funktionen und Abrechnung." },
+  { title: "Unterkunft", lead: "Zimmer, Preise und alles, was Gäste rund um den Aufenthalt nutzen." },
   { title: "Verkauf", lead: "Wie Gäste Sie finden und buchen, auf Ihrer Website, über Portale und per Mail." },
   { title: "Gastronomie", lead: "Speisekarte, Tische und Reservierung, Online-Bestellung und Kasse." },
-  { title: "Technik", lead: "Funktionen ein- und ausschalten, Geräte anschliessen, Daten übernehmen, Abo." },
 ];
 
 /** `hidden`: Menüpunkte ausgeschalteter Module (src/domain/modules.ts) oder nicht erlaubter Bereiche. Gruppen ohne Reiter verschwinden; hat eine Gruppe nur noch einen Reiter, bleibt sie ein einfacher Punkt. Sonst führt der Punkt zum ersten übrigen Reiter. */
@@ -49,7 +49,7 @@ export function adminNav(hotel: HotelRef, hiddenIn: ReadonlySet<string> = new Se
     if (tabs.length === 1) return { ...i, key: tabs[0].key, href: tabs[0].href, tabs: tabs[0].tabs };
     return { ...i, href: tabs[0].href, tabs };
   };
-  const list = (items: NavItem[]) => items.flatMap((i) => prune(i) ?? []).map((i) => (opts.kind === "restaurant" && i.key === "site" ? { ...i, label: "Website" } : i));
+  const list = (items: NavItem[]) => items.flatMap((i) => prune(i) ?? []).map((i) => (opts.kind === "restaurant" && i.key === "site" ? { ...i, label: "Website" } : opts.kind === "restaurant" && i.key === "ki-chat" ? { ...i, group: "Verkauf" } : i)); // KI-Chat steht bei Unterkünften unter «Unterkunft», in reinen Restaurants unter «Verkauf»
   // Zahnrad: die Seite /einstellungen bleibt das Ziel, nur die Punkte darunter werden gefiltert
   return { primary: list(nav.primary), settings: { ...nav.settings, tabs: list(nav.settings.tabs ?? []) }, account: prune(nav.account) ?? nav.account };
 }
@@ -101,27 +101,27 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
     settings: {
       key: "einstellungen", label: "Einstellungen", href: `${base}/einstellungen`,
       tabs: [
-        set("Betrieb", link("settings", "Grunddaten"), "Name, Adresse, Zeiten, Kurtaxe und Status der Online-Buchung."),
-        set("Betrieb", link("payments", "Zahlungsmethoden", "zahlungen"), "Karte und TWINT über Stripe, Anzahlung, Grundgebühr und hinterlegte Karte."),
-        set("Betrieb", link("rooms", "Zimmer & Tarife"), "Zimmertypen, Fotos, Preise und Tarife."),
-        set("Betrieb", link("extras", "Zusatzleistungen", "rooms/extras"), "Hund, Parkplatz, Endreinigung und weitere Extras zum Zimmer."),
-        set("Betrieb", link("resourcelist", "Angebote vor Ort", "resources/angebote"), "Sauna, Seminarraum, Tennisplatz: Plätze, Zeitfenster und Preise."),
+        set("Betrieb", link("settings", "Betriebsdaten"), "Name, Adresse, Zeiten, Öffnungszeiten und Kurtaxe."),
+        set("Betrieb", link("funktionen", "Funktionen"), "Nur was Sie brauchen, bleibt im Menü. Dazu die Darstellung (Symbol und Name des Restaurant-Bereichs)."),
         set("Betrieb", link("team", "Team & Rollen"), "Wer Zugang hat und was jede Person sehen darf."),
-        set("Verkauf", { ...link("g-site", "Website & Buchung", "site"), tabs: [link("site", "Website"), link("direct", "Direktbuchung", "direktbuchung"), link("api", "Schnittstelle (API)")] }, "Texte, Fotos und Farben der Website, Buchungsstrecke, Werkzeuge für Direktbuchungen."),
+        set("Betrieb", { ...link("g-devices", "Geräte", "terminal"), tabs: [link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt")] }, "Kartenleser und Türschlösser."),
+        set("Betrieb", link("payments", "Zahlungsmethoden", "zahlungen"), "Karte und TWINT über Stripe, Anzahlung, Grundgebühr und hinterlegte Karte."),
+        set("Betrieb", link("report", "Abrechnung", "report", { match: [`${base}/plattform-rechnung`] }), "Monatsabrechnung, Plattformgebühren und Rechnungen von Pontivo (nur Inhaber)."),
+        set("Betrieb", link("migration", "Datenübernahme"), "Buchungen und Gäste aus Ihrer bisherigen Software übernehmen."),
+        set("Unterkunft", link("rooms", "Zimmer & Tarife"), "Zimmertypen, Fotos, Preise und Tarife."),
+        set("Unterkunft", link("extras", "Zusatzleistungen", "rooms/extras"), "Hund, Parkplatz, Endreinigung und weitere Extras zum Zimmer."),
+        set("Unterkunft", link("resourcelist", "Angebote vor Ort", "resources/angebote"), "Sauna, Seminarraum, Tennisplatz: Plätze, Zeitfenster und Preise."),
+        set("Unterkunft", link("gaesteportal", "Gästeportal"), "Wünsche, Tipps, Türcode und Check-out auf der Buchungsseite des Gastes."),
+        set("Unterkunft", link("upsell", "Upselling"), "Extras wie Frühstück, die Gäste online dazubuchen."),
+        set("Unterkunft", link("ki-chat", "KI-Chat"), "Der digitale Assistent auf Website und Buchungsseite."),
+        set("Verkauf", { ...link("g-site", "Website & Buchung", "site"), tabs: [link("site", "Website"), link("direct", "Direktbuchung", "direktbuchung"), link("api", "Schnittstelle (API)")] }, "Online-Buchung ein- und ausschalten, Texte, Fotos und Farben der Website, Werkzeuge für Direktbuchungen."),
         set("Verkauf", { ...link("g-channels", "Kanäle", "channex"), tabs: [link("channex", "Channel-Manager"), link("ical", "Kalender-Abgleich")] }, "Booking.com, Airbnb, Expedia und iCal, dazu die Provision der Portale."),
         set("Verkauf", link("mailtexts", "Gäste-Mails", "mail-texte"), "Eigene Sätze in Bestätigung, Vor-der-Anreise- und Nachher-Mail."),
-        set("Verkauf", link("gaesteportal", "Gästeportal"), "Wünsche, Tipps, Türcode und Check-out auf der Buchungsseite des Gastes."),
-        set("Verkauf", link("upsell", "Upselling"), "Extras wie Frühstück, die Gäste online dazubuchen."),
-        set("Verkauf", link("ki-chat", "KI-Chat"), "Der digitale Assistent auf Website und Buchungsseite."),
         set("Gastronomie", link("positems", "Speisekarte", "restaurant/artikel"), "Artikel mit Preisen, Optionen und Menüs, KI-Speisekarte und Import per CSV."),
         set("Gastronomie", link("tables", "Tischplan", "restaurant/tische"), "Tische anlegen, Plätze und Form festlegen, Tische im Plan platzieren, Import per CSV."),
         set("Gastronomie", link("ressettings", "Reservierung", "restaurant/einstellungen"), "Zeiten, Plätze und Regeln für die Online-Reservierung, Anzahlung und Erinnerung."),
         set("Gastronomie", link("ordersettings", "Bestellung", "restaurant/bestellung-einstellungen"), "Abholung und Lieferung, Zeiten, Liefergebiete, Barzahlung, Probebestellung und Live-Schaltung."),
         set("Gastronomie", { ...link("g-pos", "Kasse", "restaurant/geraete"), tabs: [link("posdevices", "Kassen-Geräte", "restaurant/geraete"), link("posbridge", "Kassen-Schnittstelle")] }, "Kassen-Geräte, Verbindung zum Hotel und Schnittstelle zu Ihrer bisherigen Kasse."),
-        set("Technik", link("funktionen", "Funktionen"), "Nur was Sie brauchen, bleibt im Menü."),
-        set("Technik", { ...link("g-devices", "Geräte", "terminal"), tabs: [link("terminal", "Kartenterminal"), link("access", "Zutritt", "zutritt")] }, "Kartenleser und Türschlösser."),
-        set("Technik", link("migration", "Datenübernahme"), "Buchungen und Gäste aus Ihrer bisherigen Software übernehmen."),
-        set("Technik", link("report", "Abo & Gebühren", "report", { match: [`${base}/plattform-rechnung`] }), "Monatsabrechnung, Plattformgebühren und Rechnungen von Pontivo (nur Inhaber)."),
       ],
     },
     // Profilbild oben rechts

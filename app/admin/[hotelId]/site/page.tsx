@@ -16,7 +16,7 @@ import { fontVars } from "@/components/public/fonts";
 import { ZodError } from "zod";
 import { tr } from "@/src/domain/blocks";
 
-import { updateHotelIntro } from "@/src/services/settings";
+import { goLiveProblems, setHotelStatus, updateHotelIntro } from "@/src/services/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +33,19 @@ async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>
     else throw e;
   }
   redirect(typeof r === "string" ? `/admin/${c.hotel.id}/site?msg=${encodeURIComponent(r)}` : r.to);
+}
+
+async function changeStatus(f: FormData) {
+  "use server";
+  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
+  const status = s(f, "status") as "live" | "paused" | "draft";
+  let msg = `Status: ${status}`;
+  try {
+    await setHotelStatus(hotel, status, actor);
+  } catch (e) {
+    msg = `Nicht möglich: ${(e as Error).message}`;
+  }
+  redirect(`/admin/${hotel.id}/site?msg=${encodeURIComponent(msg)}`);
 }
 
 async function saveIntro(f: FormData) {
@@ -125,6 +138,9 @@ export default async function Site({ params, searchParams }: { params: Promise<{
   const sp = await searchParams;
   const { hotel, role } = await requireHotel(hotelId);
   const canEdit = atLeast(role, "manager");
+  const isOwner = atLeast(role, "owner");
+  const restaurantKind = hotel.propertyType === "restaurant";
+  const problems = await goLiveProblems(hotel);
   const pages = await listPages(hotel.id);
   const home = pages.find((p) => p.slug === "");
   const others = pages.filter((p) => p.slug !== "");
@@ -148,6 +164,18 @@ export default async function Site({ params, searchParams }: { params: Promise<{
     <div className="stack">
       <h1>Website & Buchung</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
+
+      <section className="card stack" id="online-buchung">
+        <h2>{restaurantKind ? "Website online" : "Online-Buchung"}</h2>
+        <p>Status: <span className={`badge ${hotel.status === "live" ? "" : "warn"}`}>{hotel.status === "live" ? "live" : hotel.status === "paused" ? "pausiert" : "Entwurf"}</span> {hotel.primaryDomain ? <span className="muted small">· Domain {hotel.primaryDomain}</span> : null}</p>
+        {problems.length ? <ul className="notice warn">{problems.map((p) => <li key={p}>{p}</li>)}</ul> : null}
+        {isOwner ? (
+          <div className="inline-form">
+            {hotel.status !== "live" ? <form action={changeStatus}>{hidden}<input type="hidden" name="status" value="live" /><button className="btn" disabled={problems.length > 0}>Live schalten</button></form> : null}
+            {hotel.status === "live" ? <form action={changeStatus}>{hidden}<input type="hidden" name="status" value="paused" /><button className="btn secondary">Pausieren</button></form> : null}
+          </div>
+        ) : <p className="muted small">Live schalten und pausieren kann nur der Inhaber.</p>}
+      </section>
 
       <section className="card stack" id="betriebsart">
         <h2>Wie nutzen Sie {env().PLATFORM_NAME}?</h2>

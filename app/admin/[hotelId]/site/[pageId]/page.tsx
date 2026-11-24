@@ -489,10 +489,10 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
         <div><label>Öffnungszeiten von</label><select name="place" defaultValue={b.place}>{HOURS_PLACES.map((p) => <option key={p} value={p}>{PLACE_LABEL[p]}</option>)}</select></div>
         <div><label>Zeiten</label><select name="source" defaultValue={b.source}>
-          <option value="opening">Aus den Öffnungszeiten der Grunddaten (wie Reservierung und Online-Bestellung)</option>
+          <option value="opening">Aus den Öffnungszeiten der Betriebsdaten (wie Reservierung und Online-Bestellung)</option>
           <option value="manual">Hier von Hand erfassen</option>
         </select></div>
-        {b.source === "opening" ? <p className="muted small">Die Zeiten kommen aus <a href={`/admin/${hotelId}/settings#gastronomie`}>Grunddaten → Öffnungszeiten</a>. Betriebsferien und Hinweis erfassen Sie hier.</p> : null}
+        {b.source === "opening" ? <p className="muted small">Die Zeiten kommen aus <a href={`/admin/${hotelId}/settings#gastronomie`}>Betriebsdaten → Öffnungszeiten</a>. Betriebsferien und Hinweis erfassen Sie hier.</p> : null}
         <table className="table small" hidden={b.source === "opening"}>
           <thead><tr><th>Tag</th><th>1. Zeitfenster</th><th>2. Zeitfenster</th><th>3. Zeitfenster</th></tr></thead>
           <tbody>

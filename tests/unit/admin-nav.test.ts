@@ -49,12 +49,12 @@ describe("Admin-Menü", () => {
 
   it("Zahnrad: Gruppen mit je einem Satz Erklärung", () => {
     const groups = settingsGroups(nav);
-    expect(groups.map((g) => g.title)).toEqual(["Betrieb", "Verkauf", "Gastronomie", "Technik"]);
+    expect(groups.map((g) => g.title)).toEqual(["Betrieb", "Unterkunft", "Verkauf", "Gastronomie"]);
     expect(groups.map((g) => g.items.map((i) => i.label))).toEqual([
-      ["Grunddaten", "Zahlungsmethoden", "Zimmer & Tarife", "Zusatzleistungen", "Angebote vor Ort", "Team & Rollen"],
-      ["Website & Buchung", "Kanäle", "Gäste-Mails", "Gästeportal", "Upselling", "KI-Chat"],
+      ["Betriebsdaten", "Funktionen", "Team & Rollen", "Geräte", "Zahlungsmethoden", "Abrechnung", "Datenübernahme"],
+      ["Zimmer & Tarife", "Zusatzleistungen", "Angebote vor Ort", "Gästeportal", "Upselling", "KI-Chat"],
+      ["Website & Buchung", "Kanäle", "Gäste-Mails"],
       ["Speisekarte", "Tischplan", "Reservierung", "Bestellung", "Kasse"],
-      ["Funktionen", "Geräte", "Datenübernahme", "Abo & Gebühren"],
     ]);
     for (const g of groups) { expect(g.lead.length).toBeGreaterThan(10); for (const i of g.items) expect(i.lead, i.label).toBeTruthy(); }
     expect(nav.settings.tabs!.find((i) => i.label === "Website & Buchung")!.tabs!.map((t) => t.key)).toEqual(["site", "direct", "api"]);

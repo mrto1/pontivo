@@ -243,7 +243,7 @@ export async function issueInvoice(hotel: Hotel, invoiceId: string, actor: strin
     if (!inv) throw new InvoiceError("Rechnung nicht gefunden.");
     if (inv.status !== "draft") throw new InvoiceError("Die Rechnung ist schon ausgestellt.");
     if (!inv.recipient.name?.trim() && !inv.recipient.company?.trim()) throw new InvoiceError("Bitte zuerst den Empfänger (Name oder Firma) angeben.");
-    if (set.vatLiable && !set.vatNumber) throw new InvoiceError("MWST-Nummer fehlt (Einstellungen → Grunddaten → Rechnung).");
+    if (set.vatLiable && !set.vatNumber) throw new InvoiceError("MWST-Nummer fehlt (Finanzen → Rechnungen).");
     const today = todayIn(hotel.timezone, now);
     await assertOpenDay(tx, hotel.id, today);
     const number = await nextNumber(tx, hotel.id, Number(today.slice(0, 4)));
@@ -344,7 +344,7 @@ export async function invoiceView(hotel: Hotel, invoiceId: string): Promise<Invo
   let qrNote: string | null = null;
   const set = invoicingSettings(hotel);
   if (invoice.status === "issued" && invoice.kind === "invoice" && open > 0) {
-    if (!set.iban && !set.qrIban) qrNote = "Keine IBAN hinterlegt: Die QR-Rechnung fehlt (Einstellungen → Grunddaten → Rechnung).";
+    if (!set.iban && !set.qrIban) qrNote = "Keine IBAN hinterlegt: Die QR-Rechnung fehlt (Finanzen → Rechnungen).";
     else if (!hotel.postalCode || !hotel.city) qrNote = "Adresse des Betriebs unvollständig (PLZ/Ort): Die QR-Rechnung fehlt.";
     else qrSvg = await qrSvgFor(hotel, invoice, open, set);
   }

@@ -31,5 +31,11 @@ test("Startseite: Anmelden, angemeldet «Zu <Betrieb>», im Admin Verwaltung und
   // Zahnrad führt auf die Übersicht der drei Gruppen
   await page.getByRole("link", { name: "Einstellungen" }).first().click();
   await expect(page).toHaveURL(new RegExp(`/admin/${h.hotel.id}/einstellungen`));
-  for (const g of ["Betrieb", "Verkauf", "Technik"]) await expect(page.locator("h2", { hasText: g })).toBeVisible();
+  for (const g of ["Betrieb", "Unterkunft", "Verkauf"]) await expect(page.locator("h2", { hasText: g })).toBeVisible();
+  // Schalter «Online-Buchung» steht auf «Website & Buchung», nicht mehr in den Betriebsdaten
+  await page.goto(`/admin/${h.hotel.id}/site`);
+  await expect(page.locator("h2", { hasText: "Online-Buchung" })).toBeVisible();
+  await page.goto(`/admin/${h.hotel.id}/settings`);
+  await expect(page.getByRole("heading", { name: "Betriebsdaten" })).toBeVisible();
+  await expect(page.locator("h2", { hasText: "Online-Buchung" })).toHaveCount(0);
 });

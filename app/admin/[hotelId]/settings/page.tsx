@@ -3,11 +3,10 @@ import { redirect } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { taxRuleFor } from "@/src/services/hotels";
-import { confirmTouristTax, goLiveProblems, setDiningLabel, setHotelStatus, updateHotelSettings } from "@/src/services/settings";
+import { confirmTouristTax, updateHotelSettings } from "@/src/services/settings";
 import { FormSwitch } from "@/components/admin/FormSwitch";
 import { moduleRows } from "@/src/services/modules";
 import { isOn } from "@/src/domain/modules";
-import { DINING_LABEL, DINING_LABELS } from "@/src/admin/nav";
 import { WEEKDAYS_DE, hoursText, parseHoursText } from "@/src/domain/reservations";
 import { getSettings, saveOpeningHours } from "@/src/services/reservations";
 import { todayIn } from "@/src/domain/dates";
@@ -55,7 +54,6 @@ async function saveDining(f: FormData) {
   "use server";
   const { hotel, actor } = await requireHotel(s(f, "hotelId"), "manager");
   try {
-    if (s(f, "diningLabel")) await setDiningLabel(hotel, s(f, "diningLabel"), actor);
     let hours: Record<string, { from: string; to: string }[]> | null = null;
     if (f.get("useHours") === "on") {
       hours = {};
@@ -72,39 +70,25 @@ async function saveDining(f: FormData) {
   back(hotel.id, "Gespeichert");
 }
 
-async function changeStatus(f: FormData) {
-  "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
-  const status = s(f, "status") as "live" | "paused" | "draft";
-  try {
-    await setHotelStatus(hotel, status, actor);
-  } catch (e) {
-    back(hotel.id, `Nicht möglich: ${(e as Error).message}`);
-  }
-  back(hotel.id, `Status: ${status}`);
-}
-
 export default async function Settings({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
   const { hotel, role } = await requireHotel(hotelId);
   const isManager = atLeast(role, "manager");
-  const isOwner = atLeast(role, "owner");
   const restaurantKind = hotel.propertyType === "restaurant";
   const rule = restaurantKind ? null : await taxRuleFor(hotel, todayIn(hotel.timezone));
   const dining = isOn(await moduleRows(hotel.id), "restaurant");
   const cfg = dining ? await getSettings(hotel.id) : null;
-  const problems = await goLiveProblems(hotel);
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
 
   return (
     <div className="stack">
-      <h1>Grunddaten</h1>
+      <h1>Betriebsdaten</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
 
       {isManager ? (
         <form action={saveHotel} className="card stack">
-          <h2>Betriebsdaten</h2>
+          <h2>Name und Adresse</h2>
           {hidden}
           <div className="form-grid">
             <div><label>Name</label><input name="name" defaultValue={hotel.name} required /></div>
@@ -127,11 +111,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
       {dining && isManager && cfg ? (
         <form action={saveDining} className="card stack" id="gastronomie" data-testid="dining-settings">
           {hidden}
-          <h2>{restaurantKind ? "Öffnungszeiten" : "Gastronomie"}</h2>
-          {restaurantKind ? null : (
-            <div><label htmlFor="diningLabel">Bezeichnung im Umschalter oben (Besteck-Symbol)</label>
-              <select id="diningLabel" name="diningLabel" defaultValue={hotel.diningLabel}>{DINING_LABELS.map((k) => <option key={k} value={k}>{DINING_LABEL[k].de}</option>)}</select></div>
-          )}
+          <h2>{restaurantKind ? "Öffnungszeiten" : "Öffnungszeiten Restaurant"}</h2>
           <FormSwitch name="useHours" defaultOn={!!cfg.openingHours} label="Öffnungszeiten verwenden" hint="Online-Reservierungen gibt es dann nur zu diesen Zeiten; leerer Tag = Ruhetag. Aus = jeden Tag in den Zeitfenstern der Online-Reservierung." />
           <div className="form-grid">
             {WEEKDAYS_DE.map((d, i) => ({ d, i })).slice(1).concat({ d: WEEKDAYS_DE[0], i: 0 }).map(({ d, i }) => (
@@ -172,17 +152,6 @@ export default async function Settings({ params, searchParams }: { params: Promi
         ) : null}
       </section>}
 
-      <section className="card stack">
-        <h2>{restaurantKind ? "Website online" : "Online-Buchung"}</h2>
-        <p>Status: <span className={`badge ${hotel.status === "live" ? "" : "warn"}`}>{hotel.status}</span> {hotel.primaryDomain ? <span className="muted small">· Domain {hotel.primaryDomain}</span> : null}</p>
-        {problems.length ? <ul className="notice warn">{problems.map((p) => <li key={p}>{p}</li>)}</ul> : null}
-        {isOwner ? (
-          <div className="inline-form">
-            {hotel.status !== "live" ? <form action={changeStatus}>{hidden}<input type="hidden" name="status" value="live" /><button className="btn" disabled={problems.length > 0}>Live schalten</button></form> : null}
-            {hotel.status === "live" ? <form action={changeStatus}>{hidden}<input type="hidden" name="status" value="paused" /><button className="btn secondary">Pausieren</button></form> : null}
-          </div>
-        ) : null}
-      </section>
     </div>
   );
 }

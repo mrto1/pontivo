@@ -91,7 +91,7 @@ export type GoLiveInput = { hasOpeningHours: boolean; onlineItems: number; strip
 /** Was fehlt noch, bevor die Online-Bestellung live gehen darf? (leer = bereit) */
 export function goLiveProblems(i: GoLiveInput): { key: string; text: string }[] {
   const p: { key: string; text: string }[] = [];
-  if (!i.hasOpeningHours) p.push({ key: "hours", text: "Öffnungszeiten fehlen (Grunddaten)." });
+  if (!i.hasOpeningHours) p.push({ key: "hours", text: "Öffnungszeiten fehlen (Betriebsdaten)." });
   if (!i.onlineItems) p.push({ key: "items", text: "Kein Artikel ist online bestellbar (Speisekarte)." });
   if (!i.pickup && !i.delivery) p.push({ key: "kind", text: "Weder Abholung noch Lieferung ist eingeschaltet." });
   if (i.delivery && !i.activeZones) p.push({ key: "zones", text: "Für die Lieferung fehlt ein Liefergebiet." });
