@@ -177,34 +177,6 @@ export default async function Site({ params, searchParams }: { params: Promise<{
         ) : <p className="muted small">Live schalten und pausieren kann nur der Inhaber.</p>}
       </section>
 
-      <section className="card stack" id="betriebsart">
-        <h2>Wie nutzen Sie {env().PLATFORM_NAME}?</h2>
-        <form action={saveBrand} className="stack">
-          {hidden}
-          <div className="mode-pick">
-            <label>
-              <input type="radio" name="mode" value="booking_only" defaultChecked={bookingOnly} disabled={!canEdit} />
-              <span><strong>Wir behalten unsere Website</strong><span className="muted small">{env().PLATFORM_NAME} übernimmt nur die Buchung. Der Gast kommt über einen Knopf auf unserer Website zur Buchungsseite.</span></span>
-            </label>
-            <label>
-              <input type="radio" name="mode" value="website" defaultChecked={!bookingOnly} disabled={!canEdit} />
-              <span><strong>{env().PLATFORM_NAME} ist unsere Website</strong><span className="muted small">Startseite, Zimmer und Buchung unter unserer eigenen Domain.</span></span>
-            </label>
-          </div>
-          <div className="form-grid">
-            <div><label htmlFor="f1c501">Adresse der eigenen Website</label><input id="f1c501" name="websiteUrl" type="url" placeholder="https://www.hotel.ch" defaultValue={brand.websiteUrl ?? ""} disabled={!canEdit} /></div>
-            <div>
-              <label>Hauptfarbe (Knöpfe, Links)</label>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <input name="color" type="color" defaultValue={brand.color ?? "#2f5d50"} style={{ width: 64, height: 42, padding: 2 }} disabled={!canEdit} />
-                <label className="check m0"><input type="checkbox" name="useColor" defaultChecked={!!brand.color} disabled={!canEdit} />verwenden</label>
-              </div>
-            </div>
-          </div>
-          {canEdit ? <button className="btn">Speichern</button> : null}
-        </form>
-        <p className="muted small m0">Je nach Auswahl zeigt diese Seite nur, was Sie brauchen: mit eigener Website die Einbindung in Ihre Seite, mit {env().PLATFORM_NAME} als Website zusätzlich Startseite, Seiten und Dokumente.</p>
-      </section>
 
       {bookingOnly ? (
         <section className="card stack" id="einbinden">
@@ -228,89 +200,16 @@ export default async function Site({ params, searchParams }: { params: Promise<{
         </section>
       ) : null}
 
-      <section className="card stack" id="gestaltung">
-        <h2>Gestaltung</h2>
-        <p className="muted small">Layout und Schrift gelten für alle Seiten und die Buchungsstrecke. Hauptfarbe stellen Sie oben ein, das Logo weiter unten.</p>
-        <form action={saveDesign} className="stack">
-          {hidden}
-          <fieldset className="plain" disabled={!canEdit}>
-            <legend className="small muted">Layout</legend>
-            <div className="choice-grid">
-              {LAYOUTS.map((l) => (
-                <label key={l.key} className="choice">
-                  <input type="radio" name="layout" value={l.key} defaultChecked={l.key === layout} />
-                  <span className={`layout-thumb thumb-${l.key}`} aria-hidden="true"><i /><b /><em /></span>
-                  <strong>{l.label}</strong>
-                  <span className="small muted">{l.hint}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset className="plain mt12" disabled={!canEdit} >
-            <legend className="small muted">Schrift (Titel / Text)</legend>
-            <div className="choice-grid">
-              {FONTS.map((f) => (
-                <label key={f.key} className="choice font-choice" style={fontVars(f.key) as React.CSSProperties}>
-                  <input type="radio" name="font" value={f.key} defaultChecked={f.key === font} />
-                  <strong>{f.label}</strong>
-                  <span className="font-sample">Willkommen im Glarnerland</span>
-                  <span className="small muted">{f.head} / {f.body}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          {canEdit ? <div><button className="btn small">Gestaltung speichern</button> <a className="small" href={`${base}/de`} target="_blank">Website ansehen</a></div> : null}
-        </form>
-      </section>
 
-      <section className="card stack" id="logo">
-        <h2>Logo</h2>
-        {brand.logoUrl ? <img src={brand.logoUrl} alt="Logo" style={{ maxHeight: 60, maxWidth: 240, objectFit: "contain", alignSelf: "flex-start" }} /> : <p className="muted small">Noch kein Logo – oben auf der Buchungsseite steht dann der Hotelname.</p>}
-        {canEdit ? (
-          <div className="inline-form">
-            <form action={`/api/admin/hotels/${hotel.id}/photos`} method="post" encType="multipart/form-data" className="inline-form">
-              <input type="hidden" name="target" value="logo" />
-              <div><label htmlFor="f1c502">Logo hochladen (PNG mit transparentem Hintergrund, JPG oder WebP)</label><input id="f1c502" type="file" name="file" accept="image/png,image/jpeg,image/webp" required /></div>
-              <button className="btn small">Hochladen</button>
-            </form>
-            {brand.logoUrl ? <form action={removeLogo}>{hidden}<button className="btn secondary small">Logo entfernen</button></form> : null}
-          </div>
-        ) : null}
-        <p className="small"><a href={link} target="_blank">Buchungsseite ansehen</a></p>
-      </section>
 
-      <section className="card stack" id="hotel-photos">
-        <h2>Fotos des Hotels</h2>
-        <p className="muted small">Das erste Foto ist das Titelbild und erscheint gross auf der Startseite und der Buchungsseite. Fotos der einzelnen Zimmertypen verwalten Sie unter «Zimmer & Tarife».</p>
-        <PhotoManager hotelId={hotel.id} roomTypeId={null} photos={hotel.content.photos ?? []} canEdit={canEdit} page="site" alt="z. B. Hotel mit Blick auf den See" />
-      </section>
 
-      <section className="card stack" id="sprachen">
-        <h2>Sprachen</h2>
-        <p className="muted small">Deutsch ist immer dabei. Für jede weitere Sprache erscheint auf der Website ein Sprachwechsel, und Buchung, Bestätigungs-Mail und Stornoseite sind in der Sprache des Gastes. Fehlt ein Text in einer Sprache, zeigt die Website Englisch, sonst Deutsch.</p>
-        <form action={saveLanguages} className="stack">
-          {hidden}
-          <fieldset className="plain" disabled={!canEdit}>
-            <div className="weekdays">
-              {LOCALES.map((l) => (
-                <label key={l}><input type="checkbox" name="lang" value={l} defaultChecked={langs.includes(l)} disabled={l === "de"} />{LOCALE_NAMES[l]}</label>
-              ))}
-            </div>
-          </fieldset>
-          {canEdit ? <div><button className="btn small">Sprachen speichern</button></div> : null}
-        </form>
-        <p className="muted small">
-          {translationEnabled()
-            ? <>Texte übersetzen Sie im Editor jeder Seite mit «Fehlende Texte übersetzen», Zimmer & Tarife unter <a href={`/admin/${hotel.id}/rooms`}>Zimmer</a>. Noch {translationsLeft(hotel)} automatische Übersetzungen diesen Monat.</>
-            : <>Automatische Übersetzung ist noch nicht eingerichtet; die Felder können Sie im Editor von Hand ausfüllen.</>}
-          {" "}AGB und Datenschutz erscheinen auf Französisch, Italienisch und Niederländisch vorerst auf Englisch.
-        </p>
-      </section>
+
+
 
       {!bookingOnly ? (
-        <>
-      <section className="card stack">
-        <h2>Startseite</h2>
+      <section className="card stack" id="seiten">
+        <h2>Seiten</h2>
+        <h3 className="m0">Startseite</h3>
         {home ? (
           <p><a className="btn" href={`/admin/${hotel.id}/site/${home.id}`}>Startseite bearbeiten</a> <a href={`${base}/de`} target="_blank">ansehen</a></p>
         ) : canEdit ? (
@@ -337,38 +236,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
             </form>
           </>
         ) : null}
-      </section>
-
-      <section className="card stack" id="dokumente">
-        <h2>Dokumente (PDF)</h2>
-        <p className="muted small">Zum Beispiel Speisekarte, Preisliste, Seminarunterlagen. Auf einer Seite zeigen Sie sie mit dem Baustein «Downloads (PDF)».</p>
-        {docs.length ? (
-          <table className="table">
-            <thead><tr><th>Titel</th><th>Grösse</th><th></th></tr></thead>
-            <tbody>
-              {docs.map((d) => (
-                <tr key={d.url}>
-                  <td><a href={d.url} target="_blank">{d.title.de || d.title.en}</a>{d.title.en && d.title.de ? <span className="muted small"> · EN: {d.title.en}</span> : null}</td>
-                  <td className="small">{kb(d.bytes)}</td>
-                  <td>{canEdit ? <form action={removeDoc}>{hidden}<input type="hidden" name="url" value={d.url} /><button className="btn secondary small">Löschen</button></form> : null}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : <p className="muted small">Noch keine Dokumente.</p>}
-        {canEdit ? (
-          <form action={`/api/admin/hotels/${hotel.id}/documents`} method="post" encType="multipart/form-data" className="inline-form">
-            <div><label htmlFor="f1c507">PDF-Datei (max. 15 MB)</label><input id="f1c507" type="file" name="file" accept="application/pdf,.pdf" required /></div>
-            {langs.map((l) => (
-              <div key={l}><label>Titel {l.toUpperCase()}</label><input name={`title.${l}`} placeholder={l === "de" ? "z. B. Speisekarte" : l === "en" ? "z. B. Menu" : ""} maxLength={120} /></div>
-            ))}
-            <button className="btn small">Hochladen</button>
-          </form>
-        ) : null}
-      </section>
-
-      <section className="card stack">
-        <h2>Weitere Seiten</h2>
+        <h3 className="m0 mt16">Weitere Seiten</h3>
         {others.length ? (
           <table className="table">
             <thead><tr><th>Seite</th><th>Adresse</th><th>Menü</th><th>Status</th><th></th></tr></thead>
@@ -401,8 +269,136 @@ export default async function Site({ params, searchParams }: { params: Promise<{
         ) : null}
         <p className="muted small">Die Reihenfolge hier ist die Reihenfolge im Menü. AGB und Datenschutz gibt es automatisch.</p>
       </section>
-        </>
       ) : null}
+      <section className="card stack" id="bilder">
+        <h2>Logo und Fotos</h2>
+        <h3 className="m0" id="logo">Logo</h3>
+        {brand.logoUrl ? <img src={brand.logoUrl} alt="Logo" style={{ maxHeight: 60, maxWidth: 240, objectFit: "contain", alignSelf: "flex-start" }} /> : <p className="muted small">Noch kein Logo – oben auf der Buchungsseite steht dann der Hotelname.</p>}
+        {canEdit ? (
+          <div className="inline-form">
+            <form action={`/api/admin/hotels/${hotel.id}/photos`} method="post" encType="multipart/form-data" className="inline-form">
+              <input type="hidden" name="target" value="logo" />
+              <div><label htmlFor="f1c502">Logo hochladen (PNG mit transparentem Hintergrund, JPG oder WebP)</label><input id="f1c502" type="file" name="file" accept="image/png,image/jpeg,image/webp" required /></div>
+              <button className="btn small">Hochladen</button>
+            </form>
+            {brand.logoUrl ? <form action={removeLogo}>{hidden}<button className="btn secondary small">Logo entfernen</button></form> : null}
+          </div>
+        ) : null}
+        <p className="small"><a href={link} target="_blank">Buchungsseite ansehen</a></p>
+        <h3 className="m0 mt16" id="hotel-photos">Fotos des Hotels</h3>
+        <p className="muted small">Das erste Foto ist das Titelbild und erscheint gross auf der Startseite und der Buchungsseite. Fotos der einzelnen Zimmertypen verwalten Sie unter «Zimmer & Tarife».</p>
+        <PhotoManager hotelId={hotel.id} roomTypeId={null} photos={hotel.content.photos ?? []} canEdit={canEdit} page="site" alt="z. B. Hotel mit Blick auf den See" />
+      </section>
+      <details className="card stack fold" id="gestaltung" open={sp.msg === "Gestaltung gespeichert"}>
+        <summary><strong>Gestaltung</strong> <span className="muted small">Layout und Schrift</span></summary>
+        <p className="muted small">Layout und Schrift gelten für alle Seiten und die Buchungsstrecke. Hauptfarbe stellen Sie oben ein, das Logo weiter unten.</p>
+        <form action={saveDesign} className="stack">
+          {hidden}
+          <fieldset className="plain" disabled={!canEdit}>
+            <legend className="small muted">Layout</legend>
+            <div className="choice-grid">
+              {LAYOUTS.map((l) => (
+                <label key={l.key} className="choice">
+                  <input type="radio" name="layout" value={l.key} defaultChecked={l.key === layout} />
+                  <span className={`layout-thumb thumb-${l.key}`} aria-hidden="true"><i /><b /><em /></span>
+                  <strong>{l.label}</strong>
+                  <span className="small muted">{l.hint}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset className="plain mt12" disabled={!canEdit} >
+            <legend className="small muted">Schrift (Titel / Text)</legend>
+            <div className="choice-grid">
+              {FONTS.map((f) => (
+                <label key={f.key} className="choice font-choice" style={fontVars(f.key) as React.CSSProperties}>
+                  <input type="radio" name="font" value={f.key} defaultChecked={f.key === font} />
+                  <strong>{f.label}</strong>
+                  <span className="font-sample">Willkommen im Glarnerland</span>
+                  <span className="small muted">{f.head} / {f.body}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          {canEdit ? <div><button className="btn small">Gestaltung speichern</button> <a className="small" href={`${base}/de`} target="_blank">Website ansehen</a></div> : null}
+        </form>
+      </details>
+      <section className="card stack" id="dokumente">
+        <h2>Dokumente (PDF)</h2>
+        <p className="muted small">Zum Beispiel Speisekarte, Preisliste, Seminarunterlagen. Auf einer Seite zeigen Sie sie mit dem Baustein «Downloads (PDF)».</p>
+        {docs.length ? (
+          <table className="table">
+            <thead><tr><th>Titel</th><th>Grösse</th><th></th></tr></thead>
+            <tbody>
+              {docs.map((d) => (
+                <tr key={d.url}>
+                  <td><a href={d.url} target="_blank">{d.title.de || d.title.en}</a>{d.title.en && d.title.de ? <span className="muted small"> · EN: {d.title.en}</span> : null}</td>
+                  <td className="small">{kb(d.bytes)}</td>
+                  <td>{canEdit ? <form action={removeDoc}>{hidden}<input type="hidden" name="url" value={d.url} /><button className="btn secondary small">Löschen</button></form> : null}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : <p className="muted small">Noch keine Dokumente.</p>}
+        {canEdit ? (
+          <form action={`/api/admin/hotels/${hotel.id}/documents`} method="post" encType="multipart/form-data" className="inline-form">
+            <div><label htmlFor="f1c507">PDF-Datei (max. 15 MB)</label><input id="f1c507" type="file" name="file" accept="application/pdf,.pdf" required /></div>
+            {langs.map((l) => (
+              <div key={l}><label>Titel {l.toUpperCase()}</label><input name={`title.${l}`} placeholder={l === "de" ? "z. B. Speisekarte" : l === "en" ? "z. B. Menu" : ""} maxLength={120} /></div>
+            ))}
+            <button className="btn small">Hochladen</button>
+          </form>
+        ) : null}
+      </section>
+      <section className="card stack" id="sprachen">
+        <h2>Sprachen</h2>
+        <p className="muted small">Deutsch ist immer dabei. Für jede weitere Sprache erscheint auf der Website ein Sprachwechsel, und Buchung, Bestätigungs-Mail und Stornoseite sind in der Sprache des Gastes. Fehlt ein Text in einer Sprache, zeigt die Website Englisch, sonst Deutsch.</p>
+        <form action={saveLanguages} className="stack">
+          {hidden}
+          <fieldset className="plain" disabled={!canEdit}>
+            <div className="weekdays">
+              {LOCALES.map((l) => (
+                <label key={l}><input type="checkbox" name="lang" value={l} defaultChecked={langs.includes(l)} disabled={l === "de"} />{LOCALE_NAMES[l]}</label>
+              ))}
+            </div>
+          </fieldset>
+          {canEdit ? <div><button className="btn small">Sprachen speichern</button></div> : null}
+        </form>
+        <p className="muted small">
+          {translationEnabled()
+            ? <>Texte übersetzen Sie im Editor jeder Seite mit «Fehlende Texte übersetzen», Zimmer & Tarife unter <a href={`/admin/${hotel.id}/rooms`}>Zimmer</a>. Noch {translationsLeft(hotel)} automatische Übersetzungen diesen Monat.</>
+            : <>Automatische Übersetzung ist noch nicht eingerichtet; die Felder können Sie im Editor von Hand ausfüllen.</>}
+          {" "}AGB und Datenschutz erscheinen auf Französisch, Italienisch und Niederländisch vorerst auf Englisch.
+        </p>
+      </section>
+      <section className="card stack" id="betriebsart">
+        <h2>Wie nutzen Sie {env().PLATFORM_NAME}?</h2>
+        <form action={saveBrand} className="stack">
+          {hidden}
+          <div className="mode-pick">
+            <label>
+              <input type="radio" name="mode" value="booking_only" defaultChecked={bookingOnly} disabled={!canEdit} />
+              <span><strong>Wir behalten unsere Website</strong><span className="muted small">{env().PLATFORM_NAME} übernimmt nur die Buchung. Der Gast kommt über einen Knopf auf unserer Website zur Buchungsseite.</span></span>
+            </label>
+            <label>
+              <input type="radio" name="mode" value="website" defaultChecked={!bookingOnly} disabled={!canEdit} />
+              <span><strong>{env().PLATFORM_NAME} ist unsere Website</strong><span className="muted small">Startseite, Zimmer und Buchung unter unserer eigenen Domain.</span></span>
+            </label>
+          </div>
+          <div className="form-grid">
+            <div><label htmlFor="f1c501">Adresse der eigenen Website</label><input id="f1c501" name="websiteUrl" type="url" placeholder="https://www.hotel.ch" defaultValue={brand.websiteUrl ?? ""} disabled={!canEdit} /></div>
+            <div>
+              <label>Hauptfarbe (Knöpfe, Links)</label>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <input name="color" type="color" defaultValue={brand.color ?? "#2f5d50"} style={{ width: 64, height: 42, padding: 2 }} disabled={!canEdit} />
+                <label className="check m0"><input type="checkbox" name="useColor" defaultChecked={!!brand.color} disabled={!canEdit} />verwenden</label>
+              </div>
+            </div>
+          </div>
+          {canEdit ? <button className="btn">Speichern</button> : null}
+        </form>
+        <p className="muted small m0">Je nach Auswahl zeigt diese Seite nur, was Sie brauchen: mit eigener Website die Einbindung in Ihre Seite, mit {env().PLATFORM_NAME} als Website zusätzlich Startseite, Seiten und Dokumente.</p>
+      </section>
     </div>
   );
 }
