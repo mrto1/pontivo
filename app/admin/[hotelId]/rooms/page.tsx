@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { WeekdayPick } from "@/components/admin/WeekdayPick";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
@@ -186,7 +187,7 @@ function PlanForm({ hotelId, roomTypeId, p, canEdit, langs, cancelHref }: { hote
         <div><label htmlFor="f238315">Mindestaufenthalt (Nächte)</label><input id="f238315" name="minNights" type="number" min={1} max={60} defaultValue={p?.minNights ?? 1} disabled={!canEdit} title="Für Pakete wie «3 Nächte mit Halbpension». Gilt immer, zusätzlich zu den Regeln im Kalender." /></div>
       </div>
       <fieldset className="plain"><legend className="small muted">Anreise nur an (keiner gewählt = jeder Tag; z. B. Ferienwohnung nur Samstag)</legend>
-        <div className="weekdays">{[1, 2, 3, 4, 5, 6, 0].map((w) => <label key={w}><input type="checkbox" name="arrivalWeekdays" value={w} defaultChecked={p?.arrivalWeekdays.includes(w)} disabled={!canEdit} />{["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][w]}</label>)}</div>
+        <WeekdayPick name="arrivalWeekdays" defaultValues={p?.arrivalWeekdays ?? []} disabled={!canEdit} />
       </fieldset>
       <div className="form-grid">
         <div>

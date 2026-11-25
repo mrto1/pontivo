@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { WeekdayPick } from "@/components/admin/WeekdayPick";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { feePercentText } from "@/src/domain/fee";
@@ -443,7 +444,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
                 {whole ? <div><label htmlFor="f020410">Endreinigung CHF (im Preis ausgewiesen)</label><input id="f020410" name="cleaning" inputMode="decimal" placeholder="80" /></div> : null}
               </div>
               <fieldset className="plain"><legend className="small muted">Anreise nur an (keiner gewählt = jeder Tag)</legend>
-                <div className="weekdays">{[1, 2, 3, 4, 5, 6, 0].map((w) => <label key={w}><input type="checkbox" name="arrival" value={w} />{WD[w]}</label>)}</div>
+                <WeekdayPick name="arrival" />
               </fieldset>
               <div><label htmlFor="f020411">Stornoregel</label><select id="f020411" name="cancel" defaultValue={whole ? "moderat" : "flexibel"}>{Object.entries(CANCEL_TEMPLATES).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}</select></div>
               {whole ? null : <label className="check"><input type="checkbox" name="breakfast" defaultChecked={hotel.propertyType !== "group_house"} />Frühstück im Preis inbegriffen</label>}

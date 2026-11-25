@@ -1,4 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
+import { WeekdayPick } from "@/components/admin/WeekdayPick";
 import { InfoTip } from "@/components/admin/InfoTip";
 import { Fragment } from "react";
 import { revalidatePath } from "next/cache";
@@ -80,11 +81,7 @@ function Weekdays() {
   return (
     <div>
       <label>Wochentage (leer = alle)</label>
-      <div className="weekdays">
-        {[1, 2, 3, 4, 5, 6, 0].map((d) => (
-          <label key={d} className="chip"><input type="checkbox" name="wd" value={d} /><span>{WD[d]}</span></label>
-        ))}
-      </div>
+      <WeekdayPick name="wd" />
     </div>
   );
 }
