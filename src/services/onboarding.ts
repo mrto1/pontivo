@@ -9,6 +9,7 @@ import { billingReady } from "../domain/platform-invoice";
 import { DEFAULT_MONTHLY_MINIMUM_RAPPEN, HOST_TERMS_VERSION } from "../legal/host-terms";
 import { enqueueEmail } from "../email/enqueue";
 import { requestLoginLink } from "../auth/session";
+import { hashPassword, passwordProblem } from "../auth/password";
 import { env } from "../env";
 import { isDisposableEmail } from "../domain/disposable-email";
 import { audit } from "./audit";
@@ -49,6 +50,11 @@ export const registerSchema = z.object({
   /** «website» = Pontivo ist die Website; «booking_only» = eigene Website behalten, nur Buchungssystem */
   mode: z.enum(["website", "booking_only"]).default("website"),
   websiteUrl: z.string().trim().max(300).optional(),
+  /** Passwort für die spätere Anmeldung. Mit Passwort bestätigt der Link in der Mail nur die Adresse (meldet nicht an). */
+  password: z.string().optional(),
+}).superRefine((v, ctx) => {
+  const p = v.password ? passwordProblem(v.password) : null;
+  if (p) ctx.addIssue({ code: "custom", path: ["password"], message: p });
 }).transform((v, ctx) => {
   if (v.mode !== "booking_only") return { ...v, websiteUrl: undefined };
   const raw = v.websiteUrl ?? "";
@@ -104,7 +110,8 @@ export async function registerHost(input: RegisterInput, now = new Date(), opts:
       onboarding: { startedAt: now.toISOString(), reminders: 0 },
       content: { languages: ["de", "en"], brand: { mode: v.mode, ...(v.websiteUrl ? { websiteUrl: v.websiteUrl } : {}) } },
     }).returning();
-    const [u] = await tx.insert(users).values({ email: v.email, name: v.contactName })
+    const passwordHash = v.password ? await hashPassword(v.password) : null;
+    const [u] = await tx.insert(users).values({ email: v.email, name: v.contactName, ...(passwordHash ? { passwordHash } : {}) })
       .onConflictDoUpdate({ target: users.email, set: { name: sql`coalesce(${users.name}, ${v.contactName})` } }).returning();
     await tx.insert(hotelMembers).values({ hotelId: h.id, userId: u.id, role: "owner" }).onConflictDoNothing();
     // Startprofil als feste Einträge: Funktionen sind von Anfang an schaltbar (Wizard «Was brauchen Sie?», Funktionen-Seite)
@@ -113,8 +120,10 @@ export async function registerHost(input: RegisterInput, now = new Date(), opts:
     return h;
   });
   // Eine einzige Mail: die Willkommensmail enthält den Anmelde-Link (keine zweite «Login-Link»-Mail)
-  const loginLink = opts.noLogin ? null : await requestLoginLink(v.email, now, { mail: false });
-  await enqueueEmail(db(), { hotelId: hotel.id, template: "host_welcome", to: v.email, language: "de", data: { contactName: v.contactName, propertyType: v.propertyType, mode: v.mode, link: loginLink } });
+  // Mit Passwort: Aktivierungslink (bestätigt nur die Adresse, Anmeldung danach mit Passwort oder Passkey). Ohne: Anmelde-Link wie bisher.
+  const activate = !!v.password;
+  const loginLink = opts.noLogin ? null : await requestLoginLink(v.email, now, { mail: false, purpose: activate ? "activate" : "login" });
+  await enqueueEmail(db(), { hotelId: hotel.id, template: "host_welcome", to: v.email, language: "de", data: { contactName: v.contactName, propertyType: v.propertyType, mode: v.mode, link: loginLink, activate } });
   return { hotel, loginLink };
 }
 

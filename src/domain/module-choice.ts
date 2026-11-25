@@ -4,17 +4,17 @@ import { MODULES, moduleDef, type ModuleRow } from "./modules";
  * Funktionswahl in Alltagssprache (Wizard-Schritt «Was brauchen Sie?») und Auflösung der Abhängigkeiten.
  * Reine Logik ohne I/O.
  */
-export type Choice = { key: string; question: string; modules: string[]; /** angekreuzt, sobald eine der Funktionen läuft (bestehende Betriebe mit nur einer davon bleiben angekreuzt) */ anyOn?: boolean };
+export type Choice = { key: string; question: string; /** Eine Zeile Erklärung unter der Frage (für Fachbegriffe) */ hint?: string; modules: string[]; /** angekreuzt, sobald eine der Funktionen läuft (bestehende Betriebe mit nur einer davon bleiben angekreuzt) */ anyOn?: boolean };
 export const CHOICES: Choice[] = [
   { key: "staff", question: "Wir arbeiten mit Personal in Rezeption und Reinigung (Tagesliste, Zimmerplan, Reinigungsliste am Handy)", modules: ["frontdesk", "housekeeping"], anyOn: true },
   { key: "restaurant", question: "Wir haben ein Restaurant oder Café (Tischreservierung, Speisekarte, Küche)", modules: ["restaurant"] },
   { key: "pos", question: "Wir wollen die Kasse von Pontivo nutzen (Bestellen, Kassieren, aufs Zimmer; CHF 29 pro Monat)", modules: ["pos"] },
-  { key: "posbridge", question: "Unsere eigene Restaurantkasse soll Posten aufs Zimmer buchen", modules: ["posbridge"] },
+  { key: "posbridge", question: "Unsere eigene Restaurantkasse soll Posten aufs Zimmer buchen", hint: "Nur wenn Sie bereits eine andere Kasse haben und deren Rechnungen aufs Zimmer gehen sollen.", modules: ["posbridge"] },
   { key: "shop", question: "Wir verkaufen Waren (Getränke, Snacks, Minibar) oder führen ein Lager", modules: ["shop"] },
-  { key: "debtors", question: "Firmenkunden bezahlen auf Rechnung", modules: ["debtors"] },
-  { key: "owners", question: "Wir verwalten Wohnungen für Eigentümer", modules: ["owners"] },
-  { key: "resources", question: "Wellness, Sauna, Seminarraum oder Tennisplatz zum Buchen", modules: ["resources"] },
-  { key: "groups", question: "Gruppen mit Zimmerblock und Rooming-Liste", modules: ["groups"] },
+  { key: "debtors", question: "Firmenkunden bezahlen auf Rechnung", hint: "Sie stellen die Rechnung aus und sehen, wer noch offen ist und wann Mahnungen fällig sind.", modules: ["debtors"] },
+  { key: "owners", question: "Wir vermieten Wohnungen im Auftrag der Eigentümer", hint: "Nur für Verwalter: Die Wohnungen gehören anderen. Pontivo erstellt jeden Monat eine Abrechnung für den Eigentümer (Umsatz, Ihre Kommission, Kosten). Eigene Wohnungen? Dann nicht ankreuzen.", modules: ["owners"] },
+  { key: "resources", question: "Gäste können Wellness, Sauna, Seminarraum oder Tennisplatz buchen", hint: "Räume und Plätze mit Zeitfenstern, getrennt von den Zimmern.", modules: ["resources"] },
+  { key: "groups", question: "Wir nehmen Gruppenbuchungen an (Reisegruppen, Vereine, Hochzeiten)", hint: "Sie reservieren mehrere Zimmer auf einmal und tragen die Namen der Teilnehmer erst später ein; die Zimmer werden automatisch freigegeben, wenn die Gruppe nicht rechtzeitig bestätigt.", modules: ["groups"] },
   { key: "access", question: "Türschlösser von Nuki mit automatischen Codes", modules: ["access"] },
   { key: "marketing", question: "Newsletter an Gäste, die zugestimmt haben", modules: ["marketing"] },
 ];

@@ -283,7 +283,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           {(resto ? CHOICES.filter((c) => RESTAURANT_CHOICES.includes(c.key)) : CHOICES).map((c) => (
             <label key={c.key} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
               <input className="w-auto-mt4" type="checkbox" name={`c_${c.key}`} value="1" defaultChecked={choiceOn(rows, c, isOn)} />
-              <span>{c.question}</span>
+              <span>{c.question}{c.hint ? <span className="small muted block">{c.hint}</span> : null}</span>
             </label>
           ))}
           <div><button className="btn">Speichern und weiter</button></div>

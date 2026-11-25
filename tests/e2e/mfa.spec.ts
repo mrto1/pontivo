@@ -31,11 +31,17 @@ test("Passkey und 2FA: einrichten, abmelden, anmelden", async ({ page, context }
   await page.fill("#municipality", `Testdorf ${id}`);
   await page.fill("#contactName", "Ruth Keller");
   await page.fill("#email", email);
+  await page.fill("#password", "Testpasswort-123");
   await page.locator("input[name=terms]").check();
   await page.waitForTimeout(3200); // Mindestzeit des Formular-Schutzes (Bots senden sofort)
-  await page.getByRole("button", { name: /Registrieren und Login-Link/ }).click();
-  await page.getByRole("link", { name: "Hier anmelden" }).click();
-  await expect(page).toHaveURL(/\/admin/);
+  await page.getByRole("button", { name: "Registrieren", exact: true }).click();
+  await page.getByRole("link", { name: "Link öffnen" }).click();
+  await expect(page.getByText("Ihre E-Mail-Adresse ist bestätigt")).toBeVisible(); // Aktivierung meldet nicht an
+  await page.fill("#email", email);
+  await page.fill("#password", "Testpasswort-123");
+  await page.waitForTimeout(800); // Mindestzeit des Formular-Schutzes
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin(?!\/login)/);
 
   // Passkey hinzufügen
   await page.goto("/admin/konto");

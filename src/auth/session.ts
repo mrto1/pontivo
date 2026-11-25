@@ -10,6 +10,9 @@ import { enqueueEmail } from "../email/enqueue";
 export const SESSION_COOKIE = "hb_session";
 const SESSION_DAYS = 30;
 const TOKEN_MINUTES = 15;
+/** Aktivierungslink aus der Registrierung: 3 Tage (die Mail wird oft erst später geöffnet) */
+const ACTIVATE_MINUTES = 3 * 24 * 60;
+export type TokenPurpose = "login" | "activate";
 
 function sign(payload: string): string {
   return crypto.createHmac("sha256", requireEnv("AUTH_SECRET")).update(payload).digest("base64url");
@@ -64,29 +67,31 @@ export function sessionCookieOptions() {
  * Magic-Link anfordern. Gibt den Link zurück (für Entwicklung ohne E-Mail-Versand), sonst null.
  * Unbekannte E-Mail-Adressen erhalten keinen Link, die Antwort an den Client ist trotzdem gleich.
  */
-export async function requestLoginLink(email: string, now = new Date(), opts: { mail?: boolean } = {}): Promise<string | null> {
+export async function requestLoginLink(email: string, now = new Date(), opts: { mail?: boolean; purpose?: TokenPurpose } = {}): Promise<string | null> {
   const [u] = await db().select().from(users).where(eq(users.email, email.trim().toLowerCase()));
   // Anmeldung nur per Passkey: kein Link (Antwort an den Client bleibt gleich, keine Auskunft über das Konto)
   if (!u || u.emailLoginDisabled) return null;
   const token = crypto.randomBytes(32).toString("base64url");
-  await db().insert(loginTokens).values({ tokenHash: sha256(token), userId: u.id, expiresAt: new Date(now.getTime() + TOKEN_MINUTES * 60_000) });
-  const link = `${env().APP_BASE_URL}/api/auth/callback?token=${token}`;
+  const purpose = opts.purpose ?? "login";
+  const minutes = purpose === "activate" ? ACTIVATE_MINUTES : TOKEN_MINUTES;
+  await db().insert(loginTokens).values({ tokenHash: sha256(token), userId: u.id, purpose, expiresAt: new Date(now.getTime() + minutes * 60_000) });
+  const link = `${env().APP_BASE_URL}/api/auth/${purpose === "activate" ? "activate" : "callback"}?token=${token}`;
   // mail: false = Link steckt in einer anderen Mail (Willkommensmail bei der Registrierung), keine zweite Mail
   if (opts.mail !== false) await enqueueEmail(db(), { hotelId: null, template: "login_link", to: u.email, data: { link } });
   return link;
 }
 
-/** Token einlösen (einmalig, 15 Minuten) → userId */
-export async function consumeLoginToken(token: string, now = new Date()): Promise<string | null> {
+/** Token einlösen (einmalig, 15 Minuten; Aktivierung 3 Tage) → userId. Ein Token gilt nur für seinen Zweck. */
+export async function consumeLoginToken(token: string, now = new Date(), purpose: TokenPurpose = "login"): Promise<string | null> {
   const [row] = await db()
     .update(loginTokens)
     .set({ usedAt: now })
-    .where(and(eq(loginTokens.tokenHash, sha256(token)), isNull(loginTokens.usedAt), gt(loginTokens.expiresAt, now)))
+    .where(and(eq(loginTokens.tokenHash, sha256(token)), eq(loginTokens.purpose, purpose), isNull(loginTokens.usedAt), gt(loginTokens.expiresAt, now)))
     .returning();
   if (!row) return null;
   // ein vor dem Abschalten ausgestellter Link gilt nicht mehr
   const [u] = await db().select({ off: users.emailLoginDisabled }).from(users).where(eq(users.id, row.userId));
-  if (!u || u.off) return null;
+  if (!u || (u.off && purpose === "login")) return null;
   // Wer den Link aus dem Postfach einlöst, hat die E-Mail-Adresse bewiesen
   await db().update(users).set({ emailVerifiedAt: now }).where(and(eq(users.id, row.userId), isNull(users.emailVerifiedAt)));
   return row.userId;

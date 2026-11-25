@@ -37,7 +37,7 @@ async function register(f: FormData) {
   let link: string | null = null;
   try {
     const r = await registerHost({
-      propertyType: s(f, "propertyType") as never, name: s(f, "name"), contactName: s(f, "contactName"), email: s(f, "email"),
+      propertyType: s(f, "propertyType") as never, name: s(f, "name"), contactName: s(f, "contactName"), email: s(f, "email"), password: s(f, "password"),
       canton: s(f, "canton") as never, municipality: s(f, "municipality"),
       mode: s(f, "mode") === "booking_only" ? "booking_only" : "website", websiteUrl: s(f, "websiteUrl"), acceptTerms: f.get("terms") === "on" ? true : (false as never),
     });
@@ -79,7 +79,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
             <p className="muted">Website, Tischreservation, Online-Bestellung mit Abholung und Lieferung und auf Wunsch Kasse, für Restaurants, Cafés und Take-aways in der Schweiz.</p>
             {helpCard}
             <ol className="register-steps">
-              <li><strong>Registrieren</strong> – Sie erhalten einen Login-Link per E-Mail.</li>
+              <li><strong>Registrieren</strong> – Sie bestätigen Ihre E-Mail-Adresse und melden sich mit Passwort an.</li>
               <li><strong>Reservation live</strong> – Öffnungszeiten und Tische angeben, Gäste reservieren sofort über Website, Link oder QR-Code.</li>
               <li><strong>Speisekarte</strong> – aus Ihrer Website oder einem PDF einlesen, prüfen, fertig.</li>
               <li><strong>Online-Bestellung</strong> – sobald Stripe Ihre Zahlungen freigibt, mit Probebestellung live schalten.</li>
@@ -92,7 +92,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
           <p className="muted">Online-Buchung mit TWINT und Kartenzahlung für Hotels, B&amp;Bs, Ferienwohnungen und Chalets in der Schweiz – mit neuer Website oder eingebaut in Ihre bestehende.</p>
           {helpCard}
           <ol className="register-steps">
-            <li><strong>Registrieren</strong> – Sie erhalten einen Login-Link per E-Mail.</li>
+            <li><strong>Registrieren</strong> – Sie bestätigen Ihre E-Mail-Adresse und melden sich mit Passwort an.</li>
             <li><strong>Einrichten</strong> – der Assistent fragt Angaben, Kurtaxe, Preise und Fotos ab. Unterbrechen jederzeit möglich.</li>
             <li><strong>Zahlungen aktivieren</strong> – Konto bei Stripe eröffnen, Geld geht direkt an Sie.</li>
             <li><strong>Online gehen</strong> – sofort buchbar. Mit eigener Website: Link oder Knopf «Buchen» einbauen, wir zeigen wie.</li>
@@ -129,10 +129,11 @@ export default async function Register({ searchParams }: { searchParams: Promise
           </div>
           <div><label htmlFor="contactName">Ihr Name</label><input id="contactName" name="contactName" required maxLength={120} autoComplete="name" /></div>
           <div><label htmlFor="email">E-Mail</label><input id="email" name="email" type="email" required maxLength={200} autoComplete="email" /></div>
+          <div><label htmlFor="password">Passwort</label><input id="password" name="password" type="password" required minLength={8} maxLength={200} autoComplete="new-password" /><span className="small muted">Mindestens 8 Zeichen. Damit melden Sie sich an; einen Passkey richten Sie später unter «Mein Konto» ein.</span></div>
           <FormGuard />
           {turnstileEnabled() ? <Turnstile siteKey={env().TURNSTILE_SITE_KEY!} /> : null}
           <label className="check"><input type="checkbox" name="terms" required /><span>Ich akzeptiere die <a href="/gastgeber-bedingungen" target="_blank">Bedingungen für Gastgeber</a> ({feePercentText()} %, mindestens CHF 19 pro Monat).</span></label>
-          <button className="btn">Registrieren und Login-Link erhalten</button>
+          <button className="btn">Registrieren</button>
           <p className="small muted">Schon registriert? <a href="/admin/login">Anmelden</a></p>
         </form>
       </div>

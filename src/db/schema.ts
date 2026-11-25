@@ -178,6 +178,8 @@ export const loginTokens = pgTable("login_tokens", {
   userId: uuid("user_id").notNull(),
   expiresAt: ts("expires_at").notNull(),
   usedAt: ts("used_at"),
+  /** "login" = meldet an; "activate" = bestätigt nur die E-Mail-Adresse (Registrierung), meldet nie an */
+  purpose: text("purpose").notNull().default("login"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 

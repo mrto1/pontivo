@@ -71,6 +71,8 @@ export default async function Login({ searchParams }: { searchParams: Promise<Re
         {sp.emailchanged ? <p className="notice">Die neue E-Mail-Adresse ist bestätigt. Bitte melden Sie sich damit an.</p> : null}
         {sp.error === "retry" ? <p className="notice warn">Bitte nochmals absenden.</p> : null}
         {sp.error === "turnstile" ? <p className="notice warn">Die Sicherheitsprüfung ist fehlgeschlagen. Bitte die Seite neu laden und nochmals versuchen.</p> : null}
+        {sp.activated ? <p className="notice" role="status">Ihre E-Mail-Adresse ist bestätigt. Melden Sie sich jetzt mit E-Mail und Passwort an.</p> : null}
+        {sp.error === "activate" ? <p className="notice warn">Der Bestätigungslink ist ungültig oder abgelaufen. Mit «Passwort vergessen?» erhalten Sie einen neuen Link.</p> : null}
         {sp.error === "link" ? <p className="notice warn">Der Link ist ungültig oder abgelaufen. Bitte neu anfordern.</p> : null}
         {sp.error === "pw" ? <p className="notice warn" role="alert">E-Mail oder Passwort stimmen nicht. «Nur Passkey» eingeschaltet? Dann melden Sie sich mit dem Passkey an.</p> : null}
         {sp.error === "rate" ? <p className="notice warn" role="alert">Zu viele Versuche. Bitte in einigen Minuten nochmals versuchen.</p> : null}

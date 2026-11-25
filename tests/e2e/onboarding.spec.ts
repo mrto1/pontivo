@@ -9,12 +9,19 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
   await page.selectOption("#canton", "GR");
   await page.fill("#municipality", `Testdorf ${id}`);
   await page.fill("#contactName", "Ruth Keller");
-  await page.fill("#email", `ruth-${id}@example.ch`);
+  const email = `ruth-${id}@example.ch`;
+  await page.fill("#email", email);
+  await page.fill("#password", "Testpasswort-123");
   await page.locator("input[name=terms]").check();
   await page.waitForTimeout(3200); // Mindestzeit des Formular-Schutzes (Bots senden sofort)
-  await page.getByRole("button", { name: /Registrieren und Login-Link/ }).click();
+  await page.getByRole("button", { name: "Registrieren", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Fast geschafft" })).toBeVisible();
-  await page.getByRole("link", { name: "Hier anmelden" }).click();
+  await page.getByRole("link", { name: "Link öffnen" }).click();
+  await expect(page.getByText("Ihre E-Mail-Adresse ist bestätigt")).toBeVisible(); // Aktivierung meldet nicht an
+  await page.fill("#email", email);
+  await page.fill("#password", "Testpasswort-123");
+  await page.waitForTimeout(800); // Mindestzeit des Formular-Schutzes
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
 
   // Nach dem Login: volles Menü, Einrichtungskarte, Hinweise auf jeder Seite; Konto über den Avatar
   await expect(page.getByRole("heading", { name: "Willkommen bei Pontivo" })).toBeVisible();
