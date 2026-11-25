@@ -14,6 +14,7 @@ import { env } from "@/src/env";
 import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
 import { setEmbeddedCheckout } from "@/src/services/payment-settings";
 import { s } from "@/src/lib/form";
+import { applyStripeBranding, BrandingError } from "@/src/integrations/stripe/branding";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,20 @@ async function billingMethod(f: FormData) {
   const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
   try { await setBillingMethod(hotel, s(f, "method") === "qr" ? "qr" : "card", actor); } catch (e) { if (!(e instanceof BillingError)) throw e; back(hotel.id, e.message); }
   back(hotel.id, s(f, "method") === "qr" ? "Grundgebühr per QR-Rechnung: gilt ab der nächsten Monatsrechnung." : "Grundgebühr per Karte: gilt ab der nächsten Monatsrechnung.");
+}
+
+async function brandingApply(f: FormData) {
+  "use server";
+  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
+  let msg: string;
+  try {
+    const r = await applyStripeBranding(hotel, actor);
+    msg = `Auf Stripe übernommen: Farbe ${r.color}${r.logo ? ", Logo" : ""}${r.icon ? " und Icon" : ""}.`;
+  } catch (e) {
+    if (!(e instanceof BrandingError)) { back(hotel.id, `Stripe: ${(e as Error).message}`); return; }
+    msg = e.message;
+  }
+  back(hotel.id, msg);
 }
 
 async function stripeRefresh(f: FormData) {
@@ -130,6 +145,18 @@ export default async function Zahlungen({ params, searchParams }: { params: Prom
           </div>
         ) : <p className="muted small">Nur Inhaber können Stripe einrichten.</p>}
       </section>
+
+      {isOwner && provider === "stripe" && hotel.stripeAccountId ? (
+        <section className="card stack" id="aussehen">
+          <h2>Aussehen der Zahlungsseite</h2>
+          <p className="small muted">Pontivo übernimmt Ihr Logo und Ihre Hauptfarbe (unter «Website &amp; Buchung») auf Ihr Stripe-Konto. Die Zahlungsseite, Belege und Stripe-Mails an Ihre Gäste erscheinen dann in Ihrem Auftritt. Nach einer Änderung von Logo oder Farbe den Knopf nochmals drücken.</p>
+          <div className="kv">
+            <span className="muted">Hauptfarbe</span><span>{hotel.content.brand?.color ?? "Standard"}</span>
+            <span className="muted">Logo</span><span>{hotel.content.brand?.logoUrl ? "vorhanden" : "noch keines (unter «Website & Buchung» hochladen)"}</span>
+          </div>
+          <form action={brandingApply}>{hidden}<button className="btn secondary small">Auf Stripe übernehmen</button></form>
+        </section>
+      ) : null}
 
       {isManager ? (
         <form action={saveDeposit} className="card stack">

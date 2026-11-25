@@ -69,6 +69,18 @@ export function mediaPath(hotelId: string, file: string): { file: string; type: 
   return { file: path.join(/* turbopackIgnore: true */ root(), hotelId, file), type: TYPES[ext] };
 }
 
+/** Bytes einer gespeicherten Datei aus ihrer /media-Adresse (null, wenn es sie nicht gibt) */
+export async function readMedia(url: string): Promise<{ bytes: Uint8Array; type: string } | null> {
+  const m = /^\/media\/([^/]+)\/([^/]+)$/.exec(url);
+  const p = m ? mediaPath(m[1], m[2]) : null;
+  if (!p) return null;
+  try {
+    return { bytes: new Uint8Array(await fs.readFile(p.file)), type: p.type };
+  } catch {
+    return null;
+  }
+}
+
 export async function deleteImage(url: string) {
   const m = /^\/media\/([^/]+)\/([^/]+)$/.exec(url);
   const p = m ? mediaPath(m[1], m[2]) : null;
