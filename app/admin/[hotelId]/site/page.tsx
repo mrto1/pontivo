@@ -319,10 +319,14 @@ export default async function Site({ params, searchParams }: { params: Promise<{
               {hidden}
               <p className="small muted m0">Einfache Startseite: Titel und Einleitung, darunter Ihre Zimmer.</p>
               <div className="form-grid">
-                <div><label htmlFor="f1c503">Titel (DE)</label><input id="f1c503" name="headlineDe" defaultValue={hotel.content?.de?.headline ?? ""} /></div>
-                <div><label htmlFor="f1c504">Titel (EN)</label><input id="f1c504" name="headlineEn" defaultValue={hotel.content?.en?.headline ?? ""} /></div>
-                <div><label htmlFor="f1c505">Einleitung (DE)</label><textarea id="f1c505" name="introDe" rows={3} defaultValue={hotel.content?.de?.intro ?? ""} /></div>
-                <div><label htmlFor="f1c506">Einleitung (EN)</label><textarea id="f1c506" name="introEn" rows={3} defaultValue={hotel.content?.en?.intro ?? ""} /></div>
+                <div className="stack">
+                  <div><label htmlFor="f1c503">Titel (Deutsch)</label><input id="f1c503" name="headlineDe" defaultValue={hotel.content?.de?.headline ?? ""} /></div>
+                  <div><label htmlFor="f1c505">Einleitung (Deutsch)</label><textarea id="f1c505" name="introDe" rows={4} defaultValue={hotel.content?.de?.intro ?? ""} /></div>
+                </div>
+                <div className="stack">
+                  <div><label htmlFor="f1c504">Titel (Englisch)</label><input id="f1c504" name="headlineEn" defaultValue={hotel.content?.en?.headline ?? ""} /></div>
+                  <div><label htmlFor="f1c506">Einleitung (Englisch)</label><textarea id="f1c506" name="introEn" rows={4} defaultValue={hotel.content?.en?.intro ?? ""} /></div>
+                </div>
               </div>
               <div><button className="btn">Speichern</button></div>
             </form>

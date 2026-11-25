@@ -67,7 +67,7 @@ async function saveBasics(f: FormData) {
   "use server";
   await step(f, ({ hotel, actor }) => updateBasics(hotel, {
     name: s(f, "name"), addressLine: s(f, "addressLine"), postalCode: s(f, "postalCode"), city: s(f, "city"), contactPhone: s(f, "phone"),
-    checkinTime: s(f, "checkin"), checkoutTime: s(f, "checkout"), intro: s(f, "intro"),
+    checkinTime: s(f, "checkin"), checkoutTime: s(f, "checkout"),
   }, actor));
 }
 
@@ -250,8 +250,6 @@ export default async function Wizard({ params, searchParams }: { params: Promise
                 {[1, 2, 3, 4, 5, 6, 0].map((i) => <div key={i}><label htmlFor={`h${i}`}>{WEEKDAYS_DE[i]}</label><input id={`h${i}`} name={`h${i}`} defaultValue={hoursText(cfg.openingHours?.[String(i)])} placeholder="11:30-14:00, 17:30-22:00" /></div>)}
               </div>
             </fieldset>
-            <div><label htmlFor="intro">Kurzbeschreibung für die Startseite (1–3 Sätze)</label>
-              <textarea id="intro" name="intro" rows={3} maxLength={1000} defaultValue={hotel.content.de?.intro ?? ""} placeholder="z. B. Gemütliche Beiz mit Gartenterrasse, saisonale Küche aus der Region." /></div>
             <div><button className="btn">Speichern und weiter</button></div>
           </form>
         );
@@ -270,8 +268,6 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             <div><label htmlFor="checkin">Check-in ab</label><input id="checkin" name="checkin" type="time" defaultValue={hotel.checkinTime.slice(0, 5)} required /></div>
             <div><label htmlFor="checkout">Check-out bis</label><input id="checkout" name="checkout" type="time" defaultValue={hotel.checkoutTime.slice(0, 5)} required /></div>
           </div>
-          <div><label htmlFor="intro">{onlyBooking ? "Kurzbeschreibung für die Buchungsseite (1–3 Sätze)" : "Kurzbeschreibung für die Startseite (1–3 Sätze)"}</label>
-            <textarea id="intro" name="intro" rows={3} maxLength={1000} defaultValue={hotel.content.de?.intro ?? ""} placeholder={whole ? "z. B. Gemütliche 3½-Zimmer-Wohnung mit Balkon und Bergsicht, 5 Minuten zur Gondelbahn." : "z. B. Familiengeführter Gasthof mit 12 Zimmern und Restaurant, mitten im Dorf."} /></div>
           <div><button className="btn">Speichern und weiter</button></div>
         </form>
       );

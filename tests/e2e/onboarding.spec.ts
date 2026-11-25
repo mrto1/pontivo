@@ -38,7 +38,6 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
   await page.fill("#addressLine", "Promenade 12");
   await page.fill("#postalCode", "7270");
   await page.fill("#city", "Davos");
-  await page.fill("#intro", "Helle 3½-Zimmer-Wohnung mit Balkon, 5 Minuten zur Parsennbahn.");
   await page.getByRole("button", { name: "Speichern und weiter" }).click();
 
   // Was brauchen Sie? (Ferienwohnung: ohne Personal vorbelegt)
