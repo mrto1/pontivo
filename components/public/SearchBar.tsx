@@ -60,7 +60,7 @@ export function SearchBar({ action, locale, defaults, today, plan, codes, code }
           <input className="upper" id="code" name="code" defaultValue={code ?? ""} autoComplete="off" maxLength={24} />
         </div>
       ) : null}
-      <button className="btn" type="submit">{d.search}</button>
+      <button className="btn search-go" type="submit">{d.search}</button>
     </form>
   );
 }

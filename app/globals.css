@@ -1201,3 +1201,5 @@ button.plan-table { font: inherit; cursor: pointer; }
 .weekdays.wd7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .weekdays.weekdays.wd7 > label:has(> input) { padding: 0; min-width: 0; }
 .wd-quick { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; margin-top: 6px; }
+/* Suchknopf: eine Zeile, so hoch wie die Felder; belegt zwei Spalten, damit der Text nie umbricht (schmal: eigene Zeile darunter) */
+.searchbar .search-go { grid-column: span 2; white-space: nowrap; min-height: 48px; padding-top: 0; padding-bottom: 0; }
