@@ -98,7 +98,7 @@ export async function goLiveProblems(hotel: Hotel): Promise<string[]> {
   // Mindestens ein Inhaber muss seine E-Mail-Adresse über den Anmelde-Link bestätigt haben
   const owners = await db().select({ at: users.emailVerifiedAt }).from(hotelMembers).innerJoin(users, eq(users.id, hotelMembers.userId))
     .where(and(eq(hotelMembers.hotelId, hotel.id), eq(hotelMembers.role, "owner")));
-  if (!owners.some((o) => o.at)) problems.push("Die E-Mail-Adresse des Inhabers ist noch nicht bestätigt (einmal über den Login-Link aus der E-Mail anmelden).");
+  if (!owners.some((o) => o.at)) problems.push("Die E-Mail-Adresse des Inhabers ist noch nicht bestätigt (Bestätigungslink in der Willkommens-E-Mail öffnen; nicht erhalten? Auf der Anmeldeseite «Passwort vergessen?» wählen, der Link bestätigt die Adresse ebenfalls).");
   const rule = restaurant ? null : await taxRuleFor(hotel, todayIn(hotel.timezone));
   if (!restaurant && (!rule || (rule.status === "needs_confirmation") || (rule.adultRappen === null))) {
     problems.push("Kurtaxe-Satz für die Gemeinde ist nicht bestätigt.");
