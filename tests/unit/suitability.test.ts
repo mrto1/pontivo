@@ -15,7 +15,7 @@ describe("Eignungs-Check (SPEC 19.14)", () => {
     expect(r.text).toContain("Treuhänder"); // Kassenmodul noch nicht vom Treuhänder bestätigt
     expect(r.text).toContain("noch nicht"); // kein Drucker, kein Terminal
   });
-  it("zu gross oder Grosssoftware: läuft daneben, auch mit Restaurant", () => {
+  it("zu gross oder Grosssoftware: ergänzt die bestehende Software, auch mit Restaurant", () => {
     expect(suitability({ rooms: MAX_ROOMS + 1, restaurantWithPos: false, software: "none" }).fit).toBe("alongside");
     expect(suitability({ rooms: MAX_ROOMS, restaurantWithPos: false, software: "none" }).fit).toBe("fits");
     const r = suitability({ rooms: 10, restaurantWithPos: true, software: "large" });

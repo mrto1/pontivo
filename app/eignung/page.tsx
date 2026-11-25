@@ -20,8 +20,10 @@ export default async function Eignung({ searchParams }: { searchParams: Promise<
       <form method="get" className="card stack">
         <div><label htmlFor="rooms">Wie viele Zimmer oder Einheiten haben Sie?</label><input id="rooms" name="rooms" type="number" min={1} max={1000} required defaultValue={answered ? rooms : undefined} /></div>
         <fieldset className="plain"><legend className="small muted">Haben Sie ein Restaurant mit eigener Kasse?</legend>
-          <label><input type="radio" name="restaurant" value="no" required defaultChecked={sp.restaurant !== "yes"} /> Nein</label>{" "}
-          <label><input type="radio" name="restaurant" value="yes" defaultChecked={sp.restaurant === "yes"} /> Ja</label>
+          <div className="yn-pick">
+            <label><input type="radio" name="restaurant" value="no" required defaultChecked={sp.restaurant !== "yes"} /><span>Nein</span></label>
+            <label><input type="radio" name="restaurant" value="yes" defaultChecked={sp.restaurant === "yes"} /><span>Ja</span></label>
+          </div>
         </fieldset>
         <div><label htmlFor="software">Welche Software nutzen Sie jetzt?</label>
           <select id="software" name="software" required defaultValue={software ?? ""}><option value="" disabled>wählen</option>{SOFTWARE.map((s) => <option key={s} value={s}>{SOFTWARE_LABEL[s]}</option>)}</select></div>

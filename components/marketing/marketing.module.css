@@ -31,7 +31,7 @@
     --pv-white: #131c2e;
   }
 }
-.page a { color: var(--pv-keep); }
+.page a:not(:global(.btn)) { color: var(--pv-keep); }
 .page :focus-visible { outline: 3px solid var(--pv-keep); outline-offset: 3px; border-radius: 4px; }
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
 

@@ -21,7 +21,7 @@ export function suitability(i: { rooms: number; restaurantWithPos: boolean; soft
   if (i.software === "large") reasons.push("Ihre heutige Software deckt Bereiche ab (Kasse, Bankett, Schlüsselkarten, Telefonanlage), die Pontivo nicht ersetzt.");
   if (reasons.length) {
     return {
-      fit: "alongside", title: "Pontivo läuft daneben",
+      fit: "alongside", title: "Pontivo ergänzt Ihre Software",
       text: "Die Direktbuchung mit Zahlung und der Kanalabgleich lassen sich trotzdem nutzen. Ihre bisherige Software bleibt für den Rest bestehen.", reasons,
     };
   }
