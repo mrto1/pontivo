@@ -9,6 +9,8 @@ const schema = z.object({
   ENVIRONMENT_LABEL: z.string().max(20).optional(),
   /** Testumgebung: alle ausgehenden E-Mails gehen an diese Adresse (Original im Betreff), nie an Gäste */
   MAIL_REDIRECT_TO: z.string().email().optional(),
+  /** Testumgebung: Mails per SMTP an einen Mail-Fänger (Mailpit, z. B. smtp://mailpit:1025) statt an Postmark. Nie in der Produktion. */
+  SMTP_URL: z.string().url().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET_CONNECT: z.string().optional(),
   // Öffentlicher Schlüssel (pk_…) für eingebettete Stripe-Komponenten (Konto eröffnen im Assistenten). Ohne: gehostetes Onboarding.

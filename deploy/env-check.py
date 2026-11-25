@@ -82,6 +82,8 @@ def main(argv):
     errors, warns, unused, missing = [], [], [], []
     get = lambda k: cfg.get(k, "")
     prod = mode == "prod"
+    # int: docker-compose.int.yml setzt SMTP_URL (Mailpit) selbst, dann braucht die .env.int weder Umleitung noch Postmark
+    smtp = bool(get("SMTP_URL")) or (not prod and "SMTP_URL:" in read(os.path.join(ROOT, "deploy/docker-compose.int.yml")))
 
     # Gefährliche Kombinationen
     if get("PAYMENT_PROVIDER") == "fake": errors.append("PAYMENT_PROVIDER=fake: Buchungen würden ohne Zahlung bestätigt.")
@@ -93,7 +95,8 @@ def main(argv):
     if prod and (not base.startswith("https://") or "localhost" in base): errors.append("APP_BASE_URL muss in der Produktion eine https-Adresse sein (kein localhost).")
     if prod and get("MAIL_REDIRECT_TO"): errors.append("MAIL_REDIRECT_TO ist gesetzt: alle Mails gingen an diese Adresse statt an Gäste (nur für die Testumgebung).")
     if prod and get("ENVIRONMENT_LABEL"): errors.append("ENVIRONMENT_LABEL ist gesetzt: die Seite würde als Testumgebung markiert und nicht indexiert.")
-    if not prod and not get("MAIL_REDIRECT_TO"): errors.append("MAIL_REDIRECT_TO fehlt: die Testumgebung könnte echte Gäste anschreiben.")
+    if prod and get("SMTP_URL"): errors.append("SMTP_URL ist gesetzt: Mails würden nur in einem Mail-Fänger landen statt bei den Gästen (nur für die Testumgebung).")
+    if not prod and not smtp and not get("MAIL_REDIRECT_TO"): errors.append("MAIL_REDIRECT_TO fehlt: die Testumgebung könnte echte Gäste anschreiben (oder SMTP_URL für Mailpit setzen).")
     if not prod and not get("ENVIRONMENT_LABEL"): warns.append("ENVIRONMENT_LABEL fehlt: die Testumgebung ist nicht als solche erkennbar.")
     if prod and "staging.channex.io" in get("CHANNEX_BASE_URL"): warns.append("CHANNEX_BASE_URL zeigt auf die Channex-Testumgebung (staging).")
     if get("EMAIL_FROM") and get("EMAIL_FROM").endswith("@example.ch"): warns.append("EMAIL_FROM ist noch die Beispieladresse.")
@@ -109,7 +112,8 @@ def main(argv):
 
     # Fehlende Einträge
     need = ["POSTGRES_PASSWORD", "APP_DOMAIN", "ACME_EMAIL", "AUTH_SECRET", "APP_BASE_URL", "PAYMENT_PROVIDER", "STRIPE_SECRET_KEY",
-            "STRIPE_WEBHOOK_SECRET_CONNECT", "POSTMARK_SERVER_TOKEN", "EMAIL_FROM", "PLATFORM_ALERT_EMAIL"]
+            "STRIPE_WEBHOOK_SECRET_CONNECT", "EMAIL_FROM", "PLATFORM_ALERT_EMAIL"]
+    if not smtp: need.append("POSTMARK_SERVER_TOKEN")
     if prod: need += ["PLATFORM_UID", "GUEST_DATA_KEY", "HOSTING_PROVIDER"]
     for k in need:
         if not get(k): missing.append(k)

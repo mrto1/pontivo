@@ -10,6 +10,7 @@ x-app: &app
     DATABASE_URL: postgres://pontivo:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt}@db:5432/pontivo
     UPLOAD_DIR: /app/data/uploads
     HOSTNAME: 0.0.0.0
+    SMTP_URL: smtp://mailpit:1025
     PORT: "3000"
   restart: unless-stopped
 
@@ -50,6 +51,19 @@ services:
       timeout: 5s
       retries: 5
 
+  # Mail-Fänger: int verschickt nie echte Mails, alles landet hier (Oberfläche: https://int.<Domain>/mail, hinter dem int-Passwort)
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    environment:
+      MP_WEBROOT: /mail
+      MP_MAX_MESSAGES: "500"
+      MP_DATABASE: /data/mailpit.db
+    volumes: [mail:/data]
+    networks:
+      default: {}
+      web: { aliases: [int-mailpit] }
+
   worker:
     <<: *app
     command: ["node", "--import", "tsx", "src/jobs/worker.ts"]
@@ -59,6 +73,7 @@ services:
 volumes:
   pgdata:
   uploads:
+  mail:
 
 networks:
   web:

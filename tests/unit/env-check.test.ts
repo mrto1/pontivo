@@ -52,7 +52,18 @@ describe("deploy/env-check.py", () => {
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 
-  it("Testumgebung verlangt Mail-Umleitung, Live-Schlüssel ist ein Fehler", () => {
+  it("Produktion mit SMTP_URL (Mail-Fänger) ist ein Fehler", () => {
+    const dir = mkdtempSync(join(tmpdir(), "envcheck-"));
+    try {
+      const f = join(dir, ".env.production");
+      writeFileSync(f, "SMTP_URL=smtp://mailpit:1025\n", { mode: 0o600 });
+      const r = run(f);
+      expect(r.status).toBe(1);
+      expect(r.stdout).toContain("SMTP_URL ist gesetzt");
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  it("int: Mailpit aus der Compose-Datei ersetzt Umleitung und Postmark; Live-Schlüssel ist ein Fehler", () => {
     const dir = mkdtempSync(join(tmpdir(), "envcheck-"));
     try {
       const f = join(dir, ".env.int");
@@ -60,7 +71,8 @@ describe("deploy/env-check.py", () => {
       const r = run(f);
       expect(r.status).toBe(1);
       expect(r.stdout).toContain("Live-Schlüssel in der Testumgebung");
-      expect(r.stdout).toContain("MAIL_REDIRECT_TO fehlt");
+      expect(r.stdout).not.toContain("MAIL_REDIRECT_TO fehlt"); // Mailpit (SMTP_URL) setzt docker-compose.int.yml
+      expect(r.stdout).not.toContain("POSTMARK_SERVER_TOKEN"); // kein Postmark in int nötig
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 });

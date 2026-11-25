@@ -55,7 +55,7 @@ docker compose --env-file .env.production -f docker-compose.prod.yml logs --tail
 | Adresse | https://int.pontivo.ch (Passwortschutz) | https://pontivo.ch |
 | Ordner auf dem Server | `/opt/pontivo-int` | `/opt/pontivo` |
 | Zahlung | Stripe Testmodus | Stripe live |
-| E-Mails | alle an `MAIL_REDIRECT_TO` | normal |
+| E-Mails | Mail-Fänger Mailpit unter `int.<Domain>/mail`, nichts wird verschickt | normal |
 | Code | `main` oder ein Branch | nur freigegebene Versionen (`prod-…`) |
 
 Der Weg einer Änderung: **Entwicklung → int ausrollen → testen → freigeben → prod ausrollen.**

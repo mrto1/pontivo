@@ -13,8 +13,21 @@ export function setMailer(m: Mailer | null) {
   override = m;
 }
 
-/** Postmark, wenn POSTMARK_SERVER_TOKEN gesetzt ist; sonst Ausgabe in der Konsole (Entwicklung). */
+/** Mail-Fänger (SMTP_URL, Testumgebung): nichts verlässt den Server. */
+export async function sendViaSmtp(url: string, msg: Parameters<Mailer>[0]) {
+  const nodemailer = await import("nodemailer");
+  const transport = nodemailer.createTransport(url);
+  try {
+    await transport.sendMail({ from: msg.from, to: msg.to, subject: msg.subject, html: msg.html, text: msg.text });
+  } finally {
+    transport.close();
+  }
+}
+
+/** SMTP_URL (Mailpit, int) → Postmark, wenn POSTMARK_SERVER_TOKEN gesetzt ist → sonst Ausgabe in der Konsole (Entwicklung). */
 async function defaultMailer(original: Parameters<Mailer>[0]) {
+  const smtp = env().SMTP_URL;
+  if (smtp) return sendViaSmtp(smtp, original);
   const msg = applyMailGuard(original, env().MAIL_REDIRECT_TO);
   const token = env().POSTMARK_SERVER_TOKEN;
   if (!token) {

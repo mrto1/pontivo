@@ -29,7 +29,12 @@ int.{$APP_DOMAIN} {
 	}
 	@geschuetzt not path /api/webhooks/* /api/health
 	import /etc/caddy/int/*.caddy
-	reverse_proxy int-app:3000
+	handle /mail* {
+		reverse_proxy int-mailpit:8025
+	}
+	handle {
+		reverse_proxy int-app:3000
+	}
 }
 
 # Eigene Domains der Hotels, z. B. www.hotel-beispiel.ch (DNS zeigt auf diesen Server)
