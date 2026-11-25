@@ -67,3 +67,13 @@ describe("Funktionswahl «Personal»", () => {
     expect(choiceOn([], staff, on([]))).toBe(false);
   });
 });
+
+import { choicesFor as choicesForKind } from "../../src/domain/module-choice";
+describe("Funktionswahl je Betriebstyp", () => {
+  it("Eigentümerabrechnung nur für Wohnungen, nicht für Hotels und Restaurants", () => {
+    const has = (k: { restaurant: boolean; wholeUnit: boolean }) => choicesForKind(k).some((c) => c.key === "owners");
+    expect(has({ restaurant: false, wholeUnit: true })).toBe(true);
+    expect(has({ restaurant: false, wholeUnit: false })).toBe(false);
+    expect(has({ restaurant: true, wholeUnit: false })).toBe(false);
+  });
+});

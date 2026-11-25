@@ -10,7 +10,7 @@ import {
   addUnit, bookingOnly, CANCEL_TEMPLATES, chooseModules, detectEmbed, goLiveFromWizard, markEmbedded, isWholeUnit, nextOpenStep, onboardingSteps, OnboardingError, PROPERTY_LABEL,
   goLiveRestaurant, isRestaurant, markSetupCompleteIfDone, quickTables, setArrivalInfo, setGuestInfo, unitWord, updateBasics, type StepKey,
 } from "@/src/services/onboarding";
-import { CHOICES, RESTAURANT_CHOICES, choiceOn } from "@/src/domain/module-choice";
+import { choicesFor, choiceOn } from "@/src/domain/module-choice";
 import { WEEKDAYS_DE, hoursText, parseHoursText } from "@/src/domain/reservations";
 import { getSettings, saveOpeningHours, saveSettings } from "@/src/services/reservations";
 import { listItems, listTables, PosError } from "@/src/services/pos";
@@ -104,7 +104,7 @@ async function saveOnlineStep(f: FormData) {
 async function saveModules(f: FormData) {
   "use server";
   await step(f, async ({ hotel, actor }) => {
-    const shown = isRestaurant(hotel.propertyType) ? CHOICES.filter((c) => RESTAURANT_CHOICES.includes(c.key)) : CHOICES;
+    const shown = choicesFor({ restaurant: isRestaurant(hotel.propertyType), wholeUnit: isWholeUnit(hotel.propertyType) });
     // Reines Restaurant: das Modul «restaurant» bleibt an
     await chooseModules(hotel, { ...Object.fromEntries(shown.flatMap((c) => c.modules.map((m) => [m, f.get(`c_${c.key}`) === "1"]))), ...(isRestaurant(hotel.propertyType) ? { restaurant: true } : {}) }, actor);
   });
@@ -280,7 +280,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       body = (
         <form action={saveModules} className="stack">{H}
           <p className="muted m0">Kreuzen Sie an, was auf Sie zutrifft. Alles andere bleibt ausgeblendet und lässt sich jederzeit unter «Funktionen» ändern.</p>
-          {(resto ? CHOICES.filter((c) => RESTAURANT_CHOICES.includes(c.key)) : CHOICES).map((c) => (
+          {choicesFor({ restaurant: !!resto, wholeUnit: whole }).map((c) => (
             <label key={c.key} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
               <input className="w-auto-mt4" type="checkbox" name={`c_${c.key}`} value="1" defaultChecked={choiceOn(rows, c, isOn)} />
               <span>{c.question}{c.hint ? <span className="small muted block">{c.hint}</span> : null}</span>

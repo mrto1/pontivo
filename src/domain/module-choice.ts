@@ -12,7 +12,7 @@ export const CHOICES: Choice[] = [
   { key: "posbridge", question: "Unsere eigene Restaurantkasse soll Posten aufs Zimmer buchen", hint: "Nur wenn Sie bereits eine andere Kasse haben und deren Rechnungen aufs Zimmer gehen sollen.", modules: ["posbridge"] },
   { key: "shop", question: "Wir verkaufen Waren (Getränke, Snacks, Minibar) oder führen ein Lager", modules: ["shop"] },
   { key: "debtors", question: "Firmenkunden bezahlen auf Rechnung", hint: "Sie stellen die Rechnung aus und sehen, wer noch offen ist und wann Mahnungen fällig sind.", modules: ["debtors"] },
-  { key: "owners", question: "Wir vermieten Wohnungen im Auftrag der Eigentümer", hint: "Nur für Verwalter: Die Wohnungen gehören anderen. Pontivo erstellt jeden Monat eine Abrechnung für den Eigentümer (Umsatz, Ihre Kommission, Kosten). Eigene Wohnungen? Dann nicht ankreuzen.", modules: ["owners"] },
+  { key: "owners", question: "Wir vermieten Ferienwohnungen im Auftrag der Eigentümer", hint: "Sie verwalten Wohnungen, die anderen gehören, und rechnen monatlich mit ihnen ab (Umsatz, Ihre Kommission, Kosten).", modules: ["owners"] },
   { key: "resources", question: "Gäste können Wellness, Sauna, Seminarraum oder Tennisplatz buchen", hint: "Räume und Plätze mit Zeitfenstern, getrennt von den Zimmern.", modules: ["resources"] },
   { key: "groups", question: "Wir nehmen Gruppenbuchungen an (Reisegruppen, Vereine, Hochzeiten)", hint: "Sie reservieren mehrere Zimmer auf einmal und tragen die Namen der Teilnehmer erst später ein; die Zimmer werden automatisch freigegeben, wenn die Gruppe nicht rechtzeitig bestätigt.", modules: ["groups"] },
   { key: "access", question: "Türschlösser von Nuki mit automatischen Codes", modules: ["access"] },
@@ -32,6 +32,14 @@ export function startModules(wholeUnit: boolean, restaurant = false): Record<str
 
 /** Fragen im Assistenten für reine Restaurants (ohne Zimmer-Fragen) */
 export const RESTAURANT_CHOICES = ["pos", "shop", "marketing", "debtors"];
+/** Nur für Verwalter ganzer Wohnungen sinnvoll: in Hotels und B&Bs nicht angeboten */
+const WHOLE_UNIT_ONLY = ["owners"];
+
+/** Fragen für diesen Betriebstyp: Restaurants ohne Zimmer-Fragen, Hotels und B&Bs ohne Eigentümerabrechnung */
+export function choicesFor(kind: { restaurant: boolean; wholeUnit: boolean }): Choice[] {
+  if (kind.restaurant) return CHOICES.filter((c) => RESTAURANT_CHOICES.includes(c.key));
+  return kind.wholeUnit ? CHOICES : CHOICES.filter((c) => !WHOLE_UNIT_ONLY.includes(c.key));
+}
 
 /** Ist die Auswahl an? (alle Funktionen dahinter laufen) */
 export const choiceOn = (rows: ModuleRow[], c: Choice, isOn: (rows: ModuleRow[], key: string) => boolean) => (c.anyOn ? c.modules.some((k) => isOn(rows, k)) : c.modules.every((k) => isOn(rows, k)));
