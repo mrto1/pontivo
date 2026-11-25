@@ -10,6 +10,9 @@ import { CHAT_TEXT } from "@/src/i18n/chat";
 import { planName, roomName } from "@/src/domain/i18n-names";
 import { CancelBox } from "@/components/public/CancelBox";
 import { AutoRefresh } from "@/components/public/AutoRefresh";
+import { ResumePayment } from "@/components/public/ResumePayment";
+import { PAY } from "@/src/i18n/pay";
+import { hasElementPayment } from "@/src/services/element-payments";
 import { checkinContext } from "@/src/services/guests";
 import { CI } from "@/src/i18n/checkin";
 import { bookingExtrasOf } from "@/src/services/extras";
@@ -74,6 +77,8 @@ export default async function BookingView({ params, searchParams }: { params: Pr
   // Ankunftsinfos (Code, WLAN …) nur während des Aufenthalts einer bestätigten Buchung
   const arrival = arrivalAllowed({ booking, hotel }) ? arrivalText({ hotel, roomType }, locale) : "";
 
+  // Payment Element (SPEC 19.52): offene Zahlung einer noch reservierten Buchung kann fortgesetzt werden
+  const resumable = booking.status === "hold" && (await hasElementPayment(booking.id));
   const pt = PORTAL[locale];
   const guestInfo = booking.status === "confirmed" ? tr(hotel.content.guestInfo, locale).trim() : "";
   const extrasOffer = await offerForBooking(token);
@@ -91,9 +96,11 @@ export default async function BookingView({ params, searchParams }: { params: Pr
       <section className="pad32">
         <h1>{d.booking}</h1>
         {sp.paid && booking.status === "confirmed" ? <p className="notice">{d.paidThanks}</p> : null}
-        {sp.paid && booking.status === "hold" ? (<><p className="notice">{d.paymentPending}</p><AutoRefresh seconds={3} /></>) : null}
+        {sp.redirect_status === "failed" && booking.status === "hold" ? <p className="notice warn">{PAY[locale].failedReturn}</p> : null}
+        {sp.paid && booking.status === "hold" && sp.redirect_status !== "failed" ? (<><p className="notice">{d.paymentPending}</p><AutoRefresh seconds={3} /></>) : null}
         {sp.balance_paid ? <p className="notice">{d.balancePaidThanks}</p> : null}
         {sp.cancelled_payment && booking.status === "hold" ? <p className="notice warn">{d.paymentAborted}</p> : null}
+        {booking.status === "hold" && resumable ? <ResumePayment locale={locale} token={token} returnUrl={`${base}/b/${token}?paid=1`} rebookHref={`${base}/`} /> : null}
         <div className="card">
           <table className="rows">
             <tbody>

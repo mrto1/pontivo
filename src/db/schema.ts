@@ -75,7 +75,7 @@ export type HotelContent = {
   /** Monatsmail an die Inhaber (SPEC 19.32); Standard an, false = aus */
   monthlyMail?: boolean;
   /** Zahlung (SPEC 19.25): Stripe Checkout eingebettet statt Weiterleitung */
-  payment?: { embedded?: boolean };
+  payment?: { embedded?: boolean; /** SPEC 19.52: hosted = Weiterleitung, embedded = Checkout eingebettet, element = Payment Element */ ui?: "hosted" | "embedded" | "element" };
   /** Angebotene Sprachen der Website (src/i18n/dict.ts hotelLocales), fehlt = Deutsch und Englisch */
   languages?: string[];
   /** Automatische Übersetzungen pro Monat ("YYYY-MM" → Anzahl), für das Limit */
@@ -674,7 +674,7 @@ export const platformCharges = pgTable("platform_charges", {
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   error: text("error"),
   attempts: integer("attempts").notNull().default(0),
-  /** Rechnung an das Hotel (SPEC 19.30): Wert aller Leistungen ohne MWST, MWST-Satz und -Betrag, Nummer und Datum; chargeRappen = bei der Karte noch zu belasten (inkl. MWST) */
+  /** Rechnung an das Hotel (SPEC 19.52): Wert aller Leistungen ohne MWST, MWST-Satz und -Betrag, Nummer und Datum; chargeRappen = bei der Karte noch zu belasten (inkl. MWST) */
   netRappen: integer("net_rappen").notNull().default(0),
   vatBps: integer("vat_bps").notNull().default(0),
   vatRappen: integer("vat_rappen").notNull().default(0),

@@ -15,9 +15,13 @@ import { raiseAlert } from "./monitor";
 
 export type SessionPaid = (hotel: Hotel, sessionId: string) => Promise<boolean>;
 
-/** Fragt Stripe (Checkout Session auf dem Konto des Hotels): bezahlt? */
+/** Fragt Stripe (Checkout Session oder, bei «pi_», PaymentIntent des Payment Element auf dem Konto des Hotels): bezahlt? */
 export const stripeSessionPaid: SessionPaid = async (hotel, sessionId) => {
   if (!hotel.stripeAccountId) return false;
+  if (sessionId.startsWith("pi_")) {
+    const pi = await stripe().paymentIntents.retrieve(sessionId, undefined, { stripeAccount: hotel.stripeAccountId });
+    return pi.status === "succeeded";
+  }
   const s = await stripe().checkout.sessions.retrieve(sessionId, undefined, { stripeAccount: hotel.stripeAccountId });
   return s.payment_status === "paid";
 };
@@ -37,11 +41,11 @@ export async function reconcilePayments(now = new Date(), opts: { sessionPaid?: 
   const sessionPaid = opts.sessionPaid ?? (env().PAYMENT_PROVIDER === "stripe" ? stripeSessionPaid : null);
   if (sessionPaid) {
     const open = rows<{ booking_id: string; hotel_id: string; session: string; reference: string; status: string }>(await db().execute(sql`
-      SELECT p.booking_id, p.hotel_id, p.stripe_checkout_session_id AS session, b.reference, b.status
+      SELECT p.booking_id, p.hotel_id, COALESCE(p.stripe_checkout_session_id, p.stripe_payment_intent_id) AS session, b.reference, b.status
         FROM payments p JOIN bookings b ON b.id = p.booking_id
        WHERE p.status = 'pending' AND b.status IN ('hold','expired','cancelled')
          AND p.created_at < ${iso(30 * 60_000)}::timestamptz AND p.created_at > ${iso(5 * DAY)}::timestamptz
-         AND p.stripe_checkout_session_id IS NOT NULL
+         AND COALESCE(p.stripe_checkout_session_id, p.stripe_payment_intent_id) IS NOT NULL
        ORDER BY p.created_at DESC LIMIT 200`));
     for (const o of open) {
       const [h] = await db().select().from(hotels).where(eq(hotels.id, o.hotel_id));

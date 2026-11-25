@@ -360,14 +360,10 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       body = (
         <form action={saveUmstieg} className="stack">{H}
           <p className="muted m0">Haben Sie bereits eine Hotelsoftware oder Buchungsverwaltung?</p>
-          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
-            <input className="w-auto-mt4" type="radio" name="answer" value="none" defaultChecked={hotel.onboarding.previousSoftware !== "yes"} />
-            <span>Nein, ich starte neu mit Pontivo.</span>
-          </label>
-          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
-            <input className="w-auto-mt4" type="radio" name="answer" value="yes" defaultChecked={hotel.onboarding.previousSoftware === "yes"} />
-            <span>Ja, ich wechsle von einer anderen Software und möchte meine Reservierungen übernehmen.</span>
-          </label>
+          <div className="mode-pick">
+            <label><input type="radio" name="answer" value="none" defaultChecked={hotel.onboarding.previousSoftware !== "yes"} /><span><strong>Nein, ich starte neu mit Pontivo.</strong></span></label>
+            <label><input type="radio" name="answer" value="yes" defaultChecked={hotel.onboarding.previousSoftware === "yes"} /><span><strong>Ja, ich wechsle von einer anderen Software</strong><span className="small muted">und möchte meine Reservierungen übernehmen.</span></span></label>
+          </div>
           <p className="small muted m0">Bei «Ja» läuft Ihre alte Software zunächst parallel weiter. Unter «Datenübernahme» finden Sie dann den Import, die Umschalt-Checkliste und Hinweise zum Parallelbetrieb.</p>
           <div><button className="btn">Speichern und weiter</button></div>
         </form>

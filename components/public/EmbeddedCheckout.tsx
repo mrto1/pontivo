@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
  * Stripe.js wird von js.stripe.com geladen (Stripe verlangt das), die Funktion `createEmbeddedCheckoutPage` und `fetchClientSecret` stehen in der Stripe-Doku.
  * Bei Direct Charges wird Stripe.js mit `{ stripeAccount }` initialisiert (im Teststand am 20.11.2026 geprüft, QUESTIONS.md).
  */
-type StripeJs = (key: string, opts?: { stripeAccount?: string }) => { createEmbeddedCheckoutPage: (o: { fetchClientSecret: () => Promise<string> }) => Promise<{ mount: (el: HTMLElement) => void; destroy: () => void }> };
+export type StripeJs = (key: string, opts?: { stripeAccount?: string }) => { createEmbeddedCheckoutPage: (o: { fetchClientSecret: () => Promise<string> }) => Promise<{ mount: (el: HTMLElement) => void; destroy: () => void }> };
 declare global { interface Window { Stripe?: StripeJs } }
 
 const SRC = "https://js.stripe.com/endive/stripe.js";
@@ -15,7 +15,7 @@ let mounting: Promise<void> = Promise.resolve();
 
 // Ein einziges Laden pro Seite (der Entwicklungsmodus mountet doppelt; Stripe warnt sonst «mehrfach geladen»)
 let stripePromise: Promise<StripeJs> | null = null;
-function loadStripe(): Promise<StripeJs> {
+export function loadStripe(): Promise<StripeJs> {
   if (stripePromise) return stripePromise;
   stripePromise = new Promise((resolve, reject) => {
     if (window.Stripe) return resolve(window.Stripe);

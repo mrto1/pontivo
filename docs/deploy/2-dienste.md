@@ -19,7 +19,7 @@ E-Mail, Zahlung, Channex, Bot-Schutz, eigene Domains, Push, KI und Buchhaltung. 
 
 - **Stripe** (Dashboard → Developers → Webhooks): Endpoint für **Connected accounts** anlegen,
   URL `https://pontivo.ch/api/webhooks/stripe`, Ereignisse: `checkout.session.completed`, `checkout.session.expired`,
-  `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `account.updated`, `charge.refunded`, `charge.dispute.created`.
+  `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `payment_intent.succeeded`, `payment_intent.canceled`, `payment_intent.payment_failed`, `account.updated`, `charge.refunded`, `charge.dispute.created`.
   Signing secret → `STRIPE_WEBHOOK_SECRET_CONNECT`. Zusätzlich in Stripe Connect die Plattform-Einstellungen (Name, Logo, Branding) ausfüllen.
 - **Channex**: Den Staging-API-Key vorher **neu erzeugen** (er stand im Chat) und als `CHANNEX_API_KEY` eintragen, `./deploy.sh`. Dann den Webhook mit einem Befehl einrichten:
   ```bash

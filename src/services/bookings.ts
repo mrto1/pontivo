@@ -27,6 +27,7 @@ import { benefitsFor } from "../domain/direct-tools";
 import { resolveCode } from "./direct-tools";
 import { pushForBooking } from "../push/service";
 import { env } from "../env";
+import { cancelPendingIntents, sweepIntents } from "./element-payments";
 
 /**
  * Hold-Dauer. SPEC 5.3 nennt 30 Minuten; Stripe Checkout verlangt expires_at >= 30 Minuten
@@ -172,7 +173,7 @@ export class RollbackSoldOut extends Error {}
 export async function createDirectBooking(
   hotel: Hotel,
   input: CreateBookingInput,
-  opts: { now?: Date; ip?: string; /** Rückkehr-Adresse der eigenen Website (SPEC 19.22), vom Aufrufer gegen die erlaubten Ursprünge geprüft */ returnUrl?: string; /** SPEC 19.25: eingebettetes Checkout anfordern (liefert clientSecret statt Weiterleitung) */ embedded?: boolean } = {},
+  opts: { now?: Date; ip?: string; /** Rückkehr-Adresse der eigenen Website (SPEC 19.22), vom Aufrufer gegen die erlaubten Ursprünge geprüft */ returnUrl?: string; /** SPEC 19.25: eingebettetes Checkout anfordern (liefert clientSecret statt Weiterleitung) */ embedded?: boolean; /** SPEC 19.52: Payment Element (liefert clientSecret eines PaymentIntent) */ element?: boolean } = {},
 ): Promise<{ booking: Booking; checkoutUrl: string; clientSecret?: string; stripeAccountId?: string }> {
   const provider = await getPaymentProvider();
   if (!isBookable(hotel, provider.name)) throw new BookingError("hotel_not_bookable", 403);
@@ -311,7 +312,7 @@ export async function createDirectBooking(
     await confirmBooking(booking.id, { method: "voucher", actor: "guest" });
     return { booking, checkoutUrl: `${base}/b/${booking.publicToken}?paid=1` };
   }
-  let checkout: { url: string; sessionId: string; clientSecret?: string };
+  let checkout: { url: string; sessionId: string; clientSecret?: string; paymentIntentId?: string };
   try {
     checkout = await provider.createCheckout({
       hotel,
@@ -322,6 +323,7 @@ export async function createDirectBooking(
       cancelUrl: opts.returnUrl ? withParams(opts.returnUrl, { reference: booking.reference, result: "cancelled" }) : `${base}/b/${booking.publicToken}?cancelled_payment=1`,
       description: `${t(lang).stay} ${hotel.name}, ${input.checkin} – ${input.checkout}`,
       embedded: opts.embedded,
+      element: opts.element,
     });
   } catch (e) {
     await releaseHold(booking.id, { reason: "checkout_failed", actor: "system" });
@@ -331,7 +333,8 @@ export async function createDirectBooking(
   await db().insert(payments).values({
     hotelId: hotel.id,
     bookingId: booking.id,
-    stripeCheckoutSessionId: checkout.sessionId,
+    stripeCheckoutSessionId: checkout.sessionId || null,
+    stripePaymentIntentId: checkout.paymentIntentId ?? null,
     amountRappen: cardRappen,
     applicationFeeRappen: feeShare(booking.platformFeeRappen, cardTotal, cardRappen),
     kind: booking.balanceRappen > 0 ? "deposit" : "full",
@@ -427,13 +430,15 @@ async function setPaymentInfo(
   };
   const where = pay.sessionId
     ? and(eq(payments.bookingId, booking.id), eq(payments.stripeCheckoutSessionId, pay.sessionId))
-    : eq(payments.bookingId, booking.id);
+    : pay.paymentIntentId
+      ? and(eq(payments.bookingId, booking.id), eq(payments.stripePaymentIntentId, pay.paymentIntentId))
+      : eq(payments.bookingId, booking.id);
   const updated = await tx.update(payments).set(set).where(where).returning({ id: payments.id });
-  if (updated.length === 0 && pay.sessionId) {
+  if (updated.length === 0 && (pay.sessionId || pay.paymentIntentId)) {
     await tx.insert(payments).values({
       hotelId: booking.hotelId,
       bookingId: booking.id,
-      stripeCheckoutSessionId: pay.sessionId,
+      stripeCheckoutSessionId: pay.sessionId ?? null,
       stripePaymentIntentId: pay.paymentIntentId ?? null,
       method: pay.method ?? null,
       amountRappen: pay.amountRappen ?? booking.totalRappen - booking.voucherRappen - booking.balanceRappen,
@@ -473,7 +478,7 @@ export async function releaseHold(
   opts: { reason: string; actor: string; paymentFailed?: boolean; now?: Date },
 ): Promise<boolean> {
   const now = opts.now ?? new Date();
-  return db().transaction(async (tx) => {
+  const released = await db().transaction(async (tx) => {
     const [b] = rows<{ status: string }>(await tx.execute(sql`SELECT status FROM bookings WHERE id = ${bookingId} FOR UPDATE`));
     if (!b || b.status !== "hold") return false;
     const [booking] = await tx.select().from(bookings).where(eq(bookings.id, bookingId));
@@ -490,6 +495,9 @@ export async function releaseHold(
     await enqueueWebhook(tx, booking.hotelId, "booking.expired", bookingPayload({ ...booking, status: "expired" }), now);
     return true;
   });
+  // Payment Element (SPEC 19.52): offenen PaymentIntent abbrechen, sonst könnte der Gast nach Ablauf noch zahlen
+  if (released) await cancelPendingIntents(bookingId);
+  return released;
 }
 
 /** Job alle 60 s: abgelaufene Holds freigeben */
@@ -502,6 +510,7 @@ export async function expireHolds(now: Date = new Date()): Promise<number> {
   for (const { id } of due) {
     if (await releaseHold(id, { reason: "hold_expired", actor: "system", now })) n++;
   }
+  await sweepIntents(now).catch((e) => console.error("[element] Nachholen fehlgeschlagen:", (e as Error).message));
   return n;
 }
 

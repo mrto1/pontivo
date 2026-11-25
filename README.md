@@ -59,7 +59,7 @@ Abnahmetests (SPEC 12): `tests/unit/pricing.test.ts` (Preis-Testfälle 5.2), `te
    ```bash
    stripe listen --forward-connect-to localhost:3000/api/webhooks/stripe
    ```
-   Das angezeigte `whsec_...` als `STRIPE_WEBHOOK_SECRET_CONNECT` eintragen. Ereignisse: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`, `charge.dispute.created`, `account.updated`.
+   Das angezeigte `whsec_...` als `STRIPE_WEBHOOK_SECRET_CONNECT` eintragen. Ereignisse: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `payment_intent.succeeded`, `payment_intent.canceled`, `payment_intent.payment_failed`, `charge.refunded`, `charge.dispute.created`, `account.updated`.
 4. Admin → Einstellungen → „Stripe-Konto einrichten“ → Test-Onboarding durchklicken → zurück → „Status neu laden“. Danach kann das Hotel live geschaltet werden.
 5. Buchen mit Testkarte `4242 4242 4242 4242`. TWINT muss im Stripe-Dashboard freigeschaltet sein.
 

@@ -20,6 +20,27 @@ export class StripePaymentProvider implements PaymentProvider {
     const amount = cardTotal - booking.balanceRappen; // bei Anzahlung nur der Teil von heute
     const twintAllowed = hotel.stripeTwintActive && amount <= TWINT_MAX_RAPPEN;
     const metadata = { booking_id: booking.id, hotel_id: hotel.id };
+    if (a.element) {
+      // SPEC 19.52: Payment Element. PaymentIntent als Direct Charge; läuft anders als eine Checkout-Session nicht von selbst ab,
+      // deshalb bricht Pontivo ihn beim Ablauf der Reservierung selbst ab (cancelPendingIntents in bookings.ts).
+      // Zahlarten dynamisch aus den Stripe-Einstellungen des Hotels (wie beim Checkout); TWINT nur, wenn aktiv und unter dem Limit.
+      const pi = await stripe().paymentIntents.create(
+        {
+          amount,
+          currency: "chf",
+          automatic_payment_methods: { enabled: true },
+          ...(twintAllowed ? {} : { excluded_payment_method_types: ["twint" as const] }),
+          application_fee_amount: feeShare(booking.platformFeeRappen, cardTotal, amount),
+          receipt_email: a.guestEmail,
+          description: a.description,
+          // flow=element: nur diese Zahlungen bestätigt der Webhook payment_intent.succeeded (Checkout-Zahlungen laufen über die Session)
+          metadata: { ...metadata, flow: "element", reference: booking.reference },
+        },
+        { stripeAccount: hotel.stripeAccountId, idempotencyKey: `pi-${booking.id}` },
+      );
+      if (!pi.client_secret) throw new Error("Stripe lieferte kein client_secret");
+      return { url: "", sessionId: "", clientSecret: pi.client_secret, paymentIntentId: pi.id };
+    }
     const session = await stripe().checkout.sessions.create(
       {
         mode: "payment",

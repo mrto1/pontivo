@@ -285,3 +285,9 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - Annahme (`// ASSUMPTION:` in `src/integrations/stripe/branding.ts`): Upload im Namen des Betriebs-Kontos. Einmal mit einem Test-Hotel auf int prüfen (Zahlungsseite, Beleg).
 
 - **Stripe-Branding der Betriebe** (`src/integrations/stripe/branding.ts`): Logo und Hauptfarbe werden per Accounts v2 (`configuration.merchant.branding`) auf das Stripe-Konto des Betriebs gesetzt; die Bilder werden im Namen des Kontos hochgeladen (`business_logo`, `business_icon`). Annahme, noch nicht gegen ein echtes Konto geprüft: bitte einmal mit einem Test-Betrieb auf int ausprobieren (Zahlungsseite zeigt Logo und Farbe?). Offen: Hell/Dunkel (siehe Checkout-Sessions `branding_settings`).
+
+## Payment Element (SPEC 19.52)
+- [ ] **Testlauf auf int** (Stripe-Testmodus, `STRIPE_PUBLISHABLE_KEY` gesetzt, Webhook um `payment_intent.succeeded`, `payment_intent.canceled`, `payment_intent.payment_failed` erweitert): Karte 4242 4242 4242 4242 (bestätigt), 4000 0000 0000 9995 (abgelehnt, erneut versuchen), 4000 0025 0000 3155 (3-D-Secure), TWINT-Testzahlung (bestätigen, abbrechen, ablaufen lassen), Seite während der Zahlung neu laden («Zahlung fortsetzen»), Reservierung ablaufen lassen (PaymentIntent muss bei Stripe «canceled» sein), Werbeblocker an (Hinweis «Erneut versuchen»).
+- [ ] ASSUMPTION: Stripe.js wird wie beim eingebetteten Checkout mit `{ stripeAccount }` initialisiert und `elements({ clientSecret })` erwartet den PaymentIntent des verbundenen Kontos. Mit einer Testbuchung prüfen.
+- [ ] ASSUMPTION: Webfont des Hotels im Zahlungsformular nicht übernommen (Systemschrift), die Farben schon. Bei Bedarf `fonts: [{ cssSrc }]` nachrüsten.
+- [ ] Ob Apple Pay und Google Pay im Payment Element erscheinen, hängt von Domain-Registrierung und Einstellungen des Hotelkontos ab; nicht geprüft.

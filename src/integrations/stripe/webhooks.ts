@@ -164,18 +164,24 @@ async function onPaid(session: Stripe.Checkout.Session, account: string) {
     }
     return;
   }
-  const method = piId ? await paymentMethodOf(piId, account) : null;
+  await settleBooking(found, { sessionId: session.id, piId, amountRappen: session.amount_total, account });
+}
+
+/** Buchung nach erfolgreicher Zahlung bestätigen; kam sie zu spät und das Zimmer ist weg → volle Rückerstattung (SPEC 5.4) */
+async function settleBooking(found: { booking: typeof bookings.$inferSelect; hotel: typeof hotels.$inferSelect }, p: { sessionId: string | null; piId: string | null; amountRappen: number | null; account: string }) {
+  const { piId } = p;
+  const method = piId ? await paymentMethodOf(piId, p.account) : null;
   const result = await confirmBooking(found.booking.id, {
-    sessionId: session.id,
+    sessionId: p.sessionId,
     paymentIntentId: piId,
     method,
-    amountRappen: session.amount_total,
+    amountRappen: p.amountRappen,
     actor: "stripe",
   });
   if (result === "refund_required" && piId) {
     // Zahlung kam nach Ablauf, Zimmer ist weg → volle Rückerstattung inkl. Gebühr (SPEC 5.4)
     const provider = await getPaymentProvider();
-    const amount = session.amount_total ?? found.booking.totalRappen;
+    const amount = p.amountRappen ?? found.booking.totalRappen;
     await provider.refund({ hotel: found.hotel, booking: found.booking, paymentIntentId: piId, amountRappen: amount });
     await db().transaction(async (tx) => {
       await tx.update(payments).set({ refundedRappen: amount, status: "refunded", updatedAt: new Date() }).where(eq(payments.stripePaymentIntentId, piId));
@@ -234,6 +240,28 @@ async function processEvent(event: Stripe.Event) {
       if (found) await releaseHold(found.booking.id, { reason: "checkout_expired", actor: "stripe", paymentFailed: true });
       return;
     }
+    // Payment Element (SPEC 19.52): nur PaymentIntents mit flow=element. Die PaymentIntents hinter Checkout-Sessions
+    // tragen dieselben booking_id, werden aber über checkout.session.completed bestätigt (sonst doppelt).
+    case "payment_intent.succeeded": {
+      const pi = event.data.object as Stripe.PaymentIntent;
+      if (pi.metadata?.flow !== "element" || !account) return;
+      const found = await bookingForSession({ metadata: pi.metadata } as unknown as Stripe.Checkout.Session, account);
+      if (!found) return;
+      await settleBooking(found, { sessionId: null, piId: pi.id, amountRappen: pi.amount_received || pi.amount, account });
+      return;
+    }
+    case "payment_intent.canceled": {
+      // Von Pontivo beim Ablauf abgebrochen oder vom Hotel im Stripe-Dashboard: Reservierung freigeben (idempotent)
+      const pi = event.data.object as Stripe.PaymentIntent;
+      if (pi.metadata?.flow !== "element" || !account) return;
+      const found = await bookingForSession({ metadata: pi.metadata } as unknown as Stripe.Checkout.Session, account);
+      if (found) await releaseHold(found.booking.id, { reason: "payment_canceled", actor: "stripe", paymentFailed: true });
+      return;
+    }
+    case "payment_intent.payment_failed":
+      // Absichtlich nichts: ein abgelehnter Versuch (Karte, TWINT nicht bestätigt) lässt den Gast im selben Formular erneut zahlen.
+      // Die Reservierung läuft nach 32 Minuten von selbst ab und bricht den PaymentIntent ab.
+      return;
     case "charge.refunded": {
       const ch = event.data.object as Stripe.Charge;
       const piId = typeof ch.payment_intent === "string" ? ch.payment_intent : ch.payment_intent?.id;

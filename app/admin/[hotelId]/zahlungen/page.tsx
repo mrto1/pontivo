@@ -12,7 +12,7 @@ import { getPlatformBilling } from "@/src/services/platform-settings";
 import { formatChf } from "@/src/domain/money";
 import { env } from "@/src/env";
 import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
-import { setEmbeddedCheckout } from "@/src/services/payment-settings";
+import { paymentUi, setPaymentUi, type PaymentUi } from "@/src/services/payment-settings";
 import { s } from "@/src/lib/form";
 import { applyStripeBranding, BrandingError } from "@/src/integrations/stripe/branding";
 
@@ -32,10 +32,11 @@ async function saveDeposit(f: FormData) {
   back(hotel.id, "Gespeichert");
 }
 
-async function saveEmbedded(f: FormData) {
+async function savePaymentUi(f: FormData) {
   "use server";
   const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
-  await setEmbeddedCheckout(hotel, s(f, "embedded") === "on", actor);
+  const ui = s(f, "ui");
+  await setPaymentUi(hotel, ui === "element" || ui === "embedded" ? (ui as PaymentUi) : "hosted", actor);
   back(hotel.id, "Gespeichert");
 }
 
@@ -123,10 +124,20 @@ export default async function Zahlungen({ params, searchParams }: { params: Prom
           <span className="muted">Plattformgebühr</span><span>{hotel.platformFeeBps / 100} % pro Direktbuchung</span>
         </div>
         {isOwner && provider === "stripe" && env().STRIPE_PUBLISHABLE_KEY ? (
-          <form action={saveEmbedded} className="stack">
+          <form action={savePaymentUi} className="stack" id="zahlungsseite">
             {hidden}
-            <label className="check"><input type="checkbox" name="embedded" defaultChecked={hotel.content.payment?.embedded === true} /> Zahlung auf Ihrer Website einbetten (der Gast bleibt auf der Seite)</label>
-            <p className="muted small">Die Karteneingabe liegt in einem Rahmen von Stripe, Pontivo sieht keine Kartendaten. Erst nach einer Testbuchung einschalten. Aus: Weiterleitung auf die Stripe-Seite wie bisher.</p>
+            <fieldset className="plain"><legend className="small muted">So bezahlt der Gast auf Ihrer Pontivo-Website</legend>
+              <div className="mode-pick">
+                {([
+                  ["element", "Im Formular Ihrer Website", "Die Zahlung erscheint in Ihrem Design (Farben, Schrift, Dunkelmodus), der Gast bleibt auf der Seite. Karte, Apple Pay, Google Pay und TWINT."],
+                  ["embedded", "Eingebettete Stripe-Seite", "Stripe-Zahlungsseite im Rahmen Ihrer Website. Erscheinung über das Stripe-Branding (siehe unten)."],
+                  ["hosted", "Weiterleitung zu Stripe", "Der Gast wechselt auf die Stripe-Seite und kommt danach zurück. Der einfachste und robusteste Weg."],
+                ] as const).map(([v, title, text]) => (
+                  <label key={v}><input type="radio" name="ui" value={v} defaultChecked={paymentUi(hotel) === v} /><span><strong>{title}</strong><span className="small muted">{text}</span></span></label>
+                ))}
+              </div>
+            </fieldset>
+            <p className="muted small">Die Karteneingabe liegt immer in einem Rahmen von Stripe, Pontivo sieht keine Kartendaten. Erst nach einer Testbuchung einschalten. Geht bei einer Variante etwas schief, stellen Sie hier auf «Weiterleitung» zurück, die anderen bleiben unverändert.</p>
             <button className="btn secondary small">Speichern</button>
           </form>
         ) : null}
