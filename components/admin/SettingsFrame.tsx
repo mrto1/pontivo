@@ -11,7 +11,8 @@ import { inSettings, isActive, settingsGroups, type Nav } from "@/src/admin/nav"
 export function SettingsFrame({ nav: navIn, home, tabs, children }: { nav: Nav; home: string; tabs: ReactNode; children: ReactNode }) {
   const pathname = usePathname();
   const nav = useAreaNav(navIn);
-  if (!inSettings(pathname, nav, home)) return <>{tabs}{children}</>;
+  // Der Seiten-Editor (/site/<Seite>) nutzt die ganze Breite mit Vorschau und hat einen eigenen Link zurück: ohne Seitenleiste
+  if (!inSettings(pathname, nav, home) || /\/site\/[^/]+\/?$/.test(pathname)) return <>{tabs}{children}</>;
   const onOverview = pathname === nav.settings.href;
   return (
     <div className="settings-frame">
