@@ -20,7 +20,8 @@ export async function reserveAction(f: FormData) {
   let token = "";
   let redirectTo = "";
   try {
-    const r = await createReservation(hotel, { day: s(f, "day"), time: s(f, "time"), party: Number(s(f, "party")), name: s(f, "name"), phone: s(f, "phone"), email: s(f, "email"), note: s(f, "note"), language: locale }, "online", "guest");
+    const preorder = [...f.entries()].filter(([k]) => k.startsWith("p_")).map(([k, v]) => ({ itemId: k.slice(2), quantity: Math.floor(Number(v) || 0), optionIds: [] as string[], note: "" })).filter((l) => l.quantity > 0);
+    const r = await createReservation(hotel, { day: s(f, "day"), time: s(f, "time"), party: Number(s(f, "party")), name: s(f, "name"), phone: s(f, "phone"), email: s(f, "email"), note: s(f, "note"), language: locale, preorder }, "online", "guest");
     token = r.reservation.publicToken;
     if (r.checkoutUrl) redirectTo = r.checkoutUrl;
   } catch (e) {

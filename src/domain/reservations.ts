@@ -7,6 +7,8 @@ export type ResSettings = {
   onlineEnabled: boolean; windows: Window[]; durationMin: number; maxParty: number; capacity: number; leadHours: number; horizonDays: number;
   /** Anzahlung je Person in Rappen (0 = keine), gilt ab `depositFromParty` Personen; kostenlose Stornierung bis `cancelHours` vor Beginn */
   depositPerPersonRappen: number; depositFromParty: number; cancelHours: number; reminderHours: number; autoAssign: boolean;
+  /** Vorbestellung (SPEC 19.57): erlaubt, und ab dieser Gruppengrösse Pflicht (0 = nie) */
+  preorderEnabled?: boolean; preorderRequiredFrom?: number;
   /** Öffnungszeiten je Wochentag (0 = Sonntag), null/fehlend = keine Einschränkung (SPEC 20.1) */
   openingHours?: OpeningHours | null;
 };

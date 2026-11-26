@@ -107,6 +107,7 @@ export default async function ReservationsPage({ params, searchParams }: { param
                   {(visits.get(r.email.toLowerCase())?.visits ?? 0) >= REGULAR_VISITS ? <> <span className="badge">Stammgast</span></> : null}
                   {prof.get(r.email.toLowerCase())?.tags.map((t) => <span key={t} className="badge" style={{ marginLeft: 4 }}>{t}</span>)}
                   <div className="small muted">{[r.phone, r.email, r.note].filter(Boolean).join(" · ")}</div>
+                  {r.preorder?.length ? <div className="small" data-testid="preorder-lines"><strong>Vorbestellung{r.depositStatus === "paid" ? " (bezahlt)" : ""}:</strong> {r.preorder.map((l) => `${l.quantity}× ${l.description}`).join(", ")} · {formatChf(r.preorderRappen)}</div> : null}
                   {prof.get(r.email.toLowerCase())?.note ? <div className="small">Kartei: {prof.get(r.email.toLowerCase())!.note.slice(0, 120)}</div> : null}
                   {notes && r.email ? (
                     <details className="small"><summary>Kartei</summary>

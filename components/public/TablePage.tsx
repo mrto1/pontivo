@@ -9,6 +9,8 @@ import { AutoRefresh } from "./AutoRefresh";
 import { depositFor } from "@/src/domain/reservations";
 import { formatChf } from "@/src/domain/money";
 import { cancelReservationAction, reserveAction, waitlistAction } from "./table-actions";
+import { PRE } from "@/src/i18n/preorder";
+import { onlineMenu } from "@/src/services/online-orders";
 
 /** Öffentliche Tischreservierung (SPEC 19.49 Etappe C): Datum und Personen wählen, freie Zeiten, Daten, Bestätigung */
 export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; locale: Locale; base: string; sp: Record<string, string | string[] | undefined> }) {
@@ -22,6 +24,12 @@ export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; loc
   const day = one("date") ?? "";
   const party = Math.max(1, Math.min(50, Number(one("party")) || 2));
   const slots = settings.onlineEnabled && day ? (await slotsFor(hotel, day, party)).filter((x) => x.ok) : null;
+  const stripeOk = env().PAYMENT_PROVIDER !== "stripe" || !!(hotel.stripeAccountId && hotel.stripeChargesEnabled);
+  const pre = PRE[locale];
+  // Vorbestellung (SPEC 19.57): Artikel ohne Pflicht-Optionen, die online bestellbar sind
+  const menu = settings.preorderEnabled && stripeOk && slots ? (await onlineMenu(hotel.id)).filter((x) => !x.groups.some((g) => g.required)) : [];
+  const preRequired = !!settings.preorderEnabled && !!settings.preorderRequiredFrom && party >= settings.preorderRequiredFrom;
+  const cats = [...new Set(menu.map((x) => x.category))];
   return (
     <Shell hotel={hotel} locale={locale} base={base} path="/tisch">
       <section className="stack pad32-560">
@@ -51,7 +59,20 @@ export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; loc
                   <div><label htmlFor="phone">{r.phone}</label><input id="phone" name="phone" type="tel" maxLength={40} autoComplete="tel" /></div>
                   <p className="small muted">{r.contact}</p>
                   <div><label htmlFor="note">{r.note}</label><input id="note" name="note" maxLength={300} /></div>
-                  {depositFor(settings, party) ? <p className="notice small">{r.deposit(formatChf(depositFor(settings, party)))}</p> : null}
+                  {menu.length ? (
+                    <fieldset className="stack" data-testid="preorder"><legend><strong>{pre.title}</strong></legend>
+                      <p className="small muted m0">{pre.hint()}</p>
+                      {preRequired ? <p className="notice small">{pre.required(settings.preorderRequiredFrom!)}</p> : null}
+                      {cats.map((c) => (
+                        <div key={c} className="stack"><strong className="small">{c}</strong>
+                          {menu.filter((x) => x.category === c).map((x) => (
+                            <div key={x.id} className="tq-line"><label htmlFor={`p_${x.id}`}>{x.name}</label><span className="small muted">{formatChf(x.priceRappen)}</span><input id={`p_${x.id}`} name={`p_${x.id}`} type="number" min={0} max={50} defaultValue={0} aria-label={`${pre.qty}: ${x.name}`} /></div>
+                          ))}
+                        </div>
+                      ))}
+                    </fieldset>
+                  ) : null}
+                  {!menu.length && depositFor(settings, party) ? <p className="notice small">{r.deposit(formatChf(depositFor(settings, party)))}</p> : null}
                   <div><button className="btn">{r.book}</button></div>
                 </form>
               ) : (

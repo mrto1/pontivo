@@ -1320,3 +1320,11 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 - Seite `restaurant/auswertung` (Reiter «Auswertung» unter Finanzen, Rolle `manager`), je Monat: Umsatz und Trinkgeld gesamt, je Kellner und je Tisch (aus den Bons), durchschnittliche Verweildauer (Eröffnung der Bestellung bis letzter Bon, Bestellungen über 8 Stunden zählen nicht), Gäste je Stunde aus den Reservierungen, No-show-Quote, Bewertungen (Durchschnitt, kritische Kommentare ab 3 Sternen abwärts).
 - Reine Logik `src/domain/dining-stats.ts`, Abfrage `src/services/dining-stats.ts`. ASSUMPTION: Kellner und Tische nach heutiger Zuweisung, nicht nach dem Stand zum Zeitpunkt des Bons.
 
+## 19.57 Vorbestellung zur Reservierung (auch Gruppen)
+
+- Einstellungen → Reservierung: «Vorbestellung zulassen» und «Pflicht ab Personen» (0 = nie; `restaurant_settings.preorder_enabled`, `preorder_required_from`). Nur online und nur mit freigegebenem Stripe-Konto.
+- Auf der Reservierungsseite wählt der Gast nach der Zeit Mengen aus der Online-Speisekarte (Artikel, die «online» bestellbar sind und **keine Pflicht-Optionen** haben). Preise zum Zeitpunkt der Buchung, MWST-Satz «im Haus» (nur bei MWST-pflichtigem Betrieb, sonst 0).
+- **Vorauszahlung:** Die Summe der Vorbestellung ist die Anzahlung (ersetzt die Anzahlung je Person) und wird über den bestehenden Anzahlungsweg bezahlt (Stripe Checkout, Status `pending` bis bezahlt, Verfall nach 35 Minuten). Storno rechtzeitig (Regel «Gratis-Storno bis») erstattet sie, «nicht erschienen» behält sie.
+- **Platzieren:** Setzt das Personal die Reservierung auf «am Tisch» (oder weist danach den Tisch zu), entsteht einmalig eine Bestellung am Tisch (Gerät «RSV»; Küche sieht die Zeilen) und ein Bon über den Betrag (Zahlart Karte). Ohne Tisch bleibt die Vorbestellung in der Liste sichtbar (Reservierungen → Liste).
+- Abnahme: `tests/integration/preorder.test.ts`, `tests/e2e/preorder.spec.ts`.
+

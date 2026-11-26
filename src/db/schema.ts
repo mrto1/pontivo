@@ -1845,6 +1845,9 @@ export const restaurantSettings = pgTable("restaurant_settings", {
   hotelId: uuid("hotel_id").primaryKey(),
   /** Link zur Google-Bewertung (Bewertungsanfrage nach dem Bezahlen am Tisch) */
   reviewUrl: text("review_url").notNull().default(""),
+  /** Vorbestellung zur Reservierung (SPEC 19.57): an, und ab wie vielen Personen Pflicht (0 = nie) */
+  preorderEnabled: boolean("preorder_enabled").notNull().default(false),
+  preorderRequiredFrom: integer("preorder_required_from").notNull().default(0),
   onlineEnabled: boolean("online_enabled").notNull().default(false),
   windows: jsonb("windows").$type<{ from: string; to: string }[]>().notNull(),
   durationMin: integer("duration_min").notNull().default(90),
@@ -1882,6 +1885,10 @@ export const posReservations = pgTable("pos_reservations", {
   createdAt: ts("created_at").notNull().defaultNow(),
   depositRappen: integer("deposit_rappen").notNull().default(0),
   depositStatus: text("deposit_status").$type<"none" | "pending" | "paid" | "refunded">().notNull().default("none"),
+  /** Vorbestellung (SPEC 19.57): Zeilen wie bei der Online-Bestellung; wird vorab bezahlt und beim Platzieren als Bestellung mit Bon gebucht */
+  preorder: jsonb("preorder").$type<OnlineOrderItem[] | null>(),
+  preorderRappen: integer("preorder_rappen").notNull().default(0),
+  preorderOrderId: uuid("preorder_order_id"),
   stripeSessionId: text("stripe_session_id"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   reminderSentAt: ts("reminder_sent_at"),

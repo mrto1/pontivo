@@ -12,7 +12,9 @@ import { isLocale } from "../i18n/dict";
 import { enqueuePush } from "../push/service";
 import { audit } from "./audit";
 import { getHotelById } from "./hotels";
-import { PosError } from "./pos";
+import { PosError, addLines, createDevice, openOrder, pay } from "./pos";
+import { priceCart, type CartLine } from "./online-orders";
+import { posDevices, type OnlineOrderItem } from "../db/schema";
 
 /** Tischreservierungen, intern und online (SPEC 19.49 Etappe C). Jede Abfrage nach hotel_id. */
 const clean = (v: string, max: number) => v.replace(/\s+/g, " ").trim().slice(0, max);
@@ -102,7 +104,7 @@ export async function slotsFor(hotel: Hotel, day: string, party: number): Promis
   return onlineSlots(s, day, party, ex, now, diffDays(now.day, day));
 }
 
-export type ReservationInput = { day: string; time: string; party: number; name: string; phone?: string; email?: string; note?: string; tableId?: string | null; language?: string };
+export type ReservationInput = { day: string; time: string; party: number; name: string; phone?: string; email?: string; note?: string; tableId?: string | null; language?: string; /** Vorbestellung (nur online, SPEC 19.57) */ preorder?: CartLine[] };
 export type Created = { reservation: PosReservation; /** nur bei Anzahlung: Zahlungsseite, auf die der Gast weitergeleitet wird */ checkoutUrl: string | null };
 
 /**
@@ -122,8 +124,20 @@ export async function createReservation(hotel: Hotel, i: ReservationInput, sourc
   const s = await getSettings(hotel.id);
   // Anzahlung erst, wenn Stripe Zahlungen freigegeben hat (Konzept 7a: Prüfung blockiert nur Zahlungen, nicht die Reservierung)
   const stripeOk = env().PAYMENT_PROVIDER !== "stripe" || !!(hotel.stripeAccountId && hotel.stripeChargesEnabled);
-  const deposit = source === "online" && stripeOk ? depositFor(s, i.party) : 0;
-  if (deposit > 0 && !email) throw new PosError("Für die Anzahlung brauchen wir Ihre E-Mail-Adresse.");
+  // Vorbestellung (SPEC 19.57): wird ganz vorab bezahlt und ersetzt die Anzahlung (ASSUMPTION: Summe der Vorbestellung = Anzahlung)
+  const pre = (i.preorder ?? []).filter((l) => l.quantity > 0);
+  const preRequired = source === "online" && !!s.preorderEnabled && !!s.preorderRequiredFrom && i.party >= s.preorderRequiredFrom;
+  if (pre.length && (source !== "online" || !s.preorderEnabled)) throw new PosError("Vorbestellung ist hier nicht möglich.");
+  if (preRequired && !pre.length) throw new PosError(`Ab ${s.preorderRequiredFrom} Personen bitte eine Vorbestellung aufgeben.`);
+  let preItems: OnlineOrderItem[] | null = null;
+  let preTotal = 0;
+  if (pre.length) {
+    if (!stripeOk) throw new PosError("Vorbestellung ist nur mit Online-Zahlung möglich.");
+    const priced = await priceCart(hotel, pre, "dine_in");
+    preItems = priced.items; preTotal = priced.subtotalRappen;
+  }
+  const deposit = source === "online" && stripeOk ? (preTotal > 0 ? preTotal : depositFor(s, i.party)) : 0;
+  if (deposit > 0 && !email) throw new PosError(preTotal > 0 ? "Für die Vorbestellung brauchen wir Ihre E-Mail-Adresse." : "Für die Anzahlung brauchen wir Ihre E-Mail-Adresse.");
 
   const token = randomBytes(18).toString("base64url");
   const r = await db().transaction(async (tx) => {
@@ -146,8 +160,9 @@ export async function createReservation(hotel: Hotel, i: ReservationInput, sourc
     const [row] = await tx.insert(posReservations).values({
       hotelId: hotel.id, day: i.day, time: i.time, party: i.party, name, phone, email, note: clean(i.note ?? "", 300), tableId, source, language: i.language ?? hotel.defaultLanguage, publicToken: token,
       status: deposit > 0 ? "pending" : "confirmed", depositRappen: deposit, depositStatus: deposit > 0 ? "pending" : "none",
+      preorder: preItems, preorderRappen: preTotal,
     }).returning();
-    await audit(tx, { hotelId: hotel.id, actor, action: "reservation.create", entity: "pos_reservation", entityId: row.id, details: { source, day: row.day, time: row.time, party: row.party, deposit } });
+    await audit(tx, { hotelId: hotel.id, actor, action: "reservation.create", entity: "pos_reservation", entityId: row.id, details: { source, day: row.day, time: row.time, party: row.party, deposit, preorder: preTotal } });
     if (!deposit && email) await sendConfirmation(tx, hotel, row);
     // ASSUMPTION: Mit Anzahlung kommt die Mitteilung erst, wenn bezahlt ist (unbezahlte laufen ab)
     if (!deposit) await pushNewReservation(tx, hotel.id, row);
@@ -160,7 +175,7 @@ export async function createReservation(hotel: Hotel, i: ReservationInput, sourc
     const lang = isLocale(r.language) ? r.language : "de";
     const back = reservationUrl(hotel, lang, token);
     const co = await provider.createPaymentCheckout({
-      hotel, amountRappen: deposit, feeRappen: 0, email, lang, description: `${hotel.name} – ${i.party} × Tischreservierung ${i.day} ${i.time}`.slice(0, 250),
+      hotel, amountRappen: deposit, feeRappen: 0, email, lang, description: `${hotel.name} – ${preTotal > 0 ? "Vorbestellung" : `${i.party} × Tischreservierung`} ${i.day} ${i.time}`.slice(0, 250),
       successUrl: `${back}?new=1`, cancelUrl: `${back}`, metadata: { reservation_id: r.id }, reference: r.id.slice(0, 8), idempotencyKey: `table-${r.id}`,
     });
     await db().update(posReservations).set({ stripeSessionId: co.sessionId }).where(eq(posReservations.id, r.id));
@@ -253,6 +268,7 @@ export async function setReservationStatus(hotelId: string, id: string, status: 
   const [r] = await db().update(posReservations).set({ status }).where(and(eq(posReservations.id, id), eq(posReservations.hotelId, hotelId), ne(posReservations.status, "pending"))).returning();
   if (!r) throw new PosError("Reservierung nicht gefunden.");
   await audit(db(), { hotelId, actor, action: "reservation.status", entity: "pos_reservation", entityId: id, details: { status } });
+  if (status === "seated") await seatPreorder(hotelId, r, actor);
   if (status === "cancelled") {
     if (r.depositStatus === "paid") await refundDeposit(id, "hotel_cancel");
     await notifyWaitlist(hotelId, r.day);
@@ -270,8 +286,9 @@ export async function assignTable(hotelId: string, id: string, tableId: string |
     const others = await db().select().from(posReservations).where(and(eq(posReservations.hotelId, hotelId), eq(posReservations.day, r.day), ne(posReservations.id, id)));
     if (!tableFree(others, t.id, r.time, s.durationMin)) throw new PosError(`${t.name} ist zu dieser Zeit schon reserviert.`);
   }
-  await db().update(posReservations).set({ tableId }).where(eq(posReservations.id, id));
+  const [u] = await db().update(posReservations).set({ tableId }).where(eq(posReservations.id, id)).returning();
   await audit(db(), { hotelId, actor, action: "reservation.table", entity: "pos_reservation", entityId: id, details: { tableId } });
+  if (u.status === "seated") await seatPreorder(hotelId, u, actor); // Gast sass schon, Tisch kam erst jetzt
 }
 
 /** Alle Reservierungen eines Tages ohne Tisch zuteilen: grosse Gruppen zuerst, dann nach Zeit. Gibt die Zahl der zugeteilten zurück. */
@@ -365,4 +382,27 @@ export async function tableJob(now = new Date()): Promise<{ released: number; wa
     reminders++;
   }
   return { released: stale.length, waitlist, reminders };
+}
+
+/**
+ * Gast wird platziert: die bezahlte Vorbestellung wird zur Bestellung am Tisch (Küche sieht sie) und der Betrag als Bon gebucht
+ * (Zahlart Karte, Gerät «RSV»). Einmalig je Reservierung. Ohne Tisch bleibt die Vorbestellung in der Liste, bis ein Tisch zugewiesen ist.
+ */
+async function seatPreorder(hotelId: string, r: PosReservation, actor: string): Promise<void> {
+  if (!r.preorder?.length || r.depositStatus !== "paid" || r.preorderOrderId || !r.tableId) return;
+  const [claimed] = await db().update(posReservations).set({ preorderOrderId: crypto.randomUUID() }).where(and(eq(posReservations.id, r.id), isNull(posReservations.preorderOrderId))).returning();
+  if (!claimed) return;
+  try {
+  const hotel = await getHotelById(hotelId);
+  if (!hotel) return;
+  const [d0] = await db().select().from(posDevices).where(and(eq(posDevices.hotelId, hotelId), eq(posDevices.code, "RSV")));
+  const dev = d0 ?? (await createDevice(hotelId, "RSV", "Vorbestellung", "system"));
+  const order = await openOrder(hotelId, { id: claimed.preorderOrderId!, tableId: r.tableId, deviceId: dev.id, label: `Vorbestellung ${r.name}` }, actor);
+  const lines = await addLines(hotel, order.id, r.preorder.map((l) => ({ itemId: l.itemId, quantity: l.quantity, mode: "dine_in" as const, optionIds: l.optionIds, note: l.note, snapshot: { description: l.description, unitPriceRappen: l.unitPriceRappen, vatBps: l.vatBps }, optionsSnapshot: l.options })), actor);
+  await pay(hotel, { orderId: order.id, deviceId: dev.id, selection: lines.map((l) => ({ lineId: l.id, quantity: l.quantity })), payments: [{ method: "card", amountRappen: r.preorderRappen }] }, actor);
+  await audit(db(), { hotelId, actor, action: "reservation.preorder_seated", entity: "pos_reservation", entityId: r.id, details: { orderId: order.id, amount: r.preorderRappen } });
+  } catch (e) {
+    await db().update(posReservations).set({ preorderOrderId: null }).where(eq(posReservations.id, r.id)); // nächster Versuch beim erneuten Platzieren
+    throw e;
+  }
 }

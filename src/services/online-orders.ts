@@ -247,7 +247,7 @@ export type OrderInput = {
 export type Priced = { items: OnlineOrderItem[]; subtotalRappen: number };
 
 /** Warenkorb auf dem Server rechnen: Artikel online bestellbar, Optionen prüfen, Text und Preis wie an der Kasse, MWST Take-away */
-export async function priceCart(hotel: Hotel, lines: CartLine[]): Promise<Priced> {
+export async function priceCart(hotel: Hotel, lines: CartLine[], mode: "takeaway" | "dine_in" = "takeaway"): Promise<Priced> {
   if (!lines.length) throw new PosError("Der Warenkorb ist leer.");
   if (lines.length > 50) throw new PosError("Zu viele Positionen.");
   const vatLiable = invoicingSettings(hotel).vatLiable;
@@ -261,7 +261,7 @@ export async function priceCart(hotel: Hotel, lines: CartLine[]): Promise<Priced
     if (bad) throw new PosError(`${it.name}: ${bad}`);
     if ((l.note ?? "").length > NOTE_MAX) throw new PosError(`Sonderwunsch: höchstens ${NOTE_MAX} Zeichen.`);
     const c = composeLine(it, groups, l.optionIds, l.note ?? "");
-    items.push({ itemId: it.id, quantity: l.quantity, optionIds: l.optionIds, note: c.note, description: c.description, unitPriceRappen: c.unitPriceRappen, vatBps: vatLiable ? it.vatTakeawayBps : 0, options: c.options });
+    items.push({ itemId: it.id, quantity: l.quantity, optionIds: l.optionIds, note: c.note, description: c.description, unitPriceRappen: c.unitPriceRappen, vatBps: vatLiable ? (mode === "dine_in" ? it.vatDineInBps : it.vatTakeawayBps) : 0, options: c.options });
   }
   return { items, subtotalRappen: items.reduce((a, i) => a + i.unitPriceRappen * i.quantity, 0) };
 }
