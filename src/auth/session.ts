@@ -6,6 +6,7 @@ import { encodeCustomRole, isEditableStandardRole, ROLE_LABEL } from "../domain/
 import { sha256 } from "../domain/ids";
 import { requireEnv, env } from "../env";
 import { enqueueEmail } from "../email/enqueue";
+import { isUuid } from "../lib/uuid";
 
 export const SESSION_COOKIE = "hb_session";
 const SESSION_DAYS = 30;
@@ -124,6 +125,7 @@ export async function hotelsForUser(userId: string) {
 
 /** Rolle eines Benutzers in einem Hotel, null = kein Zugriff (SPEC 3) */
 export async function roleIn(userId: string, hotelId: string): Promise<Role | null> {
+  if (!isUuid(hotelId)) return null; // z. B. /admin/tippfehler → 404 statt Datenbankfehler
   const u = await getUser(userId);
   if (!u) return null;
   if (u.isPlatformAdmin) return "owner";

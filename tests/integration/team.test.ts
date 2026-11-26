@@ -96,3 +96,12 @@ describe("Bereich «frontdesk» ist in «tag» aufgegangen (SPEC 19.42)", () => 
     expect(areasOf(encodeCustomRole("Alt", ["frontdesk", "bookings"]) as never)).toContain("tag");
   });
 });
+
+describe("Ungültige Hotel-Adresse", () => {
+  it("roleIn liefert null statt Datenbankfehler (Seite zeigt 404)", async () => {
+    const h = await makeHotel();
+    const email = `x-${crypto.randomUUID()}@example.com`;
+    await setMemberRole(h.hotel.id, email, "owner", "t");
+    expect(await roleIn(await userId(email), "registrieren")).toBeNull();
+  });
+});

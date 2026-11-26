@@ -15,12 +15,12 @@ export function PhotoManager({ hotelId, roomTypeId, photos, canEdit, page, alt }
         <form action={`/api/admin/hotels/${hotelId}/photos?from=${page}`} method="post" encType="multipart/form-data" className="inline-form">
           <input type="hidden" name="roomTypeId" value={roomTypeId ?? ""} />
           <div className="dropzone" style={{ flex: "1 1 100%" }}>
-            <label>Fotos hochladen (JPG, PNG, WebP, max. 8 MB, bis 3 aufs Mal)</label>
-            <input type="file" name="file" accept="image/jpeg,image/png,image/webp" multiple required />
+            <label htmlFor={`ph-file-${roomTypeId ?? "haus"}`}>Fotos hochladen (JPG, PNG, WebP, max. 8 MB, bis 3 aufs Mal)</label>
+            <input id={`ph-file-${roomTypeId ?? "haus"}`} type="file" name="file" accept="image/jpeg,image/png,image/webp" multiple required />
           </div>
           <div style={{ flex: "1 1 180px" }}>
-            <label>Bildbeschreibung (optional)</label>
-            <input name="alt" placeholder={alt} />
+            <label htmlFor={`ph-alt-${roomTypeId ?? "haus"}`}>Bildbeschreibung (optional)</label>
+            <input id={`ph-alt-${roomTypeId ?? "haus"}`} name="alt" placeholder={alt} />
           </div>
           <button className="btn small">Hochladen</button>
         </form>

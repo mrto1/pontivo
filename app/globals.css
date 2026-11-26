@@ -1,4 +1,6 @@
 :root {
+  /* Höhe aller Eingabefelder; Knöpfe neben Feldern bekommen dieselbe Höhe */
+  --ctl-h: 48px;
   --bg: #faf8f5;
   --surface: #ffffff;
   --ink: #1f2a2e;
@@ -72,7 +74,7 @@ h3 { font-size: 1.1rem; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; }
 .searchbar { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; align-items: end; }
 label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: 6px; }
-input, select, textarea { width: 100%; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--field-line); border-radius: 8px; padding: 12px 14px; min-height: 46px; }
+input, select, textarea { width: 100%; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--field-line); border-radius: 8px; padding: 11px 14px; min-height: var(--ctl-h); }
 input:hover, select:hover, textarea:hover { border-color: var(--accent); }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 input, select, textarea { color-scheme: light dark; }
@@ -89,7 +91,7 @@ label:has(> input[type="checkbox"]):not(.chip), label:has(> input[type="radio"])
 label:has(> input[type="checkbox"]):not(.check):not(.chip), label:has(> input[type="radio"]):not(.check) { display: inline-block; vertical-align: top; }
 label:has(> input[type="checkbox"]):not(.chip) > input[type="checkbox"], label:has(> input[type="radio"]) > input[type="radio"] { position: absolute; left: 0; top: 1px; margin: 0; }
 .notice ul { margin: 0; padding-left: 18px; }
-.inline-form .btn, .inline-form button { min-height: 46px; }
+.inline-form .btn, .inline-form button { min-height: var(--ctl-h); }
 .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 16px; align-items: end; }
 .check { display: block; position: relative; padding-left: 30px; color: var(--ink); font-size: .95rem; line-height: 1.5; }
 .btn { display: inline-flex; align-items: center; justify-content: center; font: inherit; font-weight: 600; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 11px 18px; cursor: pointer; text-decoration: none; text-align: center; }
@@ -175,7 +177,6 @@ details > summary::-webkit-details-marker { display: none; }
   .tabbar .active { color: var(--accent); font-weight: 700; box-shadow: inset 0 2px 0 var(--accent); }
   .more-panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-width: none; max-height: 85vh; border-radius: 16px 16px 0 0; padding: 0 16px calc(16px + env(safe-area-inset-bottom)); display: block; }
   .more-group a { padding: 11px 0; }
-  .admin-main { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
   /* Handy: Tabellen seitlich scrollbar statt die Seite zu sprengen, Eingaben ohne iOS-Zoom, Knöpfe in Daumengrösse */
   .table { display: block; overflow-x: auto; }
   input, select, textarea { font-size: 16px; }
@@ -774,8 +775,6 @@ table.plan tr.plan-off { opacity: .55; }
 .kind-seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .kind-seg label:has(input:checked) { background: var(--brand, var(--accent)); color: var(--brand-ink, #fff); }
 .kind-seg label:has(input:focus-visible) { outline: 2px solid var(--brand-link, var(--accent)); outline-offset: 2px; }
-.link-btn { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; font-size: .9rem; cursor: pointer; text-align: left; justify-self: start; }
-.link-btn:hover { text-decoration: underline; }
 .cal-lower { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 @media (max-width: 860px) { .cal-lower { grid-template-columns: 1fr; } }
 code { overflow-wrap: anywhere; }
@@ -1015,7 +1014,7 @@ pre { overflow-x: auto; }
 @media (min-width: 900px) { .order-layout { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; } .order-cart { position: sticky; top: 16px; } }
 .order-item { display: flex; gap: 12px; align-items: flex-start; }
 .order-photo { width: 88px; height: 88px; object-fit: cover; border-radius: 8px; flex: none; }
-.link-btn { background: none; border: 0; padding: 4px 0; color: var(--brand-link, var(--accent)); cursor: pointer; text-align: left; text-decoration: underline; font: inherit; }
+.link-btn { background: none; border: 0; padding: 4px 0; color: var(--brand-link, var(--accent)); cursor: pointer; text-align: left; text-decoration: underline; font: inherit; justify-self: start; }
 
 /* Tischplan (SPEC 19.49 Etappe C) */
 .plan-area { position: relative; width: 100%; aspect-ratio: 3 / 2; border: 1px dashed var(--border, #ccc); border-radius: 12px; background: repeating-linear-gradient(0deg, transparent 0 39px, rgba(0,0,0,.04) 39px 40px), repeating-linear-gradient(90deg, transparent 0 39px, rgba(0,0,0,.04) 39px 40px); touch-action: none; overflow: hidden; }
@@ -1230,7 +1229,7 @@ form.stack.stack > * + * { margin-top: 20px; }
 form.stack.stack > .form-grid, form.stack.stack > .form-row { margin-top: 20px !important; gap: 20px 16px; }
 .form-grid, .form-row { gap: 20px 16px; }
 label { margin-bottom: 6px; }
-input + .small, select + .small, textarea + .small { display: block; margin-top: 6px; }
+:is(input, select, textarea) + .small:not(.btn):not(button) { display: block; margin-top: 6px; } /* Hinweistext unter einem Feld; kleine Knöpfe direkt nach einem Feld bleiben Knöpfe */
 
 /* Tischplan: Räume (Tabs), Stühle in Statusfarben, Orientierungselemente, Reservierungen daneben (SPEC 19.53) */
 .plan-tabs { align-self: flex-start; max-width: 100%; overflow-x: auto; }
@@ -1282,3 +1281,40 @@ input + .small, select + .small, textarea + .small { display: block; margin-top:
 .stat-row strong { font-size: 1.3rem; }
 .bar-row { display: grid; grid-template-columns: 52px 1fr 36px; align-items: center; gap: 10px; }
 .bar { height: 14px; border-radius: 7px; background: var(--accent, #0b7285); min-width: 4px; }
+
+/* ---- Einheitlichkeit (UI-Durchgang 11/2026) ---- */
+/* Formularraster: Felder einer Zeile stehen auf gleicher Höhe, auch wenn ein Label zweizeilig umbricht */
+/* (nur in Rastern ohne Hinweistext unter einem Feld; dort bleiben die Felder oben ausgerichtet) */
+:is(.form-grid, .form-row):not(:has(> div > :is(input, select, textarea) + *)) > div:has(> label + :is(input, select, textarea):last-child) { display: flex; flex-direction: column; justify-content: flex-end; }
+/* Knöpfe in einer Zeile mit Feldern: gleiche Höhe wie die Felder */
+:is(.form-grid, .form-row) > :is(.btn, button) { min-height: var(--ctl-h); align-self: end; }
+@media print { .print-title { position: static; width: auto; height: auto; margin: 0 0 12px; overflow: visible; clip: auto; white-space: normal; } }
+/* Handy und Tablet: Tippflächen mindestens 44 px (Apple/Google-Richtwert) */
+@media (max-width: 860px), (pointer: coarse) {
+  .switch { min-height: 44px; }
+  .settings-back { padding: 10px 0; }
+  .link-btn { min-height: 44px; display: inline-flex; align-items: center; }
+  :where(details:not(.avatar-menu)) > summary { padding-block: 10px; } /* niedrige Spezifität: eigene Polster (FAQ usw.) gehen vor */
+  .admin-brand { padding-block: 7px; }
+  .setup-chip { min-height: 36px; }
+}
+/* Werkzeugleisten (Zeitraum, Datum, Filter): alle Bedienelemente gleich hoch, am Handy in Daumengrösse */
+:root { --tool-h: 38px; }
+@media (max-width: 860px), (pointer: coarse) { :root { --tool-h: 44px; } }
+.seg a, .seg .seg-off, .seg .seg-mid { display: inline-flex; align-items: center; justify-content: center; min-height: calc(var(--tool-h) - 2px); padding-block: 0; }
+.cal-tools :is(input, select) { min-height: var(--tool-h); height: var(--tool-h); padding-block: 0; }
+.cal-tools :is(.btn, .btn-dl) { min-height: var(--tool-h); padding-block: 0; }
+/* Knopf neben Suchfeld oder Datumsfeldern: Feldhöhe */
+.bk-filter > .btn, .cal-export .btn-dl { min-height: var(--ctl-h); }
+.bk-filter > .btn { justify-self: start; padding-inline: 22px; }
+/* Bedienelemente in Tabellenzeilen: kompakt und gleich hoch (Felder, Auswahl, Knöpfe) */
+.table :is(input:not([type=checkbox]):not([type=radio]), select) { min-height: var(--tool-h); height: var(--tool-h); padding-block: 0; }
+.table :is(.btn, .inline-form .btn, .inline-form button) { min-height: var(--tool-h); padding-block: 0; }
+/* kleine Zahlenfelder (Personen, Kinder) dürfen enger stehen */
+.form-grid.tight { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+/* Aufklappbare Abschnitte: überall ein Pfeil, damit man sieht, dass sie sich öffnen (eigene Zeichen bei FAQ, Menü usw. bleiben) */
+details:not(.avatar-menu, .faq-item, .rt, .ready, .fold) > summary:not(.btn)::before { content: "▸"; display: inline-block; width: 1em; margin-right: 4px; color: var(--muted); transition: transform .15s; }
+details[open]:not(.avatar-menu, .faq-item, .rt, .ready, .fold) > summary:not(.btn)::before { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { details > summary::before { transition: none; } }
+/* Datums- und Zeitfelder sind im Browser sonst etwas höher als Textfelder */
+:where(input:is([type=date], [type=time], [type=datetime-local], [type=month])) { height: var(--ctl-h); padding-block: 0; }

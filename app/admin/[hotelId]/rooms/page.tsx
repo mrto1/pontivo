@@ -148,8 +148,8 @@ function RoomForm({ hotelId, rt, canEdit, nextOrder = 0, langs, cancelHref }: { 
       <div><label htmlFor="f23838">Ankunftsinfos für diese Wohnung/dieses Zimmer (optional)</label><textarea id="f23838" name="arrivalInfo" rows={3} maxLength={2000} defaultValue={rt?.arrivalInfo ?? ""} disabled={!canEdit} placeholder="z. B. Schlüsselbox-Code, WLAN. Überschreibt die allgemeinen Infos zur Ankunft. Gäste sehen es nur während ihres Aufenthalts." /></div>
       {EXTRA.map((l) => langs.includes(l) ? (
         <div key={l} className="form-grid">
-          <div><label>Name {LOCALE_NAMES[l]}</label><input name={`name.${l}`} defaultValue={rt?.i18n?.[l]?.name ?? ""} disabled={!canEdit} placeholder={l === "en" ? "z. B. Double room with lake view" : ""} /></div>
-          <div style={{ gridColumn: "span 2" }}><label>Beschreibung {LOCALE_NAMES[l]}</label><textarea name={`description.${l}`} rows={2} defaultValue={rt?.i18n?.[l]?.description ?? ""} disabled={!canEdit} /></div>
+          <div><label htmlFor={`rt-${rt?.id ?? "neu"}-name.${l}`}>Name {LOCALE_NAMES[l]}</label><input id={`rt-${rt?.id ?? "neu"}-name.${l}`} name={`name.${l}`} defaultValue={rt?.i18n?.[l]?.name ?? ""} disabled={!canEdit} placeholder={l === "en" ? "z. B. Double room with lake view" : ""} /></div>
+          <div style={{ gridColumn: "span 2" }}><label htmlFor={`rt-${rt?.id ?? "neu"}-description.${l}`}>Beschreibung {LOCALE_NAMES[l]}</label><textarea id={`rt-${rt?.id ?? "neu"}-description.${l}`} name={`description.${l}`} rows={2} defaultValue={rt?.i18n?.[l]?.description ?? ""} disabled={!canEdit} /></div>
         </div>
       ) : (
         <span key={l} hidden>
@@ -178,7 +178,7 @@ function PlanForm({ hotelId, roomTypeId, p, canEdit, langs, cancelHref }: { hote
       <div className="form-grid">
         <div><label htmlFor="f238310">Name des Tarifs</label><input id="f238310" name="name" defaultValue={p?.name ?? "Flexibel"} required disabled={!canEdit} /></div>
         {EXTRA.map((l) => langs.includes(l) ? (
-          <div key={l}><label>Name {LOCALE_NAMES[l]}</label><input name={`name.${l}`} defaultValue={p?.i18n?.[l]?.name ?? (p ? "" : l === "en" ? "Flexible" : "")} disabled={!canEdit} /></div>
+          <div key={l}><label htmlFor={`rp-${p?.id ?? "neu"}-name.${l}`}>Name {LOCALE_NAMES[l]}</label><input id={`rp-${p?.id ?? "neu"}-name.${l}`} name={`name.${l}`} defaultValue={p?.i18n?.[l]?.name ?? (p ? "" : l === "en" ? "Flexible" : "")} disabled={!canEdit} /></div>
         ) : p?.i18n?.[l]?.name ? <input key={l} type="hidden" name={`name.${l}`} value={p.i18n[l]!.name} /> : null)}
         {!p ? <div><label htmlFor="f238311">Startpreis CHF pro Nacht</label><input id="f238311" name="price" inputMode="decimal" required placeholder="z. B. 180" disabled={!canEdit} /></div> : null}
         <div><label htmlFor="f238312">Preis gilt für Personen</label><input id="f238312" name="baseOccupancy" type="number" min={1} defaultValue={p?.baseOccupancy ?? 2} required disabled={!canEdit} /></div>

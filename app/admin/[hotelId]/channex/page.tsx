@@ -215,9 +215,9 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
             <div><label htmlFor="fa4981">Property-ID</label><input id="fa4981" name="propertyId" defaultValue={hotel.channexPropertyId ?? ""} placeholder="UUID" /></div>
             {rts.map((rt) => (
               <div key={rt.id} className="card stack">
-                <div><label>{rt.name} – Room Type ID</label><input name={`rt:${rt.id}`} defaultValue={rt.channexRoomTypeId ?? ""} placeholder="UUID" /></div>
+                <div><label htmlFor={`cx-rt:${rt.id}`}>{rt.name} – Room Type ID</label><input id={`cx-rt:${rt.id}`} name={`rt:${rt.id}`} defaultValue={rt.channexRoomTypeId ?? ""} placeholder="UUID" /></div>
                 {rps.filter((p) => p.roomTypeId === rt.id).map((p) => (
-                  <div key={p.id}><label>↳ {p.name} – Rate Plan ID</label><input name={`rp:${p.id}`} defaultValue={p.channexRatePlanId ?? ""} placeholder="UUID" /></div>
+                  <div key={p.id}><label htmlFor={`cx-rp:${p.id}`}>↳ {p.name} – Rate Plan ID</label><input id={`cx-rp:${p.id}`} name={`rp:${p.id}`} defaultValue={p.channexRatePlanId ?? ""} placeholder="UUID" /></div>
                 ))}
               </div>
             ))}

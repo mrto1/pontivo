@@ -97,13 +97,13 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
           {items.map((b, i) => (
             <div key={i} className="stack gap6">
               <div className="row">
-                <div style={{ flex: "1 1 320px" }}><label>Vorteil {i + 1} (Deutsch)</label><input name={`text_${i}_de`} defaultValue={b?.text.de ?? ""} maxLength={90} placeholder={i === 0 ? "z. B. Late Check-out bis 14 Uhr" : ""} /></div>
+                <div style={{ flex: "1 1 320px" }}><label htmlFor={`db-text_${i}_de`}>Vorteil {i + 1} (Deutsch)</label><input id={`db-text_${i}_de`} name={`text_${i}_de`} defaultValue={b?.text.de ?? ""} maxLength={90} placeholder={i === 0 ? "z. B. Late Check-out bis 14 Uhr" : ""} /></div>
                 <div style={{ width: 150 }}><label htmlFor={`fbe24m1-${i}`}>ab Nächten</label><input id={`fbe24m1-${i}`} name={`min_${i}`} type="number" min={1} max={30} defaultValue={b?.minNights ?? ""} placeholder="alle" /></div>
               </div>
               {langs.length > 1 ? (
                 <details><summary className="small muted">Übersetzungen</summary>
                   <div className="row mt6">
-                    {langs.filter((l) => l !== "de").map((l) => <div key={l} style={{ flex: "1 1 220px" }}><label>{LOCALE_NAMES[l]}</label><input name={`text_${i}_${l}`} defaultValue={b?.text[l] ?? ""} maxLength={90} /></div>)}
+                    {langs.filter((l) => l !== "de").map((l) => <div key={l} style={{ flex: "1 1 220px" }}><label htmlFor={`db-text_${i}_${l}`}>{LOCALE_NAMES[l]}</label><input id={`db-text_${i}_${l}`} name={`text_${i}_${l}`} defaultValue={b?.text[l] ?? ""} maxLength={90} /></div>)}
                   </div>
                   <p className="muted small m-4-0-0">Fehlt eine Sprache, sehen Gäste Englisch oder Deutsch.</p>
                 </details>

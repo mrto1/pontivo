@@ -67,7 +67,7 @@ export default async function OwnersPage({ params, searchParams }: { params: Pro
   const canEdit = role === "owner" || role === "manager";
   return (
     <div className="stack">
-      <h1>Eigentümerabrechnung</h1>
+      <h1 className="sr-only">Eigentümerabrechnung</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <div><InfoTip label="Worum geht es hier?">Für Verwalter von Ferienwohnungen: Objekte (Zimmertypen) gehören Eigentümern. Umsatz = Übernachtungspreise bestätigter Buchungen, Nächte im Monat (ohne Kurtaxe und Zusatzleistungen).</InfoTip></div>
       <PeriodNav prev={`?month=${shiftMonth(month, -1)}`} next={month < todayIn(hotel.timezone).slice(0, 7) ? `?month=${shiftMonth(month, 1)}` : undefined} todayHref="?" todayActive={month === prevMonth(hotel.timezone)} todayLabel="Letzter Monat" prevLabel="Vormonat" nextLabel="Folgemonat" jump={{ kind: "month", value: month, param: "month" }} />

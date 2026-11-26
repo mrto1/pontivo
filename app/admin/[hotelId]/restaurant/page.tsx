@@ -40,7 +40,7 @@ export default async function RestaurantPage({ params, searchParams }: { params:
   const planned = tables.filter(({ table }) => table.planX !== null && table.planY !== null);
   return (
     <div className="stack">
-      <h1>Restaurant</h1>
+      <h1 className="sr-only">Tische</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       {planned.length ? (
         <FloorPlan waiters={waiters.map((w) => ({ id: w.id, name: w.name, color: w.color }))} areas={areas.map((a) => ({ id: a.id, name: a.name }))} items={planItems.filter((i) => areas.some((a) => a.id === i.areaId)).map((i) => ({ id: i.id, kind: i.kind, label: i.label, x: i.planX, y: i.planY, w: i.w, h: i.h, areaId: i.areaId }))}

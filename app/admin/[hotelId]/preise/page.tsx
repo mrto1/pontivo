@@ -155,8 +155,8 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
             <fieldset><legend>Auslastung des Zimmertyps (ab … % gebucht → Zu-/Abschlag in %)</legend>
               {[1, 2, 3].map((i) => (
                 <div className="row" key={i}>
-                  <div><label htmlFor={`f35a8m4-${i}`}>ab % Auslastung</label><input id={`f35a8m4-${i}`} name={`st${i}p`} type="number" min={0} max={100} defaultValue={st[i - 1]?.fromPct ?? ""} /></div>
-                  <div><label htmlFor={`f35a8m5-${i}`}>Zu-/Abschlag %</label><input id={`f35a8m5-${i}`} name={`st${i}b`} type="number" min={-100} max={100} defaultValue={st[i - 1] ? st[i - 1].bps / 100 : ""} /></div>
+                  <div><label htmlFor={`f35a8m4-${p.id}-${i}`}>ab % Auslastung</label><input id={`f35a8m4-${p.id}-${i}`} name={`st${i}p`} type="number" min={0} max={100} defaultValue={st[i - 1]?.fromPct ?? ""} /></div>
+                  <div><label htmlFor={`f35a8m5-${p.id}-${i}`}>Zu-/Abschlag %</label><input id={`f35a8m5-${p.id}-${i}`} name={`st${i}b`} type="number" min={-100} max={100} defaultValue={st[i - 1] ? st[i - 1].bps / 100 : ""} /></div>
                 </div>
               ))}
             </fieldset>
@@ -168,7 +168,7 @@ export default async function PricingAdmin({ params, searchParams }: { params: P
               </div>
             </fieldset>
             <fieldset><legend>Wochentag (Zu-/Abschlag %)</legend>
-              <div className="row">{WD.map((w, d) => <div key={d}><label>{w}</label><input name={`wd${d}`} type="number" min={-100} max={100} defaultValue={r ? r.weekdayBps[d] / 100 : 0} /></div>)}</div>
+              <div className="row">{WD.map((w, d) => <div key={d}><label htmlFor={`pr-${p.id}-wd${d}`}>{w}</label><input id={`pr-${p.id}-wd${d}`} name={`wd${d}`} type="number" min={-100} max={100} defaultValue={r ? r.weekdayBps[d] / 100 : 0} /></div>)}</div>
             </fieldset>
             <label><input type="checkbox" name="active" defaultChecked={r?.active ?? true} /> Regel aktiv</label>
             <label><input type="checkbox" name="auto" defaultChecked={r?.autoApply ?? false} /> Automatisch übernehmen (nur innerhalb Mindest- und Höchstpreis)</label>

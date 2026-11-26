@@ -344,7 +344,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
           <form action={`/api/admin/hotels/${hotel.id}/documents`} method="post" encType="multipart/form-data" className="inline-form">
             <div><label htmlFor="f1c507">PDF-Datei (max. 15 MB)</label><input id="f1c507" type="file" name="file" accept="application/pdf,.pdf" required /></div>
             {langs.map((l) => (
-              <div key={l}><label>Titel {l.toUpperCase()}</label><input name={`title.${l}`} placeholder={l === "de" ? "z. B. Speisekarte" : l === "en" ? "z. B. Menu" : ""} maxLength={120} /></div>
+              <div key={l}><label htmlFor={`sp-title.${l}`}>Titel {l.toUpperCase()}</label><input id={`sp-title.${l}`} name={`title.${l}`} placeholder={l === "de" ? "z. B. Speisekarte" : l === "en" ? "z. B. Menu" : ""} maxLength={120} /></div>
             ))}
             <button className="btn small">Hochladen</button>
           </form>
@@ -388,9 +388,9 @@ export default async function Site({ params, searchParams }: { params: Promise<{
           <div className="form-grid">
             <div><label htmlFor="f1c501">Adresse der eigenen Website</label><input id="f1c501" name="websiteUrl" type="url" placeholder="https://www.hotel.ch" defaultValue={brand.websiteUrl ?? ""} disabled={!canEdit} /></div>
             <div>
-              <label>Hauptfarbe (Knöpfe, Links)</label>
+              <label htmlFor="sp-color">Hauptfarbe (Knöpfe, Links)</label>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <input name="color" type="color" defaultValue={brand.color ?? "#2f5d50"} style={{ width: 64, height: 42, padding: 2 }} disabled={!canEdit} />
+                <input id="sp-color" name="color" type="color" defaultValue={brand.color ?? "#2f5d50"} style={{ width: 64, height: 42, padding: 2 }} disabled={!canEdit} />
                 <label className="check m0"><input type="checkbox" name="useColor" defaultChecked={!!brand.color} disabled={!canEdit} />verwenden</label>
               </div>
             </div>

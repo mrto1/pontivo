@@ -386,7 +386,7 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
           const it = b.items[i];
           return (<>
             <div className="form-grid">
-              <div><label>Name des Labels {i + 1}</label><input name={`${k}.name`} defaultValue={it?.name ?? ""} placeholder="z. B. Swisstainable" maxLength={80} /></div>
+              <div><label htmlFor={`pg-${k}.name`}>Name des Labels {i + 1}</label><input id={`pg-${k}.name`} name={`${k}.name`} defaultValue={it?.name ?? ""} placeholder="z. B. Swisstainable" maxLength={80} /></div>
               <div><label htmlFor="fff0812">Link (optional)</label><input id="fff0812" name={`${k}.url`} defaultValue={it?.url ?? ""} placeholder="https://…" /></div>
             </div>
             <LField name={`${k}.level`} label="Stufe (optional, z. B. «Level II – engaged»)" value={it?.level} max={60} langs={langs} />
@@ -611,11 +611,11 @@ export default async function EditPage({ params, searchParams }: { params: Promi
           </>) : null}
           <div className="lfield">
             <div><label htmlFor="fff0827">Titel bei Google (DE, max. 70 Zeichen)</label><input id="fff0827" name="seoTitle.de" maxLength={70} defaultValue={page.seo.de?.title ?? ""} /></div>
-            {editLang ? <div><label>Titel bei Google ({editLang.toUpperCase()})</label><input name={`seoTitle.${editLang}`} maxLength={70} defaultValue={page.seo[editLang]?.title ?? ""} /></div> : null}
+            {editLang ? <div><label htmlFor={`pg-seoTitle.${editLang}`}>Titel bei Google ({editLang.toUpperCase()})</label><input id={`pg-seoTitle.${editLang}`} name={`seoTitle.${editLang}`} maxLength={70} defaultValue={page.seo[editLang]?.title ?? ""} /></div> : null}
           </div>
           <div className="lfield">
             <div><label htmlFor="fff0828">Beschreibung bei Google (DE, max. 170 Zeichen)</label><textarea id="fff0828" name="seoDesc.de" rows={2} maxLength={170} defaultValue={page.seo.de?.description ?? ""} /></div>
-            {editLang ? <div><label>Beschreibung bei Google ({editLang.toUpperCase()})</label><textarea name={`seoDesc.${editLang}`} rows={2} maxLength={170} defaultValue={page.seo[editLang]?.description ?? ""} /></div> : null}
+            {editLang ? <div><label htmlFor={`pg-seoDesc.${editLang}`}>Beschreibung bei Google ({editLang.toUpperCase()})</label><textarea id={`pg-seoDesc.${editLang}`} name={`seoDesc.${editLang}`} rows={2} maxLength={170} defaultValue={page.seo[editLang]?.description ?? ""} /></div> : null}
           </div>
           {LOCALES.filter((l) => l !== "de" && l !== editLang).map((l) => (
             <span key={l} hidden>

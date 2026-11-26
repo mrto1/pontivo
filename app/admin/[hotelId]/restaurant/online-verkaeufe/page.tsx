@@ -28,7 +28,7 @@ export default async function OnlineSales({ params, searchParams }: { params: Pr
   return (
     <div className="stack print-page">
       <style>{`@media print{.no-print,.admin-head,.section-tabs{display:none !important} body{background:#fff;color:#000}}`}</style>
-      <h1>Online-Verkäufe {label}</h1>
+      <h1 className="sr-only print-title">Online-Verkäufe {label}</h1>
       <div className="no-print">
         <PeriodNav prev={`${base}?month=${shiftMonth(month, -1)}`} next={month < cur ? `${base}?month=${shiftMonth(month, 1)}` : undefined} todayHref={base} todayActive={month === cur} todayLabel="Dieser Monat" jump={{ kind: "month", value: month, param: "month" }}>
           <DownloadLink href={`${base}/csv?month=${month}`}>CSV</DownloadLink>

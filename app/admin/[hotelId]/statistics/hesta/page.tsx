@@ -21,7 +21,8 @@ export default async function Hesta({ params, searchParams }: { params: Promise<
   const tot = r.rows.reduce((a, x) => ({ arrivals: a.arrivals + x.arrivals, nights: a.nights + x.nights }), { arrivals: 0, nights: 0 });
   return (
     <div className="stack">
-      <h1>Beherbergungsstatistik (HESTA)<InfoTip>Zahlen für die Meldung an das Bundesamt für Statistik. Sie tragen sie im Portal des BFS (eHESTA) ein; eine automatische Übermittlung gibt es noch nicht. Herkunftsland = Nationalität aus der Gästemeldung; Personen ohne Meldung stehen unter «Land unbekannt».</InfoTip></h1>
+      <h1 className="sr-only">Beherbergungsstatistik (HESTA)</h1>
+      <div><InfoTip label="Worum geht es hier?">Zahlen für die Meldung an das Bundesamt für Statistik. Sie tragen sie im Portal des BFS (eHESTA) ein; eine automatische Übermittlung gibt es noch nicht. Herkunftsland = Nationalität aus der Gästemeldung; Personen ohne Meldung stehen unter «Land unbekannt».</InfoTip></div>
       <PeriodNav prev={`?month=${shiftMonth(month, -1)}`} next={month < thisMonth ? `?month=${shiftMonth(month, 1)}` : undefined} todayHref="?" todayActive={month === shiftMonth(thisMonth, -1)} todayLabel="Letzter Monat" prevLabel="Vormonat" nextLabel="Folgemonat" jump={{ kind: "month", value: month, param: "month" }} />
       <section className="card stack">
         <h2>Angebot und Belegung</h2>

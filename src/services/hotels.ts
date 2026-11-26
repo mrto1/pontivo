@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db, type Executor } from "../db/client";
 import { hotels, touristTaxRules, type Hotel, type TouristTaxRule } from "../db/schema";
 import { pickRule } from "../domain/tourist-tax";
+import { isUuid } from "../lib/uuid";
 
 export function normalizeHost(host: string | null | undefined): string | null {
   if (!host) return null;
@@ -26,6 +27,7 @@ export async function getHotelBySlug(slug: string): Promise<Hotel | null> {
 }
 
 export async function getHotelById(id: string, ex: Executor = db()): Promise<Hotel | null> {
+  if (!isUuid(id)) return null;
   const [row] = await ex.select().from(hotels).where(eq(hotels.id, id)).limit(1);
   return row ?? null;
 }

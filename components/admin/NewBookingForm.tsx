@@ -16,50 +16,52 @@ export async function NewBookingForm({ hotel, sp, action, cancelHref }: { hotel:
   <form action={action} className="stack">
     <input type="hidden" name="hotelId" value={hotel.id} />
     <div>
-      <label>Zimmer und Tarif</label>
-      <select name="offer" required defaultValue={sp.offer}>
+      <label htmlFor="nb-of">Zimmer und Tarif</label>
+      <select id="nb-of" name="offer" required defaultValue={sp.offer}>
         {rts.map((rt) => rps.filter((p) => p.roomTypeId === rt.id).map((p) => (
           <option key={p.id} value={`${rt.id}|${p.id}`}>{rt.name} · {p.name}</option>
         )))}
       </select>
     </div>
-    <div className="inline-form">
-      <div><label>Anreise</label><input type="date" name="checkin" required min={today} defaultValue={checkin} /></div>
-      <div><label>Abreise</label><input type="date" name="checkout" required min={addDays(today, 1)} defaultValue={sp.checkout ?? addDays(checkin, 1)} /></div>
-      <div><label>Erwachsene</label><input type="number" name="adults" min={1} max={30} required defaultValue={sp.adults ?? 2} className="w80" /></div>
-      <div><label>Kinder</label><input type="number" name="children" min={0} max={20} defaultValue={sp.children ?? 0} className="w80" /></div>
-      <div><label>Alter der Kinder</label><input className="w120" name="ages" placeholder="z. B. 4, 9" defaultValue={sp.ages} /></div>
+    <div className="form-grid">
+      <div><label htmlFor="nb-in">Anreise</label><input id="nb-in" type="date" name="checkin" required min={today} defaultValue={checkin} /></div>
+      <div><label htmlFor="nb-out">Abreise</label><input id="nb-out" type="date" name="checkout" required min={addDays(today, 1)} defaultValue={sp.checkout ?? addDays(checkin, 1)} /></div>
+    </div>
+    <div className="form-grid tight">
+      <div><label htmlFor="nb-ad">Erwachsene</label><input id="nb-ad" type="number" name="adults" min={1} max={30} required defaultValue={sp.adults ?? 2} /></div>
+      <div><label htmlFor="nb-ch">Kinder</label><input id="nb-ch" type="number" name="children" min={0} max={20} defaultValue={sp.children ?? 0} /></div>
+      <div><label htmlFor="nb-ag">Alter der Kinder</label><input id="nb-ag" name="ages" placeholder="z. B. 4, 9" defaultValue={sp.ages} /></div>
     </div>
     {[2, 3].map((i) => (
       <details key={i} open={!!sp[`offer${i}`]}>
         <summary className="small">Weiteres Zimmer {i - 1} hinzufügen (z. B. Familie, mehrere Zimmer)</summary>
-        <div className="inline-form">
+        <div className="stack mt8">
           <div>
-            <label>Zimmer und Tarif</label>
-            <select name={`offer${i}`} defaultValue={sp[`offer${i}`] ?? ""}>
+            <label htmlFor={`nb-of${i}`}>Zimmer und Tarif</label>
+            <select id={`nb-of${i}`} name={`offer${i}`} defaultValue={sp[`offer${i}`] ?? ""}>
               <option value="">(kein weiteres Zimmer)</option>
               {rts.map((rt) => rps.filter((p) => p.roomTypeId === rt.id).map((p) => <option key={p.id} value={`${rt.id}|${p.id}`}>{rt.name} · {p.name}</option>))}
             </select>
           </div>
-          <div><label>Erwachsene</label><input type="number" name={`adults${i}`} min={1} max={30} defaultValue={sp[`adults${i}`] ?? 2} className="w80" /></div>
-          <div><label>Kinder</label><input type="number" name={`children${i}`} min={0} max={20} defaultValue={sp[`children${i}`] ?? 0} className="w80" /></div>
-          <div><label>Alter der Kinder</label><input className="w120" name={`ages${i}`} placeholder="z. B. 4, 9" defaultValue={sp[`ages${i}`]} /></div>
+          <div className="form-grid tight">
+            <div><label htmlFor={`nb-ad${i}`}>Erwachsene</label><input id={`nb-ad${i}`} type="number" name={`adults${i}`} min={1} max={30} defaultValue={sp[`adults${i}`] ?? 2} /></div>
+            <div><label htmlFor={`nb-ch${i}`}>Kinder</label><input id={`nb-ch${i}`} type="number" name={`children${i}`} min={0} max={20} defaultValue={sp[`children${i}`] ?? 0} /></div>
+            <div><label htmlFor={`nb-ag${i}`}>Alter der Kinder</label><input id={`nb-ag${i}`} name={`ages${i}`} placeholder="z. B. 4, 9" defaultValue={sp[`ages${i}`]} /></div>
+          </div>
         </div>
       </details>
     ))}
-    <div className="inline-form">
-      <div><label>Vorname</label><input name="firstName" required maxLength={100} defaultValue={sp.firstName} /></div>
-      <div><label>Nachname</label><input name="lastName" required maxLength={100} defaultValue={sp.lastName} /></div>
-    </div>
-    <div className="inline-form">
-      <div><label>E-Mail (optional)</label><input type="email" name="email" maxLength={200} defaultValue={sp.email} /></div>
-      <div><label>Telefon (optional)</label><input type="tel" name="phone" maxLength={40} defaultValue={sp.phone} /></div>
+    <div className="form-grid">
+      <div><label htmlFor="nb-fn">Vorname</label><input id="nb-fn" name="firstName" required maxLength={100} autoComplete="off" defaultValue={sp.firstName} /></div>
+      <div><label htmlFor="nb-ln">Nachname</label><input id="nb-ln" name="lastName" required maxLength={100} autoComplete="off" defaultValue={sp.lastName} /></div>
+      <div><label htmlFor="nb-em">E-Mail (optional)</label><input id="nb-em" type="email" name="email" maxLength={200} autoComplete="off" defaultValue={sp.email} /></div>
+      <div><label htmlFor="nb-ph">Telefon (optional)</label><input id="nb-ph" type="tel" name="phone" maxLength={40} autoComplete="off" defaultValue={sp.phone} /></div>
       <div>
-        <label>Sprache</label>
-        <select name="language" defaultValue={sp.language ?? hotel.defaultLanguage}>{LOCALES.map((l) => <option key={l} value={l}>{LANG_NAMES[l]}</option>)}</select>
+        <label htmlFor="nb-lang">Sprache</label>
+        <select id="nb-lang" name="language" defaultValue={sp.language ?? hotel.defaultLanguage}>{LOCALES.map((l) => <option key={l} value={l}>{LANG_NAMES[l]}</option>)}</select>
       </div>
     </div>
-    <div><label>Bemerkung</label><textarea name="notes" rows={2} maxLength={2000} defaultValue={sp.notes} /></div>
+    <div><label htmlFor="nb-no">Bemerkung</label><textarea id="nb-no" name="notes" rows={2} maxLength={2000} defaultValue={sp.notes} /></div>
     <label className="check"><input type="checkbox" name="notify" defaultChecked /> Bestätigung per E-Mail an den Gast (falls E-Mail angegeben)</label>
     <div className="drawer-actions"><button className="btn">Buchung erfassen</button><a className="btn secondary" href={cancelHref}>Abbrechen</a></div>
   </form>

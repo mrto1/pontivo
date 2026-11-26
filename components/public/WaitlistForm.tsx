@@ -31,8 +31,8 @@ export function WaitlistForm(props: { locale: Locale; hotelSlug: string; checkin
       <h3 className="m0">{m.waitTitle}</h3>
       <p className="muted m0">{m.waitText}</p>
       <div className="form-grid">
-        <div><label>{m.waitName}</label><input name="name" autoComplete="name" /></div>
-        <div><label>{m.waitEmail}</label><input name="email" type="email" required autoComplete="email" /></div>
+        <div><label htmlFor="wl-name">{m.waitName}</label><input id="wl-name" name="name" autoComplete="name" /></div>
+        <div><label htmlFor="wl-email">{m.waitEmail}</label><input id="wl-email" name="email" type="email" required autoComplete="email" /></div>
       </div>
       {state === "error" ? <p className="notice warn" role="alert">{m.waitError}</p> : null}
       <div><button className="btn" type="submit" disabled={state === "busy" || !ready}>{m.waitButton}</button></div>

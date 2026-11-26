@@ -66,7 +66,7 @@ export default async function Buchhaltung({ params, searchParams }: { params: Pr
         <form action={save} className="stack">
           <input type="hidden" name="hotelId" value={hotel.id} />
           <fieldset className="plain" disabled={!manager}><div className="form-grid">
-            {ACCOUNT_KEYS.map((k) => <div key={k}><label>{ACCOUNT_LABEL[k]}</label><input name={k} defaultValue={accounts[k]} maxLength={20} /></div>)}
+            {ACCOUNT_KEYS.map((k) => <div key={k}><label htmlFor={`acc-${k}`}>{ACCOUNT_LABEL[k]}</label><input id={`acc-${k}`} name={k} defaultValue={accounts[k]} maxLength={20} /></div>)}
           </div></fieldset>
           {manager ? <div><button className="btn small">Konten speichern</button></div> : null}
         </form>

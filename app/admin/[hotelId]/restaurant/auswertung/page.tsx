@@ -37,7 +37,7 @@ export default async function DiningStatsPage({ params, searchParams }: { params
   const maxG = Math.max(1, ...s.guestsByHour.map((h) => h.guests));
   return (
     <div className="stack">
-      <h1>Auswertung {label}</h1>
+      <h1 className="sr-only">Auswertung {label}</h1>
       <PeriodNav prev={`${base}?month=${shiftMonth(month, -1)}`} next={month < cur ? `${base}?month=${shiftMonth(month, 1)}` : undefined} todayHref={base} todayActive={month === cur} todayLabel="Dieser Monat" jump={{ kind: "month", value: month, param: "month" }}>{null}</PeriodNav>
       <p className="small muted">Grundlage sind die Bons der Kasse. Kellner und Tische gelten nach der heutigen Zuweisung; Bestellungen, die länger als 8 Stunden offen waren, zählen nicht zur Verweildauer.</p>
       <div className="stat-row" data-testid="dining-totals">

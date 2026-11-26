@@ -129,18 +129,18 @@ export function BookingForm(props: {
       ) : null}
       <h3 className="mt16">{d.yourDetails}</h3>
       <div className="form-grid">
-        <div><label>{d.firstName}</label><input name="first_name" required autoComplete="given-name" /></div>
-        <div><label>{d.lastName}</label><input name="last_name" required autoComplete="family-name" /></div>
-        <div><label>{d.email}</label><input name="email" type="email" required autoComplete="email" /></div>
-        <div><label>{d.phone}</label><input name="phone" type="tel" autoComplete="tel" /></div>
+        <div><label htmlFor="bf-first_name">{d.firstName}</label><input id="bf-first_name" name="first_name" required autoComplete="given-name" /></div>
+        <div><label htmlFor="bf-last_name">{d.lastName}</label><input id="bf-last_name" name="last_name" required autoComplete="family-name" /></div>
+        <div><label htmlFor="bf-email">{d.email}</label><input id="bf-email" name="email" type="email" required autoComplete="email" /></div>
+        <div><label htmlFor="bf-phone">{d.phone}</label><input id="bf-phone" name="phone" type="tel" autoComplete="tel" /></div>
       </div>
-      <div className="mt12"><label>{d.notes}</label><textarea name="notes" rows={2} /></div>
+      <div className="mt12"><label htmlFor="bf-notes">{d.notes}</label><textarea id="bf-notes" name="notes" rows={2} /></div>
       {props.vouchers && !props.payOnInvoice ? (
         <details className="voucher-redeem mt12">
           <summary className="small">{d.voucherHave}</summary>
           <div style={{ marginTop: 8, maxWidth: 320 }}>
-            <label>{d.voucherCodeLabel}</label>
-            <input className="upper" name="voucher" placeholder="GS-XXXX-XXXX" autoComplete="off" />
+            <label htmlFor="bf-voucher">{d.voucherCodeLabel}</label>
+            <input id="bf-voucher" className="upper" name="voucher" placeholder="GS-XXXX-XXXX" autoComplete="off" />
             <p className="small muted">{d.voucherHint}</p>
           </div>
         </details>

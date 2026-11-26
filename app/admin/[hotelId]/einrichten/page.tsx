@@ -431,7 +431,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
               </div>
               <div><label htmlFor="f02048">Beschreibung (optional)</label><textarea id="f02048" name="description" rows={3} maxLength={2000} placeholder={whole ? "Zimmer, Betten, Küche, Balkon, Parkplatz …" : "Bett, Grösse, Aussicht, Bad …"} /></div>
               <div className="form-grid">
-                <div><label>Preis pro Nacht CHF{whole ? " (ganze Unterkunft)" : " (für 2 Personen)"}</label><input name="price" inputMode="decimal" required placeholder={whole ? "180" : "160"} /></div>
+                <div><label htmlFor="ein-price">Preis pro Nacht CHF{whole ? " (ganze Unterkunft)" : " (für 2 Personen)"}</label><input id="ein-price" name="price" inputMode="decimal" required placeholder={whole ? "180" : "160"} /></div>
                 <div><label htmlFor="f02049">Mindestaufenthalt (Nächte)</label><input id="f02049" name="minNights" type="number" min={1} max={60} defaultValue={whole ? 3 : 1} /></div>
                 {whole ? <div><label htmlFor="f020410">Endreinigung CHF (im Preis ausgewiesen)</label><input id="f020410" name="cleaning" inputMode="decimal" placeholder="80" /></div> : null}
               </div>

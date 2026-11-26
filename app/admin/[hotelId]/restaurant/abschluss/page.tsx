@@ -5,7 +5,9 @@ import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError, closeDay, dayReportFor, listDayCloses, verifyHotel } from "@/src/services/pos";
 import { offlineWarnings } from "@/src/services/pos-sync";
 import { METHODS, METHOD_LABEL, type DayReport } from "@/src/domain/pos";
-import { todayIn } from "@/src/domain/dates";
+import { addDays, todayIn } from "@/src/domain/dates";
+import { formatDay } from "@/src/i18n/dict";
+import { PeriodNav } from "@/components/admin/PeriodNav";
 import { formatChf } from "@/src/domain/money";
 import { s } from "@/src/lib/form";
 
@@ -32,11 +34,11 @@ export default async function PosClosePage({ params, searchParams }: { params: P
   const r = (closed?.report as DayReport | undefined) ?? rep;
   return (
     <div className="stack">
-      <h1>Kassenabschluss {day}</h1>
+      <h1 className="sr-only">Kassenabschluss {formatDay(day, "de")}</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
-      <form className="card"><label htmlFor="day">Tag</label> <input id="day" name="day" type="date" defaultValue={day} max={today} /> <button className="btn secondary small">Anzeigen</button></form>
+      <PeriodNav prev={`?day=${addDays(day, -1)}`} next={day < today ? `?day=${addDays(day, 1)}` : undefined} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }} />
       <section className="card stack">
-        <h2>Z-Bericht{closed ? " (abgeschlossen)" : ""}</h2>
+        <h2>Z-Bericht {formatDay(day, "de")} {closed ? "· abgeschlossen" : "· offen"}</h2>
         <p>{r.receipts} Bons, davon {r.reversals} Gegenbons{r.late ? `, ${r.late} verspätet verbucht` : ""}. Total {formatChf(r.totalRappen)}.</p>
         <table className="table"><thead><tr><th>Zahlart</th><th>Betrag</th><th>Trinkgeld</th></tr></thead><tbody>
           {METHODS.map((m) => <tr key={m}><td>{METHOD_LABEL[m]}</td><td>{formatChf(r.byMethod[m])}</td><td>{formatChf(r.tipsByMethod[m])}</td></tr>)}

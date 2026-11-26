@@ -89,7 +89,8 @@ export default async function OrdersScreenPage({ params, searchParams }: { param
   return (
     <div className="stack">
       <SeenMark hotelId={hotel.id} kind="orders" />
-      <h1>Online-Bestellungen {waiting.length ? <span className="badge danger">{waiting.length} neu</span> : null}</h1>
+      <h1 className="sr-only">Online-Bestellungen {waiting.length ? `${waiting.length} neu` : ""}</h1>
+      {waiting.length ? <p className="m0"><span className="badge danger">{waiting.length} neu</span></p> : null}
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <OrderScreen waiting={waiting.length} beat={beat.bind(null, hotel.id)} probe={sp.probe === "1"} />
       {!cfg.enabled && !open.some((o) => o.isTest) ? <p className="muted small">Die Online-Bestellung ist noch nicht live. <a href={`/admin/${hotel.id}/restaurant/bestellung-einstellungen`}>Einrichten</a></p> : null}

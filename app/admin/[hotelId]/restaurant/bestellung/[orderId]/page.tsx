@@ -158,8 +158,8 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           {v.lines.filter((l) => l.openQuantity > 0 && l.line.quantity > 0).map(({ line, openQuantity }) => (
             <form key={line.id} action={storno} className="stack">
               {H}{O}<input type="hidden" name="lineId" value={line.id} />
-              <div><label>«{line.description}» stornieren (offen {openQuantity})</label>
-                <input name="quantity" type="number" min={1} max={openQuantity} defaultValue={1} className="w70" /> <input name="reason" placeholder="Grund" required maxLength={200} /> <button className="btn secondary small">Stornieren</button></div>
+              <div><label htmlFor={`sq-${line.id}`}>«{line.description}» stornieren (offen {openQuantity})</label>
+                <div className="inline-form"><input id={`sq-${line.id}`} name="quantity" type="number" min={1} max={openQuantity} defaultValue={1} className="w70" /> <input name="reason" placeholder="Grund" aria-label={`Grund für Storno ${line.description}`} required maxLength={200} className="flex1" /> <button className="btn secondary small">Stornieren</button></div></div>
             </form>
           ))}
         </section>
