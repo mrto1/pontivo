@@ -20,17 +20,17 @@ export async function listAreas(hotelId: string): Promise<PosArea[]> {
   return a;
 }
 
-export async function saveArea(hotelId: string, id: string | null, name: string, actor: string): Promise<PosArea> {
+export async function saveArea(hotelId: string, id: string | null, name: string, actor: string, online?: boolean): Promise<PosArea> {
   const n = clean(name, 40);
   if (!n) throw new FloorplanError("Der Name fehlt.");
   return db().transaction(async (tx) => {
     let a: PosArea;
     if (id) {
-      [a] = await tx.update(posAreas).set({ name: n }).where(and(eq(posAreas.id, id), eq(posAreas.hotelId, hotelId))).returning();
+      [a] = await tx.update(posAreas).set({ name: n, ...(online === undefined ? {} : { online }) }).where(and(eq(posAreas.id, id), eq(posAreas.hotelId, hotelId))).returning();
       if (!a) throw new FloorplanError("Raum nicht gefunden.");
     } else {
       const count = (await tx.select({ id: posAreas.id }).from(posAreas).where(eq(posAreas.hotelId, hotelId))).length;
-      [a] = await tx.insert(posAreas).values({ hotelId, name: n, sortOrder: count }).returning();
+      [a] = await tx.insert(posAreas).values({ hotelId, name: n, sortOrder: count, ...(online === undefined ? {} : { online }) }).returning();
     }
     await audit(tx, { hotelId, actor, action: id ? "pos.area_update" : "pos.area_create", entity: "pos_area", entityId: a.id });
     return a;
@@ -55,7 +55,7 @@ export const listPlanItems = (hotelId: string): Promise<PosPlanItem[]> =>
   db().select().from(posPlanItems).where(eq(posPlanItems.hotelId, hotelId)).orderBy(asc(posPlanItems.createdAt));
 
 export type PlanItemInput = { id?: string; kind: PlanItemKind; label?: string; x: number; y: number; w: number; h: number };
-export type TablePlacement = { id: string; x: number | null; y: number | null; shape?: "square" | "round" | "rect"; seats?: number; waiterId?: string | null };
+export type TablePlacement = { id: string; x: number | null; y: number | null; shape?: "square" | "round" | "rect"; seats?: number; waiterId?: string | null; online?: boolean };
 
 /**
  * Layout eines Raums speichern (alles oder nichts): Tische (Lage, Form, Plätze, Raumzuordnung) und Elemente.
@@ -82,6 +82,7 @@ export async function saveAreaLayout(hotelId: string, areaId: string, tables: Ta
       if (t.shape) set.shape = t.shape;
       if (t.seats !== undefined) set.seats = t.seats;
       if (t.waiterId !== undefined) set.waiterId = t.waiterId;
+      if (t.online !== undefined) set.online = t.online;
       await tx.update(posTables).set(set).where(and(eq(posTables.id, t.id), eq(posTables.hotelId, hotelId)));
     }
     await tx.delete(posPlanItems).where(and(eq(posPlanItems.hotelId, hotelId), eq(posPlanItems.areaId, areaId)));

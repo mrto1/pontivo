@@ -91,3 +91,32 @@ describe("Zusammengelegte Tische (SPEC 19.58)", () => {
     expect(await autoAssignDay(hotel.id, day, "t")).toBeGreaterThanOrEqual(0);
   });
 });
+
+import { slotsFor } from "../../src/services/reservations";
+describe("Online-Buchung steuern (SPEC 19.59)", () => {
+  it("nur online buchbare Tische und Räume zählen; Räume ausnehmbar", async () => {
+    const { hotel } = await makeHotel({}, room);
+    await db().insert(hotelModules).values({ hotelId: hotel.id, module: "restaurant", enabled: true });
+    const hs = (await import("../../src/db/schema")).hotels;
+    const [h0] = await db().select().from(hs).where(eq(hs.id, hotel.id));
+    const day = addDays(todayIn(h0.timezone), 3);
+    await saveSettings(hotel.id, { onlineEnabled: true, windows: [{ from: "18:00", to: "19:00" }], durationMin: 90, maxParty: 8, capacity: 50, leadHours: 0, horizonDays: 30, depositPerPersonRappen: 0, depositFromParty: 1, cancelHours: 24, reminderHours: 24, autoAssign: true }, "t");
+    const [inside] = await listAreas(hotel.id);
+    const terrace = await saveArea(hotel.id, null, "Terrasse", "t", false);
+    const t1 = await saveTable(hotel.id, "T1", "t"), t2 = await saveTable(hotel.id, "T2", "t");
+    await saveAreaLayout(hotel.id, inside.id, [{ id: t1.id, x: 100, y: 100, seats: 4 }], [], "t");
+    await saveAreaLayout(hotel.id, terrace.id, [{ id: t2.id, x: 100, y: 100, seats: 4 }], [], "t");
+    // Terrasse ausgenommen: nur T1 online
+    const r1 = await createReservation(h0, { day, time: "18:00", party: 2, name: "A", email: "a@example.ch" }, "online", "guest");
+    expect(r1.reservation.tableId).toBe(t1.id);
+    // T1 belegt, Terrasse nicht online: keine Zeit mehr frei, Buchung wird abgelehnt
+    expect((await slotsFor(h0, day, 2)).every((x) => !x.ok)).toBe(true);
+    await expect(createReservation(h0, { day, time: "18:00", party: 2, name: "B", email: "b@example.ch" }, "online", "guest")).rejects.toBeInstanceOf(Error);
+    // Terrasse online schalten: wieder frei
+    await saveArea(hotel.id, terrace.id, "Terrasse", "t", true);
+    expect((await slotsFor(h0, day, 2)).some((x) => x.ok)).toBe(true);
+    // Intern darf man trotzdem auf die Terrasse setzen
+    const r3 = await createReservation(h0, { day, time: "18:00", party: 2, name: "C", tableId: t2.id }, "admin", "t");
+    expect(r3.reservation.tableId).toBe(t2.id);
+  });
+});

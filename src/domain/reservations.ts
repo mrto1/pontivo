@@ -11,6 +11,8 @@ export type ResSettings = {
   preorderEnabled?: boolean; preorderRequiredFrom?: number;
   /** grosse Gruppen automatisch auf mehrere nahe Tische legen (SPEC 19.58) */
   combineTables?: boolean;
+  /** Küchentakt: höchstens so viele Gäste je Beginnzeit online (0/fehlend = ohne Grenze), SPEC 19.59 */
+  slotMaxGuests?: number;
   /** Öffnungszeiten je Wochentag (0 = Sonntag), null/fehlend = keine Einschränkung (SPEC 20.1) */
   openingHours?: OpeningHours | null;
 };
@@ -93,7 +95,9 @@ export function onlineSlots(s: ResSettings, day: string, party: number, existing
   if (!s.onlineEnabled || party < 1 || party > s.maxParty || daysAhead < 0 || daysAhead > s.horizonDays) return [];
   return slotTimes(s.windows).map((time) => {
     const early = daysAhead === 0 && toMin(time) < now.minutes + s.leadHours * 60;
-    return { time, ok: !early && openAt(s.openingHours, day, time) && coversAt(existing, time, s.durationMin) + party <= s.capacity };
+    const starting = existing.filter((r) => active(r) && r.time === time).reduce((a, r) => a + r.party, 0);
+    const paced = !s.slotMaxGuests || starting + party <= s.slotMaxGuests;
+    return { time, ok: !early && paced && openAt(s.openingHours, day, time) && coversAt(existing, time, s.durationMin) + party <= s.capacity };
   });
 }
 
@@ -110,6 +114,19 @@ export const refundable = (s: ResSettings, startsAt: Date, now: Date) => now.get
 export function suggestTable(tables: { id: string; seats: number }[], existing: ResLite[], party: number, time: string, dur: number, ignoreId?: string): string | null {
   const fit = tables.filter((t) => t.seats >= party && tableFree(existing, t.id, time, dur, ignoreId)).sort((a, b) => a.seats - b.seats);
   return fit[0]?.id ?? null;
+}
+
+/** Tische, die online gebucht werden dürfen: Tisch und sein Raum müssen online sein. */
+export const onlineTables = <T extends { online?: boolean; areaId?: string | null }>(tables: T[], offAreas: Set<string>): T[] =>
+  tables.filter((t) => t.online !== false && !(t.areaId && offAreas.has(t.areaId)));
+
+/**
+ * Gibt es für die Gruppe zur Zeit online buchbare Tische? Nur wenn der Betrieb Tische oder Räume von «online» ausgenommen hat
+ * (`restricted`), sonst gilt allein die Kapazität. Einzeltisch oder Kombination (wenn erlaubt).
+ */
+export function onlineTableAvailable(tables: PlanTableLite[], existing: ResLite[], party: number, time: string, dur: number, combine: boolean): boolean {
+  if (suggestTable(tables, existing, party, time, dur)) return true;
+  return combine && !!suggestCombination(tables, existing, party, time, dur);
 }
 
 export const MAX_COMBINED = 4;

@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { PLAN_ITEM_KINDS, PLAN_ITEM_LABELS, chairLayout, clampPlan } from "../../src/domain/floorplan";
 import type { PlanArea, PlanWaiter } from "./floor-plan-types";
 
-export type EditTable = { id: string; name: string; seats: number; shape: "square" | "round" | "rect"; x: number | null; y: number | null; areaId: string; waiterId: string | null };
+export type EditTable = { id: string; name: string; seats: number; shape: "square" | "round" | "rect"; x: number | null; y: number | null; areaId: string; waiterId: string | null; online: boolean };
 export type EditItem = { key: string; areaId: string; kind: string; label: string; x: number; y: number; w: number; h: number };
 
 /**
@@ -40,7 +40,7 @@ export function TableEditor({ tables, areas, waiters = [], items, action, hotelI
   const shownItems = its.filter((i) => i.areaId === areaId);
   const cur = its.find((i) => i.key === selItem) ?? null;
   const json = JSON.stringify({
-    tables: rows.map((t) => ({ id: t.id, areaId: t.areaId, waiterId: t.waiterId, seats: t.seats, shape: t.shape, x: t.x, y: t.y })),
+    tables: rows.map((t) => ({ id: t.id, areaId: t.areaId, waiterId: t.waiterId, online: t.online, seats: t.seats, shape: t.shape, x: t.x, y: t.y })),
     items: its.map((i) => ({ areaId: i.areaId, kind: i.kind, label: i.label, x: i.x, y: i.y, w: i.w, h: i.h })),
   });
 
@@ -49,7 +49,7 @@ export function TableEditor({ tables, areas, waiters = [], items, action, hotelI
       <input type="hidden" name="hotelId" value={hotelId} />
       <input type="hidden" name="layout" value={json} />
       <div className="te-list" role="table" aria-label="Tische">
-        <div className="te-row te-head" role="row"><span role="columnheader">Tisch</span><span role="columnheader">Plätze</span><span role="columnheader">Form</span><span role="columnheader">Raum</span>{waiters.length ? <span role="columnheader">Kellner</span> : null}<span role="columnheader">Im Plan</span></div>
+        <div className="te-row te-head" role="row"><span role="columnheader">Tisch</span><span role="columnheader">Plätze</span><span role="columnheader">Form</span><span role="columnheader">Raum</span>{waiters.length ? <span role="columnheader">Kellner</span> : null}<span role="columnheader">Online</span><span role="columnheader">Im Plan</span></div>
         {rows.map((t) => (
           <div key={t.id} className="te-row" role="row">
             <strong>{t.name}</strong>
@@ -61,6 +61,7 @@ export function TableEditor({ tables, areas, waiters = [], items, action, hotelI
             </div>
             <select aria-label={`Raum ${t.name}`} value={t.areaId} onChange={(e) => patch(t.id, { areaId: e.target.value })}>{areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select>
             {waiters.length ? <select aria-label={`Kellner ${t.name}`} value={t.waiterId ?? ""} onChange={(e) => patch(t.id, { waiterId: e.target.value || null })}><option value="">–</option>{waiters.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select> : null}
+            <label className="te-plan"><input type="checkbox" aria-label={`Online buchbar ${t.name}`} checked={t.online} onChange={(e) => patch(t.id, { online: e.target.checked })} /><span className="small">Online</span></label>
             <label className="te-plan"><input type="checkbox" checked={t.x !== null} onChange={(e) => patch(t.id, e.target.checked ? { x: 500, y: 500 } : { x: null, y: null })} /><span className="small">Im Plan</span></label>
           </div>
         ))}

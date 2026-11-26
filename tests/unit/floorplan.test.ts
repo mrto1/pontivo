@@ -81,3 +81,21 @@ describe("Tische zusammenlegen (SPEC 19.58)", () => {
     expect(suggestCombination(tables, ex, 7, "18:00", 90)).toBeNull();
   });
 });
+
+import { onlineSlots, onlineTableAvailable, onlineTables, type ResSettings } from "../../src/domain/reservations";
+describe("Online steuern und Küchentakt (SPEC 19.59)", () => {
+  const s: ResSettings = { onlineEnabled: true, windows: [{ from: "18:00", to: "19:00" }], durationMin: 90, maxParty: 10, capacity: 100, leadHours: 0, horizonDays: 30, depositPerPersonRappen: 0, depositFromParty: 1, cancelHours: 24, reminderHours: 24, autoAssign: true, slotMaxGuests: 6 };
+  it("Küchentakt begrenzt Gäste je Beginnzeit", () => {
+    const ex = [{ time: "18:00", party: 4, tableId: null, status: "confirmed" }];
+    const slots = onlineSlots(s, "2026-12-01", 3, ex, { day: "2026-11-01", minutes: 0 }, 30);
+    expect(slots.find((x) => x.time === "18:00")!.ok).toBe(false); // 4 + 3 > 6
+    expect(slots.find((x) => x.time === "18:30")!.ok).toBe(true);
+    expect(onlineSlots({ ...s, slotMaxGuests: 0 }, "2026-12-01", 3, ex, { day: "2026-11-01", minutes: 0 }, 30)[0].ok).toBe(true);
+  });
+  it("nur online buchbare Tische und Räume", () => {
+    const all = [{ id: "a", seats: 4, online: true, areaId: "r1" }, { id: "b", seats: 4, online: false, areaId: "r1" }, { id: "c", seats: 4, online: true, areaId: "r2" }];
+    expect(onlineTables(all, new Set(["r2"])).map((t) => t.id)).toEqual(["a"]);
+    expect(onlineTableAvailable([{ id: "a", seats: 4 }], [{ time: "18:00", party: 2, tableId: "a", status: "confirmed" }], 2, "18:30", 90, false)).toBe(false);
+    expect(onlineTableAvailable([{ id: "a", seats: 4 }], [], 2, "18:30", 90, false)).toBe(true);
+  });
+});

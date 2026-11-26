@@ -2,9 +2,9 @@ import { randomBytes } from "node:crypto";
 import { and, asc, eq, gte, isNull, lte, ne, sql } from "drizzle-orm";
 import { formatInTimeZone } from "date-fns-tz";
 import { db, rows } from "../db/client";
-import { posReservations, posTables, posWaitlist, restaurantSettings, type Hotel, type PosReservation } from "../db/schema";
+import { posAreas, posReservations, posTables, posWaitlist, restaurantSettings, type Hotel, type PosReservation } from "../db/schema";
 import { addDays, diffDays, isDay, todayIn, zonedToUtc } from "../domain/dates";
-import { TIME_RE, checkOpeningHours, checkWindows, coversAt, depositFor, onlineSlots, refundable, suggestCombination, suggestTable, tableFree, type ResSettings, type Slot, PENDING_MINUTES } from "../domain/reservations";
+import { TIME_RE, checkOpeningHours, checkWindows, coversAt, depositFor, onlineSlots, refundable, onlineTableAvailable, onlineTables, suggestCombination, suggestTable, tableFree, type ResSettings, type Slot, PENDING_MINUTES } from "../domain/reservations";
 import { enqueueEmail } from "../email/enqueue";
 import { env } from "../env";
 import { getPaymentProvider } from "../payments/provider";
@@ -97,11 +97,22 @@ export function reservationUrl(hotel: Hotel, locale: string, token: string): str
 }
 
 /** Freie Zeiten für Gäste an einem Tag */
+/** Online buchbare Tische; `restricted` = der Betrieb hat Tische oder Räume ausgenommen (dann braucht jede Online-Reservierung einen solchen Tisch) */
+async function onlineTableSet(hotelId: string) {
+  const all = await db().select().from(posTables).where(and(eq(posTables.hotelId, hotelId), eq(posTables.active, true))).orderBy(asc(posTables.sortOrder), asc(posTables.name));
+  const offAreas = new Set((await db().select({ id: posAreas.id }).from(posAreas).where(and(eq(posAreas.hotelId, hotelId), eq(posAreas.online, false)))).map((a) => a.id));
+  const tables = onlineTables(all, offAreas);
+  return { tables, restricted: tables.length < all.length };
+}
+
 export async function slotsFor(hotel: Hotel, day: string, party: number): Promise<Slot[]> {
   if (!isDay(day) || !(await tableReservationOnline(hotel.id))) return [];
   const [s, ex] = await Promise.all([getSettings(hotel.id), reservationsOfDay(hotel.id, day)]);
   const now = nowIn(hotel);
-  return onlineSlots(s, day, party, ex, now, diffDays(now.day, day));
+  const slots = onlineSlots(s, day, party, ex, now, diffDays(now.day, day));
+  const ot = await onlineTableSet(hotel.id);
+  if (!ot.restricted) return slots;
+  return slots.map((x) => (x.ok && !onlineTableAvailable(ot.tables, ex, party, x.time, s.durationMin, !!s.combineTables) ? { ...x, ok: false } : x));
 }
 
 export type ReservationInput = { day: string; time: string; party: number; name: string; phone?: string; email?: string; note?: string; tableId?: string | null; language?: string; /** Vorbestellung (nur online, SPEC 19.57) */ preorder?: CartLine[] };
@@ -140,6 +151,7 @@ export async function createReservation(hotel: Hotel, i: ReservationInput, sourc
   if (deposit > 0 && !email) throw new PosError(preTotal > 0 ? "Für die Vorbestellung brauchen wir Ihre E-Mail-Adresse." : "Für die Anzahlung brauchen wir Ihre E-Mail-Adresse.");
 
   const token = randomBytes(18).toString("base64url");
+  const online = await onlineTableSet(hotel.id);
   const r = await db().transaction(async (tx) => {
     const existing = await tx.select().from(posReservations).where(and(eq(posReservations.hotelId, hotel.id), eq(posReservations.day, i.day)));
     if (source === "online") {
@@ -157,9 +169,11 @@ export async function createReservation(hotel: Hotel, i: ReservationInput, sourc
       if (!t) throw new PosError("Tisch nicht gefunden.");
       if (!tableFree(existing, t.id, i.time, s.durationMin)) throw new PosError(`${t.name} ist zu dieser Zeit schon reserviert.`);
       tableId = t.id;
-    } else if (s.autoAssign) {
-      tableId = suggestTable(tables, existing, i.party, i.time, s.durationMin);
-      if (!tableId && s.combineTables) { const c = suggestCombination(tables, existing, i.party, i.time, s.durationMin); if (c) { tableId = c[0]; extra = c.slice(1); } }
+    } else if (s.autoAssign || (source === "online" && online.restricted)) {
+      const pool = source === "online" ? online.tables : tables; // Online nur auf online buchbare Tische (SPEC 19.59)
+      tableId = suggestTable(pool, existing, i.party, i.time, s.durationMin);
+      if (!tableId && s.combineTables) { const c = suggestCombination(pool, existing, i.party, i.time, s.durationMin); if (c) { tableId = c[0]; extra = c.slice(1); } }
+      if (!tableId && source === "online" && online.restricted) throw new PosError("Diese Zeit ist leider nicht mehr frei. Bitte eine andere wählen.");
     }
     const [row] = await tx.insert(posReservations).values({
       hotelId: hotel.id, day: i.day, time: i.time, party: i.party, name, phone, email, note: clean(i.note ?? "", 300), tableId, extraTableIds: extra, source, language: i.language ?? hotel.defaultLanguage, publicToken: token,

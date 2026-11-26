@@ -1335,3 +1335,9 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 - Der Plan zeigt die Reservierung an allen ihren Tischen (Farbe, Kurzinfo) und markiert alle beim Antippen; die Liste neben dem Plan nennt «T1 + T2».
 - Noch nicht: zusammengelegte Plätze sind die Summe der Einzeltische (keine Abzüge), Kasse-Bestellung hängt am Haupttisch.
 
+
+## 19.59 Online-Buchung steuern (Raum/Tisch) und Küchentakt
+
+- Je Raum (`pos_areas.online`) und je Tisch (`pos_tables.online`) lässt sich festlegen, ob er online buchbar ist (Standard: ja). Ein Tisch ist online buchbar, wenn Tisch und Raum freigegeben sind (`onlineTableAvailable`). Online-Reservierungen erhalten nur solche Tische; ist keiner frei, wird die Zeit nicht angeboten und die Buchung abgelehnt. Das Personal kann in der Oberfläche weiterhin jeden Tisch zuweisen.
+- **Küchentakt** (`restaurant_settings.slot_max_guests`, 0 = aus): Höchstzahl Gäste, die zur selben Uhrzeit neu beginnen. Ist sie erreicht, wird die Zeit online nicht mehr angeboten (`onlineSlots`).
+- Abnahme: `tests/unit/floorplan.test.ts`, `tests/integration/floorplan.test.ts`.

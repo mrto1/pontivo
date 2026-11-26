@@ -25,12 +25,12 @@ async function tablesSave(f: FormData) {
   "use server";
   const c = await guard(f);
   try {
-    const raw = JSON.parse(s(f, "layout")) as { tables: { id: string; areaId: string; waiterId?: string | null; seats: number; shape: string; x: number | null; y: number | null }[]; items: { areaId: string; kind: string; label: string; x: number; y: number; w: number; h: number }[] };
+    const raw = JSON.parse(s(f, "layout")) as { tables: { id: string; areaId: string; waiterId?: string | null; online?: boolean; seats: number; shape: string; x: number | null; y: number | null }[]; items: { areaId: string; kind: string; label: string; x: number; y: number; w: number; h: number }[] };
     if (!raw || !Array.isArray(raw.tables) || !Array.isArray(raw.items)) throw new PosError("Eingabe ungültig.");
     const areas = await listAreas(c.hotel.id);
     for (const a of areas) {
       await saveAreaLayout(c.hotel.id, a.id,
-        raw.tables.filter((t) => t.areaId === a.id).map((t) => ({ id: String(t.id), seats: Number(t.seats), waiterId: t.waiterId ? String(t.waiterId) : null, shape: (t.shape === "round" ? "round" : t.shape === "rect" ? "rect" : "square") as "square" | "round" | "rect", x: t.x === null ? null : Number(t.x), y: t.y === null ? null : Number(t.y) })),
+        raw.tables.filter((t) => t.areaId === a.id).map((t) => ({ id: String(t.id), seats: Number(t.seats), waiterId: t.waiterId ? String(t.waiterId) : null, online: t.online !== false, shape: (t.shape === "round" ? "round" : t.shape === "rect" ? "rect" : "square") as "square" | "round" | "rect", x: t.x === null ? null : Number(t.x), y: t.y === null ? null : Number(t.y) })),
         raw.items.filter((i) => i.areaId === a.id).map((i) => ({ kind: i.kind as import("@/src/db/schema").PlanItemKind, label: String(i.label ?? ""), x: Number(i.x), y: Number(i.y), w: Number(i.w), h: Number(i.h) })),
         c.actor);
     }
@@ -54,7 +54,7 @@ async function areaSave(f: FormData) {
   "use server";
   const c = await guard(f);
   const id = s(f, "areaId") || null;
-  try { await saveArea(c.hotel.id, id, s(f, "name"), c.actor); } catch (e) { if (!(e instanceof FloorplanError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
+  try { await saveArea(c.hotel.id, id, s(f, "name"), c.actor, f.get("online") === "on"); } catch (e) { if (!(e instanceof FloorplanError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
   here(c.hotel.id, id ? "Raum umbenannt." : "Raum angelegt.");
 }
 async function areaDelete(f: FormData) {
@@ -93,11 +93,12 @@ export default async function TablesSettingsPage({ params, searchParams }: { par
         {areas.map((a) => (
           <form key={a.id} action={areaSave} className="inline-form">{H}<input type="hidden" name="areaId" value={a.id} />
             <div><label htmlFor={`an-${a.id}`}>Name</label><input id={`an-${a.id}`} name="name" defaultValue={a.name} required maxLength={40} /></div>
-            <button className="btn secondary small">Umbenennen</button>
+            <label className="te-plan"><input type="checkbox" name="online" defaultChecked={a.online} /><span className="small">Online buchbar</span></label>
+            <button className="btn secondary small">Speichern</button>
             {areas.length > 1 ? <button className="btn secondary small" formAction={areaDelete}>Löschen</button> : null}
           </form>
         ))}
-        <form action={areaSave} className="inline-form">{H}<div><label htmlFor="newarea">Neuer Raum</label><input id="newarea" name="name" required maxLength={40} placeholder="z. B. Terrasse" /></div><button className="btn secondary small">Raum anlegen</button></form>
+        <form action={areaSave} className="inline-form">{H}<div><label htmlFor="newarea">Neuer Raum</label><input id="newarea" name="name" required maxLength={40} placeholder="z. B. Terrasse" /></div><label className="te-plan"><input type="checkbox" name="online" defaultChecked /><span className="small">Online buchbar</span></label><button className="btn secondary small">Raum anlegen</button></form>
       </section>
       <section className="card stack" id="kellner" data-testid="waiters">
         <h2>Kellner ({waiters.length})</h2>
@@ -116,7 +117,7 @@ export default async function TablesSettingsPage({ params, searchParams }: { par
         <section className="card stack" id="tischplan" data-testid="table-plan">
           <h2>Plätze, Form und Plan</h2>
           <p className="small muted">Plätze und Form je Tisch festlegen, dann die Tische im Plan an ihren Ort ziehen. Der Plan erscheint unter Reservierungen → Tischplan (und bei «Tische» mit der Kasse) mit dem aktuellen Zustand.</p>
-          <TableEditor key={`${areas.length}-${tables.length}-${waiters.length}`} waiters={waiters.map((w) => ({ id: w.id, name: w.name, color: w.color }))} areas={areas.map((a) => ({ id: a.id, name: a.name }))} tables={tables.map((t) => ({ id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY, areaId: t.areaId ?? areas[0].id, waiterId: t.waiterId }))} items={items.filter((i) => areas.some((a) => a.id === i.areaId)).map((i) => ({ key: i.id, areaId: i.areaId, kind: i.kind, label: i.label, x: i.planX, y: i.planY, w: i.w, h: i.h }))} action={tablesSave} hotelId={hotel.id} />
+          <TableEditor key={`${areas.length}-${tables.length}-${waiters.length}`} waiters={waiters.map((w) => ({ id: w.id, name: w.name, color: w.color }))} areas={areas.map((a) => ({ id: a.id, name: a.name }))} tables={tables.map((t) => ({ id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY, areaId: t.areaId ?? areas[0].id, waiterId: t.waiterId, online: t.online }))} items={items.filter((i) => areas.some((a) => a.id === i.areaId)).map((i) => ({ key: i.id, areaId: i.areaId, kind: i.kind, label: i.label, x: i.planX, y: i.planY, w: i.w, h: i.h }))} action={tablesSave} hotelId={hotel.id} />
         </section>
       ) : null}
       <form action={csvTables} className="card stack">{H}

@@ -1261,7 +1261,7 @@ input + .small, select + .small, textarea + .small { display: block; margin-top:
 .te-item-edit { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 12px 14px; }
 .te-item-edit input { width: 110px; }
 .plan-item.selected { outline: 3px solid var(--accent, #0b7285); }
-.te-row { grid-template-columns: minmax(80px, 1fr) 84px auto minmax(110px, 160px) 84px; }
+.te-row { grid-template-columns: minmax(80px, 1fr) 84px auto minmax(110px, 160px) minmax(84px, auto) 84px; }
 @media (max-width: 560px) { .te-row { grid-template-columns: 84px 1fr; } }
 .plan-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }
 .plan-clock { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 240px; margin: 0; }

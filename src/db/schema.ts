@@ -1441,6 +1441,8 @@ export const posTables = pgTable("pos_tables", {
   waiterId: uuid("waiter_id"),
   /** QR-Code am Tisch (SPEC 19.55) */
   qrToken: text("qr_token"),
+  /** online buchbar (SPEC 19.59) */
+  online: boolean("online").notNull().default(true),
 });
 export type PosTable = typeof posTables.$inferSelect;
 
@@ -1462,6 +1464,8 @@ export const posAreas = pgTable("pos_areas", {
   name: text("name").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),
   active: boolean("active").notNull().default(true),
+  /** Tische dieses Raums online buchbar (SPEC 19.59) */
+  online: boolean("online").notNull().default(true),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 export type PosArea = typeof posAreas.$inferSelect;
@@ -1850,6 +1854,8 @@ export const restaurantSettings = pgTable("restaurant_settings", {
   preorderRequiredFrom: integer("preorder_required_from").notNull().default(0),
   /** grosse Gruppen automatisch auf mehrere nahe Tische legen (SPEC 19.58) */
   combineTables: boolean("combine_tables").notNull().default(false),
+  /** Küchentakt: höchstens so viele Gäste je Beginnzeit online (0 = ohne Grenze), SPEC 19.59 */
+  slotMaxGuests: integer("slot_max_guests").notNull().default(0),
   onlineEnabled: boolean("online_enabled").notNull().default(false),
   windows: jsonb("windows").$type<{ from: string; to: string }[]>().notNull(),
   durationMin: integer("duration_min").notNull().default(90),
