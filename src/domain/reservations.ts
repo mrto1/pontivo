@@ -9,6 +9,8 @@ export type ResSettings = {
   depositPerPersonRappen: number; depositFromParty: number; cancelHours: number; reminderHours: number; autoAssign: boolean;
   /** Vorbestellung (SPEC 19.57): erlaubt, und ab dieser Gruppengrösse Pflicht (0 = nie) */
   preorderEnabled?: boolean; preorderRequiredFrom?: number;
+  /** grosse Gruppen automatisch auf mehrere nahe Tische legen (SPEC 19.58) */
+  combineTables?: boolean;
   /** Öffnungszeiten je Wochentag (0 = Sonntag), null/fehlend = keine Einschränkung (SPEC 20.1) */
   openingHours?: OpeningHours | null;
 };
@@ -35,7 +37,9 @@ export function checkOpeningHours(h: OpeningHours): string | null {
   }
   return null;
 }
-export type ResLite = { id?: string; time: string; party: number; tableId: string | null; status: string; createdAt?: Date };
+export type ResLite = { id?: string; time: string; party: number; tableId: string | null; /** zusammengelegte Tische (SPEC 19.58) */ extraTableIds?: string[]; status: string; createdAt?: Date };
+/** Alle Tische einer Reservierung (Haupttisch zuerst) */
+export const tablesOfRes = (r: { tableId: string | null; extraTableIds?: string[] }): string[] => (r.tableId ? [r.tableId, ...(r.extraTableIds ?? [])] : []);
 /** Nicht bezahlte Online-Reservierung hält Plätze nur so lange (Stripe-Zahlungsseite läuft nach 30 Minuten ab) */
 export const PENDING_MINUTES = 35;
 
@@ -76,7 +80,7 @@ export function coversAt(existing: ResLite[], time: string, dur: number): number
 
 /** Tisch zur Zeit noch frei? (ohne die Reservierung `ignoreId`, z. B. beim Umsetzen) */
 export function tableFree(existing: ResLite[], tableId: string, time: string, dur: number, ignoreId?: string): boolean {
-  return !existing.some((r) => active(r) && r.tableId === tableId && (ignoreId === undefined || r.id !== ignoreId) && overlaps(time, r.time, dur));
+  return !existing.some((r) => active(r) && tablesOfRes(r).includes(tableId) && (ignoreId === undefined || r.id !== ignoreId) && overlaps(time, r.time, dur));
 }
 
 export type Slot = { time: string; ok: boolean };
@@ -106,6 +110,32 @@ export const refundable = (s: ResSettings, startsAt: Date, now: Date) => now.get
 export function suggestTable(tables: { id: string; seats: number }[], existing: ResLite[], party: number, time: string, dur: number, ignoreId?: string): string | null {
   const fit = tables.filter((t) => t.seats >= party && tableFree(existing, t.id, time, dur, ignoreId)).sort((a, b) => a.seats - b.seats);
   return fit[0]?.id ?? null;
+}
+
+export const MAX_COMBINED = 4;
+export type PlanTableLite = { id: string; seats: number; areaId?: string | null; planX?: number | null; planY?: number | null };
+
+/**
+ * Tische zusammenlegen (SPEC 19.58): passt kein einzelner Tisch, werden freie Tische im selben Raum zusammengestellt, ausgehend von
+ * einem Anker immer der nächste (nach Lage im Plan, sonst Reihenfolge). Möglichst wenige Tische, dann möglichst wenige Plätze.
+ * Liefert die Tisch-Ids (Haupttisch zuerst, der Anker) oder null.
+ */
+export function suggestCombination(tables: PlanTableLite[], existing: ResLite[], party: number, time: string, dur: number, ignoreId?: string): string[] | null {
+  const free = tables.filter((t) => tableFree(existing, t.id, time, dur, ignoreId));
+  const dist = (a: PlanTableLite, b: PlanTableLite) => (a.planX != null && a.planY != null && b.planX != null && b.planY != null ? Math.hypot(a.planX - b.planX, a.planY - b.planY) : 0);
+  let best: { ids: string[]; seats: number } | null = null;
+  for (const anchor of free) {
+    const group = free.filter((t) => t.id !== anchor.id && (t.areaId ?? null) === (anchor.areaId ?? null)).sort((a, b) => dist(anchor, a) - dist(anchor, b));
+    const ids = [anchor.id];
+    let seats = anchor.seats;
+    for (const t of group) {
+      if (seats >= party || ids.length >= MAX_COMBINED) break;
+      ids.push(t.id); seats += t.seats;
+    }
+    if (seats < party || ids.length < 2) continue;
+    if (!best || ids.length < best.ids.length || (ids.length === best.ids.length && seats < best.seats)) best = { ids, seats };
+  }
+  return best?.ids ?? null;
 }
 
 /** Zeiträume aus Text «11:30-14:00, 17:30-22:00» (leer = Ruhetag); null bei unlesbarer Eingabe */

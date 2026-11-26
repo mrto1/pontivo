@@ -8,7 +8,7 @@ import { listTables, tablesOverview } from "@/src/services/pos";
 import { listAreas, listPlanItems, listWaiters } from "@/src/services/floorplan";
 import { getSettings, reservationsOfDay } from "@/src/services/reservations";
 import { addDays, isDay, todayIn } from "@/src/domain/dates";
-import { TIME_RE, toMin } from "@/src/domain/reservations";
+import { TIME_RE, toMin, tablesOfRes as resTables } from "@/src/domain/reservations";
 import { formatDay } from "@/src/i18n/dict";
 import { formatChf } from "@/src/domain/money";
 import { atLeast, hasArea } from "@/src/domain/roles";
@@ -31,8 +31,8 @@ export default async function ReservationPlan({ params, searchParams }: { params
   const t0 = toMin(time);
   const live = list.filter((r) => r.status === "confirmed" || r.status === "seated" || r.status === "pending");
   // Reservierung, die zur gewählten Zeit läuft (Tisch belegt bis Ende) und die nächste danach (Tisch frei bis dahin)
-  const now = (id: string) => live.find((r) => r.tableId === id && toMin(r.time) <= t0 && toMin(r.time) + cfg.durationMin > t0);
-  const next = (id: string) => live.filter((r) => r.tableId === id && toMin(r.time) > t0).sort((a, b) => toMin(a.time) - toMin(b.time))[0];
+  const now = (id: string) => live.find((r) => resTables(r).includes(id) && toMin(r.time) <= t0 && toMin(r.time) + cfg.durationMin > t0);
+  const next = (id: string) => live.filter((r) => resTables(r).includes(id) && toMin(r.time) > t0).sort((a, b) => toMin(a.time) - toMin(b.time))[0];
   const hhmm = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
   const minSeats = Math.max(0, Math.floor(Number(sp.seats) || 0));
   const maxSeats = Math.max(0, ...tables.map((t) => t.seats));
@@ -50,7 +50,7 @@ export default async function ReservationPlan({ params, searchParams }: { params
       <p className="small muted m0">{formatDay(day, "de")}, {time} · grün frei (mit Uhrzeit, bis wann) · orange belegt oder in weniger als 30 Minuten reserviert · rot am Tisch{pos ? " oder offene Bestellung" : ""}</p>
       {planned.length ? (
         <FloorPlan waiters={waiters.map((w) => ({ id: w.id, name: w.name, color: w.color }))} clock={{ time, durationMin: cfg.durationMin }} areas={areas.map((a) => ({ id: a.id, name: a.name }))} items={planItems.filter((i) => areas.some((a) => a.id === i.areaId)).map((i) => ({ id: i.id, kind: i.kind, label: i.label, x: i.planX, y: i.planY, w: i.w, h: i.h, areaId: i.areaId }))}
-          reservations={live.slice().sort((a, b) => toMin(a.time) - toMin(b.time)).map((r) => ({ id: r.id, time: r.time, name: r.name, party: r.party, tableId: r.tableId, status: r.status }))} tables={planned.map((t) => {
+          reservations={live.slice().sort((a, b) => toMin(a.time) - toMin(b.time)).map((r) => ({ id: r.id, time: r.time, name: r.name, party: r.party, tableId: r.tableId, extraTableIds: r.extraTableIds, status: r.status }))} tables={planned.map((t) => {
           const cur = now(t.id); const nxt = next(t.id); const orders = openBy.get(t.id) ?? [];
           const busy = orders.length > 0 || (cur?.status === "seated");
           // ASSUMPTION: «bald» (orange) heisst: nächste Reservierung in weniger als 30 Minuten; sonst bleibt der Tisch grün mit «frei bis HH:MM».

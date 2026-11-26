@@ -5,9 +5,14 @@ export type TableState = "free" | "reserved" | "seated";
 
 export interface ResLike {
   tableId: string | null;
+  /** zusammengelegte Tische */
+  extraTableIds?: string[];
   time: string; // 'HH:MM'
   status: "confirmed" | "seated" | "cancelled" | "noshow";
 }
+
+/** Alle Tische einer Reservierung */
+export const resTables = (r: { tableId: string | null; extraTableIds?: string[] }): string[] => (r.tableId ? [r.tableId, ...(r.extraTableIds ?? [])] : []);
 
 export function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
@@ -23,7 +28,7 @@ export function tableState(tableId: string, reservations: ResLike[], at: string,
   const t = toMinutes(at);
   let state: TableState = "free";
   for (const r of reservations) {
-    if (r.tableId !== tableId) continue;
+    if (!resTables(r).includes(tableId)) continue;
     if (r.status === "cancelled" || r.status === "noshow") continue;
     const start = toMinutes(r.time);
     if (t < start || t >= start + durationMin) continue;
@@ -99,7 +104,7 @@ const hhmm = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}
 /** Zustand eines Tisches zur Zeit `at` samt laufender und nächster Reservierung; `soon` = nächste beginnt in weniger als `soonMin` Minuten. */
 export function tableView(tableId: string, list: ResView[], at: string, durationMin: number, soonMin = 30): TableView {
   const t = toMinutes(at);
-  const mine = list.filter((r) => r.tableId === tableId && r.status !== "cancelled" && r.status !== "noshow");
+  const mine = list.filter((r) => resTables(r).includes(tableId) && r.status !== "cancelled" && r.status !== "noshow");
   const cur = mine.find((r) => toMinutes(r.time) <= t && toMinutes(r.time) + durationMin > t) ?? null;
   const next = mine.filter((r) => toMinutes(r.time) > t).sort((a, b) => toMinutes(a.time) - toMinutes(b.time))[0] ?? null;
   const state: TableState = cur ? (cur.status === "seated" ? "seated" : "reserved") : "free";

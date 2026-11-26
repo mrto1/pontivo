@@ -4,7 +4,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { db, rows } from "../db/client";
 import { posReservations, posTables, posWaitlist, restaurantSettings, type Hotel, type PosReservation } from "../db/schema";
 import { addDays, diffDays, isDay, todayIn, zonedToUtc } from "../domain/dates";
-import { TIME_RE, checkOpeningHours, checkWindows, coversAt, depositFor, onlineSlots, refundable, suggestTable, tableFree, type ResSettings, type Slot, PENDING_MINUTES } from "../domain/reservations";
+import { TIME_RE, checkOpeningHours, checkWindows, coversAt, depositFor, onlineSlots, refundable, suggestCombination, suggestTable, tableFree, type ResSettings, type Slot, PENDING_MINUTES } from "../domain/reservations";
 import { enqueueEmail } from "../email/enqueue";
 import { env } from "../env";
 import { getPaymentProvider } from "../payments/provider";
@@ -151,14 +151,18 @@ export async function createReservation(hotel: Hotel, i: ReservationInput, sourc
     }
     const tables = await tx.select().from(posTables).where(and(eq(posTables.hotelId, hotel.id), eq(posTables.active, true))).orderBy(asc(posTables.sortOrder), asc(posTables.name));
     let tableId: string | null = null;
+    let extra: string[] = [];
     if (i.tableId) {
       const t = tables.find((x) => x.id === i.tableId);
       if (!t) throw new PosError("Tisch nicht gefunden.");
       if (!tableFree(existing, t.id, i.time, s.durationMin)) throw new PosError(`${t.name} ist zu dieser Zeit schon reserviert.`);
       tableId = t.id;
-    } else if (s.autoAssign) tableId = suggestTable(tables, existing, i.party, i.time, s.durationMin);
+    } else if (s.autoAssign) {
+      tableId = suggestTable(tables, existing, i.party, i.time, s.durationMin);
+      if (!tableId && s.combineTables) { const c = suggestCombination(tables, existing, i.party, i.time, s.durationMin); if (c) { tableId = c[0]; extra = c.slice(1); } }
+    }
     const [row] = await tx.insert(posReservations).values({
-      hotelId: hotel.id, day: i.day, time: i.time, party: i.party, name, phone, email, note: clean(i.note ?? "", 300), tableId, source, language: i.language ?? hotel.defaultLanguage, publicToken: token,
+      hotelId: hotel.id, day: i.day, time: i.time, party: i.party, name, phone, email, note: clean(i.note ?? "", 300), tableId, extraTableIds: extra, source, language: i.language ?? hotel.defaultLanguage, publicToken: token,
       status: deposit > 0 ? "pending" : "confirmed", depositRappen: deposit, depositStatus: deposit > 0 ? "pending" : "none",
       preorder: preItems, preorderRappen: preTotal,
     }).returning();
@@ -277,21 +281,29 @@ export async function setReservationStatus(hotelId: string, id: string, status: 
 
 /** Tisch zuweisen oder lösen (null); der Tisch muss zur Zeit frei sein */
 export async function assignTable(hotelId: string, id: string, tableId: string | null, actor: string) {
+  await assignTables(hotelId, id, tableId ? [tableId] : [], actor);
+}
+
+/** Einen oder mehrere (zusammengelegte) Tische zuweisen, der erste ist der Haupttisch; leer = lösen. Alle müssen zur Zeit frei sein. */
+export async function assignTables(hotelId: string, id: string, tableIds: string[], actor: string) {
   const [r] = await db().select().from(posReservations).where(and(eq(posReservations.id, id), eq(posReservations.hotelId, hotelId)));
   if (!r) throw new PosError("Reservierung nicht gefunden.");
-  if (tableId) {
-    const [t] = await db().select().from(posTables).where(and(eq(posTables.id, tableId), eq(posTables.hotelId, hotelId)));
-    if (!t) throw new PosError("Tisch nicht gefunden.");
+  const ids = [...new Set(tableIds)];
+  if (ids.length > 4) throw new PosError("Höchstens 4 Tische zusammenlegen.");
+  if (ids.length) {
     const s = await getSettings(hotelId);
     const others = await db().select().from(posReservations).where(and(eq(posReservations.hotelId, hotelId), eq(posReservations.day, r.day), ne(posReservations.id, id)));
-    if (!tableFree(others, t.id, r.time, s.durationMin)) throw new PosError(`${t.name} ist zu dieser Zeit schon reserviert.`);
+    for (const tid of ids) {
+      const [t] = await db().select().from(posTables).where(and(eq(posTables.id, tid), eq(posTables.hotelId, hotelId)));
+      if (!t) throw new PosError("Tisch nicht gefunden.");
+      if (!tableFree(others, t.id, r.time, s.durationMin)) throw new PosError(`${t.name} ist zu dieser Zeit schon reserviert.`);
+    }
   }
-  const [u] = await db().update(posReservations).set({ tableId }).where(eq(posReservations.id, id)).returning();
-  await audit(db(), { hotelId, actor, action: "reservation.table", entity: "pos_reservation", entityId: id, details: { tableId } });
+  const [u] = await db().update(posReservations).set({ tableId: ids[0] ?? null, extraTableIds: ids.slice(1) }).where(eq(posReservations.id, id)).returning();
+  await audit(db(), { hotelId, actor, action: "reservation.table", entity: "pos_reservation", entityId: id, details: { tableIds: ids } });
   if (u.status === "seated") await seatPreorder(hotelId, u, actor); // Gast sass schon, Tisch kam erst jetzt
 }
 
-/** Alle Reservierungen eines Tages ohne Tisch zuteilen: grosse Gruppen zuerst, dann nach Zeit. Gibt die Zahl der zugeteilten zurück. */
 export async function autoAssignDay(hotelId: string, day: string, actor: string): Promise<number> {
   const s = await getSettings(hotelId);
   const tables = await db().select().from(posTables).where(and(eq(posTables.hotelId, hotelId), eq(posTables.active, true))).orderBy(asc(posTables.sortOrder), asc(posTables.name));
@@ -299,10 +311,12 @@ export async function autoAssignDay(hotelId: string, day: string, actor: string)
   const todo = all.filter((r) => !r.tableId && (r.status === "confirmed" || r.status === "pending")).sort((a, b) => b.party - a.party || a.time.localeCompare(b.time));
   let n = 0;
   for (const r of todo) {
-    const t = suggestTable(tables, all, r.party, r.time, s.durationMin, r.id);
+    let t = suggestTable(tables, all, r.party, r.time, s.durationMin, r.id);
+    let extra: string[] = [];
+    if (!t && s.combineTables) { const c = suggestCombination(tables, all, r.party, r.time, s.durationMin, r.id); if (c) { t = c[0]; extra = c.slice(1); } }
     if (!t) continue;
-    await db().update(posReservations).set({ tableId: t }).where(eq(posReservations.id, r.id));
-    r.tableId = t; n++;
+    await db().update(posReservations).set({ tableId: t, extraTableIds: extra }).where(eq(posReservations.id, r.id));
+    r.tableId = t; r.extraTableIds = extra; n++;
   }
   if (n) await audit(db(), { hotelId, actor, action: "reservation.auto_assign", entity: "restaurant_settings", entityId: hotelId, details: { day, assigned: n } });
   return n;

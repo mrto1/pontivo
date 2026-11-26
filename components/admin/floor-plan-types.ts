@@ -2,6 +2,6 @@ export type PlanTable = { id: string; name: string; seats: number; shape: "squar
 export type PlanArea = { id: string; name: string };
 export type PlanItemView = { id: string; kind: string; label: string; x: number; y: number; w: number; h: number; areaId: string };
 /** Reservierung in der Liste neben dem Plan */
-export type PlanRes = { id: string; time: string; name: string; party: number; tableId: string | null; status: string; note?: string };
+export type PlanRes = { id: string; time: string; name: string; party: number; tableId: string | null; /** zusammengelegte Tische */ extraTableIds?: string[]; status: string; note?: string };
 
 export type PlanWaiter = { id: string; name: string; color: string };

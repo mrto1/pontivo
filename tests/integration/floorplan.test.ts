@@ -59,3 +59,35 @@ describe("Kellner (SPEC 19.54)", () => {
     expect(await listWaiters(a.id)).toHaveLength(0);
   });
 });
+
+import { assignTables, createReservation, saveSettings, reservationsOfDay, autoAssignDay } from "../../src/services/reservations";
+import { hotelModules } from "../../src/db/schema";
+import { addDays, todayIn } from "../../src/domain/dates";
+describe("Zusammengelegte Tische (SPEC 19.58)", () => {
+  it("von Hand und automatisch; belegte Tische sind gesperrt", async () => {
+    const { hotel } = await makeHotel({}, room);
+    await db().insert(hotelModules).values({ hotelId: hotel.id, module: "restaurant", enabled: true });
+    const [h0] = await db().select().from((await import("../../src/db/schema")).hotels).where(eq((await import("../../src/db/schema")).hotels.id, hotel.id));
+    const day = addDays(todayIn(h0.timezone), 3);
+    const s = { onlineEnabled: true, windows: [{ from: "18:00", to: "20:00" }], durationMin: 90, maxParty: 12, capacity: 50, leadHours: 0, horizonDays: 30, depositPerPersonRappen: 0, depositFromParty: 1, cancelHours: 24, reminderHours: 24, autoAssign: true, combineTables: true };
+    await saveSettings(hotel.id, s, "t");
+    const t1 = await saveTable(hotel.id, "T1", "t"), t2 = await saveTable(hotel.id, "T2", "t"), t3 = await saveTable(hotel.id, "T3", "t");
+    for (const t of [t1, t2, t3]) await saveAreaLayout(hotel.id, (await listAreas(hotel.id))[0].id, [{ id: t.id, x: 100 * Number(t.name.slice(1)), y: 100, seats: 4 }], [], "t");
+    const g = await createReservation(h0, { day, time: "18:00", party: 7, name: "Gruppe", email: "g@example.ch" }, "online", "guest");
+    expect(g.reservation.tableId).toBeTruthy();
+    expect(g.reservation.extraTableIds).toHaveLength(1);
+    const used = [g.reservation.tableId!, ...g.reservation.extraTableIds];
+    const free = [t1, t2, t3].find((t) => !used.includes(t.id))!;
+    // zweite Gruppe passt nur noch an den freien Tisch
+    const h = await createReservation(h0, { day, time: "18:00", party: 3, name: "Klein", email: "k@example.ch" }, "online", "guest");
+    expect(h.reservation.tableId).toBe(free.id);
+    // Handzuweisung auf belegten Tisch scheitert, auf freien Zeitpunkt geht
+    const late = await createReservation(h0, { day, time: "20:00", party: 2, name: "Spät", email: "s@example.ch" }, "admin", "t");
+    await expect(assignTables(hotel.id, late.reservation.id, [used[0], used[1]], "t")).resolves.toBeUndefined();
+    const all = await reservationsOfDay(hotel.id, day);
+    expect(all.find((r) => r.id === late.reservation.id)!.extraTableIds).toHaveLength(1);
+    const mid = await createReservation(h0, { day, time: "18:30", party: 2, name: "Mitte", email: "m@example.ch" }, "admin", "t");
+    await expect(assignTables(hotel.id, mid.reservation.id, [used[0]], "t")).rejects.toBeInstanceOf(Error);
+    expect(await autoAssignDay(hotel.id, day, "t")).toBeGreaterThanOrEqual(0);
+  });
+});

@@ -6,7 +6,7 @@ import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { atLeast } from "@/src/domain/roles";
 import { requireModule } from "@/src/services/modules";
 import { PosError, listTables } from "@/src/services/pos";
-import { assignTable, autoAssignDay, createReservation, getSettings, reservationsOfDay, setReservationStatus, waitlistOfDay } from "@/src/services/reservations";
+import { assignTables, autoAssignDay, createReservation, getSettings, reservationsOfDay, setReservationStatus, waitlistOfDay } from "@/src/services/reservations";
 import { addDays, isDay, todayIn } from "@/src/domain/dates";
 import { coversAt } from "@/src/domain/reservations";
 import { formatDay } from "@/src/i18n/dict";
@@ -46,7 +46,7 @@ async function status(f: FormData) {
 async function table(f: FormData) {
   "use server";
   const c = await guard(f);
-  try { await assignTable(c.hotel.id, s(f, "id"), s(f, "tableId") || null, c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, s(f, "day"), `Nicht zugewiesen: ${e.message}`); }
+  try { await assignTables(c.hotel.id, s(f, "id"), [s(f, "tableId"), s(f, "tableId2")].filter(Boolean), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, s(f, "day"), `Nicht zugewiesen: ${e.message}`); }
   here(c.hotel.id, s(f, "day"), "Tisch zugewiesen.");
 }
 async function autoAssign(f: FormData) {
@@ -121,8 +121,9 @@ export default async function ReservationsPage({ params, searchParams }: { param
                   ) : null}
                 </td>
                 <td><form action={table} className="res-table">{H}{D}<input type="hidden" name="id" value={r.id} />
-                  <select name="tableId" defaultValue={r.tableId ?? ""} aria-label={`Tisch ${r.name}`}><option value="">–</option>{tables.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.seats})</option>)}</select><button className="btn secondary small">Setzen</button></form>
-                  {r.tableId ? <span className="small muted">{tname.get(r.tableId)}</span> : null}</td>
+                  <select name="tableId" defaultValue={r.tableId ?? ""} aria-label={`Tisch ${r.name}`}><option value="">–</option>{tables.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.seats})</option>)}</select>
+                  <select name="tableId2" defaultValue={r.extraTableIds?.[0] ?? ""} aria-label={`Zusätzlicher Tisch ${r.name}`}><option value="">+ Tisch</option>{tables.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.seats})</option>)}</select><button className="btn secondary small">Setzen</button></form>
+                  {r.tableId ? <span className="small muted">{[r.tableId, ...(r.extraTableIds ?? [])].map((x) => tname.get(x)).join(" + ")}</span> : null}</td>
                 <td>{STATUS[r.status]}{r.depositStatus !== "none" ? <div className="small muted">Anzahlung {formatChf(r.depositRappen)}: {r.depositStatus === "paid" ? "bezahlt (bei der Rechnung abziehen)" : r.depositStatus === "refunded" ? "zurückerstattet" : "offen"}</div> : null}</td>
                 <td className="res-actions">{r.status === "pending" ? null : (["seated", "noshow", "cancelled"] as const).filter((x) => x !== r.status).map((x) => (
                   <form key={x} action={status} style={{ display: "contents" }}>{H}{D}<input type="hidden" name="id" value={r.id} /><input type="hidden" name="status" value={x} /><button className={x === "seated" ? "btn small" : "linklike"}>{x === "seated" ? "Am Tisch" : x === "noshow" ? "Nicht erschienen" : "Stornieren"}</button></form>

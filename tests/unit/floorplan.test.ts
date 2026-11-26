@@ -57,3 +57,27 @@ describe("initials und tableView", () => {
     expect(tableView("t1", list, "10:00", 90).state).toBe("free");
   });
 });
+
+import { suggestCombination, tableFree } from "../../src/domain/reservations";
+describe("Tische zusammenlegen (SPEC 19.58)", () => {
+  const tables = [
+    { id: "a", seats: 4, areaId: "r1", planX: 100, planY: 100 },
+    { id: "b", seats: 4, areaId: "r1", planX: 200, planY: 100 },
+    { id: "c", seats: 4, areaId: "r1", planX: 900, planY: 900 },
+    { id: "t", seats: 6, areaId: "r2", planX: 100, planY: 100 },
+  ];
+  it("nimmt den nächsten Tisch im selben Raum", () => {
+    const c = suggestCombination(tables, [], 7, "18:00", 90)!;
+    expect(c).toHaveLength(2);
+    expect(new Set(c)).toEqual(new Set(["a", "b"]));
+  });
+  it("null, wenn die Plätze nicht reichen; Räume werden nicht gemischt", () => {
+    expect(suggestCombination(tables, [], 20, "18:00", 90)).toBeNull();
+    expect(suggestCombination([{ id: "x", seats: 2, areaId: "r1" }, { id: "y", seats: 2, areaId: "r2" }], [], 4, "18:00", 90)).toBeNull();
+  });
+  it("belegte Tische (auch als Zusatztisch) zählen nicht", () => {
+    const ex = [{ time: "18:00", party: 6, tableId: "a", extraTableIds: ["b"], status: "confirmed" }];
+    expect(tableFree(ex, "b", "18:30", 90)).toBe(false);
+    expect(suggestCombination(tables, ex, 7, "18:00", 90)).toBeNull();
+  });
+});

@@ -1848,6 +1848,8 @@ export const restaurantSettings = pgTable("restaurant_settings", {
   /** Vorbestellung zur Reservierung (SPEC 19.57): an, und ab wie vielen Personen Pflicht (0 = nie) */
   preorderEnabled: boolean("preorder_enabled").notNull().default(false),
   preorderRequiredFrom: integer("preorder_required_from").notNull().default(0),
+  /** grosse Gruppen automatisch auf mehrere nahe Tische legen (SPEC 19.58) */
+  combineTables: boolean("combine_tables").notNull().default(false),
   onlineEnabled: boolean("online_enabled").notNull().default(false),
   windows: jsonb("windows").$type<{ from: string; to: string }[]>().notNull(),
   durationMin: integer("duration_min").notNull().default(90),
@@ -1889,6 +1891,8 @@ export const posReservations = pgTable("pos_reservations", {
   preorder: jsonb("preorder").$type<OnlineOrderItem[] | null>(),
   preorderRappen: integer("preorder_rappen").notNull().default(0),
   preorderOrderId: uuid("preorder_order_id"),
+  /** weitere Tische bei zusammengelegten Tischen (SPEC 19.58); `table_id` bleibt der Haupttisch */
+  extraTableIds: uuid("extra_table_ids").array().notNull().default([]),
   stripeSessionId: text("stripe_session_id"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   reminderSentAt: ts("reminder_sent_at"),

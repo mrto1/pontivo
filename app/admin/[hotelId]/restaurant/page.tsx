@@ -44,7 +44,7 @@ export default async function RestaurantPage({ params, searchParams }: { params:
       {sp.msg ? <Notice text={sp.msg} /> : null}
       {planned.length ? (
         <FloorPlan waiters={waiters.map((w) => ({ id: w.id, name: w.name, color: w.color }))} areas={areas.map((a) => ({ id: a.id, name: a.name }))} items={planItems.filter((i) => areas.some((a) => a.id === i.areaId)).map((i) => ({ id: i.id, kind: i.kind, label: i.label, x: i.planX, y: i.planY, w: i.w, h: i.h, areaId: i.areaId }))}
-          reservations={todays.slice().sort((a, b) => toMin(a.time) - toMin(b.time)).map((r) => ({ id: r.id, time: r.time, name: r.name, party: r.party, tableId: r.tableId, status: r.status }))} tables={planned.map(({ table, orders }) => { const r = nextRes(table.id); const open = orders.reduce((a, o) => a + o.openRappen, 0); return {
+          reservations={todays.slice().sort((a, b) => toMin(a.time) - toMin(b.time)).map((r) => ({ id: r.id, time: r.time, name: r.name, party: r.party, tableId: r.tableId, extraTableIds: r.extraTableIds, status: r.status }))} tables={planned.map(({ table, orders }) => { const r = nextRes(table.id); const open = orders.reduce((a, o) => a + o.openRappen, 0); return {
           id: table.id, name: table.name, seats: table.seats, shape: table.shape, x: table.planX, y: table.planY, areaId: table.areaId, waiterId: table.waiterId,
           tone: orders.length ? "busy" as const : r ? "soon" as const : "free" as const,
           info: orders.length ? formatChf(open) : r ? `${r.time} ${r.name}` : "frei",

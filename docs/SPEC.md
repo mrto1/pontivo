@@ -1328,3 +1328,10 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 - **Platzieren:** Setzt das Personal die Reservierung auf «am Tisch» (oder weist danach den Tisch zu), entsteht einmalig eine Bestellung am Tisch (Gerät «RSV»; Küche sieht die Zeilen) und ein Bon über den Betrag (Zahlart Karte). Ohne Tisch bleibt die Vorbestellung in der Liste sichtbar (Reservierungen → Liste).
 - Abnahme: `tests/integration/preorder.test.ts`, `tests/e2e/preorder.spec.ts`.
 
+## 19.58 Tische zusammenlegen
+
+- Eine Reservierung kann mehrere Tische belegen (`pos_reservations.extra_table_ids`, `table_id` bleibt der Haupttisch). Von Hand: in der Reservierungsliste zweiter Tisch «+ Tisch» (höchstens 4 Tische je Reservierung); alle Tische müssen zur Zeit frei sein, jeder belegte Tisch ist für andere Reservierungen gesperrt (`tableFree`).
+- Automatisch (Einstellung «Tische zusammenlegen», `restaurant_settings.combine_tables`, Standard aus): passt kein einzelner Tisch, legt `suggestCombination` bis zu 4 freie Tische im selben Raum zusammen, ausgehend von einem Anker jeweils der nächste nach Lage im Plan; möglichst wenige Tische, dann möglichst wenige Plätze. Gilt für Online-Reservierung und «Tische automatisch zuteilen» des Tages.
+- Der Plan zeigt die Reservierung an allen ihren Tischen (Farbe, Kurzinfo) und markiert alle beim Antippen; die Liste neben dem Plan nennt «T1 + T2».
+- Noch nicht: zusammengelegte Plätze sind die Summe der Einzeltische (keine Abzüge), Kasse-Bestellung hängt am Haupttisch.
+

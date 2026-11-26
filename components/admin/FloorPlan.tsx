@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { PLAN_ITEM_LABELS, chairLayout, initials, tableView, toMinutes, type ResView } from "../../src/domain/floorplan";
+import { PLAN_ITEM_LABELS, chairLayout, initials, resTables, tableView, toMinutes, type ResView } from "../../src/domain/floorplan";
 import type { PlanArea, PlanItemView, PlanRes, PlanTable, PlanWaiter } from "./floor-plan-types";
 
 /**
@@ -86,10 +86,10 @@ export function FloorPlan({ tables: tablesIn, areas = [], items = [], reservatio
           <ul className="plan-res">
             {reservations.map((r) => (
               <li key={r.id}>
-                <button type="button" className={`plan-res-row${r.tableId && r.tableId === sel ? " selected" : ""}`} onClick={() => pick(r.tableId)} disabled={!r.tableId}>
+                <button type="button" className={`plan-res-row${sel && resTables(r).includes(sel) ? " selected" : ""}`} onClick={() => pick(r.tableId)} disabled={!r.tableId}>
                   <strong>{r.time}</strong>
                   <span>{r.name}<span className="small muted"> · {r.party} Pers.{r.status === "seated" ? " · am Tisch" : ""}</span></span>
-                  <span className="small muted">{tableName(r.tableId) ?? "ohne Tisch"}</span>
+                  <span className="small muted">{resTables(r).length ? resTables(r).map((x) => tableName(x) ?? "?").join(" + ") : "ohne Tisch"}</span>
                 </button>
               </li>
             ))}
