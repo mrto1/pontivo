@@ -15,6 +15,7 @@ import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
 import { paymentUi, setPaymentUi, type PaymentUi } from "@/src/services/payment-settings";
 import { s } from "@/src/lib/form";
 import { applyStripeBranding, BrandingError } from "@/src/integrations/stripe/branding";
+import { domainStates, domainSummary, methodStates, registerDomains, setMethods, type DomainState, type MethodState } from "@/src/integrations/stripe/payment-methods";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +37,33 @@ async function savePaymentUi(f: FormData) {
   "use server";
   const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
   const ui = s(f, "ui");
-  await setPaymentUi(hotel, ui === "element" || ui === "embedded" ? (ui as PaymentUi) : "hosted", actor);
+  const next: PaymentUi = ui === "element" || ui === "embedded" ? (ui as PaymentUi) : "hosted";
+  await setPaymentUi(hotel, next, actor);
+  // Apple Pay braucht bei Formular und eingebettetem Checkout die Domain im Stripe-Konto des Hotels (gehostet nicht): gleich eintragen
+  if (next !== "hosted" && hotel.stripeAccountId) {
+    const r = await registerDomains(hotel, actor).then(domainSummary, (e) => `Domain-Eintrag fehlgeschlagen: ${(e as Error).message}`);
+    back(hotel.id, `Gespeichert. ${r}`);
+  }
   back(hotel.id, "Gespeichert");
+}
+
+async function saveMethods(f: FormData) {
+  "use server";
+  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
+  let msg: string;
+  try {
+    await setMethods(hotel, { apple_pay: s(f, "apple_pay") === "on", google_pay: s(f, "google_pay") === "on", twint: s(f, "twint") === "on" }, actor);
+    msg = `Zahlarten gespeichert. ${domainSummary(await registerDomains(hotel, actor))}`;
+  } catch (e) {
+    msg = `Stripe: ${(e as Error).message}`;
+  }
+  back(hotel.id, msg);
+}
+
+async function registerDomainsAction(f: FormData) {
+  "use server";
+  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
+  back(hotel.id, await registerDomains(hotel, actor).then(domainSummary, (e) => `Stripe: ${(e as Error).message}`));
 }
 
 async function stripeOnboarding(f: FormData) {
@@ -107,6 +133,14 @@ export default async function Zahlungen({ params, searchParams }: { params: Prom
   const provider = env().PAYMENT_PROVIDER;
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
   const [charges, terms] = await Promise.all([chargesOf(hotel.id), getPlatformBilling()]);
+  // Stand bei Stripe (Zahlarten, Domains); darf die Seite nie blockieren oder zum Absturz bringen
+  const live = isOwner && provider === "stripe" && hotel.stripeAccountId
+    ? await Promise.race([
+        Promise.all([methodStates(hotel), domainStates(hotel)]).then(([m, d]) => ({ m, d, error: null as string | null }), (e: Error) => ({ m: [] as MethodState[], d: [] as DomainState[], error: e.message })),
+        new Promise<{ m: MethodState[]; d: DomainState[]; error: string }>((r) => setTimeout(() => r({ m: [], d: [], error: "Stripe antwortet nicht" }), 6000)),
+      ])
+    : null;
+  const stateOf = (k: string) => live?.m.find((x) => x.key === k);
 
   return (
     <div className="stack">
@@ -158,6 +192,42 @@ export default async function Zahlungen({ params, searchParams }: { params: Prom
       </section>
 
       {isOwner && provider === "stripe" && hotel.stripeAccountId ? (
+          <section className="card stack" id="zahlarten">
+            <h2>Zahlarten bei Stripe</h2>
+            <p className="muted small">Pontivo schaltet die Zahlarten direkt im Stripe-Konto Ihres Betriebs ein oder aus. Karte ist immer dabei. Apple Pay und Google Pay laufen über die Karte.</p>
+            {live?.error ? <p className="notice warn small" role="alert">Stand von Stripe nicht abrufbar: {live.error}. Sie können es später erneut versuchen.</p> : null}
+            <form action={saveMethods} className="stack">
+              {hidden}
+              {([
+                ["apple_pay", "Apple Pay", "Safari auf iPhone, iPad und Mac. Braucht die Domain bei Stripe (wird automatisch eingetragen)."],
+                ["google_pay", "Google Pay", "Chrome und Android."],
+                ["twint", "TWINT", hotel.stripeTwintActive ? "Beliebt in der Schweiz, bis CHF 5'000 pro Zahlung." : "Noch nicht freigeschaltet: Stripe prüft die Fähigkeit TWINT, sobald das Konto vollständig ist."],
+              ] as const).map(([k, title, hint]) => {
+                const st = stateOf(k);
+                return (
+                  <label key={k} className="check"><input type="checkbox" name={k} defaultChecked={st ? st.value === "on" : false} disabled={!live || !st || (k === "twint" && !hotel.stripeTwintActive)} />
+                    <strong>{title}</strong> <span className="small muted">{st ? (st.available ? "aktiv" : st.value === "on" ? "eingeschaltet, noch nicht verfügbar" : "aus") : ""}</span>
+                    <span className="small muted block">{hint}</span>
+                  </label>
+                );
+              })}
+              <button className="btn secondary small" disabled={!live || !!live.error}>Speichern und Domains eintragen</button>
+            </form>
+            <div>
+              <h3>Domains für Apple Pay und Google Pay</h3>
+              {live && live.d.length ? (
+                <ul className="small">
+                  {live.d.map((d) => (
+                    <li key={d.domain}><code>{d.domain}</code>: {"error" in d ? <span className="muted">{d.error}</span> : `${d.enabled ? "eingetragen" : "ausgeschaltet"}, Apple Pay ${d.apple === "active" ? "aktiv" : "inaktiv"}, Google Pay ${d.google === "active" ? "aktiv" : "inaktiv"}`}</li>
+                  ))}
+                </ul>
+              ) : <p className="small muted">Noch keine Domain bekannt.</p>}
+              <form action={registerDomainsAction}>{hidden}<button className="btn secondary small">Domains neu eintragen und prüfen</button></form>
+              <p className="small muted mt8">Apple Pay erscheint nur, wenn die Domain bei Stripe aktiv ist. Beim Weiterleiten zu Stripe ist das nicht nötig.</p>
+            </div>
+          </section>
+        ) : null}
+        {isOwner && provider === "stripe" && hotel.stripeAccountId ? (
         <section className="card stack" id="aussehen">
           <h2>Aussehen der Zahlungsseite</h2>
           <p className="small muted">Pontivo übernimmt Ihr Logo und Ihre Hauptfarbe (unter «Website &amp; Buchung») auf Ihr Stripe-Konto. Die Zahlungsseite, Belege und Stripe-Mails an Ihre Gäste erscheinen dann in Ihrem Auftritt. Nach einer Änderung von Logo oder Farbe den Knopf nochmals drücken.</p>
