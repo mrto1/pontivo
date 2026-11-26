@@ -154,6 +154,13 @@ export async function saveReviewUrl(hotelId: string, url: string, actor: string)
   await audit(db(), { hotelId, actor, action: "restaurant.review_url" });
 }
 
+/** Bestellen am Tisch per QR ein- oder ausschalten (SPEC 19.61) */
+export async function saveQrOrdering(hotelId: string, on: boolean, actor: string) {
+  const upd = await db().update(restaurantSettings).set({ qrOrdering: on }).where(eq(restaurantSettings.hotelId, hotelId)).returning({ id: restaurantSettings.hotelId });
+  if (!upd.length) await db().insert(restaurantSettings).values({ hotelId, qrOrdering: on, windows: [{ from: "11:30", to: "13:30" }, { from: "18:00", to: "21:00" }] });
+  await audit(db(), { hotelId, actor, action: "restaurant.qr_ordering", details: { on } });
+}
+
 export const QR_ORDER_LIMIT = 5;
 export const QR_ORDER_WINDOW_MIN = 10;
 export const QR_ORDER_MAX_LINES = 20;

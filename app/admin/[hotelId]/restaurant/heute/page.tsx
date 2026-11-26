@@ -84,7 +84,7 @@ export default async function DiningToday({ params, searchParams }: { params: Pr
           <div className="scroll-x"><table className="table" data-testid="dining-today">
             <thead><tr><th>Zeit</th><th>Pers.</th><th>Gast</th><th>Tisch</th><th>Status</th></tr></thead>
             <tbody>{live.map((r) => (
-              <tr key={r.id}><td>{r.time}</td><td>{r.party}</td><td>{r.name}{r.note ? <div className="small muted">{r.note}</div> : null}</td><td>{r.tableId ? tname.get(r.tableId) ?? "–" : "–"}</td><td>{STATUS[r.status]}</td></tr>
+              <tr key={r.id}><td>{r.time}</td><td>{r.party}</td><td>{r.name}{r.note ? <div className="small muted">{r.note}</div> : null}{r.preorder?.length ? <div className="small"><span className="badge">Vorbestellung</span> {r.preorder.map((l) => `${l.quantity}× ${l.description}`).join(", ")}</div> : null}</td><td>{r.tableId ? tname.get(r.tableId) ?? "–" : "–"}</td><td>{STATUS[r.status]}</td></tr>
             ))}</tbody>
           </table></div>
         ) : <p className="muted small m0">Keine Reservierungen.</p>}

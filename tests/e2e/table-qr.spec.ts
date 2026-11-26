@@ -52,9 +52,13 @@ test("Tisch-QR: Bestellen mit Garstufe, danach offen zum Bezahlen", async ({ pag
 
   await page.goto(`/h/${h.slug}/de/am-tisch/${qr}`);
   const form = page.getByTestId("qr-order-form");
-  await form.locator("summary").click();
-  await form.getByLabel("Entrecôte 1: Garstufe").selectOption(rare.id);
+  await form.locator("summary").first().click();
+  // Anzahl gesetzt, Garstufe vergessen: der Browser verlangt die Wahl, es wird nichts bestellt (keine stille Vorauswahl)
   await form.locator(`input[name="p_${steak.id}.0"]`).fill("1");
+  await form.getByRole("button", { name: "Bestellen" }).click();
+  await expect(page.getByTestId("qr-ordered")).toHaveCount(0);
+  expect(await form.getByLabel("Entrecôte 1: Garstufe").evaluate((e: HTMLSelectElement) => e.validity.valueMissing)).toBe(true);
+  await form.getByLabel("Entrecôte 1: Garstufe").selectOption(rare.id);
   await form.getByRole("button", { name: "Bestellen" }).click();
   await expect(page.getByTestId("qr-ordered")).toBeVisible();
   await expect(page.getByLabel("Entrecôte · rare")).toBeVisible();

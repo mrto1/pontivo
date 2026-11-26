@@ -25,7 +25,7 @@ export async function TerminalCard({ hotel, bookingId }: { hotel: Hotel; booking
           </>) : null}
         </div>
       ))}
-      {!readers.length ? <p className="muted small">Noch kein Kartenleser registriert (Einstellungen → Technik → Geräte → Kartenterminal).</p> : open > 0 ? (
+      {!readers.length ? <p className="muted small">Noch kein Kartenleser registriert (Einstellungen → Geräte → Kartenterminal).</p> : open > 0 ? (
         <form action={terminalStartAction} className="inline-form">
           {hid}
           <div><label htmlFor="fd7161">Leser</label><select id="fd7161" name="readerId">{readers.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></div>

@@ -1318,3 +1318,7 @@ details[open]:not(.avatar-menu, .faq-item, .rt, .ready, .fold) > summary:not(.bt
 @media (prefers-reduced-motion: reduce) { details > summary::before { transition: none; } }
 /* Datums- und Zeitfelder sind im Browser sonst etwas höher als Textfelder */
 :where(input:is([type=date], [type=time], [type=datetime-local], [type=month])) { height: var(--ctl-h); padding-block: 0; }
+/* Speisekarte zum Auswählen (Vorbestellung, Bestellen am Tisch) */
+.menu-pick { gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.menu-variant { gap: 8px; margin: 8px 0 0; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.menu-variant > legend { padding: 0 6px; font-weight: 600; color: var(--muted); }

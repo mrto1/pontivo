@@ -90,6 +90,7 @@ test("Reservierung: online buchen, Liste, Storno per Link; Plan zeigt Tisch", as
   const form = page.getByTestId("reserve-form");
   await form.getByLabel("Name").fill("Frau Muster");
   await form.getByLabel("E-Mail").fill("muster@example.ch");
+  await form.locator("label:has(input[name=time])").first().click(); // Gast wählt die Zeit (keine Vorauswahl)
   await form.getByRole("button", { name: "Verbindlich reservieren" }).click();
   await expect(page.getByRole("heading", { name: "Ihr Tisch ist reserviert." })).toBeVisible();
   const link = page.url();

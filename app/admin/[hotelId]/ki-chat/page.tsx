@@ -160,7 +160,7 @@ export default async function AiChatPage({ params, searchParams }: { params: Pro
           <h2>Einschalten</h2>
           {!isOwner ? <p className="muted small">Nur die Inhaberin oder der Inhaber kann das Modul einschalten.</p> : null}
           {!billingReady(hotel) ? (
-            <p className="notice warn small">Für die Abrechnung brauchen wir eine Karte oder die Wahl «QR-Rechnung». Bitte zuerst unter <a href={`/admin/${hotel.id}/zahlungen#karte`}>Zahlungen → Grundgebühr</a> einrichten.</p>
+            <p className="notice warn small">Für die Abrechnung brauchen wir eine Karte oder die Wahl «QR-Rechnung». Bitte zuerst unter <a href={`/admin/${hotel.id}/zahlungen#karte`}>Einstellungen → Zahlungsmethoden → Grundgebühr</a> einrichten.</p>
           ) : null}
           {keyMissing ? <p className="notice warn small">Der Chat ist technisch noch nicht eingerichtet (API-Schlüssel fehlt). Bitte beim Betreiber melden. Einschalten ist erst danach möglich.</p> : null}
           {plans.map((p) => (

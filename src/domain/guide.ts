@@ -76,7 +76,7 @@ export const HELP_START: Record<string, string> = {
   invoicing: "Öffnen Sie eine Buchung und wählen Sie «Rechnung erstellen». Zahlungen vor Ort buchen Sie in derselben Buchung.",
   debtors: "Legen Sie die Firma einmal an. Bei einer Buchung wählen Sie dann «auf Rechnung», die Zahlungsfrist kommt aus der Firma.",
   resources: "Legen Sie das Angebot mit Zeitfenstern an (z. B. Sauna, 60 Minuten). Buchen Sie es bei einer Buchung, der Preis kommt aufs Zimmer.",
-  restaurant: "Legen Sie unter Einstellungen → Gastronomie die Speisekarte und unter «Tischplan & Reservierung online» Ihre Tische an. Danach erscheint oben der Bereich Gastronomie.",
+  restaurant: "Legen Sie unter Einstellungen → Gastronomie die Speisekarte und unter «Tischplan» Ihre Tische an. Danach erscheint oben der Bereich Gastronomie.",
   pos: "Braucht die Funktion «Restaurant». Legen Sie unter Einstellungen → Gastronomie → Kasse mindestens ein Kassen-Gerät an. Dann öffnen Sie «Kasse» am Tablet.",
   posbridge: "Erstellen Sie einen Schlüssel und geben Sie ihn Ihrem Kassenanbieter. Dessen Kasse bucht Posten aufs Zimmer.",
   inbox: "Verbinden Sie Booking.com, Airbnb oder Expedia unter Einstellungen → Kanäle. Nachrichten erscheinen danach hier.",

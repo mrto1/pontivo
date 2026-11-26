@@ -28,11 +28,12 @@ test("Reservierung mit Vorbestellung", async ({ page }) => {
   await page.goto(`/h/${h.slug}/de/tisch?date=${day}&party=6`);
   await expect(page.getByTestId("preorder")).toBeVisible();
   await page.getByLabel("Anzahl: Randensuppe").fill("6");
-  await page.getByTestId(`pre-opt-${steak.id}`).locator("summary").click();
+  await page.getByTestId(`pre-opt-${steak.id}`).locator("summary").first().click();
   await page.getByLabel("Entrecôte 1: Garstufe").selectOption(rare.id);
   await page.locator(`input[name="p_${steak.id}.0"]`).fill("1");
   await page.getByLabel("Name").fill("Gruppe Muster");
   await page.getByLabel("E-Mail").fill("gruppe@example.ch");
+  await page.locator("label:has(input[name=time])").first().click(); // Gast wählt die Zeit (keine Vorauswahl)
   await page.getByRole("button", { name: "Verbindlich reservieren" }).click();
   await expect(page.getByText("Gruppe Muster")).toBeVisible();
   const [r] = await db().select().from(posReservations).where(eq(posReservations.hotelId, h.id));

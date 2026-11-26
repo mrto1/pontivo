@@ -51,7 +51,7 @@ describe("Admin-Menü", () => {
     const groups = settingsGroups(nav);
     expect(groups.map((g) => g.title)).toEqual(["Betrieb", "Unterkunft", "Verkauf", "Gastronomie"]);
     expect(groups.map((g) => g.items.map((i) => i.label))).toEqual([
-      ["Betriebsdaten", "Funktionen", "Team & Rollen", "Geräte", "Zahlungsmethoden", "Abrechnung", "Datenübernahme"],
+      ["Betriebsdaten", "Funktionen", "Team & Rollen", "Geräte", "Zahlungsmethoden", "Pontivo-Abrechnung", "Datenübernahme"],
       ["Zimmer & Tarife", "Zusatzleistungen", "Angebote vor Ort", "Gästeportal", "Upselling", "KI-Chat"],
       ["Website & Buchung", "Kanäle", "Shop & Lager", "Gäste-Mails"],
       ["Speisekarte", "Tischplan", "Tisch-QR", "Reservierung", "Bestellung", "Kasse"],

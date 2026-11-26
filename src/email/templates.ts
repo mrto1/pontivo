@@ -448,7 +448,7 @@ function renderDefault(template: string, lang: string, c: EmailContext): Rendere
     }
     case "hotel_voucher_sold":
       return wrap(c, l, `${de ? "Gutschein verkauft" : "Voucher sold"} ${c.data.code} – ${money("amountRappen")}`,
-        [de ? `${c.data.buyer} hat einen Gutschein über ${money("amountRappen")} gekauft${c.data.recipient ? ` (für ${c.data.recipient})` : ""}. Einlösen unter Admin → Gutscheine.` : `${c.data.buyer} bought a voucher worth ${money("amountRappen")}${c.data.recipient ? ` (for ${c.data.recipient})` : ""}. Redeem under Admin → Vouchers.`],
+        [de ? `${c.data.buyer} hat einen Gutschein über ${money("amountRappen")} gekauft${c.data.recipient ? ` (für ${c.data.recipient})` : ""}. Einlösen in der Verwaltung unter «Gutscheine».` : `${c.data.buyer} bought a voucher worth ${money("amountRappen")}${c.data.recipient ? ` (for ${c.data.recipient})` : ""}. Redeem in the admin under «Gutscheine» (vouchers).`],
         [`Code: ${c.data.code}`, `${de ? "Gültig bis" : "Valid until"}: ${formatDay(String(c.data.validUntil), l)}`]);
     case "inquiry_received": {
       const d = c.data as Record<string, string | number | null>;

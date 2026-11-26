@@ -27,7 +27,7 @@ export async function TableQrPage({ hotel, locale, base, qr, sp }: { hotel: Hote
     const fb = mine.status === "paid" ? await feedbackOf(mine.id) : null;
     const url = fb && fb.stars >= 4 ? await reviewUrl(hotel.id) : "";
     return (
-      <Shell hotel={hotel} locale={locale} base={base} path="/">
+      <Shell hotel={hotel} locale={locale} base={base} path={`/am-tisch/${qr}`} noBookButton>
         <section className="stack pad32-560" data-testid="table-qr-done">
           {mine.status === "pending" ? <><AutoRefresh seconds={5} /><h1>{t.title(table.name)}</h1><p className="notice">{t.pending}</p></> : null}
           {mine.status === "failed" || mine.status === "cancelled" ? <><h1>{t.title(table.name)}</h1><p className="notice warn">{t.failed}</p></> : null}
@@ -62,13 +62,23 @@ export async function TableQrPage({ hotel, locale, base, qr, sp }: { hotel: Hote
   const ordering = !!(await getSettings(hotel.id)).qrOrdering;
   const menu = ordering ? await onlineMenu(hotel.id) : [];
   return (
-    <Shell hotel={hotel} locale={locale} base={base} path="/">
+    <Shell hotel={hotel} locale={locale} base={base} path={`/am-tisch/${qr}`} noBookButton>
       <section className="stack pad32-560" data-testid="table-qr">
-        <h1>{t.title(table.name)}</h1>
+        <h1>{menu.length ? table.name : t.title(table.name)}</h1>
         {one("msg") ? <p className="notice error" role="alert">{one("msg")}</p> : null}
         {one("bestellt") ? <p className="notice" role="status" data-testid="qr-ordered">{t.ordered}</p> : null}
         {one("abgebrochen") ? <p className="notice warn">{t.cancelled}</p> : null}
-        {!ready ? <p className="notice warn">{t.off}</p> : !orders.length ? <p className="notice">{t.none}</p> : orders.map((oid, n) => (
+        {menu.length ? (
+          <form action={orderTableAction} className="card stack" data-testid="qr-order-form">
+            {hidden}
+            <h2>{t.orderTitle}</h2>
+            <p className="small muted m0">{t.orderHint}</p>
+            <MenuPicker menu={menu} locale={locale} />
+            <div><button className="btn">{t.orderSend}</button></div>
+          </form>
+        ) : null}
+        {menu.length ? <h2>{t.payTitle}</h2> : null}
+        {!ready ? <p className="notice warn">{t.off}</p> : !orders.length ? <p className={menu.length ? "small muted" : "notice"}>{menu.length ? t.payLater : t.none}</p> : orders.map((oid, n) => (
           <form key={oid} action={payTableAction} className="card stack" data-testid="pay-form">
             {hidden}<input type="hidden" name="orderId" value={oid} />
             <h2>{orders.length > 1 ? t.billOf(String(n + 1)) : t.open}</h2>
@@ -91,15 +101,6 @@ export async function TableQrPage({ hotel, locale, base, qr, sp }: { hotel: Hote
             <div><button className="btn">{t.pay(formatChf(bill.lines.filter((l) => l.orderId === oid).reduce((a, l) => a + l.openQty * l.unitPriceRappen, 0)))}</button></div>
           </form>
         ))}
-        {menu.length ? (
-          <form action={orderTableAction} className="card stack" data-testid="qr-order-form">
-            {hidden}
-            <h2>{t.orderTitle}</h2>
-            <p className="small muted m0">{t.orderHint}</p>
-            <MenuPicker menu={menu} locale={locale} />
-            <div><button className="btn">{t.orderSend}</button></div>
-          </form>
-        ) : null}
       </section>
     </Shell>
   );

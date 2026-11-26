@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { Notice } from "@/components/admin/Notice";
 import { requireHotelModule } from "@/src/auth/guard";
 import { PosError, listTables } from "@/src/services/pos";
-import { ensureQrToken, reviewUrl, saveReviewUrl } from "@/src/services/table-pay";
+import { ensureQrToken, reviewUrl, saveQrOrdering, saveReviewUrl } from "@/src/services/table-pay";
+import { getSettings } from "@/src/services/reservations";
+import { FormSwitch } from "@/components/admin/FormSwitch";
 import { publicUrl } from "@/src/services/online-orders";
 import { s } from "@/src/lib/form";
 
@@ -15,6 +17,14 @@ async function saveReview(f: FormData) {
   const c = await requireHotelModule("restaurant", s(f, "hotelId"), "manager");
   try { await saveReviewUrl(c.hotel.id, s(f, "url"), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
   here(c.hotel.id, "Bewertungs-Link gespeichert.");
+}
+
+async function saveOrdering(f: FormData) {
+  "use server";
+  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "manager");
+  const on = f.get("qrOrdering") === "on";
+  await saveQrOrdering(c.hotel.id, on, c.actor);
+  here(c.hotel.id, on ? "Bestellen am Tisch ist eingeschaltet." : "Bestellen am Tisch ist ausgeschaltet.");
 }
 
 /** QR-Codes für die Tische (SPEC 19.55): Gäste bezahlen am Tisch, geben Trinkgeld und bewerten */
@@ -32,8 +42,13 @@ export default async function TableQrAdmin({ params, searchParams }: { params: P
     <div className="stack">
       <h1>Tisch-QR</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
-      {!ready ? <p className="notice warn">Zahlungen sind noch nicht freigegeben (Stripe). Der QR-Code zeigt dann «Bezahlen am Tisch ist hier nicht eingerichtet».</p> : null}
-      <p className="small muted">Jeder Tisch hat einen eigenen QR-Code. Der Gast sieht die offenen Posten seines Tisches, wählt aus, gibt Trinkgeld und bezahlt mit TWINT, Karte oder Wallet. Das Trinkgeld wird dem Kellner des Tisches zugeordnet; der Bon erscheint in der Kasse. Auf diese Zahlungen erhebt Pontivo keine Plattformgebühr.</p>
+      {!ready ? <p className="notice warn">Zahlungen sind noch nicht freigegeben (Stripe). Bis dahin können Gäste per QR-Code nur bestellen (falls eingeschaltet), nicht bezahlen.</p> : null}
+      <p className="small muted">Jeder Tisch hat einen eigenen QR-Code. Der Gast bestellt (falls eingeschaltet) und sieht die offenen Posten seines Tisches, wählt aus, gibt Trinkgeld und bezahlt mit TWINT, Karte oder Wallet. Das Trinkgeld wird dem Kellner des Tisches zugeordnet; der Bon erscheint in der Kasse. Auf diese Zahlungen erhebt Pontivo keine Plattformgebühr.</p>
+      <form action={saveOrdering} className="card stack" data-testid="qr-ordering"><input type="hidden" name="hotelId" value={hotel.id} />
+        <h2>Bestellen am Tisch</h2>
+        <FormSwitch name="qrOrdering" defaultOn={!!(await getSettings(hotel.id)).qrOrdering} label="Gäste bestellen per QR-Code" hint="Der Gast sieht die Online-Speisekarte (Artikel mit «online») samt Optionen wie Garstufe und bestellt direkt in die Küche. Bezahlt wird danach am Tisch per QR oder beim Service. Pro Tisch höchstens 5 Bestellungen in 10 Minuten." />
+        <div><button className="btn secondary">Speichern</button></div>
+      </form>
       <form action={saveReview} className="card stack"><input type="hidden" name="hotelId" value={hotel.id} />
         <h2>Bewertung nach dem Bezahlen</h2>
         <p className="small muted">Der Gast bewertet mit Sternen. Ab 4 Sternen bieten wir den Link zu Google an, darunter geht die Rückmeldung nur an Sie.</p>

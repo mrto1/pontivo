@@ -1350,7 +1350,7 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 
 ## 19.61 Bestellen am Tisch per QR
 
-- Einstellungen → Reservierung: «Bestellen am Tisch per QR-Code» (`restaurant_settings.qr_ordering`, Standard aus). Dann zeigt die Tisch-QR-Seite (19.55) unter den offenen Posten die Online-Speisekarte (Artikel mit «online»), mit Mengen, Optionen (Garstufe …) und Sonderwunsch wie bei der Vorbestellung (`MenuPicker`, `parseCartForm`).
+- Einstellungen → Tisch-QR: «Bestellen am Tisch» (`restaurant_settings.qr_ordering`, Standard aus). Dann zeigt die Tisch-QR-Seite (19.55) unter den offenen Posten die Online-Speisekarte (Artikel mit «online»), mit Mengen, Optionen (Garstufe …) und Sonderwunsch wie bei der Vorbestellung (`MenuPicker`, `parseCartForm`).
 - Die Bestellung (`orderAtTable`) landet auf der neuesten offenen Bestellung des Tisches, sonst entsteht eine neue auf dem Gerät «QR» (Bezeichnung «Gast per QR»); sie erscheint in der Küche und als offener Posten, bezahlt wird wie in 19.55 (QR/TWINT mit Trinkgeld) oder beim Service. Preise, Optionen und MWST (im Haus) rechnet der Server (`priceCart`).
 - Schutz: ohne Einstellung keine Bestellung; höchstens 20 Positionen je Bestellung und 5 Bestellungen je Tisch in 10 Minuten (Zähler über `audit_log`, Aktion `table.qr_order`). Kein Bestätigen durch das Personal (entschieden): Wer den QR-Code am Tisch hat, darf bestellen; Missbrauch bleibt durch die Begrenzung klein.
 - Abnahme: `tests/integration/qr-order.test.ts`, `tests/e2e/table-qr.spec.ts`.
@@ -1363,3 +1363,11 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 - Keine E-Mail, keine Push-Nachricht und keine Erinnerung an den Gast (Quelle `admin`, ohne E-Mail). Das Abendessen ist im Zimmerpreis enthalten; die Rechnung teilt es weiterhin nach SPEC 19.4 auf, am Tisch entsteht kein Bon.
 - ASSUMPTION: Eine Zeit für alle Gäste (Einstellung), kein Wahlmenü und keine Zeitwahl durch den Gast; das Personal ändert Zeit oder Tisch in der Reservierungsliste.
 - Abnahme: `tests/integration/halfboard.test.ts`.
+
+## 19.63 Gastabläufe Restaurant: Feinschliff
+
+- **Keine stillen Vorauswahlen:** Auf der Reservierungsseite ist keine Uhrzeit vorausgewählt (ausser es gibt nur eine), und Pflicht-Optionen (z. B. Garstufe) sind in Vorbestellung und Tischbestellung nicht vorausgewählt. Der Browser verlangt die Pflicht-Option, sobald eine Variante benutzt wird; der Server prüft zusätzlich. Eine gewählte Variante ohne Anzahl gilt als 1 Stück.
+- **Speisekarte zum Auswählen** zeigt Beschreibung und Allergene; je Artikel mit Optionen Variante 1 sichtbar, Varianten 2 und 3 unter «Weitere Variante».
+- **Nach einem Hinweis** (z. B. Zeit nicht mehr frei) bleiben Name, E-Mail, Telefon, Wunsch und Zeit 10 Minuten erhalten (Cookie `res_draft`, nur HTTP, nicht in der Adresse); nach erfolgreicher Reservierung wird er gelöscht.
+- **Tisch-QR-Seite:** Mit eingeschaltetem Bestellen heisst die Seite wie der Tisch, zuerst «Bestellen», darunter «Bezahlen». Der Sprachwechsel bleibt auf der Tischseite. Auf Tisch- und Reservierungsseite kein fester «Jetzt buchen»-Knopf.
+- **Personal:** Reservierungsliste warnt bei bezahlter Vorbestellung ohne Tisch («geht erst mit Tisch in die Küche»), die Tagesübersicht zeigt Vorbestellungen. Einstellungen → Reservierung in Abschnitten (Zeiten und Plätze, Tische, Vorbestellung, Anzahlung, Hotelgäste; Halbpension nur bei Betrieben mit Zimmern).

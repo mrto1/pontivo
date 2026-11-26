@@ -119,6 +119,7 @@ test("Restaurant-Website: Tisch reservieren, Kartei bei der Reservierung", async
   const form = page.getByTestId("reserve-form");
   await form.getByLabel("Name").fill("Herr Treu");
   await form.getByLabel("E-Mail").fill("treu@example.ch");
+  await form.locator("label:has(input[name=time])").first().click(); // Gast wählt die Zeit (keine Vorauswahl)
   await form.getByRole("button", { name: "Verbindlich reservieren" }).click();
   await expect(page.getByRole("heading", { name: "Ihr Tisch ist reserviert." })).toBeVisible();
   const day = new URL(page.url().replace(/\/tisch\/[^?]+/, "/x"), "http://x").searchParams.get("date");

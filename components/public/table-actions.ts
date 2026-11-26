@@ -1,5 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { DRAFT_COOKIE } from "./reservation-draft";
 import { getHotelById } from "@/src/services/hotels";
 import { PosError } from "@/src/services/pos";
 import { cancelByToken, createReservation, joinWaitlist } from "@/src/services/reservations";
@@ -27,8 +29,12 @@ export async function reserveAction(f: FormData) {
     if (r.checkoutUrl) redirectTo = r.checkoutUrl;
   } catch (e) {
     if (!(e instanceof PosError)) throw e;
+    // Eingaben für 10 Minuten aufbewahren, damit der Gast nach dem Hinweis nicht alles neu tippen muss (nicht in der Adresse: keine Kontaktdaten in Protokollen)
+    const draft = { name: s(f, "name").slice(0, 80), email: s(f, "email").slice(0, 200), phone: s(f, "phone").slice(0, 40), note: s(f, "note").slice(0, 300), time: s(f, "time").slice(0, 5) };
+    (await cookies()).set(DRAFT_COOKIE, encodeURIComponent(JSON.stringify(draft)), { maxAge: 600, httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production" });
     here(`&msg=${encodeURIComponent(e.message)}`);
   }
+  (await cookies()).delete(DRAFT_COOKIE);
   if (redirectTo) redirect(redirectTo); // Zahlungsseite von Stripe
   redirect(`${base}/${locale}/tisch/${token}?new=1`);
 }

@@ -206,7 +206,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
             </select>
             <button className="btn secondary small">Speichern</button>
           </form>
-          <p className="muted small">Die Rechnung geht an die Firma, mit deren Zahlungsfrist. Firmen pflegen Sie unter Rechnungen → Debitoren.</p>
+          <p className="muted small">Die Rechnung geht an die Firma, mit deren Zahlungsfrist. Firmen pflegen Sie unter Finanzen → Debitoren.</p>
         </section>
       ) : null}
       {(await moduleOn(hotel.id, "invoicing")) ? <CashCard hotel={hotel} bookingId={b.id} status={b.status} /> : null}

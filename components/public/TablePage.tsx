@@ -11,6 +11,7 @@ import { formatChf } from "@/src/domain/money";
 import { cancelReservationAction, reserveAction, waitlistAction } from "./table-actions";
 import { PRE } from "@/src/i18n/preorder";
 import { MenuPicker } from "./MenuPicker";
+import { readDraft } from "./reservation-draft";
 import { onlineMenu } from "@/src/services/online-orders";
 
 /** Öffentliche Tischreservierung (SPEC 19.49 Etappe C): Datum und Personen wählen, freie Zeiten, Daten, Bestätigung */
@@ -27,11 +28,12 @@ export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; loc
   const slots = settings.onlineEnabled && day ? (await slotsFor(hotel, day, party)).filter((x) => x.ok) : null;
   const stripeOk = env().PAYMENT_PROVIDER !== "stripe" || !!(hotel.stripeAccountId && hotel.stripeChargesEnabled);
   const pre = PRE[locale];
+  const draft = one("msg") ? await readDraft() : null; // nur nach einem Hinweis vorausfüllen
   // Vorbestellung (SPEC 19.57): Artikel ohne Pflicht-Optionen, die online bestellbar sind
   const menu = settings.preorderEnabled && stripeOk && slots ? await onlineMenu(hotel.id) : [];
   const preRequired = !!settings.preorderEnabled && !!settings.preorderRequiredFrom && party >= settings.preorderRequiredFrom;
   return (
-    <Shell hotel={hotel} locale={locale} base={base} path="/tisch">
+    <Shell hotel={hotel} locale={locale} base={base} path="/tisch" noBookButton>
       <section className="stack pad32-560">
         <h1>{r.title}</h1>
         {!settings.onlineEnabled ? <p className="notice warn">{r.off}</p> : (
@@ -51,14 +53,14 @@ export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; loc
                   <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px" }} />
                   <fieldset className="stack"><legend><strong>{r.times}</strong> · {formatDay(day, locale)}</legend>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {slots.map((x, n) => <label key={x.time} className="btn secondary"><input type="radio" name="time" value={x.time} required defaultChecked={n === 0} /> {x.time}</label>)}
+                      {slots.map((x, n) => <label key={x.time} className="btn secondary"><input type="radio" name="time" value={x.time} required defaultChecked={draft ? x.time === draft.time : slots.length === 1 && n === 0} /> {x.time}</label>)}
                     </div>
                   </fieldset>
-                  <div><label htmlFor="name">{r.name}</label><input id="name" name="name" required maxLength={80} autoComplete="name" /></div>
-                  <div><label htmlFor="email">{r.email}</label><input id="email" name="email" type="email" maxLength={200} autoComplete="email" /></div>
-                  <div><label htmlFor="phone">{r.phone}</label><input id="phone" name="phone" type="tel" maxLength={40} autoComplete="tel" /></div>
+                  <div><label htmlFor="name">{r.name}</label><input id="name" name="name" required maxLength={80} autoComplete="name" defaultValue={draft?.name} /></div>
+                  <div><label htmlFor="email">{r.email}</label><input id="email" name="email" type="email" maxLength={200} autoComplete="email" defaultValue={draft?.email} /></div>
+                  <div><label htmlFor="phone">{r.phone}</label><input id="phone" name="phone" type="tel" maxLength={40} autoComplete="tel" defaultValue={draft?.phone} /></div>
                   <p className="small muted">{r.contact}</p>
-                  <div><label htmlFor="note">{r.note}</label><input id="note" name="note" maxLength={300} /></div>
+                  <div><label htmlFor="note">{r.note}</label><input id="note" name="note" maxLength={300} defaultValue={draft?.note} /></div>
                   {menu.length ? (
                     <fieldset className="stack" data-testid="preorder"><legend><strong>{pre.title}</strong></legend>
                       <p className="small muted m0">{pre.hint()}</p>
@@ -99,7 +101,7 @@ export async function TableTokenPage({ hotel, locale, base, token, sp }: { hotel
   const res = await reservationByToken(token);
   const mine = res && res.hotelId === hotel.id ? res : null;
   return (
-    <Shell hotel={hotel} locale={locale} base={base} path="/tisch">
+    <Shell hotel={hotel} locale={locale} base={base} path="/tisch" noBookButton>
       <section className="stack pad32-560">
         {!mine ? <><h1>{r.title}</h1><p className="notice warn">{r.cancelled}</p></> : (
           <>

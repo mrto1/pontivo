@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { bookings, guestProfiles, guests, type GuestProfile } from "../db/schema";
+import { bookings, guestProfiles, guests, hotels, type GuestProfile } from "../db/schema";
+import { todayIn } from "../domain/dates";
 import { rows as sqlRows } from "../db/client";
 import { audit } from "./audit";
 
@@ -54,9 +55,12 @@ export const REGULAR_VISITS = 3;
 export async function restaurantVisits(hotelId: string, emails?: string[]): Promise<Map<string, { visits: number; lastVisit: string | null; name: string }>> {
   const list = emails?.map(norm).filter(Boolean);
   if (list && !list.length) return new Map();
+  // «heute» im Kalender des Betriebs, nicht der Datenbank (UTC): sonst fehlt zwischen Mitternacht und 1 Uhr der Besuch von gestern
+  const [h] = await db().select({ tz: hotels.timezone }).from(hotels).where(eq(hotels.id, hotelId));
+  const today = todayIn(h?.tz ?? "Europe/Zurich");
   const r = sqlRows<{ email: string; visits: number; last: string | null; name: string }>(await db().execute(sql`
-    SELECT lower(email) AS email, count(*) FILTER (WHERE status = 'seated' OR (status = 'confirmed' AND day < current_date))::int AS visits,
-           (max(day) FILTER (WHERE status = 'seated' OR (status = 'confirmed' AND day < current_date)))::text AS last, max(name) AS name
+    SELECT lower(email) AS email, count(*) FILTER (WHERE status = 'seated' OR (status = 'confirmed' AND day < ${today}::date))::int AS visits,
+           (max(day) FILTER (WHERE status = 'seated' OR (status = 'confirmed' AND day < ${today}::date)))::text AS last, max(name) AS name
       FROM pos_reservations WHERE hotel_id = ${hotelId} AND email <> ''${list ? sql` AND lower(email) IN (${sql.join(list.map((e) => sql`${e}`), sql`, `)})` : sql``}
      GROUP BY lower(email)`));
   return new Map(r.map((x) => [x.email, { visits: x.visits, lastVisit: x.last, name: x.name }]));

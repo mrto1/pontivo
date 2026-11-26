@@ -19,7 +19,7 @@ export type Gate = { ok: true } | { ok: false; reason: string };
 export function setupImportGate(h: { billingPaymentMethodId: string | null; billingMethod?: "card" | "qr"; hostTermsAcceptedAt: Date | null }, aiConfigured: boolean): Gate {
   if (!aiConfigured) return { ok: false, reason: "Die KI-Einrichtung ist auf dieser Plattform nicht eingeschaltet." };
   if (!h.hostTermsAcceptedAt) return { ok: false, reason: "Bitte zuerst die Bedingungen für Gastgeber akzeptieren." };
-  if (!h.billingPaymentMethodId && h.billingMethod !== "qr") return { ok: false, reason: "Die KI-Einrichtung gibt es nach dem Abschluss des Abos: bitte zuerst die Abrechnung einrichten (Zahlungen → Grundgebühr: Karte oder QR-Rechnung)." };
+  if (!h.billingPaymentMethodId && h.billingMethod !== "qr") return { ok: false, reason: "Die KI-Einrichtung gibt es nach dem Abschluss des Abos: bitte zuerst die Abrechnung einrichten (Einstellungen → Zahlungsmethoden → Grundgebühr: Karte oder QR-Rechnung)." };
   return { ok: true };
 }
 
