@@ -29,7 +29,11 @@ int.{$APP_DOMAIN} {
 	}
 	@geschuetzt not path /api/webhooks/* /api/health
 	import /etc/caddy/int/*.caddy
-	handle /mail* {
+	# Mailpit läuft unter /mail/ (MP_WEBROOT); ohne Schrägstrich antwortet es mit 404, deshalb weiterleiten
+	handle /mail {
+		redir /mail/ 308
+	}
+	handle /mail/* {
 		reverse_proxy int-mailpit:8025
 	}
 	handle {

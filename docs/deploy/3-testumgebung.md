@@ -10,7 +10,7 @@ Neue Funktionen zuerst auf int ausprobieren, dann erst auf prod. Zurück zur Üb
 | Server | derselbe VPS, eigene Container und eigene Datenbank | |
 | Ordner | `/opt/pontivo-int` | `/opt/pontivo` |
 | Zahlung | Stripe **Testmodus** (Karte 4242 4242 4242 4242, TWINT-Test) | Stripe live |
-| E-Mails | werden **nicht verschickt**, sondern von Mailpit aufgefangen und unter https://int.pontivo.ch/mail gelesen (gleiches Passwort wie int, kein Postmark, keine Kosten) | normal über Postmark |
+| E-Mails | werden **nicht verschickt**, sondern von Mailpit aufgefangen und unter https://int.pontivo.ch/mail/ gelesen (gleiches Passwort wie int, kein Postmark, keine Kosten) | normal über Postmark |
 | Daten | Testdaten, dürfen jederzeit gelöscht werden | echte Daten, tägliche Sicherung |
 | Suchmaschinen | gesperrt, orangefarbener Hinweis «Testumgebung» unten links | offen |
 | Code | neuester Stand (`main`) oder ein Branch | nur **freigegebene** Versionen (Tag `prod-…`) |
