@@ -4,6 +4,7 @@ import Link from "next/link";
 import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { PosError, openOrder, tablesOverview, webDevice } from "@/src/services/pos";
 import { formatChf } from "@/src/domain/money";
+import { listAreas, listPlanItems } from "@/src/services/floorplan";
 import { FloorPlan } from "@/components/admin/FloorPlan";
 import { reservationsOfDay } from "@/src/services/reservations";
 import { todayIn } from "@/src/domain/dates";
@@ -30,7 +31,7 @@ export default async function RestaurantPage({ params, searchParams }: { params:
   const { hotelId } = await params;
   const sp = await searchParams;
   const { hotel } = await requireHotelModule("pos", hotelId, "staff", "restaurant");
-  const tables = await tablesOverview(hotel.id);
+  const [tables, areas, planItems] = await Promise.all([tablesOverview(hotel.id), listAreas(hotel.id), listPlanItems(hotel.id)]);
   const today = todayIn(hotel.timezone);
   const nowMin = Number(formatInTimeZone(new Date(), hotel.timezone, "H")) * 60 + Number(formatInTimeZone(new Date(), hotel.timezone, "m"));
   const todays = (await reservationsOfDay(hotel.id, today)).filter((r) => r.status === "confirmed");
@@ -42,8 +43,9 @@ export default async function RestaurantPage({ params, searchParams }: { params:
       <h1>Restaurant</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       {planned.length ? (
-        <FloorPlan tables={planned.map(({ table, orders }) => { const r = nextRes(table.id); const open = orders.reduce((a, o) => a + o.openRappen, 0); return {
-          id: table.id, name: table.name, seats: table.seats, shape: table.shape, x: table.planX, y: table.planY,
+        <FloorPlan areas={areas.map((a) => ({ id: a.id, name: a.name }))} items={planItems.filter((i) => areas.some((a) => a.id === i.areaId)).map((i) => ({ id: i.id, kind: i.kind, label: i.label, x: i.planX, y: i.planY, w: i.w, h: i.h, areaId: i.areaId }))}
+          reservations={todays.slice().sort((a, b) => toMin(a.time) - toMin(b.time)).map((r) => ({ id: r.id, time: r.time, name: r.name, party: r.party, tableId: r.tableId, status: r.status }))} tables={planned.map(({ table, orders }) => { const r = nextRes(table.id); const open = orders.reduce((a, o) => a + o.openRappen, 0); return {
+          id: table.id, name: table.name, seats: table.seats, shape: table.shape, x: table.planX, y: table.planY, areaId: table.areaId,
           tone: orders.length ? "busy" as const : r ? "soon" as const : "free" as const,
           info: orders.length ? formatChf(open) : r ? `${r.time} ${r.name}` : "frei",
           href: orders[0] ? `/admin/${hotel.id}/restaurant/bestellung/${orders[0].order.id}` : undefined,

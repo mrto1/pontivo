@@ -292,3 +292,5 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] ASSUMPTION: Webfont des Hotels im Zahlungsformular nicht übernommen (Systemschrift), die Farben schon. Bei Bedarf `fonts: [{ cssSrc }]` nachrüsten.
 - [ ] Ob Apple Pay und Google Pay im Payment Element erscheinen, hängt von Domain-Registrierung und Einstellungen des Hotelkontos ab; nicht geprüft.
 - [ ] Zahlarten-Regler (SPEC 19.52): mit einem Test-Hotel auf int prüfen, ob `paymentMethodConfigurations.list` mit `application` = Plattform-ID das Konto des Hotels richtig liefert (Konten ohne eigene Konfiguration, «Blocked» in den Plattform-Einstellungen), ob Apple Pay nach dem Eintragen auf `active` springt und ob das Ändern von TWINT/Wallets die Anzeige im Payment Element ändert.
+- [ ] ASSUMPTION (SPEC 19.53): Tische ohne Raum gehören zum ersten Raum; Stuhlfarbe folgt dem Tischzustand (frei/bald/besetzt), keine eigene Stuhlbelegung je Gast. Nicht umgesetzt (bewusst): Kellner-Zuweisung, Tische kombinieren, Wartezeit-Schätzung.
+

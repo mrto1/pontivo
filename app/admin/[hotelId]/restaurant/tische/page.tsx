@@ -3,7 +3,8 @@ import { DownloadLink } from "@/components/admin/DownloadLink";
 import { TableEditor } from "@/components/admin/TableEditor";
 import { redirect } from "next/navigation";
 import { requireHotel, requireHotelModule } from "@/src/auth/guard";
-import { PosError, importTables, listTables, saveTable, saveTableDetails, saveTablePlan } from "@/src/services/pos";
+import { PosError, importTables, listTables, saveTable } from "@/src/services/pos";
+import { FloorplanError, deleteArea, listAreas, listPlanItems, saveArea, saveAreaLayout } from "@/src/services/floorplan";
 import { parsePosTables } from "@/src/domain/pos-import";
 import { s } from "@/src/lib/form";
 
@@ -24,12 +25,30 @@ async function tablesSave(f: FormData) {
   "use server";
   const c = await guard(f);
   try {
-    const raw = JSON.parse(s(f, "tables")) as { id: string; seats: number; shape: string; x: number | null; y: number | null }[];
-    if (!Array.isArray(raw)) throw new PosError("Eingabe ungültig.");
-    for (const t of raw) await saveTableDetails(c.hotel.id, String(t.id), { seats: Number(t.seats), shape: t.shape === "round" ? "round" : "square" }, c.actor);
-    await saveTablePlan(c.hotel.id, raw.map((p) => ({ id: String(p.id), x: p.x === null ? null : Number(p.x), y: p.y === null ? null : Number(p.y) })), c.actor);
-  } catch (e) { if (!(e instanceof PosError) && !(e instanceof SyntaxError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e instanceof PosError ? e.message : "Eingabe ungültig."}`); }
-  here(c.hotel.id, "Tische gespeichert.");
+    const raw = JSON.parse(s(f, "layout")) as { tables: { id: string; areaId: string; seats: number; shape: string; x: number | null; y: number | null }[]; items: { areaId: string; kind: string; label: string; x: number; y: number; w: number; h: number }[] };
+    if (!raw || !Array.isArray(raw.tables) || !Array.isArray(raw.items)) throw new PosError("Eingabe ungültig.");
+    const areas = await listAreas(c.hotel.id);
+    for (const a of areas) {
+      await saveAreaLayout(c.hotel.id, a.id,
+        raw.tables.filter((t) => t.areaId === a.id).map((t) => ({ id: String(t.id), seats: Number(t.seats), shape: (t.shape === "round" ? "round" : t.shape === "rect" ? "rect" : "square") as "square" | "round" | "rect", x: t.x === null ? null : Number(t.x), y: t.y === null ? null : Number(t.y) })),
+        raw.items.filter((i) => i.areaId === a.id).map((i) => ({ kind: i.kind as import("@/src/db/schema").PlanItemKind, label: String(i.label ?? ""), x: Number(i.x), y: Number(i.y), w: Number(i.w), h: Number(i.h) })),
+        c.actor);
+    }
+  } catch (e) { if (!(e instanceof PosError) && !(e instanceof FloorplanError) && !(e instanceof SyntaxError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e instanceof SyntaxError ? "Eingabe ungültig." : (e as Error).message}`); }
+  here(c.hotel.id, "Tischplan gespeichert.");
+}
+async function areaSave(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  const id = s(f, "areaId") || null;
+  try { await saveArea(c.hotel.id, id, s(f, "name"), c.actor); } catch (e) { if (!(e instanceof FloorplanError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
+  here(c.hotel.id, id ? "Raum umbenannt." : "Raum angelegt.");
+}
+async function areaDelete(f: FormData) {
+  "use server";
+  const c = await guard(f);
+  try { await deleteArea(c.hotel.id, s(f, "areaId"), c.actor); } catch (e) { if (!(e instanceof FloorplanError)) throw e; here(c.hotel.id, `Nicht gelöscht: ${e.message}`); }
+  here(c.hotel.id, "Raum gelöscht. Die Tische sind im ersten Raum, ohne Platz im Plan.");
 }
 async function csvTables(f: FormData) {
   "use server";
@@ -48,18 +67,30 @@ export default async function TablesSettingsPage({ params, searchParams }: { par
   const { hotelId } = await params;
   const sp = await searchParams;
   const { hotel } = await requireHotelModule("restaurant", hotelId, "manager");
-  const tables = await listTables(hotel.id);
+  const [tables, areas, items] = await Promise.all([listTables(hotel.id), listAreas(hotel.id), listPlanItems(hotel.id)]);
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   return (
     <div className="stack">
       <h1>Tischplan</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <form action={table} className="card stack">{H}<h2>Tische ({tables.length})</h2><div><label htmlFor="tname">Neuer Tisch</label><input id="tname" name="name" required maxLength={30} /></div><div><button className="btn secondary">Anlegen</button></div></form>
+      <section className="card stack" id="raeume" data-testid="areas">
+        <h2>Räume ({areas.length})</h2>
+        <p className="small muted">Jeder Raum (z. B. Hauptsaal, Terrasse) hat seinen eigenen Plan; im Tischplan schaltet man per Tab um. Nicht gespeicherte Änderungen am Plan zuerst speichern.</p>
+        {areas.map((a) => (
+          <form key={a.id} action={areaSave} className="inline-form">{H}<input type="hidden" name="areaId" value={a.id} />
+            <div><label htmlFor={`an-${a.id}`}>Name</label><input id={`an-${a.id}`} name="name" defaultValue={a.name} required maxLength={40} /></div>
+            <button className="btn secondary small">Umbenennen</button>
+            {areas.length > 1 ? <button className="btn secondary small" formAction={areaDelete}>Löschen</button> : null}
+          </form>
+        ))}
+        <form action={areaSave} className="inline-form">{H}<div><label htmlFor="newarea">Neuer Raum</label><input id="newarea" name="name" required maxLength={40} placeholder="z. B. Terrasse" /></div><button className="btn secondary small">Raum anlegen</button></form>
+      </section>
       {tables.length ? (
         <section className="card stack" id="tischplan" data-testid="table-plan">
           <h2>Plätze, Form und Plan</h2>
           <p className="small muted">Plätze und Form je Tisch festlegen, dann die Tische im Plan an ihren Ort ziehen. Der Plan erscheint unter Reservierungen → Tischplan (und bei «Tische» mit der Kasse) mit dem aktuellen Zustand.</p>
-          <TableEditor tables={tables.map((t) => ({ id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY }))} action={tablesSave} hotelId={hotel.id} />
+          <TableEditor key={`${areas.length}-${tables.length}`} areas={areas.map((a) => ({ id: a.id, name: a.name }))} tables={tables.map((t) => ({ id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY, areaId: t.areaId ?? areas[0].id }))} items={items.filter((i) => areas.some((a) => a.id === i.areaId)).map((i) => ({ key: i.id, areaId: i.areaId, kind: i.kind, label: i.label, x: i.planX, y: i.planY, w: i.w, h: i.h }))} action={tablesSave} hotelId={hotel.id} />
         </section>
       ) : null}
       <form action={csvTables} className="card stack">{H}

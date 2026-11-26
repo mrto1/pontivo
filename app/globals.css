@@ -1231,3 +1231,35 @@ form.stack.stack > .form-grid, form.stack.stack > .form-row { margin-top: 20px !
 .form-grid, .form-row { gap: 20px 16px; }
 label { margin-bottom: 6px; }
 input + .small, select + .small, textarea + .small { display: block; margin-top: 6px; }
+
+/* Tischplan: Räume (Tabs), Stühle in Statusfarben, Orientierungselemente, Reservierungen daneben (SPEC 19.53) */
+.plan-tabs { align-self: flex-start; max-width: 100%; overflow-x: auto; }
+.plan-split { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .plan-split { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; } }
+.plan-side { max-height: 80vh; overflow: auto; }
+.plan-res { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.plan-res-row { display: grid; grid-template-columns: 52px 1fr auto; gap: 8px; align-items: baseline; width: 100%; padding: 8px 10px; border: 1px solid var(--border, #d5dbe2); border-radius: 10px; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.plan-res-row:disabled { cursor: default; opacity: .85; }
+.plan-res-row.selected { outline: 3px solid var(--accent, #0b7285); outline-offset: 1px; }
+.plan-table { overflow: visible; }
+.plan-table.rect { border-radius: 10px; min-width: 120px; min-height: 64px; }
+.plan-chair { position: absolute; width: 14px; height: 14px; border-radius: 50%; transform: translate(-50%, -50%); background: #2e9e5b; pointer-events: none; z-index: -1; display: inline-block; }
+.plan-table.soon .plan-chair { background: #e0a21b; }
+.plan-table.busy .plan-chair { background: #d64545; }
+.plan-legend .plan-chair { position: static; transform: none; vertical-align: -2px; margin-right: 4px; }
+.plan-legend .plan-chair.soon { background: #e0a21b; }
+.plan-legend .plan-chair.busy { background: #d64545; }
+.plan-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
+.plan-item { position: absolute; display: grid; place-items: center; border: 1px solid var(--border, #bbb); border-radius: 8px; background: rgba(120, 130, 140, .12); font-size: .75rem; color: var(--muted, #5a6678); text-align: center; overflow: hidden; user-select: none; }
+.plan-item.kind-wall { background: #8a94a0; border-color: #8a94a0; }
+.plan-item.kind-wall span { display: none; }
+.plan-item.kind-plant { background: rgba(46, 158, 91, .15); border-radius: 999px; }
+.plan-item.kind-text { background: none; border-style: dashed; }
+.plan-item.kind-bar { background: rgba(178, 106, 0, .14); }
+.plan-item.kind-entrance { background: rgba(11, 114, 133, .14); }
+.te-palette { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.te-item-edit { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 12px 14px; }
+.te-item-edit input { width: 110px; }
+.plan-item.selected { outline: 3px solid var(--accent, #0b7285); }
+.te-row { grid-template-columns: minmax(80px, 1fr) 84px auto minmax(110px, 160px) 84px; }
+@media (max-width: 560px) { .te-row { grid-template-columns: 84px 1fr; } }

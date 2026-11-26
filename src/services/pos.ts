@@ -62,9 +62,9 @@ export async function saveTable(hotelId: string, name: string, actor: string): P
 }
 
 /** Plätze und Form eines Tisches (SPEC 19.49 Etappe C) */
-export async function saveTableDetails(hotelId: string, id: string, i: { seats: number; shape: "square" | "round" }, actor: string) {
+export async function saveTableDetails(hotelId: string, id: string, i: { seats: number; shape: "square" | "round" | "rect" }, actor: string) {
   if (!Number.isInteger(i.seats) || i.seats < 1 || i.seats > 50) throw new PosError("Plätze: 1 bis 50.");
-  if (i.shape !== "square" && i.shape !== "round") throw new PosError("Form ungültig.");
+  if (i.shape !== "square" && i.shape !== "round" && i.shape !== "rect") throw new PosError("Form ungültig.");
   const [t] = await db().update(posTables).set({ seats: i.seats, shape: i.shape }).where(and(eq(posTables.id, id), eq(posTables.hotelId, hotelId))).returning();
   if (!t) throw new PosError("Tisch nicht gefunden.");
   await audit(db(), { hotelId, actor, action: "pos.table_update", entity: "pos_table", entityId: id });

@@ -1436,9 +1436,37 @@ export const posTables = pgTable("pos_tables", {
   seats: integer("seats").notNull().default(2),
   planX: integer("plan_x"),
   planY: integer("plan_y"),
-  shape: text("shape").$type<"square" | "round">().notNull().default("square"),
+  shape: text("shape").$type<"square" | "round" | "rect">().notNull().default("square"),
+  areaId: uuid("area_id"),
 });
 export type PosTable = typeof posTables.$inferSelect;
+
+/** Räume des Tischplans (Hauptsaal, Terrasse …), SPEC 19.53 */
+export const posAreas = pgTable("pos_areas", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: text("name").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type PosArea = typeof posAreas.$inferSelect;
+
+export type PlanItemKind = "wc" | "bar" | "coat" | "entrance" | "kitchen" | "stairs" | "wall" | "plant" | "text";
+/** Orientierungselemente im Plan (WC, Bar, Eingang …) */
+export const posPlanItems = pgTable("pos_plan_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  areaId: uuid("area_id").notNull(),
+  kind: text("kind").$type<PlanItemKind>().notNull(),
+  label: text("label").notNull().default(""),
+  planX: integer("plan_x").notNull(),
+  planY: integer("plan_y").notNull(),
+  w: integer("w").notNull().default(80),
+  h: integer("h").notNull().default(60),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type PosPlanItem = typeof posPlanItems.$inferSelect;
 
 /** Optionsgruppen, Optionen und Zuordnung zu Artikeln (SPEC 19.49) */
 export const posOptionGroups = pgTable("pos_option_groups", {
