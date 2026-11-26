@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { and, eq, isNull, like, sql } from "drizzle-orm";
-import { closeDb, db } from "../../src/db/client";
+import { and, eq, gt, isNull, like, sql } from "drizzle-orm";
+import { closeDb, db, rows } from "../../src/db/client";
 import { bookings, emailOutbox, hotels, payments, systemStatus } from "../../src/db/schema";
 import { beat, checkSystem, raiseAlert, runWatchdog } from "../../src/services/monitor";
 import { reconcilePayments } from "../../src/services/reconcile";
@@ -50,11 +50,14 @@ describe("Überwachung", () => {
 
   it("Alarm: eine Mail pro Problem, nicht wiederholt; nach Behebung und Rückfall wieder", async () => {
     const h = await makeHotel();
+    // Nur Alarme dieses Tests zählen: andere Testdateien (z. B. payment-element) erzeugen Plattform-Alarme, die ein Versandlauf
+    // inzwischen auf «sent» gesetzt haben kann; die Aufräumung oben löscht nur «pending». Darum ab der höchsten Id von jetzt.
+    const [{ last }] = rows<{ last: number }>(await db().execute(sql`SELECT coalesce(max(id), 0)::int AS last FROM email_outbox`));
     const stuck = () => db().insert(emailOutbox).values({ hotelId: h.hotel.id, template: "booking_confirmed", toEmail: "g@example.ch", sendAfter: old(45), data: {} });
     await stuck();
     expect(await runWatchdog(new Date(), 0.5)).toEqual({ problems: 1, sent: 1 });
     expect(await runWatchdog(new Date(), 0.5)).toEqual({ problems: 1, sent: 0 });
-    const alerts = await db().select().from(emailOutbox).where(and(eq(emailOutbox.template, "platform_alert"), isNull(emailOutbox.hotelId))); // nur Alarme der Überwachung (Plattform-Rechnungen melden mit Betrieb)
+    const alerts = await db().select().from(emailOutbox).where(and(eq(emailOutbox.template, "platform_alert"), isNull(emailOutbox.hotelId), gt(emailOutbox.id, last))); // nur Alarme der Überwachung (Plattform-Rechnungen melden mit Betrieb)
     expect(alerts).toHaveLength(1);
     expect(alerts[0].toEmail).toBe("alarm@example.ch");
     // behoben → Schlüssel verschwindet → Rückfall meldet wieder

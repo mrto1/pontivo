@@ -1352,7 +1352,7 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 
 - Einstellungen → Reservierung: «Bestellen am Tisch per QR-Code» (`restaurant_settings.qr_ordering`, Standard aus). Dann zeigt die Tisch-QR-Seite (19.55) unter den offenen Posten die Online-Speisekarte (Artikel mit «online»), mit Mengen, Optionen (Garstufe …) und Sonderwunsch wie bei der Vorbestellung (`MenuPicker`, `parseCartForm`).
 - Die Bestellung (`orderAtTable`) landet auf der neuesten offenen Bestellung des Tisches, sonst entsteht eine neue auf dem Gerät «QR» (Bezeichnung «Gast per QR»); sie erscheint in der Küche und als offener Posten, bezahlt wird wie in 19.55 (QR/TWINT mit Trinkgeld) oder beim Service. Preise, Optionen und MWST (im Haus) rechnet der Server (`priceCart`).
-- Schutz: ohne Einstellung keine Bestellung; höchstens 20 Positionen je Bestellung und 5 Bestellungen je Tisch in 10 Minuten (Zähler über `audit_log`, Aktion `table.qr_order`). ASSUMPTION: Kein Bestätigen durch das Personal und keine Tischfreigabe (Wer den QR-Code am Tisch hat, darf bestellen); Missbrauch bleibt durch die Begrenzung klein.
+- Schutz: ohne Einstellung keine Bestellung; höchstens 20 Positionen je Bestellung und 5 Bestellungen je Tisch in 10 Minuten (Zähler über `audit_log`, Aktion `table.qr_order`). Kein Bestätigen durch das Personal (entschieden): Wer den QR-Code am Tisch hat, darf bestellen; Missbrauch bleibt durch die Begrenzung klein.
 - Abnahme: `tests/integration/qr-order.test.ts`, `tests/e2e/table-qr.spec.ts`.
 
 ## 19.62 Halbpension mit Tisch
