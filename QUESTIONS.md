@@ -293,4 +293,7 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Ob Apple Pay und Google Pay im Payment Element erscheinen, hängt von Domain-Registrierung und Einstellungen des Hotelkontos ab; nicht geprüft.
 - [ ] Zahlarten-Regler (SPEC 19.52): mit einem Test-Hotel auf int prüfen, ob `paymentMethodConfigurations.list` mit `application` = Plattform-ID das Konto des Hotels richtig liefert (Konten ohne eigene Konfiguration, «Blocked» in den Plattform-Einstellungen), ob Apple Pay nach dem Eintragen auf `active` springt und ob das Ändern von TWINT/Wallets die Anzeige im Payment Element ändert.
 - [ ] ASSUMPTION (SPEC 19.53): Tische ohne Raum gehören zum ersten Raum; Stuhlfarbe folgt dem Tischzustand (frei/bald/besetzt), keine eigene Stuhlbelegung je Gast. Nicht umgesetzt (bewusst): Kellner-Zuweisung, Tische kombinieren, Wartezeit-Schätzung.
+- [ ] ASSUMPTION (SPEC 19.55): Zahlung am Tisch ohne Plattformgebühr (`application_fee_amount` 0), Zahlart im Bon immer `card` (TWINT nicht unterschieden). Entscheid Betreiber nötig, ob die 1,9 % auch hier gelten sollen.
+- [ ] Zahlung am Tisch mit Stripe-Test prüfen: Checkout ohne E-Mail (`customer_email` weggelassen), TWINT-Zahlung, Rückerstattung bei bereits bezahlten Posten, Webhook `checkout.session.completed` mit `table_payment_id`.
+- [ ] Kellner sind reine Namen (keine Anmeldung); Trinkgeld je Kellner wird in `table_payments.waiter_id` festgehalten, eine Auswertung fehlt noch. Trinkgeld, das das Personal an der Kasse bucht, ist keinem Kellner zugeordnet.
 

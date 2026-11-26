@@ -97,7 +97,7 @@ export class StripePaymentProvider implements PaymentProvider {
         payment_intent_data: { ...(a.feeRappen > 0 ? { application_fee_amount: a.feeRappen } : {}), metadata },
         metadata,
         client_reference_id: a.reference,
-        customer_email: a.email,
+        ...(a.email ? { customer_email: a.email } : {}),
         locale: a.lang,
         success_url: a.successUrl,
         cancel_url: a.cancelUrl,

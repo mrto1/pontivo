@@ -1302,3 +1302,16 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 - **Reservierungen** des Tages stehen neben dem Plan; Antippen einer Reservierung wählt ihren Tisch (und schaltet den Raum um), Antippen eines Tisches markiert seine Reservierung.
 - Speichern des Layouts je Raum in einer Transaktion mit `audit_log`. Reine Logik in `src/domain/floorplan.ts`, DB in `src/services/floorplan.ts`.
 
+## 19.54 Kellner und Zeitregler im Tischplan
+
+- **Kellner** (`pos_waiters`: Name, Farbe) sind keine Benutzerkonten; Tische bekommen sie über `pos_tables.waiter_id` (Einstellungen → Tischplan). Auf dem Plan zeigt der Tisch die Initialen in der Farbe des Kellners; die Auswahl «Kellner» blendet die übrigen Tische ab. Entfernen setzt die Zuweisung seiner Tische zurück.
+- **Zeitregler:** «Belegung um HH:MM» (09:00–23:30, 15 Minuten) berechnet Tischfarbe, Stühle und Kurzinfo im Browser aus den Reservierungen des Tages (`tableView`); offene Kassen-Bestellungen zählen als besetzt.
+
+## 19.55 Tisch-QR: Bezahlen am Tisch, Trinkgeld, Bewertung
+
+- Jeder Tisch hat einen QR-Token (`pos_tables.qr_token`); Seite `/<locale>/am-tisch/<token>` (auch unter `/h/<slug>/…`). Sie zeigt die offenen Posten der Kassen-Bestellungen des Tisches, der Gast wählt Mengen (Getrennt-Zahlen), Trinkgeld (kein, 5, 10, 15 %, eigener Betrag) und zahlt über Stripe Checkout (TWINT, Karte, Wallets) auf dem Konto des Betriebs.
+- Der Vorgang steht in `table_payments` (Posten, Trinkgeld, Kellner des Tisches, Status). Nach dem Webhook `checkout.session.completed` (Metadaten `table_payment_id`) entsteht der Bon über `pay()` auf dem Gerät «QR»; Zahlart `card`, Trinkgeld im Bon. Sind die Posten inzwischen anders bezahlt, wird die Zahlung zurückerstattet (`status = failed`).
+- **Bewertung** (`table_feedback`, einmal je Zahlung): 1–5 Sterne und Kommentar; ab 4 Sternen der Link zu Google (`restaurant_settings.review_url`), darunter bleibt die Rückmeldung intern.
+- Keine Plattformgebühr auf diese Zahlungen (Verkauf vor Ort). Sprachen de, en, fr, it, nl.
+- Noch nicht: Menü und Bestellen am Tisch per QR, Trinkgeld-Auswertung je Kellner, Bewertungs-Auswertung in der Oberfläche.
+

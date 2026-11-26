@@ -318,7 +318,7 @@ export async function reverseLine(hotelId: string, lineId: string, quantity: num
 type Tx = Parameters<Parameters<ReturnType<typeof db>["transaction"]>[0]>[0];
 type Ex = Tx | ReturnType<typeof db>;
 
-async function orderState(ex: Ex, hotelId: string, orderId: string) {
+export async function orderState(ex: Ex, hotelId: string, orderId: string) {
   const ls = await ex.select().from(posOrderLines).where(and(eq(posOrderLines.orderId, orderId), eq(posOrderLines.hotelId, hotelId))).orderBy(asc(posOrderLines.createdAt));
   const rs = await ex.select({ items: posReceipts.items }).from(posReceipts).where(and(eq(posReceipts.orderId, orderId), eq(posReceipts.hotelId, hotelId)));
   const lines: Line[] = ls.map((l) => ({ id: l.id, quantity: l.quantity, unitPriceRappen: l.unitPriceRappen, vatBps: l.vatBps, reversesLineId: l.reversesLineId }));

@@ -1439,6 +1439,8 @@ export const posTables = pgTable("pos_tables", {
   shape: text("shape").$type<"square" | "round" | "rect">().notNull().default("square"),
   areaId: uuid("area_id"),
   waiterId: uuid("waiter_id"),
+  /** QR-Code am Tisch (SPEC 19.55) */
+  qrToken: text("qr_token"),
 });
 export type PosTable = typeof posTables.$inferSelect;
 
@@ -1841,6 +1843,8 @@ export type SetupImport = typeof setupImports.$inferSelect;
 /** Online-Reservierung und Kapazität (SPEC 19.49 Etappe C) */
 export const restaurantSettings = pgTable("restaurant_settings", {
   hotelId: uuid("hotel_id").primaryKey(),
+  /** Link zur Google-Bewertung (Bewertungsanfrage nach dem Bezahlen am Tisch) */
+  reviewUrl: text("review_url").notNull().default(""),
   onlineEnabled: boolean("online_enabled").notNull().default(false),
   windows: jsonb("windows").$type<{ from: string; to: string }[]>().notNull(),
   durationMin: integer("duration_min").notNull().default(90),
@@ -2050,3 +2054,33 @@ export const pushPrefs = pgTable("push_prefs", {
   kind: text("kind").$type<"inbox" | "dininginbox" | "bookings" | "reservations" | "orders" | "other">().notNull(),
   enabled: boolean("enabled").notNull(),
 }, (t) => [primaryKey({ columns: [t.userId, t.hotelId, t.kind] })]);
+
+/** Zahlung am Tisch per QR (SPEC 19.55): Posten der Kassen-Bestellung plus Trinkgeld, bezahlt über Stripe */
+export const tablePayments = pgTable("table_payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  tableId: uuid("table_id").notNull(),
+  orderId: uuid("order_id").notNull(),
+  publicToken: text("public_token").notNull().unique(),
+  selection: jsonb("selection").$type<{ lineId: string; quantity: number }[]>().notNull(),
+  itemsRappen: integer("items_rappen").notNull(),
+  tipRappen: integer("tip_rappen").notNull().default(0),
+  waiterId: uuid("waiter_id"),
+  language: text("language").notNull().default("de"),
+  status: text("status").$type<"pending" | "paid" | "failed" | "cancelled">().notNull().default("pending"),
+  stripeSessionId: text("stripe_session_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  receiptId: uuid("receipt_id"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  paidAt: ts("paid_at"),
+});
+export type TablePayment = typeof tablePayments.$inferSelect;
+
+export const tableFeedback = pgTable("table_feedback", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  tablePaymentId: uuid("table_payment_id").notNull().unique(),
+  stars: integer("stars").notNull(),
+  comment: text("comment").notNull().default(""),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});

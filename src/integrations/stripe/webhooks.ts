@@ -3,9 +3,10 @@ import { cancelPendingVoucher, markVoucherPaid } from "../../services/vouchers";
 import { cancelPendingUpsell, markUpsellPaid } from "../../services/upsell";
 import { cancelUnpaid, markReservationPaid } from "../../services/reservations";
 import { cancelUnpaidOrder, markOrderPaid } from "../../services/online-orders";
+import { markTablePaid } from "../../services/table-pay";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import { bookings, guests, hotels, inboundEvents, onlineOrders, payments, posReservations, upsellOrders, vouchers } from "../../db/schema";
+import { bookings, guests, hotels, inboundEvents, onlineOrders, payments, posReservations, tablePayments, upsellOrders, vouchers } from "../../db/schema";
 import { env, requireEnv } from "../../env";
 import { confirmBooking, releaseHold } from "../../services/bookings";
 import { markBalancePaid } from "../../services/balance";
@@ -124,6 +125,16 @@ async function onlineOrderForSession(session: Stripe.Checkout.Session, account: 
 }
 
 async function onPaid(session: Stripe.Checkout.Session, account: string) {
+  const tpId = session.metadata?.table_payment_id;
+  if (tpId) {
+    const [tp] = await db().select().from(tablePayments).where(eq(tablePayments.id, tpId));
+    if (!tp) return;
+    const [h] = await db().select().from(hotels).where(eq(hotels.id, tp.hotelId));
+    if (!h || !account || h.stripeAccountId !== account) throw new Error(`Ereignis von Konto ${account} passt nicht zum Betrieb der Tischzahlung ${tpId}`);
+    const pi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+    await markTablePaid(tp.id, { sessionId: session.id, paymentIntentId: pi });
+    return;
+  }
   const oo = await onlineOrderForSession(session, account);
   if (oo) {
     const pi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;

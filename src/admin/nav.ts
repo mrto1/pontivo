@@ -120,6 +120,7 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
         set("Verkauf", link("mailtexts", "Gäste-Mails", "mail-texte"), "Eigene Sätze in Bestätigung, Vor-der-Anreise- und Nachher-Mail."),
         set("Gastronomie", link("positems", "Speisekarte", "restaurant/artikel"), "Artikel mit Preisen, Optionen und Menüs, KI-Speisekarte und Import per CSV."),
         set("Gastronomie", link("tables", "Tischplan", "restaurant/tische"), "Tische anlegen, Plätze und Form festlegen, Tische im Plan platzieren, Import per CSV."),
+        set("Gastronomie", link("tableqr", "Tisch-QR", "restaurant/tisch-qr"), "QR-Code pro Tisch: Gäste bezahlen am Tisch mit TWINT oder Karte, geben Trinkgeld und bewerten den Besuch."),
         set("Gastronomie", link("ressettings", "Reservierung", "restaurant/einstellungen"), "Zeiten, Plätze und Regeln für die Online-Reservierung, Anzahlung und Erinnerung."),
         set("Gastronomie", link("ordersettings", "Bestellung", "restaurant/bestellung-einstellungen"), "Abholung und Lieferung, Zeiten, Liefergebiete, Barzahlung, Probebestellung und Live-Schaltung."),
         set("Gastronomie", { ...link("g-pos", "Kasse", "restaurant/geraete"), tabs: [link("posdevices", "Kassen-Geräte", "restaurant/geraete"), link("posbridge", "Kassen-Schnittstelle")] }, "Kassen-Geräte, Verbindung zum Hotel und Schnittstelle zu Ihrer bisherigen Kasse."),

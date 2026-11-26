@@ -33,7 +33,7 @@ describe("Admin-Menü", () => {
       bookings: "bookings", groups: "groups", resources: "resources", resourcelist: "resources/angebote", shop: "shop", vouchers: "vouchers", guestbook: "guestbook", marketing: "marketing", feedback: "feedback",
       invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung", reports: "berichte",
       settings: "settings", rooms: "rooms", extras: "rooms/extras", payments: "zahlungen", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
-      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posdevices: "restaurant/geraete", posbridge: "posbridge", dininghome: "restaurant/heute", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste", tables: "restaurant/tische", ressettings: "restaurant/einstellungen", migration: "migration", report: "report", konto: "konto", firstweek: "erste-woche", help: "hilfe",
+      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posdevices: "restaurant/geraete", posbridge: "posbridge", dininghome: "restaurant/heute", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste", tables: "restaurant/tische", tableqr: "restaurant/tisch-qr", ressettings: "restaurant/einstellungen", migration: "migration", report: "report", konto: "konto", firstweek: "erste-woche", help: "hilfe",
     });
   });
 
@@ -54,7 +54,7 @@ describe("Admin-Menü", () => {
       ["Betriebsdaten", "Funktionen", "Team & Rollen", "Geräte", "Zahlungsmethoden", "Abrechnung", "Datenübernahme"],
       ["Zimmer & Tarife", "Zusatzleistungen", "Angebote vor Ort", "Gästeportal", "Upselling", "KI-Chat"],
       ["Website & Buchung", "Kanäle", "Shop & Lager", "Gäste-Mails"],
-      ["Speisekarte", "Tischplan", "Reservierung", "Bestellung", "Kasse"],
+      ["Speisekarte", "Tischplan", "Tisch-QR", "Reservierung", "Bestellung", "Kasse"],
     ]);
     for (const g of groups) { expect(g.lead.length).toBeGreaterThan(10); for (const i of g.items) expect(i.lead, i.label).toBeTruthy(); }
     expect(nav.settings.tabs!.find((i) => i.label === "Website & Buchung")!.tabs!.map((t) => t.key)).toEqual(["site", "direct", "api"]);

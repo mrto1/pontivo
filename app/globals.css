@@ -1268,3 +1268,11 @@ input + .small, select + .small, textarea + .small { display: block; margin-top:
 .plan-clock input[type="range"] { flex: 1; min-height: 32px; accent-color: var(--accent, #0b7285); }
 .plan-controls select { width: auto; min-height: 36px; }
 .plan-waiter { position: absolute; top: -9px; right: -9px; min-width: 22px; height: 22px; padding: 0 4px; border-radius: 999px; color: #fff; font-size: .68rem; line-height: 22px; text-align: center; border: 2px solid var(--surface, #fff); box-sizing: content-box; }
+
+/* Zahlung am Tisch (QR) */
+.tq-line { display: grid; grid-template-columns: 1fr auto 72px; gap: 10px; align-items: center; }
+.tq-line label { margin: 0; }
+.tq-line input { min-height: 44px; }
+.tq-tip { flex-wrap: wrap; }
+.tq-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.tq-admin-card { align-items: center; text-align: center; break-inside: avoid; }
