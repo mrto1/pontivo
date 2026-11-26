@@ -1,13 +1,13 @@
 import { randomBytes } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { posDevices, posOrders, posTables, restaurantSettings, tableFeedback, tablePayments, hotels, type Hotel, type PosTable, type TablePayment } from "../db/schema";
+import { posDevices, posOrders, posTables, restaurantSettings, tableFeedback, tablePayments, hotels, auditLog, type Hotel, type PosTable, type TablePayment } from "../db/schema";
 import { checkSelection, openTotalRappen, outstanding, selectionTotal, type Selection } from "../domain/pos";
 import { isLocale } from "../i18n/dict";
 import { getPaymentProvider } from "../payments/provider";
 import { audit } from "./audit";
-import { PosError, createDevice, orderState, pay } from "./pos";
-import { publicUrl } from "./online-orders";
+import { PosError, addLines, createDevice, openOrder, orderState, pay } from "./pos";
+import { priceCart, publicUrl, type CartLine } from "./online-orders";
 
 /**
  * Zahlung am Tisch per QR-Code (SPEC 19.55): Der Gast sieht die offenen Posten seines Tisches, wählt aus, gibt Trinkgeld und zahlt über Stripe.
@@ -152,4 +152,40 @@ export async function saveReviewUrl(hotelId: string, url: string, actor: string)
   const upd = await db().update(restaurantSettings).set({ reviewUrl: u }).where(eq(restaurantSettings.hotelId, hotelId)).returning({ id: restaurantSettings.hotelId });
   if (!upd.length) await db().insert(restaurantSettings).values({ hotelId, reviewUrl: u, windows: [{ from: "11:30", to: "13:30" }, { from: "18:00", to: "21:00" }] });
   await audit(db(), { hotelId, actor, action: "restaurant.review_url" });
+}
+
+export const QR_ORDER_LIMIT = 5;
+export const QR_ORDER_WINDOW_MIN = 10;
+export const QR_ORDER_MAX_LINES = 20;
+
+/**
+ * Bestellen am Tisch per QR (SPEC 19.61): Der Gast bestellt aus der Online-Speisekarte, die Zeilen landen auf der offenen Bestellung des Tisches
+ * (sonst neue Bestellung auf dem Gerät «QR») und damit in der Küche; bezahlt wird später wie gewohnt. Preise und Optionen rechnet der Server.
+ * Schutz vor Missbrauch: Einstellung «Bestellen am Tisch», höchstens 5 Bestellungen je Tisch in 10 Minuten, höchstens 20 Zeilen.
+ */
+export async function orderAtTable(hotel: Hotel, table: PosTable, lines: CartLine[], now = new Date()): Promise<{ orderId: string; count: number; totalRappen: number }> {
+  const [s] = await db().select().from(restaurantSettings).where(eq(restaurantSettings.hotelId, hotel.id));
+  if (!s?.qrOrdering) throw new PosError("Bestellen am Tisch ist hier nicht eingeschaltet.");
+  if (table.hotelId !== hotel.id || !table.active) throw new PosError("Tisch nicht gefunden.");
+  const wanted = lines.filter((l) => l.quantity > 0);
+  if (!wanted.length) throw new PosError("Nichts bestellt.");
+  if (wanted.length > QR_ORDER_MAX_LINES) throw new PosError(`Höchstens ${QR_ORDER_MAX_LINES} Positionen je Bestellung.`);
+  const [recent] = await db().select({ n: sql<number>`count(*)::int` }).from(auditLog).where(and(eq(auditLog.hotelId, hotel.id), eq(auditLog.action, "table.qr_order"), eq(auditLog.entityId, table.id), gte(auditLog.createdAt, new Date(now.getTime() - QR_ORDER_WINDOW_MIN * 60_000))));
+  if ((recent?.n ?? 0) >= QR_ORDER_LIMIT) throw new PosError("Zu viele Bestellungen in kurzer Zeit. Bitte sprechen Sie unser Team an.");
+  const priced = await priceCart(hotel, wanted, "dine_in");
+  // offene Bestellung des Tisches (neueste mit offenen Posten) weiterverwenden, sonst neue auf dem Gerät «QR»
+  let orderId: string | null = null;
+  const orders = await db().select().from(posOrders).where(and(eq(posOrders.hotelId, hotel.id), eq(posOrders.tableId, table.id))).orderBy(desc(posOrders.openedAt)).limit(5);
+  for (const o of orders) {
+    const st = await orderState(db(), hotel.id, o.id);
+    if (st.lines.length && [...outstanding(st.lines, st.paid).values()].some((q) => q > 0)) { orderId = o.id; break; }
+  }
+  if (!orderId) {
+    const [d0] = await db().select().from(posDevices).where(and(eq(posDevices.hotelId, hotel.id), eq(posDevices.code, "QR")));
+    const dev = d0 ?? (await createDevice(hotel.id, "QR", "Tisch-QR", "system"));
+    orderId = (await openOrder(hotel.id, { tableId: table.id, deviceId: dev.id, label: "Gast per QR" }, "guest")).id;
+  }
+  await addLines(hotel, orderId, priced.items.map((i) => ({ itemId: i.itemId, quantity: i.quantity, mode: "dine_in" as const, optionIds: i.optionIds, note: i.note, snapshot: { description: i.description, unitPriceRappen: i.unitPriceRappen, vatBps: i.vatBps }, optionsSnapshot: i.options })), "guest");
+  await audit(db(), { hotelId: hotel.id, actor: "guest", action: "table.qr_order", entity: "pos_table", entityId: table.id, details: { orderId, lines: priced.items.length, total: priced.subtotalRappen } });
+  return { orderId, count: priced.items.length, totalRappen: priced.subtotalRappen };
 }

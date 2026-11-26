@@ -299,3 +299,4 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] ASSUMPTION (SPEC 19.57): Die Vorbestellung ersetzt die normale Anzahlung; die Küche sieht sie beim Platzieren des Gastes oder, mit Einstellung «Küchenvorlauf» (SPEC 19.60), so viele Minuten vor Ankunft (nur mit zugewiesenem Tisch). Optionen (Garstufe usw.) sind möglich, je Artikel bis 3 Zeilen.
 - [ ] Vorbestellung nicht änderbar nach der Buchung (Storno und neu). Änderung durch den Gast per Link fehlt.
 
+- [ ] ASSUMPTION (SPEC 19.61): Bestellen am Tisch per QR ohne Bestätigung des Personals und ohne Tischfreigabe, begrenzt auf 5 Bestellungen je Tisch und 10 Minuten. Gewünscht: Personal bestätigt jede QR-Bestellung zuerst, oder ein wechselnder Tisch-Code?

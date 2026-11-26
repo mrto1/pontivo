@@ -14,6 +14,7 @@ export type ResSettings = {
   /** Küchentakt: höchstens so viele Gäste je Beginnzeit online (0/fehlend = ohne Grenze), SPEC 19.59 */
   slotMaxGuests?: number;
   preorderLeadMin?: number;
+  qrOrdering?: boolean;
   /** Öffnungszeiten je Wochentag (0 = Sonntag), null/fehlend = keine Einschränkung (SPEC 20.1) */
   openingHours?: OpeningHours | null;
 };

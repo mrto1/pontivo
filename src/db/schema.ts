@@ -1858,6 +1858,8 @@ export const restaurantSettings = pgTable("restaurant_settings", {
   slotMaxGuests: integer("slot_max_guests").notNull().default(0),
   /** Küchenvorlauf: Minuten vor Ankunft, ab denen die Vorbestellung in der Küche erscheint (0 = erst beim Platzieren), SPEC 19.60 */
   preorderLeadMin: integer("preorder_lead_min").notNull().default(0),
+  /** Bestellen am Tisch per QR-Code (SPEC 19.61) */
+  qrOrdering: boolean("qr_ordering").notNull().default(false),
   onlineEnabled: boolean("online_enabled").notNull().default(false),
   windows: jsonb("windows").$type<{ from: string; to: string }[]>().notNull(),
   durationMin: integer("duration_min").notNull().default(90),

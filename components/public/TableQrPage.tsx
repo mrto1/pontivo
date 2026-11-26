@@ -6,7 +6,10 @@ import { TQ } from "@/src/i18n/tableqr";
 import type { Locale } from "@/src/i18n/dict";
 import { feedbackOf, paymentByToken, reviewUrl, tableBill, tableByQr } from "@/src/services/table-pay";
 import { notFound } from "next/navigation";
-import { feedbackAction, payTableAction } from "./table-qr-actions";
+import { feedbackAction, orderTableAction, payTableAction } from "./table-qr-actions";
+import { MenuPicker } from "./MenuPicker";
+import { onlineMenu } from "@/src/services/online-orders";
+import { getSettings } from "@/src/services/reservations";
 
 /** Zahlung am Tisch per QR (SPEC 19.55): offene Posten wählen, Trinkgeld, bezahlen; danach Bewertung */
 export async function TableQrPage({ hotel, locale, base, qr, sp }: { hotel: Hotel; locale: Locale; base: string; qr: string; sp: Record<string, string | string[] | undefined> }) {
@@ -56,11 +59,14 @@ export async function TableQrPage({ hotel, locale, base, qr, sp }: { hotel: Hote
   }
   const bill = ready ? await tableBill(hotel.id, table.id) : { lines: [], totalRappen: 0 };
   const orders = [...new Set(bill.lines.map((l) => l.orderId))];
+  const ordering = !!(await getSettings(hotel.id)).qrOrdering;
+  const menu = ordering ? await onlineMenu(hotel.id) : [];
   return (
     <Shell hotel={hotel} locale={locale} base={base} path="/">
       <section className="stack pad32-560" data-testid="table-qr">
         <h1>{t.title(table.name)}</h1>
         {one("msg") ? <p className="notice error" role="alert">{one("msg")}</p> : null}
+        {one("bestellt") ? <p className="notice" role="status" data-testid="qr-ordered">{t.ordered}</p> : null}
         {one("abgebrochen") ? <p className="notice warn">{t.cancelled}</p> : null}
         {!ready ? <p className="notice warn">{t.off}</p> : !orders.length ? <p className="notice">{t.none}</p> : orders.map((oid, n) => (
           <form key={oid} action={payTableAction} className="card stack" data-testid="pay-form">
@@ -85,6 +91,15 @@ export async function TableQrPage({ hotel, locale, base, qr, sp }: { hotel: Hote
             <div><button className="btn">{t.pay(formatChf(bill.lines.filter((l) => l.orderId === oid).reduce((a, l) => a + l.openQty * l.unitPriceRappen, 0)))}</button></div>
           </form>
         ))}
+        {menu.length ? (
+          <form action={orderTableAction} className="card stack" data-testid="qr-order-form">
+            {hidden}
+            <h2>{t.orderTitle}</h2>
+            <p className="small muted m0">{t.orderHint}</p>
+            <MenuPicker menu={menu} locale={locale} />
+            <div><button className="btn">{t.orderSend}</button></div>
+          </form>
+        ) : null}
       </section>
     </Shell>
   );
