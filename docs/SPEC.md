@@ -1323,10 +1323,10 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 ## 19.57 Vorbestellung zur Reservierung (auch Gruppen)
 
 - Einstellungen → Reservierung: «Vorbestellung zulassen» und «Pflicht ab Personen» (0 = nie; `restaurant_settings.preorder_enabled`, `preorder_required_from`). Nur online und nur mit freigegebenem Stripe-Konto.
-- Auf der Reservierungsseite wählt der Gast nach der Zeit Mengen aus der Online-Speisekarte (Artikel, die «online» bestellbar sind und **keine Pflicht-Optionen** haben). Preise zum Zeitpunkt der Buchung, MWST-Satz «im Haus» (nur bei MWST-pflichtigem Betrieb, sonst 0).
+- Auf der Reservierungsseite wählt der Gast nach der Zeit Mengen aus der Online-Speisekarte (Artikel, die «online» bestellbar sind). Preise zum Zeitpunkt der Buchung, MWST-Satz «im Haus» (nur bei MWST-pflichtigem Betrieb, sonst 0).
 - **Vorauszahlung:** Die Summe der Vorbestellung ist die Anzahlung (ersetzt die Anzahlung je Person) und wird über den bestehenden Anzahlungsweg bezahlt (Stripe Checkout, Status `pending` bis bezahlt, Verfall nach 35 Minuten). Storno rechtzeitig (Regel «Gratis-Storno bis») erstattet sie, «nicht erschienen» behält sie.
 - **Platzieren:** Setzt das Personal die Reservierung auf «am Tisch» (oder weist danach den Tisch zu), entsteht einmalig eine Bestellung am Tisch (Gerät «RSV»; Küche sieht die Zeilen) und ein Bon über den Betrag (Zahlart Karte). Ohne Tisch bleibt die Vorbestellung in der Liste sichtbar (Reservierungen → Liste).
-- Abnahme: `tests/integration/preorder.test.ts`, `tests/e2e/preorder.spec.ts`.
+- Abnahme: `tests/integration/preorder.test.ts`, `tests/e2e/preorder.spec.ts`. Optionen und Küchenvorlauf: SPEC 19.60.
 
 ## 19.58 Tische zusammenlegen
 
@@ -1341,3 +1341,9 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 - Je Raum (`pos_areas.online`) und je Tisch (`pos_tables.online`) lässt sich festlegen, ob er online buchbar ist (Standard: ja). Ein Tisch ist online buchbar, wenn Tisch und Raum freigegeben sind (`onlineTableAvailable`). Online-Reservierungen erhalten nur solche Tische; ist keiner frei, wird die Zeit nicht angeboten und die Buchung abgelehnt. Das Personal kann in der Oberfläche weiterhin jeden Tisch zuweisen.
 - **Küchentakt** (`restaurant_settings.slot_max_guests`, 0 = aus): Höchstzahl Gäste, die zur selben Uhrzeit neu beginnen. Ist sie erreicht, wird die Zeit online nicht mehr angeboten (`onlineSlots`).
 - Abnahme: `tests/unit/floorplan.test.ts`, `tests/integration/floorplan.test.ts`.
+
+## 19.60 Vorbestellung: Optionen und Küchenvorlauf
+
+- **Optionen:** Auch Artikel mit Optionsgruppen (z. B. Garstufe, Beilage, Pflicht oder freiwillig) sind vorbestellbar. Je Artikel bis zu 3 Zeilen mit eigener Menge, Auswahl je Gruppe und Sonderwunsch (höchstens 120 Zeichen), so kann ein Gast zwei Steaks in verschiedenen Garstufen bestellen. Der Server prüft die Wahl mit denselben Regeln wie an der Kasse (`priceCart`/`checkChoice`); Aufpreise zählen zur Vorauszahlung, der Text («Entrecôte · rare · ohne Pfeffer») steht in der Küchenzeile.
+- **Küchenvorlauf** (`restaurant_settings.preorder_lead_min`, 0 = aus, höchstens 240): Ist die Vorbestellung bezahlt und ein Tisch zugewiesen, erscheint sie so viele Minuten vor der Ankunft in der Küche (Bestellung am Tisch, Gerät «RSV», Bon wie bei 19.57). Der Job «table-reservations» (alle 5 Minuten, `kitchenLead`) löst das aus; Platzieren davor oder danach erzeugt die Bestellung nur einmal. ASSUMPTION: Ohne zugewiesenen Tisch geht nichts in die Küche (die Bestellung braucht einen Tisch).
+- Abnahme: `tests/integration/preorder.test.ts`, `tests/e2e/preorder.spec.ts`.

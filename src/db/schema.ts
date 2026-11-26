@@ -1856,6 +1856,8 @@ export const restaurantSettings = pgTable("restaurant_settings", {
   combineTables: boolean("combine_tables").notNull().default(false),
   /** Küchentakt: höchstens so viele Gäste je Beginnzeit online (0 = ohne Grenze), SPEC 19.59 */
   slotMaxGuests: integer("slot_max_guests").notNull().default(0),
+  /** Küchenvorlauf: Minuten vor Ankunft, ab denen die Vorbestellung in der Küche erscheint (0 = erst beim Platzieren), SPEC 19.60 */
+  preorderLeadMin: integer("preorder_lead_min").notNull().default(0),
   onlineEnabled: boolean("online_enabled").notNull().default(false),
   windows: jsonb("windows").$type<{ from: string; to: string }[]>().notNull(),
   durationMin: integer("duration_min").notNull().default(90),

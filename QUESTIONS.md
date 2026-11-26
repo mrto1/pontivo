@@ -296,6 +296,6 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] ASSUMPTION (SPEC 19.55): Zahlung am Tisch ohne Plattformgebühr (`application_fee_amount` 0), Zahlart im Bon immer `card` (TWINT nicht unterschieden). Entscheid Betreiber nötig, ob die 1,9 % auch hier gelten sollen.
 - [ ] Zahlung am Tisch mit Stripe-Test prüfen: Checkout ohne E-Mail (`customer_email` weggelassen), TWINT-Zahlung, Rückerstattung bei bereits bezahlten Posten, Webhook `checkout.session.completed` mit `table_payment_id`.
 - [ ] Kellner sind reine Namen (keine Anmeldung); Trinkgeld je Kellner wird in `table_payments.waiter_id` festgehalten, eine Auswertung fehlt noch. Trinkgeld, das das Personal an der Kasse bucht, ist keinem Kellner zugeordnet.
-- [ ] ASSUMPTION (SPEC 19.57): Die Vorbestellung ersetzt die normale Anzahlung; die Küche sieht sie erst beim Platzieren des Gastes (nicht vorher), davor nur in der Reservierungsliste. Gewünscht: eigener Küchenvorlauf (z. B. 30 Minuten vor Ankunft)? Optionen (Garstufe usw.) sind in der Vorbestellung nicht möglich.
+- [ ] ASSUMPTION (SPEC 19.57): Die Vorbestellung ersetzt die normale Anzahlung; die Küche sieht sie beim Platzieren des Gastes oder, mit Einstellung «Küchenvorlauf» (SPEC 19.60), so viele Minuten vor Ankunft (nur mit zugewiesenem Tisch). Optionen (Garstufe usw.) sind möglich, je Artikel bis 3 Zeilen.
 - [ ] Vorbestellung nicht änderbar nach der Buchung (Storno und neu). Änderung durch den Gast per Link fehlt.
 

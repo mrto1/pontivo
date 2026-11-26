@@ -2,12 +2,12 @@ import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { closeDb, db } from "../../src/db/client";
 import { hotelModules, hotels, posOrderLines, posReceipts, posReservations } from "../../src/db/schema";
-import { addDays, todayIn } from "../../src/domain/dates";
+import { addDays, todayIn, zonedToUtc } from "../../src/domain/dates";
 import { FakePaymentProvider } from "../../src/payments/fake";
 import { setPaymentProvider } from "../../src/payments/provider";
 import { PosError, saveItem, saveOption, saveOptionGroup, saveTable, setGroupItems } from "../../src/services/pos";
 import { saveItemOnline } from "../../src/services/online-orders";
-import { assignTable, createReservation, saveSettings, setReservationStatus } from "../../src/services/reservations";
+import { assignTable, createReservation, kitchenLead, saveSettings, setReservationStatus } from "../../src/services/reservations";
 import { makeHotel } from "../helpers";
 
 afterAll(closeDb);
@@ -69,5 +69,28 @@ describe("Vorbestellung (SPEC 19.57)", () => {
     await expect(createReservation(h, guest(day, 2, [{ itemId: soup.id, quantity: 1 }]), "online", "guest")).rejects.toBeInstanceOf(PosError);
     await saveSettings(h.id, { onlineEnabled: true, windows: [{ from: "18:00", to: "20:00" }], durationMin: 90, maxParty: 12, capacity: 50, leadHours: 0, horizonDays: 30, depositPerPersonRappen: 0, depositFromParty: 1, cancelHours: 24, reminderHours: 24, autoAssign: true, preorderEnabled: false }, "t");
     await expect(createReservation(h, guest(day, 2, [{ itemId: soup.id, quantity: 1 }]), "online", "guest")).rejects.toBeInstanceOf(PosError);
+  });
+
+  it("Optionen (Garstufe) werden geprüft, bepreist und gehen in die Küche; Küchenvorlauf schickt sie vor der Ankunft", async () => {
+    const { h, day, soup, table } = await setup({ preorderLeadMin: 60 });
+    const steak = await saveItem(h.id, null, { category: "Hauptgang", name: "Entrecôte", priceRappen: 4000, vatDineInBps: 810, vatTakeawayBps: 260 }, "t");
+    await saveItemOnline(h.id, steak.id, { online: true, description: "", photoUrl: null, allergens: [] }, "t");
+    const g = await saveOptionGroup(h.id, null, { name: "Garstufe", required: true, maxChoices: 1 }, "t");
+    const medium = await saveOption(h.id, g.id, { name: "medium", priceRappen: 0 }, "t");
+    const rare = await saveOption(h.id, g.id, { name: "rare", priceRappen: 200 }, "t");
+    await setGroupItems(h.id, g.id, [steak.id], "t");
+    await expect(createReservation(h, guest(day, 2, [{ itemId: steak.id, quantity: 1 }]), "online", "guest")).rejects.toBeInstanceOf(PosError); // Pflicht fehlt
+    const { reservation } = await createReservation(h, { ...guest(day, 2), preorder: [{ itemId: steak.id, quantity: 1, optionIds: [medium.id], note: "ohne Pfeffer" }, { itemId: steak.id, quantity: 1, optionIds: [rare.id], note: "" }] }, "online", "guest");
+    expect(reservation.preorderRappen).toBe(8200);
+    await assignTable(h.id, reservation.id, table.id, "t");
+    const start = zonedToUtc(day, "18:00", h.timezone).getTime();
+    expect(await kitchenLead(new Date(start - 120 * 60_000))).toBe(0); // noch zu früh
+    expect((await db().select().from(posReservations).where(eq(posReservations.id, reservation.id)))[0].preorderOrderId).toBeNull();
+    expect(await kitchenLead(new Date(start - 45 * 60_000))).toBe(1);
+    const [r] = await db().select().from(posReservations).where(eq(posReservations.id, reservation.id));
+    const lines = await db().select().from(posOrderLines).where(eq(posOrderLines.orderId, r.preorderOrderId!));
+    expect(lines.map((l) => l.description).sort()).toEqual(["Entrecôte · medium · ohne Pfeffer", "Entrecôte · rare"]);
+    expect(await kitchenLead(new Date(start - 40 * 60_000))).toBe(0); // einmalig
+    void soup;
   });
 });

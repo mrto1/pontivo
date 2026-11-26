@@ -409,7 +409,29 @@ export async function tableJob(now = new Date()): Promise<{ released: number; wa
     await enqueueEmail(db(), { hotelId: hotel.id, template: "table_reminder", to: r.email, language: r.language, data: { name: r.name, day: r.day, time: r.time, party: r.party, token: r.publicToken, reservationId: r.id } });
     reminders++;
   }
+  await kitchenLead(now);
   return { released: stale.length, waitlist, reminders };
+}
+
+/** Küchenvorlauf (SPEC 19.60): Vorbestellungen mit Tisch gehen X Minuten vor der Ankunft in die Küche */
+export async function kitchenLead(now = new Date()): Promise<number> {
+  const due = rows<{ id: string }>(await db().execute(sql`
+    SELECT r.id FROM pos_reservations r JOIN restaurant_settings s ON s.hotel_id = r.hotel_id
+     WHERE r.status = 'confirmed' AND r.table_id IS NOT NULL AND r.preorder_order_id IS NULL AND r.deposit_status = 'paid'
+       AND jsonb_array_length(coalesce(r.preorder, '[]'::jsonb)) > 0 AND s.preorder_lead_min > 0
+       AND r.day BETWEEN (${now}::timestamptz AT TIME ZONE 'UTC')::date - 1 AND (${now}::timestamptz AT TIME ZONE 'UTC')::date + 1`));
+  let n = 0;
+  for (const x of due) {
+    const [r] = await db().select().from(posReservations).where(eq(posReservations.id, x.id));
+    const hotel = r && (await getHotelById(r.hotelId));
+    if (!r || !hotel) continue;
+    const s = await getSettings(r.hotelId);
+    const start = zonedToUtc(r.day, r.time, hotel.timezone).getTime();
+    if (!s.preorderLeadMin || start - now.getTime() > s.preorderLeadMin * 60_000) continue;
+    await seatPreorder(r.hotelId, r, "job");
+    n++;
+  }
+  return n;
 }
 
 /**

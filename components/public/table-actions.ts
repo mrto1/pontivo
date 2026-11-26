@@ -20,7 +20,13 @@ export async function reserveAction(f: FormData) {
   let token = "";
   let redirectTo = "";
   try {
-    const preorder = [...f.entries()].filter(([k]) => k.startsWith("p_")).map(([k, v]) => ({ itemId: k.slice(2), quantity: Math.floor(Number(v) || 0), optionIds: [] as string[], note: "" })).filter((l) => l.quantity > 0);
+    const preorder = [...f.entries()].filter(([k]) => k.startsWith("p_")).map(([k, v]) => {
+      const key = k.slice(2); // «<artikel>» oder «<artikel>.<k>» (Artikel mit Optionen, mehrere Zeilen)
+      const [itemId, slot] = key.split(".");
+      const optionIds = slot === undefined ? [] : [...f.entries()].filter(([ok, ov]) => ok.startsWith(`o_${itemId}.${slot}.`) && String(ov)).map(([, ov]) => String(ov));
+      const note = slot === undefined ? "" : String(f.get(`n_${itemId}.${slot}`) ?? "").slice(0, 120);
+      return { itemId, quantity: Math.floor(Number(v) || 0), optionIds, note };
+    }).filter((l) => l.quantity > 0);
     const r = await createReservation(hotel, { day: s(f, "day"), time: s(f, "time"), party: Number(s(f, "party")), name: s(f, "name"), phone: s(f, "phone"), email: s(f, "email"), note: s(f, "note"), language: locale, preorder }, "online", "guest");
     token = r.reservation.publicToken;
     if (r.checkoutUrl) redirectTo = r.checkoutUrl;
