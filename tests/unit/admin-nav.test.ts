@@ -33,7 +33,7 @@ describe("Admin-Menü", () => {
       bookings: "bookings", groups: "groups", resources: "resources", resourcelist: "resources/angebote", shop: "shop", vouchers: "vouchers", guestbook: "guestbook", marketing: "marketing", feedback: "feedback",
       invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung", reports: "berichte",
       settings: "settings", rooms: "rooms", extras: "rooms/extras", payments: "zahlungen", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
-      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posdevices: "restaurant/geraete", posbridge: "posbridge", dininghome: "restaurant/heute", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste", tables: "restaurant/tische", tableqr: "restaurant/tisch-qr", ressettings: "restaurant/einstellungen", migration: "migration", report: "report", konto: "konto", firstweek: "erste-woche", help: "hilfe",
+      funktionen: "funktionen", terminal: "terminal", access: "zutritt", positems: "restaurant/artikel", posdevices: "restaurant/geraete", posbridge: "posbridge", dininghome: "restaurant/heute", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste", tables: "restaurant/tische", tableqr: "restaurant/tisch-qr", diningstats: "restaurant/auswertung", ressettings: "restaurant/einstellungen", migration: "migration", report: "report", konto: "konto", firstweek: "erste-woche", help: "hilfe",
     });
   });
 
@@ -88,7 +88,7 @@ describe("Admin-Menü", () => {
     const d = adminNav(hotel, new Set(), { area: "dining", kind: "restaurant" });
     expect(d.primary.map((i) => i.label)).toEqual(["Heute", "Reservierungen", "Bestellungen", "Finanzen"]);
     expect(d.primary.map((i) => i.tabs!.map((t) => t.key))).toEqual([
-      ["dininghome", "inbox"], ["reservations", "resplan", "waitlist", "guestbook"], ["onlineorders", "restaurant", "kasse", "kitchen", "driver"], ["posclose", "onlinesales", "invoices", "vouchers", "accountingexport"],
+      ["dininghome", "inbox"], ["reservations", "resplan", "waitlist", "guestbook"], ["onlineorders", "restaurant", "kasse", "kitchen", "driver"], ["posclose", "onlinesales", "diningstats", "invoices", "vouchers", "accountingexport"],
     ]);
     const keys = allPages(d).map((i) => i.key);
     for (const k of ["rooms", "extras", "channex", "ical", "gaesteportal", "upsell", "direct", "api", "access", "migration", "plan", "calendar", "housekeeping"]) expect(keys).not.toContain(k);

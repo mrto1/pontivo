@@ -1315,3 +1315,8 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 - Keine Plattformgebühr auf diese Zahlungen (Verkauf vor Ort). Sprachen de, en, fr, it, nl.
 - Noch nicht: Menü und Bestellen am Tisch per QR, Trinkgeld-Auswertung je Kellner, Bewertungs-Auswertung in der Oberfläche.
 
+## 19.56 Auswertung Restaurant
+
+- Seite `restaurant/auswertung` (Reiter «Auswertung» unter Finanzen, Rolle `manager`), je Monat: Umsatz und Trinkgeld gesamt, je Kellner und je Tisch (aus den Bons), durchschnittliche Verweildauer (Eröffnung der Bestellung bis letzter Bon, Bestellungen über 8 Stunden zählen nicht), Gäste je Stunde aus den Reservierungen, No-show-Quote, Bewertungen (Durchschnitt, kritische Kommentare ab 3 Sternen abwärts).
+- Reine Logik `src/domain/dining-stats.ts`, Abfrage `src/services/dining-stats.ts`. ASSUMPTION: Kellner und Tische nach heutiger Zuweisung, nicht nach dem Stand zum Zeitpunkt des Bons.
+

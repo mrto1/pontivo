@@ -1276,3 +1276,9 @@ input + .small, select + .small, textarea + .small { display: block; margin-top:
 .tq-tip { flex-wrap: wrap; }
 .tq-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
 .tq-admin-card { align-items: center; text-align: center; break-inside: avoid; }
+
+/* Auswertung Restaurant */
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat-row strong { font-size: 1.3rem; }
+.bar-row { display: grid; grid-template-columns: 52px 1fr 36px; align-items: center; gap: 10px; }
+.bar { height: 14px; border-radius: 7px; background: var(--accent, #0b7285); min-width: 4px; }

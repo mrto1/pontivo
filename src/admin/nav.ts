@@ -63,7 +63,7 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
     { key: "g-dining-today", label: "Heute", href: `${base}/restaurant/heute`, icon: "home", tabs: [link("dininghome", "Tagesübersicht", "restaurant/heute"), link("inbox", "Posteingang", "inbox?bereich=restaurant")] },
     { key: "g-dining-res", label: "Reservierungen", href: `${base}/restaurant/reservierungen`, icon: "bookings", tabs: [link("reservations", "Liste", "restaurant/reservierungen"), link("resplan", "Tischplan", "restaurant/tischplan"), link("waitlist", "Warteliste", "restaurant/warteliste"), link("guestbook", "Gäste")] },
     { key: "g-dining-orders", label: "Bestellungen", href: `${base}/restaurant`, icon: "orders", tabs: [link("onlineorders", "Online", "restaurant/bestellungen"), link("restaurant", "Tische"), link("kasse", "Kasse"), link("kitchen", "Küche", "restaurant/kueche"), link("driver", "Lieferungen", "restaurant/fahrer")] },
-    { key: "g-dining-finance", label: "Finanzen", href: `${base}/restaurant/abschluss`, icon: "finance", tabs: [link("posclose", "Kassenabschluss", "restaurant/abschluss"), link("onlinesales", "Online-Verkäufe", "restaurant/online-verkaeufe"), link("invoices", "Rechnungen"), link("vouchers", "Gutscheine"), link("accountingexport", "Buchhaltung", "buchhaltung")] },
+    { key: "g-dining-finance", label: "Finanzen", href: `${base}/restaurant/abschluss`, icon: "finance", tabs: [link("posclose", "Kassenabschluss", "restaurant/abschluss"), link("onlinesales", "Online-Verkäufe", "restaurant/online-verkaeufe"), link("diningstats", "Auswertung", "restaurant/auswertung"), link("invoices", "Rechnungen"), link("vouchers", "Gutscheine"), link("accountingexport", "Buchhaltung", "buchhaltung")] },
   ];
   return {
     primary: area === "dining" ? dining : [
