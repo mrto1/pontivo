@@ -15,11 +15,12 @@ import { SettingsFrame } from "@/components/admin/SettingsFrame";
 import { TooltipHost } from "@/components/admin/TooltipHost";
 import { SetupNotices } from "@/components/admin/SetupNotices";
 import { atLeast } from "@/src/auth/session";
-import { onboardingSteps } from "@/src/services/onboarding";
+import { diningChecklist, isRestaurant, onboardingSteps } from "@/src/services/onboarding";
 import { initials } from "@/src/domain/avatar";
 import { badgesFor, itemKeyFor, itemKeyForPage, SEEN_KINDS, TASK_KINDS, type TaskKind } from "@/src/domain/unseen";
 import { openTaskCounts, SEEN_KIND_LIST, unseenCounts } from "@/src/services/unseen";
 import { parallelBanner, setupBanner, setupOpen, unmetNeeds } from "@/src/domain/setup";
+import { SetupChip, type Progress } from "@/components/admin/SetupChip";
 
 export default async function HotelAdminLayout({ children, params }: { children: React.ReactNode; params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
@@ -36,6 +37,11 @@ export default async function HotelAdminLayout({ children, params }: { children:
   const banner = manages ? setupBanner(hotel, steps) : null;
   const parallel = manages ? parallelBanner(hotel) : null;
   const doneCount = steps?.filter((x) => x.done).length ?? 0;
+  // Hotel mit Restaurant: im Bereich Gastronomie zählt die Checkliste «Bereit für den Betrieb», nicht der Assistent der Unterkunft
+  const mixed = vn.showSwitch && !isRestaurant(hotel.propertyType);
+  const diningList = mixed && manages ? (await diningChecklist(hotel)).filter((c) => c.key !== "domain" && c.key !== "bestellung") : null;
+  const lodgingProgress: Progress | null = steps ? { done: doneCount, total: steps.length, href: `${home}/einrichten`, title: "Einrichtung fortsetzen" } : null;
+  const diningProgress: Progress | null = diningList && diningList.some((c) => !c.done) ? { done: diningList.filter((c) => c.done).length, total: diningList.length, href: `${home}/restaurant/heute`, title: "Bereit für den Betrieb" } : null;
   // Zahlen für Ungesehenes (nur Listen, die im Menü dieser Person stehen)
   const shown = SEEN_KIND_LIST.filter((k) => itemKeyFor(k, vn.navs[SEEN_KINDS[k].area]) !== null);
   const tasks = (Object.keys(TASK_KINDS) as TaskKind[]).filter((k) => itemKeyForPage(TASK_KINDS[k].page, vn.navs[TASK_KINDS[k].area]) !== null);
@@ -56,13 +62,13 @@ export default async function HotelAdminLayout({ children, params }: { children:
             </details>
           ) : null}
           {vn.showSwitch ? <AreaSwitch lodgingLabel={LODGING_LABEL[hotel.propertyType] ?? "Hotel"} diningLabel={DINING_LABEL[hotel.diningLabel]?.de ?? "Restaurant"} badges={badges.byArea} /> : null}
-          {steps ? <a href={`${home}/einrichten`} className="setup-chip" title="Einrichtung fortsetzen">Einrichtung {doneCount} von {steps.length}</a> : null}
+          <SetupChip split={mixed} lodging={lodgingProgress} dining={diningProgress} />
           <AdminNav nav={nav} home={home} userLabel={`${user.email} · ${roleLabel(role)}`} initials={initials(user.name, user.email)} showSettings={showSettings} badges={badges.byItem} />
         </div>
       </header>
       <TooltipHost />
       <main className="wrap admin-main">
-        <SetupNotices home={home} banner={banner} parallel={parallel} unmet={steps ? unmetNeeds(steps) : []} />
+        <SetupNotices lodgingOnly={mixed} home={home} banner={banner} parallel={parallel} unmet={steps ? unmetNeeds(steps) : []} />
         <SettingsFrame nav={nav} home={home} tabs={<SectionTabs nav={nav} home={home} />}>{children}</SettingsFrame>
       </main>
     </AreaProvider>

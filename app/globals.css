@@ -167,6 +167,7 @@ details > summary::-webkit-details-marker { display: none; }
   .admin-brand { max-width: none; flex: none; overflow: visible; }
   .admin-brand .brand-name { display: none; }
   .admin-head .wrap { gap: 12px; }
+  .setup-chip .chip-word { display: none; }
   .admin-head .setup-chip { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
   .tabbar a, .tabbar button { flex: 1 1 0; min-width: 0; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center; font: inherit; font-size: .72rem; line-height: 1.1; color: var(--muted); text-decoration: none; background: none; border: 0; padding: 6px 2px; cursor: pointer; }

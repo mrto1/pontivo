@@ -1,5 +1,6 @@
 "use client";
 import { usePathname } from "next/navigation";
+import { useArea } from "./AreaContext";
 import { PAGE_NEEDS, NEEDS, type Banner, type Need } from "@/src/domain/setup";
 
 /**
@@ -7,8 +8,10 @@ import { PAGE_NEEDS, NEEDS, type Banner, type Need } from "@/src/domain/setup";
  * eine Zeile zum Stand der Einrichtung und, falls die aktuelle Seite etwas Fehlendes braucht, ein Hinweis mit Link zum passenden Schritt.
  * Nichts wird gesperrt. Auf dem Assistenten selbst bleibt es still.
  */
-export function SetupNotices({ home, banner, parallel, unmet }: { home: string; banner: Banner | null; parallel: Banner | null; unmet: Need[] }) {
+export function SetupNotices({ home, banner, parallel, unmet, lodgingOnly = false }: { /** Hotel mit Restaurant: diese Hinweise gelten nur im Bereich Unterkunft */ lodgingOnly?: boolean; home: string; banner: Banner | null; parallel: Banner | null; unmet: Need[] }) {
   const pathname = usePathname();
+  const area = useArea()?.area ?? "lodging";
+  if (lodgingOnly && area === "dining") return null;
   const seg = pathname.startsWith(home + "/") ? pathname.slice(home.length + 1).split("/")[0] : "";
   if (seg === "einrichten") return null;
   const need = PAGE_NEEDS[seg];
