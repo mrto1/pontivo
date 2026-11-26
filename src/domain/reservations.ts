@@ -15,6 +15,8 @@ export type ResSettings = {
   slotMaxGuests?: number;
   preorderLeadMin?: number;
   qrOrdering?: boolean;
+  halfboardEnabled?: boolean;
+  halfboardTime?: string;
   /** Öffnungszeiten je Wochentag (0 = Sonntag), null/fehlend = keine Einschränkung (SPEC 20.1) */
   openingHours?: OpeningHours | null;
 };

@@ -300,3 +300,4 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Vorbestellung nicht änderbar nach der Buchung (Storno und neu). Änderung durch den Gast per Link fehlt.
 
 - [ ] ASSUMPTION (SPEC 19.61): Bestellen am Tisch per QR ohne Bestätigung des Personals und ohne Tischfreigabe, begrenzt auf 5 Bestellungen je Tisch und 10 Minuten. Gewünscht: Personal bestätigt jede QR-Bestellung zuerst, oder ein wechselnder Tisch-Code?
+- [ ] ASSUMPTION (SPEC 19.62): Halbpension-Gäste bekommen eine feste Abendessenszeit (Einstellung) und einen automatisch zugeteilten Tisch; keine Zeitwahl und keine Mitteilung an den Gast. Gewünscht: Gast wählt die Zeit im Buchungsprozess oder per Link? Auswahlmenü für Halbpension?

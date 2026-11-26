@@ -41,6 +41,7 @@ import { deliverDue, webhookCleanup } from "../services/webhooks";
 import { recoveryJob, waitlistJob, winbackJob } from "../services/direct-tools";
 import { monthlyMailJob } from "../services/monthly-mail";
 import { tableJob } from "../services/reservations";
+import { halfboardJob } from "../services/halfboard";
 import { introNoticeJob, onlineOrdersJob } from "../services/online-orders";
 import { sendDueSms } from "../services/sms";
 
@@ -50,6 +51,7 @@ const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "holds", cron: "* * * * *", run: () => expireHolds() },
   { name: "waitlist", cron: "*/5 * * * *", run: () => waitlistJob() },
   { name: "table-reservations", cron: "*/5 * * * *", run: () => tableJob() },
+  { name: "halfboard-tables", cron: "*/15 * * * *", run: () => halfboardJob() },
   { name: "online-orders", cron: "* * * * *", run: () => onlineOrdersJob() },
   { name: "sms", cron: "* * * * *", run: () => sendDueSms() },
   { name: "booking-recovery", cron: "*/10 * * * *", run: () => recoveryJob() },

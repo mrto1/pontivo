@@ -1860,6 +1860,9 @@ export const restaurantSettings = pgTable("restaurant_settings", {
   preorderLeadMin: integer("preorder_lead_min").notNull().default(0),
   /** Bestellen am Tisch per QR-Code (SPEC 19.61) */
   qrOrdering: boolean("qr_ordering").notNull().default(false),
+  /** Halbpension mit Tisch (SPEC 19.62) */
+  halfboardEnabled: boolean("halfboard_enabled").notNull().default(false),
+  halfboardTime: text("halfboard_time").notNull().default("19:00"),
   onlineEnabled: boolean("online_enabled").notNull().default(false),
   windows: jsonb("windows").$type<{ from: string; to: string }[]>().notNull(),
   durationMin: integer("duration_min").notNull().default(90),
@@ -1902,6 +1905,8 @@ export const posReservations = pgTable("pos_reservations", {
   preorderRappen: integer("preorder_rappen").notNull().default(0),
   preorderOrderId: uuid("preorder_order_id"),
   /** weitere Tische bei zusammengelegten Tischen (SPEC 19.58); `table_id` bleibt der Haupttisch */
+  /** Halbpension: Buchung, aus der die Reservierung entstand (SPEC 19.62) */
+  bookingId: uuid("booking_id"),
   extraTableIds: uuid("extra_table_ids").array().notNull().default([]),
   stripeSessionId: text("stripe_session_id"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),

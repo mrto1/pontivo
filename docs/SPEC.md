@@ -1354,3 +1354,12 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 - Die Bestellung (`orderAtTable`) landet auf der neuesten offenen Bestellung des Tisches, sonst entsteht eine neue auf dem Gerät «QR» (Bezeichnung «Gast per QR»); sie erscheint in der Küche und als offener Posten, bezahlt wird wie in 19.55 (QR/TWINT mit Trinkgeld) oder beim Service. Preise, Optionen und MWST (im Haus) rechnet der Server (`priceCart`).
 - Schutz: ohne Einstellung keine Bestellung; höchstens 20 Positionen je Bestellung und 5 Bestellungen je Tisch in 10 Minuten (Zähler über `audit_log`, Aktion `table.qr_order`). ASSUMPTION: Kein Bestätigen durch das Personal und keine Tischfreigabe (Wer den QR-Code am Tisch hat, darf bestellen); Missbrauch bleibt durch die Begrenzung klein.
 - Abnahme: `tests/integration/qr-order.test.ts`, `tests/e2e/table-qr.spec.ts`.
+
+## 19.62 Halbpension mit Tisch
+
+- Einstellungen → Reservierung: «Halbpension mit Tisch» (`restaurant_settings.halfboard_enabled`, Standard aus) und «Uhrzeit Abendessen» (`halfboard_time`, Standard 19:00).
+- Für jede Nacht (Anreise bis Abreise − 1) eines **bestätigten** Aufenthalts, dessen Tarif Halb- oder Vollpension ist (`rate_plans.board`), legt der Job «halfboard-tables» (alle 15 Minuten, heute und die zwei nächsten Tage; `syncHalfboard`) eine Reservierung an: Name des Gastes, Personen = Erwachsene + Kinder aller Zimmer der Buchung, Notiz «Halbpension · Zimmer 12», Tisch automatisch (auch zusammengelegt, wenn eingeschaltet). Eindeutig je Buchung und Tag (`pos_reservations.booking_id`).
+- Der Abgleich passt Personen und Notiz an, solange die Reservierung bestätigt ist, und storniert sie, wenn die Nacht nicht mehr zutrifft (Buchung storniert, Aufenthalt verkürzt, anderer Tarif). Reservierungen, die das Personal storniert, als «nicht erschienen» oder «am Tisch» gesetzt hat, bleiben unberührt und werden nicht neu angelegt.
+- Keine E-Mail, keine Push-Nachricht und keine Erinnerung an den Gast (Quelle `admin`, ohne E-Mail). Das Abendessen ist im Zimmerpreis enthalten; die Rechnung teilt es weiterhin nach SPEC 19.4 auf, am Tisch entsteht kein Bon.
+- ASSUMPTION: Eine Zeit für alle Gäste (Einstellung), kein Wahlmenü und keine Zeitwahl durch den Gast; das Personal ändert Zeit oder Tisch in der Reservierungsliste.
+- Abnahme: `tests/integration/halfboard.test.ts`.

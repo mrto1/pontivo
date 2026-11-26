@@ -98,7 +98,7 @@ test("Reservierung: online buchen, Liste, Storno per Link; Plan zeigt Tisch", as
   await page.goto(`/admin/${h.hotel.id}/restaurant/reservierungen?day=${day}`);
   const list = page.getByTestId("res-list");
   await expect(list.getByText("Frau Muster")).toBeVisible();
-  await list.getByLabel("Tisch Frau Muster").selectOption({ label: "Tisch 1 (2)" });
+  await list.getByLabel("Tisch Frau Muster", { exact: true }).selectOption({ label: "Tisch 1 (2)" });
   await list.getByRole("button", { name: "Setzen" }).click();
   await expect(page.getByText("Tisch zugewiesen")).toBeVisible();
   await page.goto(`/admin/${h.hotel.id}/restaurant`);
