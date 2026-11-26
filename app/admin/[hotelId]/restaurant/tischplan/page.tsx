@@ -5,7 +5,7 @@ import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { moduleRows } from "@/src/services/modules";
 import { isOn } from "@/src/domain/modules";
 import { listTables, tablesOverview } from "@/src/services/pos";
-import { listAreas, listPlanItems } from "@/src/services/floorplan";
+import { listAreas, listPlanItems, listWaiters } from "@/src/services/floorplan";
 import { getSettings, reservationsOfDay } from "@/src/services/reservations";
 import { addDays, isDay, todayIn } from "@/src/domain/dates";
 import { TIME_RE, toMin } from "@/src/domain/reservations";
@@ -27,7 +27,7 @@ export default async function ReservationPlan({ params, searchParams }: { params
   const nowTime = formatInTimeZone(new Date(), hotel.timezone, "HH:mm");
   const time = sp.time && TIME_RE.test(sp.time) ? sp.time : day === today ? nowTime : "19:00";
   const pos = isOn(await moduleRows(hotel.id), "pos") && hasArea(role, "restaurant") && day === today;
-  const [tables, list, cfg, open, areas, planItems] = await Promise.all([listTables(hotel.id), reservationsOfDay(hotel.id, day), getSettings(hotel.id), pos ? tablesOverview(hotel.id) : Promise.resolve([]), listAreas(hotel.id), listPlanItems(hotel.id)]);
+  const [tables, list, cfg, open, areas, planItems, waiters] = await Promise.all([listTables(hotel.id), reservationsOfDay(hotel.id, day), getSettings(hotel.id), pos ? tablesOverview(hotel.id) : Promise.resolve([]), listAreas(hotel.id), listPlanItems(hotel.id), listWaiters(hotel.id)]);
   const t0 = toMin(time);
   const live = list.filter((r) => r.status === "confirmed" || r.status === "seated" || r.status === "pending");
   // Reservierung, die zur gewählten Zeit läuft (Tisch belegt bis Ende) und die nächste danach (Tisch frei bis dahin)
@@ -49,7 +49,7 @@ export default async function ReservationPlan({ params, searchParams }: { params
       </PeriodNav>
       <p className="small muted m0">{formatDay(day, "de")}, {time} · grün frei (mit Uhrzeit, bis wann) · orange belegt oder in weniger als 30 Minuten reserviert · rot am Tisch{pos ? " oder offene Bestellung" : ""}</p>
       {planned.length ? (
-        <FloorPlan areas={areas.map((a) => ({ id: a.id, name: a.name }))} items={planItems.filter((i) => areas.some((a) => a.id === i.areaId)).map((i) => ({ id: i.id, kind: i.kind, label: i.label, x: i.planX, y: i.planY, w: i.w, h: i.h, areaId: i.areaId }))}
+        <FloorPlan waiters={waiters.map((w) => ({ id: w.id, name: w.name, color: w.color }))} clock={{ time, durationMin: cfg.durationMin }} areas={areas.map((a) => ({ id: a.id, name: a.name }))} items={planItems.filter((i) => areas.some((a) => a.id === i.areaId)).map((i) => ({ id: i.id, kind: i.kind, label: i.label, x: i.planX, y: i.planY, w: i.w, h: i.h, areaId: i.areaId }))}
           reservations={live.slice().sort((a, b) => toMin(a.time) - toMin(b.time)).map((r) => ({ id: r.id, time: r.time, name: r.name, party: r.party, tableId: r.tableId, status: r.status }))} tables={planned.map((t) => {
           const cur = now(t.id); const nxt = next(t.id); const orders = openBy.get(t.id) ?? [];
           const busy = orders.length > 0 || (cur?.status === "seated");
@@ -63,7 +63,8 @@ export default async function ReservationPlan({ params, searchParams }: { params
           if (nxt) detail.push(`${cur ? "Danach" : "Nächste"} Reservierung: ${nxt.time} ${nxt.name}, ${nxt.party} Pers.${cur ? "" : ` (Tisch bis dahin frei)`}`);
           if (!cur && !nxt && !orders.length) detail.push("Frei für den Rest des Tages.");
           return {
-            id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY, areaId: t.areaId,
+            id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY, areaId: t.areaId, waiterId: t.waiterId, busy: orders.length > 0,
+            extra: orders.length ? [`Offene Bestellung: ${formatChf(orders.reduce((a, o) => a + o.openRappen, 0))}`] : undefined,
             tone: busy ? "busy" as const : cur || soon ? "soon" as const : "free" as const,
             dim: t.seats < minSeats,
             info: orders.length ? "offen" : cur ? `bis ${endCur}` : freeUntil ? `frei bis ${freeUntil}` : undefined,

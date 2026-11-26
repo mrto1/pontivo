@@ -1438,8 +1438,20 @@ export const posTables = pgTable("pos_tables", {
   planY: integer("plan_y"),
   shape: text("shape").$type<"square" | "round" | "rect">().notNull().default("square"),
   areaId: uuid("area_id"),
+  waiterId: uuid("waiter_id"),
 });
 export type PosTable = typeof posTables.$inferSelect;
+
+/** Kellner (Name und Farbe), Zuweisung an Tische über pos_tables.waiter_id, SPEC 19.54 */
+export const posWaiters = pgTable("pos_waiters", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  hotelId: uuid("hotel_id").notNull(),
+  name: text("name").notNull(),
+  color: text("color").notNull().default("#0b7285"),
+  active: boolean("active").notNull().default(true),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+export type PosWaiter = typeof posWaiters.$inferSelect;
 
 /** Räume des Tischplans (Hauptsaal, Terrasse …), SPEC 19.53 */
 export const posAreas = pgTable("pos_areas", {

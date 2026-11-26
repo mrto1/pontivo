@@ -36,3 +36,24 @@ describe("clampPlan", () => {
     expect(clampPlan(499.6)).toBe(500);
   });
 });
+
+import { initials, tableView } from "../../src/domain/floorplan";
+describe("initials und tableView", () => {
+  it("Initialen", () => {
+    expect(initials("Anna Muster")).toBe("AM");
+    expect(initials("Beat")).toBe("BE");
+    expect(initials("  ")).toBe("?");
+  });
+  const list = [
+    { id: "a", tableId: "t1", time: "18:00", status: "confirmed" as const, name: "A", party: 2 },
+    { id: "b", tableId: "t1", time: "20:00", status: "confirmed" as const, name: "B", party: 2 },
+  ];
+  it("laufende und nächste Reservierung", () => {
+    const v = tableView("t1", list, "18:30", 90);
+    expect(v).toMatchObject({ state: "reserved", endCur: "19:30" });
+    expect(v.next?.id).toBe("b");
+    expect(v.soon).toBe(false);
+    expect(tableView("t1", list, "19:45", 90).soon).toBe(true);
+    expect(tableView("t1", list, "10:00", 90).state).toBe("free");
+  });
+});

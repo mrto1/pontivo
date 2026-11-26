@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { closeDb, db } from "../../src/db/client";
 import { posPlanItems, posTables } from "../../src/db/schema";
 import { saveTable } from "../../src/services/pos";
-import { FloorplanError, deleteArea, listAreas, listPlanItems, saveArea, saveAreaLayout } from "../../src/services/floorplan";
+import { FloorplanError, assignWaiter, deleteArea, deleteWaiter, listWaiters, saveWaiter, listAreas, listPlanItems, saveArea, saveAreaLayout } from "../../src/services/floorplan";
 import { makeHotel } from "../helpers";
 
 afterAll(closeDb);
@@ -40,5 +40,22 @@ describe("Tischplan: Räume und Elemente (SPEC 19.53)", () => {
     await expect(saveAreaLayout(a.id, areaA.id, [{ id: tb.id, x: 1, y: null }], [], "t")).rejects.toBeInstanceOf(FloorplanError);
     await expect(saveAreaLayout(a.id, areaA.id, [], [{ kind: "bogus" as never, x: 1, y: 1, w: 50, h: 50 }], "t")).rejects.toBeInstanceOf(FloorplanError);
     expect(await db().select().from(posPlanItems).where(and(eq(posPlanItems.hotelId, a.id)))).toHaveLength(0);
+  });
+});
+
+describe("Kellner (SPEC 19.54)", () => {
+  it("anlegen, zuweisen, entfernen; Mandantentrennung", async () => {
+    const a = (await makeHotel({}, room)).hotel;
+    const b = (await makeHotel({}, room)).hotel;
+    const w = await saveWaiter(a.id, null, { name: "Anna Muster" }, "t");
+    const wb = await saveWaiter(b.id, null, { name: "Fremd" }, "t");
+    const t = await saveTable(a.id, "T1", "t");
+    await assignWaiter(a.id, [t.id], w.id, "t");
+    expect((await db().select().from(posTables).where(eq(posTables.id, t.id)))[0].waiterId).toBe(w.id);
+    await expect(assignWaiter(a.id, [t.id], wb.id, "t")).rejects.toBeInstanceOf(FloorplanError);
+    await expect(saveWaiter(a.id, null, { name: "X", color: "rot" }, "t")).rejects.toBeInstanceOf(FloorplanError);
+    await deleteWaiter(a.id, w.id, "t");
+    expect((await db().select().from(posTables).where(eq(posTables.id, t.id)))[0].waiterId).toBeNull();
+    expect(await listWaiters(a.id)).toHaveLength(0);
   });
 });

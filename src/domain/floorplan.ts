@@ -81,3 +81,27 @@ export const PLAN_ITEM_LABELS: Record<(typeof PLAN_ITEM_KINDS)[number], string> 
 export function clampPlan(v: number): number {
   return Math.max(0, Math.min(1000, Math.round(v)));
 }
+
+/** Kürzel für den Tisch-Anzeiger: Initialen, höchstens 2 Zeichen. */
+export function initials(name: string): string {
+  const p = name.trim().split(/\s+/).filter(Boolean);
+  if (!p.length) return "?";
+  return (p.length === 1 ? p[0].slice(0, 2) : p[0][0] + p[p.length - 1][0]).toUpperCase();
+}
+
+export const WAITER_COLORS = ["#0b7285", "#7048e8", "#d9480f", "#2b8a3e", "#c2255c", "#1971c2", "#e67700", "#495057"];
+
+export interface ResView extends ResLike { id: string; name: string; party: number }
+export interface TableView { state: TableState; cur: ResView | null; next: ResView | null; endCur: string | null; soon: boolean }
+
+const hhmm = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+
+/** Zustand eines Tisches zur Zeit `at` samt laufender und nächster Reservierung; `soon` = nächste beginnt in weniger als `soonMin` Minuten. */
+export function tableView(tableId: string, list: ResView[], at: string, durationMin: number, soonMin = 30): TableView {
+  const t = toMinutes(at);
+  const mine = list.filter((r) => r.tableId === tableId && r.status !== "cancelled" && r.status !== "noshow");
+  const cur = mine.find((r) => toMinutes(r.time) <= t && toMinutes(r.time) + durationMin > t) ?? null;
+  const next = mine.filter((r) => toMinutes(r.time) > t).sort((a, b) => toMinutes(a.time) - toMinutes(b.time))[0] ?? null;
+  const state: TableState = cur ? (cur.status === "seated" ? "seated" : "reserved") : "free";
+  return { state, cur, next, endCur: cur ? hhmm(toMinutes(cur.time) + durationMin) : null, soon: !!next && toMinutes(next.time) < t + soonMin };
+}
