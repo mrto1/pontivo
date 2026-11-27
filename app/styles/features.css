@@ -613,3 +613,14 @@ label { margin-bottom: 6px; }
 .stat-row strong { font-size: 1.3rem; }
 .bar-row { display: grid; grid-template-columns: 52px 1fr 36px; align-items: center; gap: 10px; }
 .bar { height: 14px; border-radius: 7px; background: var(--accent, #0b7285); min-width: 4px; }
+
+/* Funktionspakete (SPEC 19.69): Kacheln im Assistenten und auf der Seite «Funktionen» */
+.pkg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.pkg-grid > label.pkg-card.pkg-card { position: relative; display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 14px 14px 14px 46px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--surface); color: var(--ink); font-size: 1rem; cursor: pointer; }
+.pkg-grid > label.pkg-card.pkg-card > input[type="checkbox"] { position: absolute; left: 14px; top: 15px; margin: 0; }
+.pkg-grid > label.pkg-card.pkg-card:has(> input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.pkg-grid > label.pkg-card.pkg-card:has(> input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pkg-name { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-weight: 600; }
+.pkg-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); }
+.pkg-row:first-of-type { border-top: 0; }
+.pkg-row .pkg-text { display: grid; gap: 2px; min-width: 0; }

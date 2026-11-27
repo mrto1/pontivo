@@ -6,7 +6,7 @@ import {
   addUnit, chooseModules, detectEmbed, goLiveFromWizard, markEmbedded, isWholeUnit, nextOpenStep, onboardingSteps, OnboardingError,
   goLiveRestaurant, isRestaurant, markSetupCompleteIfDone, quickTables, setArrivalInfo, setGuestInfo, updateBasics,
 } from "@/src/services/onboarding";
-import { choicesFor } from "@/src/domain/module-choice";
+import { packagesFor, wantedFromPackages } from "@/src/domain/packages";
 import { WEEKDAYS_DE, parseHoursText } from "@/src/domain/reservations";
 import { getSettings, saveOpeningHours, saveSettings } from "@/src/services/reservations";
 import { setPreviousSoftware } from "@/src/services/migration";
@@ -81,9 +81,10 @@ export async function saveOnlineStep(f: FormData) {
 
 export async function saveModules(f: FormData) {
   await step(f, async ({ hotel, actor }) => {
-    const shown = choicesFor({ restaurant: isRestaurant(hotel.propertyType), wholeUnit: isWholeUnit(hotel.propertyType) });
+    const shown = packagesFor({ restaurantOnly: isRestaurant(hotel.propertyType), wholeUnit: isWholeUnit(hotel.propertyType) });
+    const wanted = wantedFromPackages(shown, f.getAll("pkg").map(String));
     // Reines Restaurant: das Modul «restaurant» bleibt an
-    await chooseModules(hotel, { ...Object.fromEntries(shown.flatMap((c) => c.modules.map((m) => [m, f.get(`c_${c.key}`) === "1"]))), ...(isRestaurant(hotel.propertyType) ? { restaurant: true } : {}) }, actor);
+    await chooseModules(hotel, { ...wanted, ...(isRestaurant(hotel.propertyType) ? { restaurant: true } : {}) }, actor);
   });
 }
 

@@ -26,7 +26,6 @@ const LEGACY = new Set([
   "app/admin/[hotelId]/channex/page.tsx",
   "app/admin/[hotelId]/einrichten/actions.ts",
   "app/admin/[hotelId]/feedback/page.tsx",
-  "app/admin/[hotelId]/funktionen/page.tsx",
   "app/admin/[hotelId]/gaesteportal/page.tsx",
   "app/admin/[hotelId]/groups/page.tsx",
   "app/admin/[hotelId]/guestbook/page.tsx",

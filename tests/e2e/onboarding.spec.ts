@@ -43,9 +43,11 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
   await page.fill("#city", "Davos");
   await page.getByRole("button", { name: "Speichern und weiter" }).click();
 
-  // Was brauchen Sie? (Ferienwohnung: ohne Personal vorbelegt)
+  // Was brauchen Sie? Pakete (Ferienwohnung: Basis vorgewählt, Hotelbetrieb nicht)
   await expect(page.getByRole("heading", { name: "Was brauchen Sie?" })).toBeVisible();
-  await expect(page.getByLabel(/Wir arbeiten mit Personal in Rezeption/)).not.toBeChecked();
+  await expect(page.getByLabel(/^Unterkunft Basis/)).toBeChecked();
+  await expect(page.getByLabel(/^Hotelbetrieb/)).not.toBeChecked();
+  if (process.env.SHOT) await page.screenshot({ path: "/tmp/wizard-packages.png", fullPage: true });
   await page.getByRole("button", { name: "Speichern und weiter" }).click();
 
   // Bisherige Software: Nein (Standard)

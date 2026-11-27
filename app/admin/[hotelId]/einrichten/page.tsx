@@ -8,7 +8,7 @@ import { requireHotel } from "@/src/auth/guard";
 import { billingReady } from "@/src/domain/platform-invoice";
 import { atLeast } from "@/src/auth/session";
 import { bookingOnly, CANCEL_TEMPLATES, isWholeUnit, nextOpenStep, onboardingSteps, PROPERTY_LABEL, isRestaurant, unitWord, type StepKey } from "@/src/services/onboarding";
-import { choicesFor, choiceOn } from "@/src/domain/module-choice";
+import { packagesFor, packageState } from "@/src/domain/packages";
 import { WEEKDAYS_DE, hoursText } from "@/src/domain/reservations";
 import { getSettings } from "@/src/services/reservations";
 import { listItems, listTables } from "@/src/services/pos";
@@ -101,15 +101,22 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       break;
     case "funktionen": {
       const rows = await moduleRows(hotel.id);
+      const shown = packagesFor({ restaurantOnly: !!resto, wholeUnit: whole });
+      // Erster Besuch: Vorauswahl nach Betriebsart; später: was ganz eingeschaltet ist
+      const first = !hotel.onboarding.modulesChosenAt;
+      const preset = (k: string) => (resto ? k === "restaurant" : k === "basis" || (k === "betrieb" && !whole));
       body = (
         <form action={saveModules} className="stack">{H}
-          <p className="muted m0">Kreuzen Sie an, was auf Sie zutrifft. Alles andere bleibt ausgeblendet und lässt sich jederzeit unter «Funktionen» ändern.</p>
-          {choicesFor({ restaurant: !!resto, wholeUnit: whole }).map((c) => (
-            <label className="u-d-flex u-gap-10px u-ai-flex-start u-fwt-400" key={c.key}>
-              <input className="w-auto-mt4" type="checkbox" name={`c_${c.key}`} value="1" defaultChecked={choiceOn(rows, c, isOn)} />
-              <span>{c.question}{c.hint ? <span className="small muted block">{c.hint}</span> : null}</span>
-            </label>
-          ))}
+          <p className="muted m0">Wählen Sie die Pakete, die zu Ihrem Betrieb passen. Unter «Funktionen» schalten Sie später jede Funktion einzeln ein oder aus.</p>
+          <div className="pkg-grid">
+            {shown.map((p) => (
+              <label key={p.key} className="pkg-card">
+                <input type="checkbox" name="pkg" value={p.key} defaultChecked={first ? preset(p.key) : packageState(p, rows, isOn) === "on"} />
+                <span className="pkg-name">{p.name}{p.price ? <span className="badge">{p.price}</span> : null}</span>
+                <span className="small muted">{p.promise}</span>
+              </label>
+            ))}
+          </div>
           <div><button className="btn">Speichern und weiter</button></div>
         </form>
       );
