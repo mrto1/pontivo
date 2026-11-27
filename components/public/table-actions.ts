@@ -8,6 +8,7 @@ import { cancelByToken, createReservation, joinWaitlist } from "@/src/services/r
 import { isLocale } from "@/src/i18n/dict";
 import { parseCartForm } from "./cart-form";
 import { s } from "@/src/lib/form";
+import { parseReferrer } from "@/src/domain/google";
 
 /** Nur die beiden eigenen Pfadformen zulassen (kein Umleiten auf fremde Adressen) */
 const baseOf = (f: FormData) => (/^\/h\/[a-z0-9-]+$/.test(s(f, "base")) ? s(f, "base") : "");
@@ -24,7 +25,7 @@ export async function reserveAction(f: FormData) {
   let redirectTo = "";
   try {
     const preorder = parseCartForm(f);
-    const r = await createReservation(hotel, { day: s(f, "day"), time: s(f, "time"), party: Number(s(f, "party")), name: s(f, "name"), phone: s(f, "phone"), email: s(f, "email"), note: s(f, "note"), language: locale, preorder }, "online", "guest");
+    const r = await createReservation(hotel, { day: s(f, "day"), time: s(f, "time"), party: Number(s(f, "party")), name: s(f, "name"), phone: s(f, "phone"), email: s(f, "email"), note: s(f, "note"), language: locale, preorder, referrer: parseReferrer(s(f, "ref")) }, "online", "guest");
     token = r.reservation.publicToken;
     if (r.checkoutUrl) redirectTo = r.checkoutUrl;
   } catch (e) {

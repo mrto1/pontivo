@@ -13,9 +13,9 @@ export async function statistics(hotelId: string, period: Period, today: string)
   // ASSUMPTION: ganze Monate, auch künftige Tage des laufenden Monats (Belegung dann inkl. bereits vorhandener Buchungen)
   const to = lastMonthEnd;
   const types = await db().select({ id: roomTypes.id, name: roomTypes.name, count: roomTypes.roomCount }).from(roomTypes).where(and(eq(roomTypes.hotelId, hotelId), eq(roomTypes.active, true)));
-  const rs = await db().select({ source: bookings.source, nights: bookingRooms.nightlyPrices, roomTypeId: bookingRooms.roomTypeId })
+  const rs = await db().select({ source: bookings.source, referrer: bookings.referrer, nights: bookingRooms.nightlyPrices, roomTypeId: bookingRooms.roomTypeId })
     .from(bookingRooms).innerJoin(bookings, eq(bookings.id, bookingRooms.bookingId))
     .where(and(eq(bookings.hotelId, hotelId), eq(bookings.status, "confirmed"), sql`${bookings.checkin} < ${to}`, sql`${bookings.checkout} > ${from}`));
-  const rows: NightRow[] = rs.flatMap((r) => r.nights.map((n) => ({ night: n.night, roomTypeId: r.roomTypeId, source: r.source, priceRappen: n.price_rappen })));
+  const rows: NightRow[] = rs.flatMap((r) => r.nights.map((n) => ({ night: n.night, roomTypeId: r.roomTypeId, source: r.source === "direct" && r.referrer === "google" ? "direct_google" : r.source, priceRappen: n.price_rappen })));
   return { ...computeStats(rows, types, from, to), from, to: addDays(to, -1) };
 }

@@ -31,4 +31,5 @@ Die Spalte «Tabellen» zeigt Tabellen, die in den SPEC-Abschnitten des Moduls g
 | `vouchers` | Gutscheine | – | an | `vouchers` | – | – |
 | `guests` | Online-Check-in & Meldeschein | – | aus | – | – | – |
 | `monthlymail` | Monatsmail | – | aus | – | – | – |
+| `google` | Google | – | an | `google` | – | – |
 | `inquiries` | Anfragen | – | an | – | `inquiries`, `offer_lines`, `offers`, `resources` | 19.21 |

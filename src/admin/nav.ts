@@ -116,6 +116,7 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
         set("Unterkunft", link("ki-chat", "KI-Chat"), "Der digitale Assistent auf Website und Buchungsseite."),
         set("Verkauf", { ...link("g-site", "Website & Buchung", "site"), tabs: [link("site", "Website"), link("direct", "Direktbuchung", "direktbuchung"), link("api", "Schnittstelle (API)")] }, "Online-Buchung ein- und ausschalten, Texte, Fotos und Farben der Website, Werkzeuge für Direktbuchungen."),
         set("Verkauf", { ...link("g-channels", "Kanäle", "channex"), tabs: [link("channex", "Channel-Manager"), link("ical", "Kalender-Abgleich")] }, "Booking.com, Airbnb, Expedia und iCal, dazu die Provision der Portale."),
+        set("Verkauf", link("google", "Google"), "Bei Google gefunden und direkt gebucht: Links fürs Unternehmensprofil, kostenlose Buchungslinks, Reservieren und Bestellen mit Google."),
         set("Verkauf", link("shop", "Shop & Lager"), "Waren mit Preis, Minibar und Lagerbestand; aufs Zimmer buchen."),
         set("Verkauf", link("mailtexts", "Gäste-Mails", "mail-texte"), "Eigene Sätze in Bestätigung, Vor-der-Anreise- und Nachher-Mail."),
         set("Gastronomie", link("positems", "Speisekarte", "restaurant/artikel"), "Artikel mit Preisen, Optionen und Menüs, KI-Speisekarte und Import per CSV."),

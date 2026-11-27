@@ -37,6 +37,7 @@ export async function POST(req: Request) {
         roomCount: body.rooms,
         voucherCode: body.voucher_code ?? null,
         companyCode: body.company_code ?? null,
+        referrer: body.ref ?? null,
         extras: body.extras,
         guest: {
           firstName: body.guest.first_name,

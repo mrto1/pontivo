@@ -17,6 +17,8 @@ const FIELDS = ["name", "phone", "email", "street", "houseNo", "postalCode", "ci
 
 /** Speisekarte mit Warenkorb im Browser und Bestellformular (SPEC 20.4/20.5) */
 export function OrderCart(p: {
+  /** Herkunft (SPEC 19.67) */
+  referrer?: string | null;
   hotelId: string; locale: Locale; base: string; menu: MenuItem[]; phone: string | null; msg: string | null; aborted: boolean;
   pickup: { on: boolean; slots: string[]; cash: boolean }; delivery: { on: boolean; zones: Zone[]; cash: boolean; cashMaxRappen: number | null }; cardOk: boolean;
 }) {
@@ -142,6 +144,7 @@ export function OrderCart(p: {
         <input type="hidden" name="hotelId" value={p.hotelId} /><input type="hidden" name="locale" value={p.locale} /><input type="hidden" name="base" value={p.base} />
         <input type="hidden" name="cart" value={JSON.stringify(lines.map(({ itemId, quantity, optionIds, note }) => ({ itemId, quantity, optionIds, note })))} />
         <input type="hidden" name="kind" value={kind} />
+        {p.referrer ? <input type="hidden" name="ref" value={p.referrer} /> : null}
         <input className="u-pos-absolute u-l-9999px" type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
         <h2>{t.cart}</h2>
         {p.pickup.on && p.delivery.on ? (

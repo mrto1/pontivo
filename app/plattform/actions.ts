@@ -12,6 +12,7 @@ import { PlatformSettingsError, savePlatformBilling, savePlatformVat, setOrderFe
 import { importPlatformCamt, markChargePaid, remindNow, resendQrInvoice, retryCharge, processCharges } from "@/src/services/billing";
 import { formatChf } from "@/src/domain/money";
 import { importSchoolHolidays } from "@/src/services/holidays";
+import { setHotelLinksStatus } from "@/src/services/google";
 
 // Alle Aktionen der Plattform-Verwaltung. Jede Seite schickt in `to` ihren eigenen Pfad mit; danach geht es dorthin zurück.
 const PAGES = ["/plattform/betriebe", "/plattform/benutzer", "/plattform/rechnungen", "/plattform/mwst", "/plattform/zahlungsverbindung", "/plattform/admins", "/plattform/schulferien"];
@@ -194,4 +195,14 @@ export async function orderPilotSet(f: FormData) {
     throw e;
   }
   go(to, on ? "Pilotbetrieb vergeben" : "Pilotstatus entzogen, Platz ist frei");
+}
+
+/** Google (SPEC 19.67): Status der kostenlosen Buchungslinks eines Betriebs setzen (nach Freischaltung in Channex) */
+export async function googleStatus(f: FormData) {
+  const to = target(f);
+  const admin = await requirePlatformAdmin();
+  const st = String(f.get("status") ?? "");
+  if (st !== "off" && st !== "requested" && st !== "active") go(to, "Status ungültig", "error");
+  await setHotelLinksStatus(String(f.get("hotelId") ?? ""), st as "off" | "requested" | "active", `user:${admin.id}`);
+  go(to, st === "active" ? "Als aktiv markiert" : "Status gespeichert");
 }

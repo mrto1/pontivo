@@ -241,6 +241,8 @@ export async function slotsToday(hotel: Hotel, kind: "pickup" | "delivery", extr
 export type CartLine = { itemId: string; quantity: number; optionIds: string[]; note: string };
 export type OrderInput = {
   kind: "pickup" | "delivery"; time: string; payment: "card" | "cash"; name: string; phone: string; email: string; note?: string; language: string;
+  /** Herkunft (SPEC 19.67) */
+  referrer?: "google" | null;
   lines: CartLine[];
   address?: { street: string; houseNo: string; postalCode: string; city: string; floor?: string; bell?: string; hint?: string };
 };
@@ -313,7 +315,7 @@ export async function createOnlineOrder(hotel: Hotel, i: OrderInput, opts: { tes
        AND to_char(day, 'YYYY-MM') = ${day.slice(0, 7)} AND status NOT IN ('rejected','expired','cancelled','not_accepted')`));
     const [o] = await tx.insert(onlineOrders).values({
       hotelId: hotel.id, day, number: opts.test ? `T-${String(n).padStart(3, "0")}` : orderNumber(n), publicToken: token, kind: i.kind,
-      status: i.payment === "card" && !opts.test ? "pending_payment" : "new", payment: i.payment, name, phone, email, language: isLocale(i.language) ? i.language : "de",
+      status: i.payment === "card" && !opts.test ? "pending_payment" : "new", payment: i.payment, name, phone, email, referrer: i.referrer ?? null, language: isLocale(i.language) ? i.language : "de",
       street: clean(a?.street ?? "", 120), houseNo: clean(a?.houseNo ?? "", 20), postalCode: (a?.postalCode ?? "").trim(), city: clean(a?.city ?? "", 80),
       floor: clean(a?.floor ?? "", 40), bell: clean(a?.bell ?? "", 60), addressHint: clean(a?.hint ?? "", 200), zoneId: zone?.id ?? null,
       items: priced.items, subtotalRappen: priced.subtotalRappen, deliveryFeeRappen: fee, totalRappen: total,

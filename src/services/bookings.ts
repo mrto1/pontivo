@@ -65,6 +65,8 @@ export type CreateBookingInput = {
   voucherCode?: string | null;
   /** Firmencode (optional, SPEC 19.29): Firmenrabatt und, wenn der Code es erlaubt, Buchung auf Rechnung */
   companyCode?: string | null;
+  /** Herkunft (SPEC 19.67) */
+  referrer?: "google" | null;
   roomTypeId: string;
   ratePlanId: string;
   checkin: string;
@@ -259,6 +261,7 @@ export async function createDirectBooking(
             holdExpiresAt,
             companyId: rc?.company.id ?? null,
             companyCodeId: rc?.code.id ?? null,
+            referrer: input.referrer ?? null,
             discountRappen: sum((o) => o.discountRappen),
             discountKind: offers.find((o) => o.adjustment)?.adjustment?.kind ?? null,
             directBenefits: benefitsFor(hotel.content.direct, nightsOf(input.checkin, input.checkout).length).map((x) => x.text),

@@ -117,7 +117,7 @@ export async function slotsFor(hotel: Hotel, day: string, party: number): Promis
   return slots.map((x) => (x.ok && !onlineTableAvailable(ot.tables, ex, party, x.time, s.durationMin, !!s.combineTables) ? { ...x, ok: false } : x));
 }
 
-export type ReservationInput = { day: string; time: string; party: number; name: string; phone?: string; email?: string; note?: string; tableId?: string | null; language?: string; /** Vorbestellung (nur online, SPEC 19.57) */ preorder?: CartLine[] };
+export type ReservationInput = { day: string; time: string; party: number; name: string; phone?: string; email?: string; note?: string; tableId?: string | null; language?: string; /** Vorbestellung (nur online, SPEC 19.57) */ preorder?: CartLine[]; /** Herkunft (SPEC 19.67) */ referrer?: "google" | null };
 export type Created = { reservation: PosReservation; /** nur bei Anzahlung: Zahlungsseite, auf die der Gast weitergeleitet wird */ checkoutUrl: string | null };
 
 /**
@@ -178,7 +178,7 @@ export async function createReservation(hotel: Hotel, i: ReservationInput, sourc
       if (!tableId && source === "online" && online.restricted) throw new PosError("Diese Zeit ist leider nicht mehr frei. Bitte eine andere wählen.");
     }
     const [row] = await tx.insert(posReservations).values({
-      hotelId: hotel.id, day: i.day, time: i.time, party: i.party, name, phone, email, note: clean(i.note ?? "", 300), tableId, extraTableIds: extra, source, language: i.language ?? hotel.defaultLanguage, publicToken: token,
+      hotelId: hotel.id, day: i.day, time: i.time, party: i.party, name, phone, email, note: clean(i.note ?? "", 300), tableId, extraTableIds: extra, source, language: i.language ?? hotel.defaultLanguage, publicToken: token, referrer: i.referrer ?? null,
       status: deposit > 0 ? "pending" : "confirmed", depositRappen: deposit, depositStatus: deposit > 0 ? "pending" : "none",
       preorder: preItems, preorderRappen: preTotal,
     }).returning();

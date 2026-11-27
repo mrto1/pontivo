@@ -33,7 +33,7 @@ describe("Plattform-Menü", () => {
     expect(sectionFor("/plattform/mwst", nav, PLATFORM_HOME)?.key).toBe("pf-billing");
     expect(sectionFor("/plattform/schulferien", nav, PLATFORM_HOME)?.key).toBe("pf-settings");
     expect(sectionFor("/plattform", nav, PLATFORM_HOME)).toBeNull();
-    expect(sectionFor("/plattform/vertrieb", nav, PLATFORM_HOME)).toBeNull();
+    expect(sectionFor("/plattform/google", nav, PLATFORM_HOME)?.key).toBe("pf-sales");
   });
 
   it("Übersicht ist nur auf der Startseite aktiv", () => {

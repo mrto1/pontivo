@@ -3,7 +3,9 @@ import { useState } from "react";
 import { t, type Locale } from "@/src/i18n/dict";
 import { D } from "@/src/i18n/direct";
 
-export function SearchBar({ action, locale, defaults, today, plan, codes, code }: {
+export function SearchBar({ action, locale, defaults, today, plan, codes, code, referrer }: {
+  /** Herkunft beibehalten (SPEC 19.67) */
+  referrer?: string;
   /** Das Hotel hat Firmencodes: Feld «Code» anzeigen (SPEC 19.29) */
   codes?: boolean;
   code?: string;
@@ -19,6 +21,7 @@ export function SearchBar({ action, locale, defaults, today, plan, codes, code }
   return (
     <form className="card searchbar" action={action} method="get">
       {plan ? <input type="hidden" name="plan" value={plan} /> : null}
+      {referrer ? <input type="hidden" name="ref" value={referrer} /> : null}
       <div>
         <label htmlFor="checkin">{d.checkin}</label>
         <input id="checkin" type="date" name="checkin" min={today} defaultValue={defaults.checkin} required />

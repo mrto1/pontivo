@@ -1,7 +1,7 @@
 import { formatChf } from "@/src/domain/money";
 import type { TaxList } from "@/src/services/guests";
 
-export const SOURCE: Record<string, string> = { direct: "Direkt", booking_com: "Booking.com", expedia: "Expedia", airbnb: "Airbnb", other_ota: "Portal", admin: "Manuell" };
+export const SOURCE: Record<string, string> = { direct: "Direkt", direct_google: "Direkt über Google", booking_com: "Booking.com", expedia: "Expedia", airbnb: "Airbnb", other_ota: "Portal", admin: "Manuell" };
 
 export function TaxTable({ r }: { r: TaxList }) {
   return (

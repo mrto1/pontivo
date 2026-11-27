@@ -42,7 +42,6 @@ const LEGACY = new Set([
   "app/admin/[hotelId]/resources/angebote/page.tsx",
   "app/admin/[hotelId]/restaurant/abschluss/page.tsx",
   "app/admin/[hotelId]/restaurant/bestellungen/page.tsx",
-  "app/admin/[hotelId]/restaurant/einstellungen/page.tsx",
   "app/admin/[hotelId]/restaurant/fahrer/page.tsx",
   "app/admin/[hotelId]/restaurant/tisch-qr/page.tsx",
   "app/admin/[hotelId]/restaurant/tischplan/page.tsx",

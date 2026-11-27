@@ -12,7 +12,7 @@ export function platformNav(): Nav {
     primary: [
       { key: "pf-home", label: "Übersicht", href: PLATFORM_HOME },
       { ...link("pf-hotels", "Betriebe", "betriebe"), tabs: [link("pf-hotels", "Betriebe", "betriebe"), link("pf-users", "Benutzer", "benutzer")] },
-      link("pf-sales", "Vertrieb", "vertrieb"),
+      { ...link("pf-sales", "Vertrieb", "vertrieb"), tabs: [link("pf-sales", "Vertrieb", "vertrieb"), link("pf-google", "Google", "google")] },
       { ...link("pf-billing", "Abrechnung", "rechnungen"), tabs: [link("pf-billing", "Rechnungen", "rechnungen"), link("pf-vat", "MWST", "mwst")] },
       { ...link("pf-settings", "Plattform", "admins"), tabs: [link("pf-admins", "Plattform-Admins", "admins"), link("pf-site", "Website-Texte", "website"), link("pf-holidays", "Schulferien", "schulferien")] },
     ],

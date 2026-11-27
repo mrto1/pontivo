@@ -31,6 +31,8 @@ export function BookingForm(props: {
   baseTotalRappen?: number;
   /** Firmencode (SPEC 19.29): wird mitgeschickt; `payOnInvoice` = ohne Kartenzahlung, Rechnung an die Firma */
   companyCode?: string;
+  /** Herkunft aus der Adresse (SPEC 19.67) */
+  referrer?: "google";
   payOnInvoice?: boolean;
 }) {
   const d = t(props.locale);
@@ -78,6 +80,7 @@ export function BookingForm(props: {
         terms_accepted: f.get("terms") === "on",
         voucher_code: String(f.get("voucher") ?? "").trim() || null,
         company_code: props.companyCode || null,
+        ref: props.referrer ?? null,
         extras: Object.entries(qty).filter(([, q]) => q > 0).map(([id, quantity]) => ({ id, quantity })),
       }),
     }).catch(() => null);

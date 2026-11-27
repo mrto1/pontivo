@@ -13,6 +13,7 @@ import { PRE } from "@/src/i18n/preorder";
 import { MenuPicker } from "./MenuPicker";
 import { readDraft } from "./reservation-draft";
 import { onlineMenu } from "@/src/services/online-orders";
+import { parseReferrer } from "@/src/domain/google";
 
 /** Öffentliche Tischreservation (SPEC 19.49 Etappe C): Datum und Personen wählen, freie Zeiten, Daten, Bestätigung */
 export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; locale: Locale; base: string; sp: Record<string, string | string[] | undefined> }) {
@@ -25,6 +26,8 @@ export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; loc
   const today = todayIn(hotel.timezone);
   const day = one("date") ?? "";
   const party = Math.max(1, Math.min(50, Number(one("party")) || 2));
+  const ref = parseReferrer(one("ref"));
+  const refInput = ref ? <input type="hidden" name="ref" value={ref} /> : null;
   const slots = settings.onlineEnabled && day ? (await slotsFor(hotel, day, party)).filter((x) => x.ok) : null;
   const stripeOk = env().PAYMENT_PROVIDER !== "stripe" || !!(hotel.stripeAccountId && hotel.stripeChargesEnabled);
   const pre = PRE[locale];
@@ -39,7 +42,7 @@ export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; loc
         {!settings.onlineEnabled ? <p className="notice warn">{r.off}</p> : (
           <>
             {one("msg") ? <p className="notice error" role="alert">{one("msg")}</p> : null}
-            <form method="get" className="stack">
+            <form method="get" className="stack">{refInput}
               <div><label htmlFor="date">{r.date}</label><input id="date" name="date" type="date" min={today} max={addDays(today, settings.horizonDays)} defaultValue={day} required /></div>
               <div><label htmlFor="party">{r.guests}</label><input id="party" name="party" type="number" min={1} max={50} defaultValue={party} required /></div>
               <div><button className="btn secondary">{r.show}</button></div>
@@ -47,7 +50,7 @@ export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; loc
             {party > settings.maxParty ? <p className="notice warn">{r.callUs}</p> : null}
             {slots && party <= settings.maxParty ? (
               slots.length ? (
-                <form action={reserveAction} className="stack" data-testid="reserve-form">
+                <form action={reserveAction} className="stack" data-testid="reserve-form">{refInput}
                   <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="locale" value={locale} /><input type="hidden" name="base" value={base} />
                   <input type="hidden" name="day" value={day} /><input type="hidden" name="party" value={party} />
                   <input className="u-pos-absolute u-l-9999px" type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />

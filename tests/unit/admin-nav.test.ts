@@ -53,7 +53,7 @@ describe("Admin-Menü", () => {
     expect(groups.map((g) => g.items.map((i) => i.label))).toEqual([
       ["Betriebsdaten", "Funktionen", "Team & Rollen", "Geräte", "Zahlungsmethoden", "Pontivo-Abrechnung", "Datenübernahme"],
       ["Zimmer & Tarife", "Zusatzleistungen", "Angebote vor Ort", "Gästeportal", "Upselling", "KI-Chat"],
-      ["Website & Buchung", "Kanäle", "Shop & Lager", "Gäste-Mails"],
+      ["Website & Buchung", "Kanäle", "Google", "Shop & Lager", "Gäste-Mails"],
       ["Speisekarte", "Tischplan", "Tisch-QR", "Reservation", "Bestellung", "Kasse"],
     ]);
     for (const g of groups) { expect(g.lead.length).toBeGreaterThan(10); for (const i of g.items) expect(i.lead, i.label).toBeTruthy(); }

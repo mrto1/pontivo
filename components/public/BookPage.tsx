@@ -23,6 +23,7 @@ import { WaitlistForm } from "./WaitlistForm";
 import { Shell } from "./Shell";
 import { SearchBar } from "./SearchBar";
 import { BookingForm } from "./BookingForm";
+import { parseReferrer } from "@/src/domain/google";
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -31,6 +32,7 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
   const one = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : sp[k]);
   const ageList = sp.age ? (Array.isArray(sp.age) ? sp.age : [sp.age]).join(",") : one("ages");
   const parsed = searchParamsSchema.safeParse({ checkin: one("checkin"), checkout: one("checkout"), adults: one("adults"), children: one("children"), rooms: one("rooms"), ages: ageList });
+  const ref = parseReferrer(one("ref")) ?? undefined;
   const today = todayIn(hotel.timezone);
   const q = parsed.success ? parsed.data : null;
   // Aus dem Baustein «Angebote»: nur dieser Tarif, Nächte vorschlagen
@@ -141,6 +143,7 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
                   nights={n}
                   baseTotalRappen={o.totalRappen}
                   companyCode={rc ? codeRaw : undefined}
+                  referrer={ref}
                   payOnInvoice={rc?.payOnInvoice}
                 />
               </details>
@@ -155,7 +158,7 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
     <Shell hotel={hotel} locale={locale} base={base} path={path} noBookButton>
       <div className="u-p-24px-0">
         {plan ? <p className="small muted u-m-0-0-8px">{d.offerFor}: <strong>{planName(plan, locale)}</strong>{plan.minNights > 1 ? ` · ${fill(d.fromNights, { n: plan.minNights })}` : ""}</p> : null}
-        <SearchBar action={`${base}/${locale}/book`} locale={locale} today={today} plan={plan?.id} codes={hasCodes} code={codeRaw}
+        <SearchBar action={`${base}/${locale}/book`} locale={locale} today={today} plan={plan?.id} codes={hasCodes} code={codeRaw} referrer={ref}
           defaults={{ checkin: q?.checkin ?? addDays(today, 1), checkout: q?.checkout ?? addDays(q?.checkin ?? addDays(today, 1), wantNights), adults: q?.adults, children: q?.children, rooms: q?.rooms, ages: q?.ages }} />
       </div>
       <section>{body}</section>
