@@ -75,7 +75,7 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
 
         <details className="card">
           <summary><strong>Neuen Lead anlegen</strong></summary>
-          <form action={addLead} className="stack" style={{ marginTop: 12, maxWidth: 560 }}>
+          <form action={addLead} className="stack mt12 u-maxw-560px">
             <label>Betrieb<input name="name" required /></label>
             <div className="form-row">
               <div><label htmlFor="f57681">Kontaktperson</label><input id="f57681" name="contactName" /></div>
@@ -118,7 +118,7 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
               <details>
                 <summary>Bearbeiten, Mail senden, Verlauf</summary>
                 <div className="stack mt12">
-                  <form action={saveLead} className="stack" style={{ maxWidth: 560 }}>
+                  <form action={saveLead} className="stack u-maxw-560px">
                     <input type="hidden" name="id" value={l.id} /><input type="hidden" name="filter" value={filter} />
                     <div className="form-row">
                       <div><label htmlFor={`f5768m1-${l.id}`}>Kontaktperson</label><input id={`f5768m1-${l.id}`} name="contactName" defaultValue={l.contactName} /></div>
@@ -131,7 +131,7 @@ export default async function Vertrieb({ searchParams }: { searchParams: Promise
                     <div><button className="btn small">Speichern</button></div>
                   </form>
 
-                  <form action={mail} className="stack" style={{ maxWidth: 560 }}>
+                  <form action={mail} className="stack u-maxw-560px">
                     <input type="hidden" name="id" value={l.id} /><input type="hidden" name="filter" value={filter} />
                     <h4 className="plat-label">Persönliche Mail senden{l.lastMailAt ? ` (zuletzt ${fmt(l.lastMailAt)})` : ""}</h4>
                     <label>Vorlage<select name="template">{MAIL_TEMPLATES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</select></label>

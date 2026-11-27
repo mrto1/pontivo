@@ -61,7 +61,7 @@ export default async function OwnersPage({ params, searchParams }: { params: Pro
             <tr><td>Umsatz Übernachtungen ({x.bookingsCount} Buchungen)</td><td>{formatChf(x.revenueRappen)}</td></tr>
             <tr><td>Kommission {(x.commissionBps / 100).toLocaleString("de-CH")} %</td><td>−{formatChf(x.commissionRappen)}</td></tr>
             {x.costs.map((c) => (
-              <tr key={c.id}><td>{c.description}{canEdit ? <form action={delCost} style={{ display: "inline", marginLeft: 8 }}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="month" value={month} /><input type="hidden" name="costId" value={c.id} /><button className="btn secondary">Löschen</button></form> : null}</td><td>−{formatChf(c.amountRappen)}</td></tr>
+              <tr key={c.id}><td>{c.description}{canEdit ? <form className="d-inline ml8" action={delCost}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="month" value={month} /><input type="hidden" name="costId" value={c.id} /><button className="btn secondary">Löschen</button></form> : null}</td><td>−{formatChf(c.amountRappen)}</td></tr>
             ))}
             <tr><td><strong>Auszahlung an Eigentümer</strong></td><td><strong>{formatChf(x.netRappen)}</strong></td></tr>
           </tbody></table>
@@ -86,7 +86,7 @@ export default async function OwnersPage({ params, searchParams }: { params: Pro
           <div><label htmlFor={`fd5acm3-${o?.id ?? "new"}`}>Name</label><input id={`fd5acm3-${o?.id ?? "new"}`} name="name" defaultValue={o?.name ?? ""} required /></div>
           <div><label htmlFor={`fd5acm4-${o?.id ?? "new"}`}>E-Mail für die Abrechnung</label><input id={`fd5acm4-${o?.id ?? "new"}`} name="email" type="email" defaultValue={o?.email ?? ""} /></div>
           <div><label htmlFor={`fd5acm5-${o?.id ?? "new"}`}>Kommission des Hauses in %</label><input id={`fd5acm5-${o?.id ?? "new"}`} name="commission" inputMode="decimal" defaultValue={o ? o.commissionBps / 100 : 20} /></div>
-          <fieldset><legend>Objekte</legend>{types.map((t) => <label key={t.id} style={{ display: "block" }}><input type="checkbox" name="roomTypeIds" value={t.id} defaultChecked={o?.roomTypeIds.includes(t.id)} /> {t.name}</label>)}</fieldset>
+          <fieldset><legend>Objekte</legend>{types.map((t) => <label className="u-d-block" key={t.id}><input type="checkbox" name="roomTypeIds" value={t.id} defaultChecked={o?.roomTypeIds.includes(t.id)} /> {t.name}</label>)}</fieldset>
           <div><label htmlFor={`fd5acm6-${o?.id ?? "new"}`}>Notiz</label><input id={`fd5acm6-${o?.id ?? "new"}`} name="note" defaultValue={o?.note ?? ""} /></div>
           <label><input type="checkbox" name="active" defaultChecked={o?.active ?? true} /> aktiv</label>
           <div><button className="btn">Speichern</button></div>

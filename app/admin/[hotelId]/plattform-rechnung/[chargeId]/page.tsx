@@ -51,7 +51,7 @@ export default async function PlatformInvoice({ params }: { params: Promise<{ ho
       <div className="no-print m-16-0"><PrintButton /></div>
       <div className="stack">
         <p className="m0"><strong>{p.operator}</strong><br />{p.address}{env().PLATFORM_UID ? <><br />UID {env().PLATFORM_UID}</> : null}{c.vatNumber ? <><br />MWST-Nr. {c.vatNumber}</> : null}<br />{p.email}</p>
-        <p style={{ margin: "16px 0 0" }}>{hotel.legalName ?? hotel.name}<br />{hotel.addressLine ?? ""}{hotel.addressLine ? <br /> : null}{[hotel.postalCode, hotel.city].filter(Boolean).join(" ")}</p>
+        <p className="u-m-16px-0-0">{hotel.legalName ?? hotel.name}<br />{hotel.addressLine ?? ""}{hotel.addressLine ? <br /> : null}{[hotel.postalCode, hotel.city].filter(Boolean).join(" ")}</p>
         <h1>Rechnung {c.invoiceNo}</h1>
         <div className="kv small">
           <span className="muted">Rechnungsdatum</span><span>{c.invoiceDate ? fmtDay(c.invoiceDate) : ""}</span>
@@ -87,7 +87,7 @@ export default async function PlatformInvoice({ params }: { params: Promise<{ ho
               <div className="lbl">Zahlbar durch</div><p>{hotel.legalName ?? hotel.name}<br />{hotel.addressLine}<br />{hotel.postalCode} {hotel.city}</p>
               <div className="lbl">Währung / Betrag</div><p>{formatChf(c.chargeRappen)}</p>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "51mm 1fr", gap: "5mm" }}>
+            <div className="u-d-grid u-gtc-51mm-1fr u-gap-5mm">
               <div>
                 <h4>Zahlteil</h4>
                 <div className="qr" dangerouslySetInnerHTML={{ __html: qr.svg }} />

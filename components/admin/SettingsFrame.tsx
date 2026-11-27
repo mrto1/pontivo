@@ -24,7 +24,7 @@ export function SettingsFrame({ nav: navIn, home, tabs, children }: { nav: Nav; 
           </div>
         ))}
       </aside>
-      <div style={{ minWidth: 0 }}>
+      <div className="u-minw-0">
         {onOverview ? null : <a className="settings-back small" href={nav.settings.href}>‹ Einstellungen</a>}
         {tabs}
         {children}

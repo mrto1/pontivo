@@ -105,7 +105,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
         <form action={saveModules} className="stack">{H}
           <p className="muted m0">Kreuzen Sie an, was auf Sie zutrifft. Alles andere bleibt ausgeblendet und lässt sich jederzeit unter «Funktionen» ändern.</p>
           {choicesFor({ restaurant: !!resto, wholeUnit: whole }).map((c) => (
-            <label key={c.key} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontWeight: 400 }}>
+            <label className="u-d-flex u-gap-10px u-ai-flex-start u-fwt-400" key={c.key}>
               <input className="w-auto-mt4" type="checkbox" name={`c_${c.key}`} value="1" defaultChecked={choiceOn(rows, c, isOn)} />
               <span>{c.question}{c.hint ? <span className="small muted block">{c.hint}</span> : null}</span>
             </label>
@@ -178,7 +178,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             <div><label htmlFor="maxParty">Grösste Gruppe online</label><input id="maxParty" name="maxParty" type="number" min={1} max={50} defaultValue={cfg.maxParty} /></div>
           </div>
           <p className="small muted">Anzahlung, Erinnerung, Warteliste und Vorlauf stellen Sie später unter <a href={`/admin/${hotel.id}/restaurant/einstellungen#online`}>Reservation</a> ein.</p>
-          <div style={{ display: "flex", gap: 8 }}><button className="btn">{live ? "Speichern und weiter" : "Reservation live schalten"}</button></div>
+          <div className="u-d-flex gap8"><button className="btn">{live ? "Speichern und weiter" : "Reservation live schalten"}</button></div>
         </form>
       );
       break;
@@ -321,7 +321,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             placeholder={whole ? "Schlüssel: Schlüsselbox neben der Haustür, Code 4711.\nParkplatz: Nr. 3 hinter dem Haus.\nWLAN: Chalet-Gast / Passwort bergluft24" : "Rezeption geöffnet 7–21 Uhr. Später? Rufen Sie uns an: 055 …\nParkplätze hinter dem Haus."} /></div>
           <div><label htmlFor="ai-en">Englisch (optional)</label><textarea id="ai-en" name="en" rows={4} maxLength={2000} defaultValue={hotel.content.arrivalInfo?.en ?? ""} /></div>
           <p className="small muted">Zugangscodes nur hier eintragen, nicht auf der Website – die Infos gehen nur an Gäste mit bestätigter Buchung.</p>
-          <div style={{ display: "flex", gap: 8 }}><button className="btn">Speichern und weiter</button>{next ? <button className="btn secondary" formNoValidate formAction={skipFromArrival}>Später</button> : null}</div>
+          <div className="u-d-flex gap8"><button className="btn">Speichern und weiter</button>{next ? <button className="btn secondary" formNoValidate formAction={skipFromArrival}>Später</button> : null}</div>
         </form>
       );
       body = (
@@ -439,7 +439,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
   return (
     <div className="wizard">
       <aside className="wizard-steps" aria-label="Schritte">
-        <p className="small muted" style={{ margin: "0 0 8px" }}>{PROPERTY_LABEL[hotel.propertyType]} · {doneCount} von {steps.length} erledigt</p>
+        <p className="small muted u-m-0-0-8px">{PROPERTY_LABEL[hotel.propertyType]} · {doneCount} von {steps.length} erledigt</p>
         <div className="wizard-bar" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={doneCount}><span style={{ width: `${(doneCount / steps.length) * 100}%` }} /></div>
         <ol>
           {steps.map((x) => (
@@ -450,7 +450,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
         </ol>
       </aside>
       <section className="card wizard-main">
-        <h1 style={{ fontSize: "1.6rem" }}>{steps[idx].title}</h1>
+        <h1 className="u-fs-1-6rem">{steps[idx].title}</h1>
         {sp.error && !sp.neu ? <p className="notice warn" role="alert">{sp.error}</p> : null}
         {sp.msg ? <Notice text={sp.msg} /> : null}
         {body}

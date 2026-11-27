@@ -128,7 +128,7 @@ export default async function BookingView({ params, searchParams }: { params: Pr
               <button className="btn">{d.payBalance} ({formatChf(booking.balanceRappen)})</button>
             </form>
           ) : null}
-          {plan ? (<><h3 style={{ marginTop: 20 }}>{d.cancellation}</h3><p className="small muted">{cancellationPolicyText(plan, locale)}</p></>) : null}
+          {plan ? (<><h3 className="u-mt-20px">{d.cancellation}</h3><p className="small muted">{cancellationPolicyText(plan, locale)}</p></>) : null}
           {preview?.cancellable ? <CancelBox token={token} locale={locale} /> : null}
           {booking.status === "confirmed" ? <p className="mt16"><a className="btn secondary small" href={`/b/${token}/kalender`}>{pt.calendar}</a></p> : null}
         </div>
@@ -156,9 +156,9 @@ export default async function BookingView({ params, searchParams }: { params: Pr
             <h3>{pt.keyTitle}</h3>
             <p>{pt.keyText}</p>
             {door.codes.map((c) => (
-              <p key={c.lock} style={{ margin: "8px 0" }}>
+              <p className="u-m-8px-0" key={c.lock}>
                 <span className="muted small">{c.lock}</span><br />
-                <strong style={{ fontSize: "1.8rem", letterSpacing: "0.2em", fontVariantNumeric: "tabular-nums" }}>{c.code}</strong>
+                <strong className="u-fs-1-8rem u-lsp-0-2em u-fvn-tabular-nums">{c.code}</strong>
                 <span className="muted small"> · {pt.keyUntil} {c.validUntil.toLocaleString(locale === "de" ? "de-CH" : locale, { timeZone: hotel.timezone, dateStyle: "short", timeStyle: "short" })}</span>
               </p>
             ))}

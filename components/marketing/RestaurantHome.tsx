@@ -91,7 +91,7 @@ export function RestaurantHome({ contact, account, fee, feeBps, minimum, today, 
         <ul className={`${s.modGrid} ${s.modGrid2}`}>
           {blocks.map(([t, d]) => <li key={t} className={s.mod}><div><strong>{t}</strong><p>{d}</p></div></li>)}
         </ul>
-        <p className={s.buildNote} style={{ marginTop: 20 }}>Dazu auf Wunsch: <strong>Online-Gutscheine</strong>, die Sie auf Ihrer Website verkaufen, und ein <strong>KI-Chat</strong>, der Fragen zu Menü, Allergenen und Öffnungszeiten beantwortet, damit im Service weniger das Telefon klingelt.</p>
+        <p className={`${s.buildNote} u-mt-20px`}>Dazu auf Wunsch: <strong>Online-Gutscheine</strong>, die Sie auf Ihrer Website verkaufen, und ein <strong>KI-Chat</strong>, der Fragen zu Menü, Allergenen und Öffnungszeiten beantwortet, damit im Service weniger das Telefon klingelt.</p>
       </section>
 
       <section className={s.section}>

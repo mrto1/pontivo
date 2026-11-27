@@ -86,8 +86,8 @@ export function PontivoHome({ contact, site: siteIn, account, children }: { cont
               </div>
             </div>
             <div className={s.legend}>
-              <span><i className={s.dot} style={{ background: "var(--pv-keep)" }} />bleibt beim Hotel</span>
-              <span><i className={s.dot} style={{ background: "var(--pv-fee)" }} />Provision</span>
+              <span><i className={`${s.dot} u-bg-var-pv-keep`} />bleibt beim Hotel</span>
+              <span><i className={`${s.dot} u-bg-var-pv-fee`} />Provision</span>
             </div>
             <p className={s.receiptNote}>Rechenbeispiel mit 17 % Portal-Provision. Zahlungsgebühren fallen in beiden Fällen an.</p>
           </figure>

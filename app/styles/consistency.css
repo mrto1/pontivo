@@ -1,0 +1,52 @@
+/* Einheitlichkeit über alle Seiten: Feldhöhen, Tippflächen, Werkzeugleisten, Aufklapper, Dialoge, Hilfe. Kommt zuletzt und gewinnt bei gleicher Spezifität. */
+
+/* ---- Einheitlichkeit (UI-Durchgang 11/2026) ---- */
+/* Formularraster: Felder einer Zeile stehen auf gleicher Höhe, auch wenn ein Label zweizeilig umbricht */
+/* (nur in Rastern ohne Hinweistext unter einem Feld; dort bleiben die Felder oben ausgerichtet) */
+:is(.form-grid, .form-row):not(:has(> div > :is(input, select, textarea) + *)) > div:has(> label + :is(input, select, textarea):last-child) { display: flex; flex-direction: column; justify-content: flex-end; }
+/* Knöpfe in einer Zeile mit Feldern: gleiche Höhe wie die Felder */
+:is(.form-grid, .form-row) > :is(.btn, button) { min-height: var(--ctl-h); align-self: end; }
+@media print { .print-title { position: static; width: auto; height: auto; margin: 0 0 12px; overflow: visible; clip: auto; white-space: normal; } }
+/* Handy und Tablet: Tippflächen mindestens 44 px (Apple/Google-Richtwert) */
+@media (max-width: 860px), (pointer: coarse) {
+  .switch { min-height: 44px; }
+  .settings-back { padding: 10px 0; }
+  .link-btn { min-height: 44px; display: inline-flex; align-items: center; }
+  :where(details:not(.avatar-menu)) > summary { padding-block: 10px; } /* niedrige Spezifität: eigene Polster (FAQ usw.) gehen vor */
+  .admin-brand { padding-block: 7px; }
+  .setup-chip { min-height: 36px; }
+}
+/* Werkzeugleisten (Zeitraum, Datum, Filter): alle Bedienelemente gleich hoch, am Handy in Daumengrösse */
+:root { --tool-h: 38px; }
+@media (max-width: 860px), (pointer: coarse) { :root { --tool-h: 44px; } }
+.seg a, .seg .seg-off, .seg .seg-mid { display: inline-flex; align-items: center; justify-content: center; min-height: calc(var(--tool-h) - 2px); padding-block: 0; }
+.cal-tools :is(input, select) { min-height: var(--tool-h); height: var(--tool-h); padding-block: 0; }
+.cal-tools :is(.btn, .btn-dl) { min-height: var(--tool-h); padding-block: 0; }
+/* Knopf neben Suchfeld oder Datumsfeldern: Feldhöhe */
+.bk-filter > .btn, .cal-export .btn-dl { min-height: var(--ctl-h); }
+.bk-filter > .btn { justify-self: start; padding-inline: 22px; }
+/* Bedienelemente in Tabellenzeilen: kompakt und gleich hoch (Felder, Auswahl, Knöpfe) */
+.table :is(input:not([type=checkbox]):not([type=radio]), select) { min-height: var(--tool-h); height: var(--tool-h); padding-block: 0; }
+.table :is(.btn, .inline-form .btn, .inline-form button) { min-height: var(--tool-h); padding-block: 0; }
+/* kleine Zahlenfelder (Personen, Kinder) dürfen enger stehen */
+.form-grid.tight { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+/* Aufklappbare Abschnitte: überall ein Pfeil, damit man sieht, dass sie sich öffnen (eigene Zeichen bei FAQ, Menü usw. bleiben) */
+details:not(.avatar-menu, .faq-item, .rt, .ready, .fold) > summary:not(.btn)::before { content: "▸"; display: inline-block; width: 1em; margin-right: 4px; color: var(--muted); transition: transform .15s; }
+details[open]:not(.avatar-menu, .faq-item, .rt, .ready, .fold) > summary:not(.btn)::before { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { details > summary::before { transition: none; } }
+/* Datums- und Zeitfelder sind im Browser sonst etwas höher als Textfelder */
+:where(input:is([type=date], [type=time], [type=datetime-local], [type=month])) { height: var(--ctl-h); padding-block: 0; }
+/* Speisekarte zum Auswählen (Vorbestellung, Bestellen am Tisch) */
+.menu-pick { gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.menu-variant { gap: 8px; margin: 8px 0 0; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.menu-variant > legend { padding: 0 6px; font-weight: 600; color: var(--muted); }
+.lang-tabs button { background: var(--surface); font: inherit; font-size: .85rem; cursor: pointer; }
+@media (max-width: 860px), (pointer: coarse) { .lang-tabs :is(a, button) { min-height: 40px; display: inline-flex; align-items: center; } }
+/* Rückfrage-Dialog (DialogButton) */
+.ask-dialog { width: min(440px, calc(100vw - 32px)); padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 60px rgba(0, 0, 0, .3); }
+.ask-dialog::backdrop { background: rgba(0, 0, 0, .45); }
+.ask-dialog h2 { font-size: 1.15rem; }
+/* Hilfe */
+.help-steps { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
+.help-steps ul { margin: 6px 0; padding-left: 18px; display: grid; gap: 4px; }
+.help-more-row { cursor: default; }

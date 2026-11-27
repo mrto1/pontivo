@@ -45,7 +45,7 @@ export default async function EditPage({ params, searchParams }: { params: Promi
     <div className="editor-grid">
     <div className="stack editor-main">
       <a href={`/admin/${hotel.id}/site`}>← Website</a>
-      <div style={{ display: "flex", gap: 12, alignItems: "baseline", flexWrap: "wrap" }}>
+      <div className="u-d-flex u-gap-12px u-ai-baseline u-fw-wrap">
         <h1 className="m0">{isHome ? "Startseite" : page.title.de || page.title.en}</h1>
         <a href={url} target="_blank">Seite ansehen</a>
       </div>
@@ -100,10 +100,10 @@ export default async function EditPage({ params, searchParams }: { params: Promi
 
       {page.blocks.map((b, i) => (
         <section key={b.id} id={`b-${b.id}`} className="card stack">
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <div className="u-d-flex u-jc-space-between u-gap-12px u-ai-center u-fw-wrap">
             <h3 className="m0">{i + 1}. {label(b.type)}</h3>
             {canEdit ? (
-              <div className="inline-form" style={{ gap: 4 }}>
+              <div className="inline-form u-gap-4px">
                 {(["up", "down", "delete"] as const).map((a) => (
                   <form key={a} action={blockAction}>{ids}<input type="hidden" name="blockId" value={b.id} /><input type="hidden" name="action" value={a} />
                     <button className="btn secondary small" disabled={(a === "up" && i === 0) || (a === "down" && i === page.blocks.length - 1)}>{a === "up" ? "↑ nach oben" : a === "down" ? "↓ nach unten" : "Entfernen"}</button>

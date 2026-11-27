@@ -20,7 +20,7 @@ export function LField({ name, label, value, rows, max, langs }: { name: string;
   return (
     <div className="lfield">
       <div><label>{label} (DE)</label>{Comp("de")}</div>
-      {langs.edit ? <div><label>{label} ({langs.edit.toUpperCase()}){!value?.[langs.edit] && value?.de ? <span className="badge warn" style={{ marginLeft: 6 }}>fehlt</span> : null}</label>{Comp(langs.edit)}</div> : null}
+      {langs.edit ? <div><label>{label} ({langs.edit.toUpperCase()}){!value?.[langs.edit] && value?.de ? <span className="badge warn u-ml-6px">fehlt</span> : null}</label>{Comp(langs.edit)}</div> : null}
       {hidden.map((l) => <textarea key={l} name={`${name}.${l}`} defaultValue={value?.[l] ?? ""} hidden readOnly />)}
     </div>
   );
@@ -269,7 +269,7 @@ export function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }:
           return (<>
             <div className="form-grid">
               <LField name={`${k}.section`} label="Rubrik" value={prevSection} max={80} langs={langs} />
-              <div><label htmlFor={fid(`${k}.price`)}>Preis CHF</label><input id={fid(`${k}.price`)} name={`${k}.price`} defaultValue={chf(it?.priceRappen)} inputMode="decimal" placeholder="28.50" style={{ maxWidth: 140 }} /></div>
+              <div><label htmlFor={fid(`${k}.price`)}>Preis CHF</label><input className="u-maxw-140px" id={fid(`${k}.price`)} name={`${k}.price`} defaultValue={chf(it?.priceRappen)} inputMode="decimal" placeholder="28.50" /></div>
             </div>
             <LField name={`${k}.name`} label={`Gericht ${i + 1}`} value={it?.name} max={160} langs={langs} />
             <LField name={`${k}.text`} label="Beschreibung (optional)" value={it?.text} max={500} langs={langs} />

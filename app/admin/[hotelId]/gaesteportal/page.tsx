@@ -61,14 +61,14 @@ export default async function PortalSettingsPage({ params, searchParams }: { par
         <div className="opt-list">
           <FormSwitch name="requests" defaultOn={requestsEnabled(p)} label="Gäste können Wünsche melden" hint={<>Antwort im <a href={`/admin/${hotel.id}/inbox?quelle=wuensche`}>Posteingang</a>, mit Mitteilung aufs Handy und per Mail an {hotel.contactEmail}.</>} />
         </div>
-        <h3 style={{ margin: "8px 0 0" }}>Wunschliste</h3>
+        <h3 className="m-8-0-0">Wunschliste</h3>
         <div className="opt-list">
           {STANDARD_WISHES.map((w) => <FormSwitch key={w.id} name="wish" value={w.id} defaultOn={standardOn.has(w.id)} label={w.label.de} />)}
         </div>
         <label htmlFor="custom">Eigene Wünsche (eine Zeile je Wunsch; Übersetzung optional mit «Deutsch | Englisch»)</label>
         <textarea id="custom" name="custom" rows={4} maxLength={1500} defaultValue={customText} placeholder={"Frühstück auf dem Zimmer | Breakfast in the room\nHund mitbringen"} />
         <p className="small muted">Frühstück und andere Bezahl-Extras bleiben bei «Upselling»: dort kann der Gast sie direkt online dazubuchen.</p>
-        <h3 style={{ margin: "8px 0 0" }}>Während des Aufenthalts</h3>
+        <h3 className="m-8-0-0">Während des Aufenthalts</h3>
         <div className="opt-list">
           <FormSwitch name="folio" defaultOn={folioEnabled(p)} label="Rechnung bis jetzt zeigen" hint="Posten aufs Zimmer (z. B. Restaurant) und offener Betrag." />
           <FormSwitch name="selfCheckout" defaultOn={selfCheckoutEnabled(p)} label="Selbst auschecken am Abreisetag" hint="Vermerk in der Tagesliste und im Posteingang; Zimmer, Schlüssel und offene Posten prüft die Rezeption." />
@@ -83,7 +83,7 @@ export default async function PortalSettingsPage({ params, searchParams }: { par
         {tips.length ? (
           <ul className="list">
             {tips.map((t) => (
-              <li key={t.id} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+              <li className="u-d-flex u-jc-space-between u-gap-12px" key={t.id}>
                 <span><strong>{tr(t.title, "de") || tr(t.title, "en")}</strong><br /><span className="small muted">{(tr(t.text, "de") || tr(t.text, "en")).slice(0, 160)}</span></span>
                 <form action={removeTip}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={t.id} /><button className="btn secondary small">Löschen</button></form>
               </li>

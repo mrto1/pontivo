@@ -15,8 +15,8 @@ export default async function Benutzer({ searchParams }: { searchParams: Promise
     <div className="stack gap24">
       <PageHead title={`Benutzer (${users.length})`}>Ein gelöschter Benutzer verliert seine Zugänge. Seine Betriebe bleiben bestehen (vorher ggf. den Betrieb löschen).</PageHead>
       <Flash sp={sp} />
-      <div className="card" style={{ padding: 0 }}>
-        <table className="table" style={{ border: 0 }}>
+      <div className="card u-p-0">
+        <table className="table u-b-0">
           <thead><tr><th>E-Mail</th><th>Betriebe</th><th>Sicherheit</th><th>Angelegt</th><th></th></tr></thead>
           <tbody>
             {users.map((u) => (
@@ -35,7 +35,7 @@ export default async function Benutzer({ searchParams }: { searchParams: Promise
                   {u.isPlatformAdmin ? <span className="muted">–</span> : (
                     <details className="plat-danger">
                       <summary>Löschen</summary>
-                      <form action={removeUser} className="stack" style={{ marginTop: 8, minWidth: 220 }}>
+                      <form action={removeUser} className="stack mt8 u-minw-220px">
                         <input type="hidden" name="to" value={TO} />
                         <input type="hidden" name="id" value={u.id} />
                         <input name="confirm" placeholder={u.email} aria-label={`E-Mail von ${u.email} zur Bestätigung`} required />

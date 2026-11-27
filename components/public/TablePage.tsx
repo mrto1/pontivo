@@ -50,9 +50,9 @@ export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; loc
                 <form action={reserveAction} className="stack" data-testid="reserve-form">
                   <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="locale" value={locale} /><input type="hidden" name="base" value={base} />
                   <input type="hidden" name="day" value={day} /><input type="hidden" name="party" value={party} />
-                  <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px" }} />
+                  <input className="u-pos-absolute u-l-9999px" type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
                   <fieldset className="stack"><legend><strong>{r.times}</strong> · {formatDay(day, locale)}</legend>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    <div className="u-d-flex u-fw-wrap gap8">
                       {slots.map((x, n) => <label key={x.time} className="btn secondary"><input type="radio" name="time" value={x.time} required defaultChecked={draft ? x.time === draft.time : slots.length === 1 && n === 0} /> {x.time}</label>)}
                     </div>
                   </fieldset>
@@ -79,7 +79,7 @@ export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; loc
                       <h2>{r.wait}</h2>
                       <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="locale" value={locale} /><input type="hidden" name="base" value={base} />
                       <input type="hidden" name="day" value={day} /><input type="hidden" name="party" value={party} />
-                      <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px" }} />
+                      <input className="u-pos-absolute u-l-9999px" type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
                       <div><label htmlFor="wname">{r.name}</label><input id="wname" name="name" required maxLength={80} autoComplete="name" /></div>
                       <div><label htmlFor="wemail">{r.email}</label><input id="wemail" name="email" type="email" required maxLength={200} autoComplete="email" /></div>
                       <div><button className="btn secondary">{r.waitSend}</button></div>

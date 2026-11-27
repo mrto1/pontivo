@@ -32,10 +32,10 @@ export function DirectChart({ data }: { data: MonthRow[] }) {
   return (
     <figure className="viz m0">
       <div className="viz-legend" aria-hidden="true">
-        <span><i style={{ background: "var(--viz-direct)" }} />Direkt (Pontivo)</span>
-        <span><i style={{ background: "var(--viz-portal)" }} />Buchungsportale</span>
+        <span><i className="u-bg-var-viz-direct" />Direkt (Pontivo)</span>
+        <span><i className="u-bg-var-viz-portal" />Buchungsportale</span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Buchungen pro Monat, direkt und über Portale, letzte 12 Monate" style={{ width: "100%", height: "auto", display: "block" }}>
+      <svg className="u-w-100pct u-h-auto u-d-block" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Buchungen pro Monat, direkt und über Portale, letzte 12 Monate">
         {ticks.map((t) => (
           <g key={t}>
             <line x1={L} x2={W} y1={y(t)} y2={y(t)} stroke="var(--line)" strokeWidth={1} />

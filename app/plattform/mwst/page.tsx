@@ -17,7 +17,7 @@ export default async function Mwst({ searchParams }: { searchParams: Promise<Rec
       <PageHead title="MWST der Plattform">Ab wann ist Lynxora MWST-pflichtig? Ab diesem Datum weisen neue Rechnungen an die Betriebe die MWST aus und belasten sie zusätzlich (die Preise verstehen sich ohne MWST, Bedingungen für Gastgeber Ziffer 2). Massgebend ist der letzte Tag des Leistungsmonats; beginnt die Pflicht mitten im Monat, gilt sie für den ganzen Monat. Bereits ausgestellte Rechnungen ändern sich nicht.</PageHead>
       <Flash sp={sp} />
       <section className="card stack">
-        <form action={saveVat} className="stack" style={{ maxWidth: 460 }}>
+        <form action={saveVat} className="stack u-maxw-460px">
           <input type="hidden" name="to" value={TO} />
           <label className="check"><input type="checkbox" name="liable" defaultChecked={!!vat.liableFrom} /> MWST-pflichtig</label>
           <label>ab Datum<input type="date" name="from" defaultValue={vat.liableFrom ?? todayIn("Europe/Zurich")} /></label>

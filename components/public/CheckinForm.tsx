@@ -65,7 +65,7 @@ function SignaturePad({ label, hint, clearLabel, onChange, invalid }: { label: s
           if (dirty.current) onChange(ref.current!.toDataURL("image/png"));
         }}
       />
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div className="u-d-flex u-jc-space-between u-ai-center">
         <span className="small muted">{hint}</span>
         <button type="button" className="btn secondary small" onClick={() => {
           const c = ref.current!;

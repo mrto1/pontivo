@@ -78,7 +78,7 @@ export default async function PosBridgePage({ params, searchParams }: { params: 
       <section className="card stack">
         <h2>Für den Kassenanbieter</h2>
         <p><code>POST {url}</code><br />Header: <code>Authorization: Bearer pnt_…</code>, <code>Content-Type: application/json</code></p>
-        <pre style={{ overflow: "auto" }}>{`{
+        <pre className="u-ov-auto">{`{
   "room_number": "12",            // oder "booking_reference": "PNT-ABC123"
   "description": "Abendessen",
   "quantity": 1,

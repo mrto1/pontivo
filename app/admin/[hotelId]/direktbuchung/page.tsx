@@ -115,8 +115,8 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
           {items.map((b, i) => (
             <div key={i} className="stack gap6">
               <div className="row">
-                <div style={{ flex: "1 1 320px" }}><label htmlFor={`db-text_${i}_de`}>Vorteil {i + 1} (Deutsch)</label><input id={`db-text_${i}_de`} name={`text_${i}_de`} defaultValue={b?.text.de ?? ""} maxLength={90} placeholder={i === 0 ? "z. B. Late Check-out bis 14 Uhr" : ""} /></div>
-                <div style={{ width: 150 }}><label htmlFor={`fbe24m1-${i}`}>ab Nächten</label><input id={`fbe24m1-${i}`} name={`min_${i}`} type="number" min={1} max={30} defaultValue={b?.minNights ?? ""} placeholder="alle" /></div>
+                <div className="u-fx-1-1-320px"><label htmlFor={`db-text_${i}_de`}>Vorteil {i + 1} (Deutsch)</label><input id={`db-text_${i}_de`} name={`text_${i}_de`} defaultValue={b?.text.de ?? ""} maxLength={90} placeholder={i === 0 ? "z. B. Late Check-out bis 14 Uhr" : ""} /></div>
+                <div className="u-w-150px"><label htmlFor={`fbe24m1-${i}`}>ab Nächten</label><input id={`fbe24m1-${i}`} name={`min_${i}`} type="number" min={1} max={30} defaultValue={b?.minNights ?? ""} placeholder="alle" /></div>
               </div>
               {langs.filter((l) => l !== "de").map((l) => (
                 <div key={l} data-lang={l} hidden={l !== langs.filter((x) => x !== "de")[0]}><label htmlFor={`db-text_${i}_${l}`}>Vorteil {i + 1} ({LOCALE_NAMES[l]})</label><input id={`db-text_${i}_${l}`} name={`text_${i}_${l}`} defaultValue={b?.text[l] ?? ""} maxLength={90} /></div>
@@ -172,7 +172,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
           <label className="check"><input type="checkbox" name="relax" defaultChecked={gaps.relaxMinStay} /> Mindestaufenthalt in der Lücke aufheben</label>
           <div><button className="btn">Speichern</button></div>
         </form>
-        <h3 style={{ margin: "8px 0 0" }}>Aktuelle Lücken (nächste 180 Tage)</h3>
+        <h3 className="m-8-0-0">Aktuelle Lücken (nächste 180 Tage)</h3>
         {gapList.length ? (
           <table className="table"><thead><tr><th>Zimmertyp</th><th>Von</th><th>Bis (Abreise)</th><th>Nächte</th></tr></thead>
             <tbody>{gapList.slice(0, 40).map((g) => <tr key={`${g.roomTypeId}${g.from}`}><td>{g.roomTypeName}</td><td>{formatDay(g.from, "de")}</td><td>{formatDay(g.to, "de")}</td><td>{g.nights}</td></tr>)}</tbody></table>

@@ -87,11 +87,11 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
           </p>
           {res.offers.map((o) => (
             <article key={o.ratePlan.id} className="card offer">
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              <div className="u-d-flex u-gap-16px u-fw-wrap">
                 {o.roomType.photos[0] ? <img className="offer-photo" src={o.roomType.photos[0].url} alt={o.roomType.photos[0].alt ?? o.roomType.name} loading="lazy" /> : null}
-                <div style={{ flex: "1 1 260px" }}>
+                <div className="u-fx-1-1-260px">
                 <h3>{o.roomType.name} · {o.ratePlan.name}</h3>
-                {o.adjustment?.kind === "gap" ? <p style={{ margin: "0 0 6px" }}><span className="badge">{o.adjustment.bps ? dm.gapBadge(String(o.adjustment.bps / 100)) : dm.gapBadgeNoDiscount}</span></p> : null}
+                {o.adjustment?.kind === "gap" ? <p className="u-m-0-0-6px"><span className="badge">{o.adjustment.bps ? dm.gapBadge(String(o.adjustment.bps / 100)) : dm.gapBadgeNoDiscount}</span></p> : null}
                 <p className="small muted">
                   {o.ratePlan.board === "half" ? d.halfBoard : o.ratePlan.board === "full" ? d.fullBoard : o.ratePlan.breakfastIncluded ? d.breakfast : d.noBreakfast} · {o.cancellationPolicy}
                 </p>
@@ -153,8 +153,8 @@ export async function BookPage({ hotel, locale, base, sp }: { hotel: Hotel; loca
 
   return (
     <Shell hotel={hotel} locale={locale} base={base} path={path} noBookButton>
-      <div style={{ padding: "24px 0" }}>
-        {plan ? <p className="small muted" style={{ margin: "0 0 8px" }}>{d.offerFor}: <strong>{planName(plan, locale)}</strong>{plan.minNights > 1 ? ` · ${fill(d.fromNights, { n: plan.minNights })}` : ""}</p> : null}
+      <div className="u-p-24px-0">
+        {plan ? <p className="small muted u-m-0-0-8px">{d.offerFor}: <strong>{planName(plan, locale)}</strong>{plan.minNights > 1 ? ` · ${fill(d.fromNights, { n: plan.minNights })}` : ""}</p> : null}
         <SearchBar action={`${base}/${locale}/book`} locale={locale} today={today} plan={plan?.id} codes={hasCodes} code={codeRaw}
           defaults={{ checkin: q?.checkin ?? addDays(today, 1), checkout: q?.checkout ?? addDays(q?.checkin ?? addDays(today, 1), wantNights), adults: q?.adults, children: q?.children, rooms: q?.rooms, ages: q?.ages }} />
       </div>

@@ -41,14 +41,14 @@ export async function CashCard({ hotel, bookingId, status }: { hotel: Hotel; boo
       {goodsList.length ? (
         <form action={addGoodAction} className="inline-form">
           {hid}
-          <div style={{ minWidth: 200 }}><label htmlFor="f14271">Ware aus dem Shop</label><select id="f14271" name="goodId" required>{goodsList.map((x) => <option key={x.id} value={x.id}>{x.name} · {formatChf(x.priceRappen)}</option>)}</select></div>
+          <div className="u-minw-200px"><label htmlFor="f14271">Ware aus dem Shop</label><select id="f14271" name="goodId" required>{goodsList.map((x) => <option key={x.id} value={x.id}>{x.name} · {formatChf(x.priceRappen)}</option>)}</select></div>
           <div><label htmlFor="f14272">Menge</label><input id="f14272" name="quantity" type="number" min={1} defaultValue={1} className="w70" /></div>
           <button className="btn secondary small">Ware buchen</button>
         </form>
       ) : null}
       <form action={addFolioAction} className="inline-form">
         {hid}
-        <div style={{ minWidth: 200 }}><label htmlFor="f14273">Beschreibung</label><input id="f14273" name="description" required maxLength={200} placeholder="z. B. Abendessen" /></div>
+        <div className="u-minw-200px"><label htmlFor="f14273">Beschreibung</label><input id="f14273" name="description" required maxLength={200} placeholder="z. B. Abendessen" /></div>
         <div><label htmlFor="f14274">Menge</label><input id="f14274" name="quantity" type="number" defaultValue={1} className="w70" /></div>
         <div><label htmlFor="f14275">Preis CHF (Rabatt: negativ)</label><input className="w110" id="f14275" name="price" required inputMode="decimal" /></div>
         <div><label htmlFor="f14276">MWST</label><select id="f14276" name="vatKind" defaultValue="standard"><option value="standard">übrige Leistungen</option><option value="stay">Beherbergung</option><option value="none">ohne MWST</option></select></div>
@@ -63,10 +63,10 @@ export async function CashCard({ hotel, bookingId, status }: { hotel: Hotel; boo
       ) : <p className="muted small">Keine Zahlungen vor Ort erfasst.</p>}
       <form action={onsitePaymentAction} className="inline-form">
         {hid}
-        <div><label htmlFor="f14277">Betrag CHF (Rückzahlung: negativ)</label><input id="f14277" name="amount" required inputMode="decimal" defaultValue={open > 0 ? (open / 100).toFixed(2) : ""} style={{ width: 130 }} /></div>
+        <div><label htmlFor="f14277">Betrag CHF (Rückzahlung: negativ)</label><input className="u-w-130px" id="f14277" name="amount" required inputMode="decimal" defaultValue={open > 0 ? (open / 100).toFixed(2) : ""} /></div>
         <div><label htmlFor="f14278">Art</label><select id="f14278" name="method"><option value="cash">bar</option><option value="card">Karte</option><option value="twint">TWINT</option><option value="bank">Überweisung</option><option value="other">andere</option></select></div>
         <div><label htmlFor="f14279">Datum</label><input id="f14279" name="date" type="date" defaultValue={todayIn(hotel.timezone)} /></div>
-        <div style={{ minWidth: 160 }}><label htmlFor="f142710">Notiz</label><input id="f142710" name="note" maxLength={200} /></div>
+        <div className="u-minw-160px"><label htmlFor="f142710">Notiz</label><input id="f142710" name="note" maxLength={200} /></div>
         <button className="btn secondary small">Zahlung verbuchen</button>
       </form>
 

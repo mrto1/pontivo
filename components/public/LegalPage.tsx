@@ -11,7 +11,7 @@ export async function LegalPage({ hotel, locale, base, kind }: { hotel: Hotel; l
   const showDraft = env().NODE_ENV !== "production" || platformInfo().missing;
   return (
     <Shell hotel={hotel} locale={locale} base={base} path={`/${kind}`}>
-      <article style={{ padding: "32px 0", maxWidth: 760 }}>
+      <article className="pad32 u-maxw-760px">
         <h1>{doc.title}</h1>
         {t(locale).legalInEnglish ? <p className="notice small">{t(locale).legalInEnglish}</p> : null}
         {showDraft ? <p className="notice warn small">{doc.draftNote}</p> : null}

@@ -71,7 +71,7 @@ export default async function Register({ searchParams }: { searchParams: Promise
   );
   return (
     <PlatformFrame hideSignup>
-    <main className="register" style={{ padding: "8px 0 56px" }}>
+    <main className="register u-p-8px-0-56px">
       <div className="register-grid">
         <section>
           {forRestaurant ? (<>

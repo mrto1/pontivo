@@ -41,7 +41,7 @@ export default async function OfferPage({ params, searchParams }: { params: Prom
     if (r) names[l.resourceId] = r.name;
   }
   return (
-    <main style={{ maxWidth: 860, margin: "0 auto", padding: "24px 16px" }} className="stack">
+    <main className="stack u-maxw-860px u-m-0-auto u-p-24px-16px">
       {sp.msg ? <Notice text={sp.msg} className="no-print" /> : null}
       <OfferSheet hotel={hotel} offer={offer} lines={lines} resourceNames={names} />
       <div className="no-print stack">

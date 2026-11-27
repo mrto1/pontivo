@@ -27,7 +27,7 @@ export default async function Zahlungsverbindung({ searchParams }: { searchParam
       <PageHead title="Zahlungsverbindung">Konto für die QR-Rechnungen an Betriebe, die die Grundgebühr per QR-Rechnung bezahlen. Mit einer QR-IBAN erhalten die Rechnungen eine QR-Referenz, und Zahlungen lassen sich mit der Bankdatei (camt.054) automatisch zuordnen; mit einer gewöhnlichen IBAN steht die Rechnungsnummer als Mitteilung im Zahlteil.</PageHead>
       <Flash sp={sp} />
       <section className="card stack">
-        <form action={saveBilling} className="stack" style={{ maxWidth: 460 }}>
+        <form action={saveBilling} className="stack u-maxw-460px">
           <input type="hidden" name="to" value={TO} />
           <label>IBAN oder QR-IBAN<input name="iban" defaultValue={b.iban.replace(/(.{4})/g, "$1 ").trim()} placeholder="CH44 3199 9123 0008 8901 2" /></label>
           <label>Zahlungsfrist in Tagen<input name="days" type="number" min={5} max={90} defaultValue={b.paymentDays} /></label>

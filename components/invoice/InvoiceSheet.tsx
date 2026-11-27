@@ -36,8 +36,8 @@ export function InvoiceSheet({ hotel, v }: { hotel: Hotel; v: InvoiceView }) {
         .qr-slip p { margin: 0; font-size: 8pt; }
         @media print { .invoice-sheet { padding: 0; } .admin-head, .section-tabs, .no-print { display: none !important; } @page { size: A4; margin: 10mm; } }
       `}</style>
-      <div className="no-print" style={{ marginBottom: 12 }}><PrintButton label="Drucken / als PDF speichern" /></div>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 24 }}>
+      <div className="no-print u-mb-12px"><PrintButton label="Drucken / als PDF speichern" /></div>
+      <div className="u-d-flex u-jc-space-between gap24">
         <div>
           <strong>{hotel.name}</strong><br />{address.map((a) => <span key={a}>{a}<br /></span>)}
           {hotel.contactPhone ? <>{hotel.contactPhone}<br /></> : null}{hotel.contactEmail}
@@ -50,7 +50,7 @@ export function InvoiceSheet({ hotel, v }: { hotel: Hotel; v: InvoiceView }) {
           {v.booking ? <><br />Buchung {v.booking.reference}</> : null}
         </div>
       </div>
-      <p style={{ margin: "10mm 0 6mm" }}>
+      <p className="u-m-10mm-0-6mm">
         {r.company ? <>{r.company}<br /></> : null}{r.name ? <>{r.name}<br /></> : null}{r.street ? <>{r.street}<br /></> : null}
         {[r.zip, r.city].filter(Boolean).join(" ")}{r.country && r.country !== "CH" ? `, ${r.country}` : ""}{r.vatId ? <><br />MWST-/UID-Nr. {r.vatId}</> : null}
       </p>
@@ -65,7 +65,7 @@ export function InvoiceSheet({ hotel, v }: { hotel: Hotel; v: InvoiceView }) {
         </tbody>
       </table>
       {set.vatLiable ? (
-        <table style={{ marginTop: 8, width: "auto" }}>
+        <table className="mt8 u-w-auto">
           <thead><tr><th>MWST-Satz</th><th className="n">Netto</th><th className="n">MWST</th><th className="n">Brutto</th></tr></thead>
           <tbody>
             {v.vat.rows.map((x) => <tr key={x.bps}><td>{x.bps ? formatBps(x.bps) : "ohne MWST"}</td><td className="n">{formatChf(x.netRappen)}</td><td className="n">{formatChf(x.vatRappen)}</td><td className="n">{formatChf(x.grossRappen)}</td></tr>)}
@@ -74,8 +74,8 @@ export function InvoiceSheet({ hotel, v }: { hotel: Hotel; v: InvoiceView }) {
       ) : null}
       {!credit && v.payments.length ? (
         <>
-          <p style={{ marginTop: 10, marginBottom: 2 }}><strong>Zahlungen</strong></p>
-          <table style={{ width: "auto" }}><tbody>{v.payments.map((p, i) => <tr key={i}><td>{formatDay(p.date, "de")}</td><td>{p.label}</td><td className="n">{formatChf(p.amountRappen)}</td></tr>)}</tbody></table>
+          <p className="u-mt-10px u-mb-2px"><strong>Zahlungen</strong></p>
+          <table className="u-w-auto"><tbody>{v.payments.map((p, i) => <tr key={i}><td>{formatDay(p.date, "de")}</td><td>{p.label}</td><td className="n">{formatChf(p.amountRappen)}</td></tr>)}</tbody></table>
         </>
       ) : null}
       {!credit ? <p className="mt8"><strong>{v.openRappen > 0 ? `Offener Betrag ${formatChf(v.openRappen)}` : "Der Betrag ist vollständig bezahlt. Vielen Dank."}</strong></p> : null}
@@ -92,7 +92,7 @@ export function InvoiceSheet({ hotel, v }: { hotel: Hotel; v: InvoiceView }) {
             {r.name || r.company ? <><div className="lbl">Zahlbar durch</div><p>{r.company || r.name}<br />{r.street}<br />{r.zip} {r.city}</p></> : null}
             <div className="lbl">Währung / Betrag</div><p>{formatChf(v.openRappen)}</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "51mm 1fr", gap: "5mm" }}>
+          <div className="u-d-grid u-gtc-51mm-1fr u-gap-5mm">
             <div>
               <h4>Zahlteil</h4>
               <div className="qr" dangerouslySetInnerHTML={{ __html: v.qrSvg }} />

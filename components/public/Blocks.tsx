@@ -84,7 +84,7 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
   const defaults = { checkin: addDays(today, 1), checkout: addDays(today, 3), adults: 2 };
   const hasHero = blocks.some((b) => b.type === "hero");
   const out: React.ReactNode[] = [];
-  if (!hasHero && pageTitle) out.push(<h1 key="title" style={{ marginTop: 32 }}>{pageTitle}</h1>);
+  if (!hasHero && pageTitle) out.push(<h1 className="mt32" key="title">{pageTitle}</h1>);
   for (const b of blocks) {
     switch (b.type) {
       case "hero":
@@ -340,7 +340,7 @@ export async function Blocks({ blocks, hotel, lang, base, pageTitle, pageSlug = 
                       <label key={a} className="amount"><input type="radio" name="amount" value={a} defaultChecked={i === 1 || set.amounts.length === 1} required />{formatChf(a).replace(".00", "")}</label>
                     ))}
                     <label className="amount"><input type="radio" name="amount" value="other" />{d.vOther}</label>
-                    <input name="other" inputMode="decimal" aria-label={d.vOther} placeholder={`${set.minRappen / 100}–${set.maxRappen / 100}`} style={{ maxWidth: 140 }} />
+                    <input className="u-maxw-140px" name="other" inputMode="decimal" aria-label={d.vOther} placeholder={`${set.minRappen / 100}–${set.maxRappen / 100}`} />
                   </div>
                 </fieldset>
                 <div><label htmlFor={`vr-${b.id}`}>{d.vFor}</label><input id={`vr-${b.id}`} name="recipientName" maxLength={120} /></div>

@@ -95,7 +95,7 @@ export default async function DiningToday({ params, searchParams }: { params: Pr
           <h2 className="m0">Online-Bestellungen</h2>
           <p className="m0">{orders.open.filter((o) => o.status === "new").length ? <span className="badge danger">{orders.open.filter((o) => o.status === "new").length} neu</span> : null} {orders.open.length} offen · {orders.done.filter((o) => o.status === "completed").length} erledigt · <Link href={`${base}/restaurant/bestellungen`}>Bestellbildschirm →</Link></p>
           {cash.length ? (
-            <table className="table"><caption className="small muted" style={{ textAlign: "left" }}>Bargeld je Fahrer (Lieferungen bar, heute)</caption><tbody>
+            <table className="table"><caption className="small muted u-ta-left">Bargeld je Fahrer (Lieferungen bar, heute)</caption><tbody>
               {cash.map((c) => <tr key={c.driver}><td>{c.driver || "ohne Fahrer"}</td><td>{c.n} Lieferungen</td><td>{formatChf(c.total)}</td></tr>)}
             </tbody></table>
           ) : null}

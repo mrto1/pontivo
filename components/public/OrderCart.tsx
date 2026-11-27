@@ -109,8 +109,8 @@ export function OrderCart(p: {
             {p.menu.filter((m) => (m.category || "") === cat).map((it) => (
               <article key={it.id} className="card order-item" data-testid={`menu-${it.name}`}>
                 {it.photoUrl ? <img src={it.photoUrl} alt="" loading="lazy" className="order-photo" /> : null}
-                <div className="stack" style={{ flex: 1, gap: 6 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><strong>{it.name}</strong><span>{formatChf(it.priceRappen)}</span></div>
+                <div className="stack flex1 gap6">
+                  <div className="u-d-flex u-jc-space-between gap8"><strong>{it.name}</strong><span>{formatChf(it.priceRappen)}</span></div>
                   {it.description ? <p className="small muted m0">{it.description}</p> : null}
                   {it.allergens.length ? <p className="small m0">{t.allergens}: {it.allergens.map((a) => ALLERGEN_LABEL[a as Allergen]?.[p.locale] ?? a).join(", ")}</p> : null}
                   {open === it.id ? (
@@ -142,7 +142,7 @@ export function OrderCart(p: {
         <input type="hidden" name="hotelId" value={p.hotelId} /><input type="hidden" name="locale" value={p.locale} /><input type="hidden" name="base" value={p.base} />
         <input type="hidden" name="cart" value={JSON.stringify(lines.map(({ itemId, quantity, optionIds, note }) => ({ itemId, quantity, optionIds, note })))} />
         <input type="hidden" name="kind" value={kind} />
-        <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px" }} />
+        <input className="u-pos-absolute u-l-9999px" type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
         <h2>{t.cart}</h2>
         {p.pickup.on && p.delivery.on ? (
           <div className="kind-seg" role="radiogroup" aria-label={t.cart}>
@@ -156,7 +156,7 @@ export function OrderCart(p: {
               const it = byId.get(l.itemId)!;
               const opts = it.groups.flatMap((g) => g.options).filter((o) => l.optionIds.includes(o.id)).map((o) => o.name);
               return (
-                <li key={l.key} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <li className="u-d-flex gap8 u-ai-center" key={l.key}>
                   <span className="flex1">{l.quantity} × {it.name}{opts.length ? <span className="small"> ({opts.join(", ")})</span> : null}{l.note ? <span className="small muted"> – {l.note}</span> : null}</span>
                   <button type="button" className="btn secondary small" onClick={() => qty(l.key, -1)} aria-label={t.remove}>−</button>
                   <button type="button" className="btn secondary small" onClick={() => qty(l.key, 1)} aria-label="+">+</button>

@@ -139,7 +139,7 @@ function RoomForm({ hotelId, rt, canEdit, nextOrder = 0, langs, cancelHref }: { 
       {EXTRA.map((l) => langs.includes(l) ? (
         <div key={l} className="form-grid">
           <div><label htmlFor={`rt-${rt?.id ?? "neu"}-name.${l}`}>Name {LOCALE_NAMES[l]}</label><input id={`rt-${rt?.id ?? "neu"}-name.${l}`} name={`name.${l}`} defaultValue={rt?.i18n?.[l]?.name ?? ""} disabled={!canEdit} placeholder={l === "en" ? "z. B. Double room with lake view" : ""} /></div>
-          <div style={{ gridColumn: "span 2" }}><label htmlFor={`rt-${rt?.id ?? "neu"}-description.${l}`}>Beschreibung {LOCALE_NAMES[l]}</label><textarea id={`rt-${rt?.id ?? "neu"}-description.${l}`} name={`description.${l}`} rows={2} defaultValue={rt?.i18n?.[l]?.description ?? ""} disabled={!canEdit} /></div>
+          <div className="u-gc-span-2"><label htmlFor={`rt-${rt?.id ?? "neu"}-description.${l}`}>Beschreibung {LOCALE_NAMES[l]}</label><textarea id={`rt-${rt?.id ?? "neu"}-description.${l}`} name={`description.${l}`} rows={2} defaultValue={rt?.i18n?.[l]?.description ?? ""} disabled={!canEdit} /></div>
         </div>
       ) : (
         <span key={l} hidden>
@@ -233,7 +233,7 @@ export default async function Rooms({ params, searchParams }: { params: Promise<
 
   return (
     <div className="stack">
-      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
+      <div className="u-d-flex u-gap-12px u-ai-center u-fw-wrap u-jc-space-between">
         <h1 className="m0">Zimmer & Tarife</h1>
         {canEdit ? <Link className="btn" href={`${base}?neu=1`} scroll={false}>+ Zimmertyp hinzufügen</Link> : null}
       </div>

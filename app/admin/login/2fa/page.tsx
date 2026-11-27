@@ -24,7 +24,7 @@ export default async function TwoFactor({ searchParams }: { searchParams: Promis
   const sp = await searchParams;
   if (!readShort((await cookies()).get(MFA_COOKIE)?.value)) redirect("/admin/login");
   return (
-    <main className="wrap" style={{ maxWidth: 420, padding: "80px 16px" }}>
+    <main className="wrap u-maxw-420px u-p-80px-16px">
       <h1>Zweiter Faktor</h1>
       <p className="muted">Geben Sie den 6-stelligen Code Ihrer Authenticator-App ein. Ohne Handy können Sie einen Wiederherstellungscode verwenden.</p>
       {sp.error === "code" ? <p className="notice warn">Der Code stimmt nicht.</p> : null}

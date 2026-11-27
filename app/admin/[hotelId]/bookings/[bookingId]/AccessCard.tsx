@@ -17,7 +17,7 @@ export async function AccessCard({ hotel, bookingId, status }: { hotel: Hotel; b
           {codes.map((c) => (
             <tr key={c.id}>
               <td>{c.lockName}</td>
-              <td>{c.code ? <code style={{ fontSize: "1.1em", letterSpacing: 2 }}>{c.code}</code> : "–"}</td>
+              <td>{c.code ? <code className="u-fs-1-1em u-lsp-2px">{c.code}</code> : "–"}</td>
               <td className="small">{ST[c.status]}{c.error ? ` (${c.error})` : ""}</td>
               <td className="small muted">{c.validFrom.toISOString().slice(0, 16).replace("T", " ")} UTC bis {c.validUntil.toISOString().slice(0, 16).replace("T", " ")} UTC</td>
             </tr>

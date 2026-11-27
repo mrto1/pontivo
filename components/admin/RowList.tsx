@@ -10,7 +10,7 @@ export function RowList({ rows }: { rows: Row[] }) {
         <li key={r.id}>
           <Link href={r.href} scroll={false} className="plan-row" aria-label={r.label}>
             <span><strong>{r.title}</strong>{r.detail ? <><br /><span className="muted small">{r.detail}</span></> : null}</span>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>{r.badges?.map((b) => <span key={b.text} className="badge warn">{b.text}</span>)}<span className="rt-arrow" aria-hidden="true">›</span></span>
+            <span className="u-d-inline-flex u-ai-center u-gap-10px">{r.badges?.map((b) => <span key={b.text} className="badge warn">{b.text}</span>)}<span className="rt-arrow" aria-hidden="true">›</span></span>
           </Link>
         </li>
       ))}

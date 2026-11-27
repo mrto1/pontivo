@@ -36,7 +36,7 @@ export default async function FlowsPage({ params }: { params: Promise<{ hotelId:
             <article key={f.key} className="card stack" id={f.key}>
               <h3 className="m0">{f.title}</h3>
               <p className="muted m0">{f.goal}</p>
-              <ol className="stack" style={{ margin: 0, paddingLeft: 20 }}>{f.steps.map((st, i) => <li key={i}>{st}</li>)}</ol>
+              <ol className="stack m0 u-pl-20px">{f.steps.map((st, i) => <li key={i}>{st}</li>)}</ol>
               {f.tip ? <p className="notice small m0"><strong>Gut zu wissen:</strong> {f.tip}</p> : null}
               <p className="m0"><a className="btn secondary small" href={ctx.pages.get(f.area)}>Seite öffnen</a></p>
             </article>
@@ -47,7 +47,7 @@ export default async function FlowsPage({ params }: { params: Promise<{ hotelId:
         <section className="card stack" data-testid="flows-more">
           <h2>Mit weiteren Funktionen</h2>
           <p className="muted small m0">Diese Abläufe gibt es, sobald die genannte Funktion eingeschaltet ist{atLeast(role, "manager") ? <> (<a href={`${base}/funktionen`}>Einstellungen → Funktionen</a>)</> : " (fragen Sie die Inhaberin oder den Inhaber)"}.</p>
-          <ul className="m0 stack" style={{ gap: 6 }}>{moreBy.map((g) => <li key={g.label}><strong>{g.label}:</strong> {g.flows.map((f) => f.title).join(" · ")}</li>)}</ul>
+          <ul className="m0 stack gap6">{moreBy.map((g) => <li key={g.label}><strong>{g.label}:</strong> {g.flows.map((f) => f.title).join(" · ")}</li>)}</ul>
         </section>
       ) : null}
     </div>

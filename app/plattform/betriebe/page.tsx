@@ -66,7 +66,7 @@ export default async function Betriebe({ searchParams }: { searchParams: Promise
 
           <details className="plat-danger">
             <summary>Betrieb löschen</summary>
-            <form action={removeHotel} className="form-row" style={{ marginTop: 10 }}>
+            <form action={removeHotel} className="form-row u-mt-10px">
               <input type="hidden" name="to" value={TO} />
               <input type="hidden" name="id" value={h.id} />
               <div><label htmlFor={`f5e64m3-${h.id}`}>Zur Bestätigung den Namen eintippen</label><input id={`f5e64m3-${h.id}`} name="confirm" placeholder={h.name} aria-label={`Namen von ${h.name} zur Bestätigung`} required /></div>

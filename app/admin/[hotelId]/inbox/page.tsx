@@ -117,16 +117,16 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
             <div className="stack">
               {wishList.map(({ r, reference, checkin, checkout, bookingId }) => (
                 <article key={r.id} className="card stack" style={{ opacity: r.status === "done" ? 0.65 : 1 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
+                  <div className="u-d-flex u-jc-space-between u-gap-12px u-fw-wrap u-ai-baseline">
                     <h3 className="m0">{r.label} · <a href={`/admin/${hotel.id}/bookings/${bookingId}`}>{reference}</a></h3>
                     <span className="small muted">{fmt(r.createdAt)} · Aufenthalt {formatDay(checkin, "de")} – {formatDay(checkout, "de")}</span>
                   </div>
                   {r.message ? <p className="pre-wrap0">{r.message}</p> : null}
                   {r.status === "done" && r.note ? <p className="small muted m0">Antwort an den Gast: {r.note}</p> : null}
-                  <form action={wishDone} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <form className="u-d-flex gap8 u-fw-wrap u-ai-center" action={wishDone}>
                     <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={r.id} />
                     <input type="hidden" name="done" value={r.status === "open" ? "1" : "0"} />
-                    {r.status === "open" ? <input name="note" maxLength={300} placeholder="Kurze Antwort an den Gast (optional)" aria-label="Antwort an den Gast" style={{ flex: "1 1 240px" }} /> : null}
+                    {r.status === "open" ? <input className="u-fx-1-1-240px" name="note" maxLength={300} placeholder="Kurze Antwort an den Gast (optional)" aria-label="Antwort an den Gast" /> : null}
                     <button className="btn secondary small">{r.status === "open" ? "Erledigt (Gast sieht es)" : "Wieder öffnen"}</button>
                   </form>
                 </article>
@@ -143,7 +143,7 @@ export default async function InboxPage({ params, searchParams }: { params: Prom
             <div className="stack">
               {list.map((x) => (
                 <article key={x.id} className="card stack" style={{ opacity: x.status === "done" ? 0.65 : 1 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "baseline" }}>
+                  <div className="u-d-flex u-jc-space-between u-gap-12px u-fw-wrap u-ai-baseline">
                     <h3 className="m0">{KIND[x.kind] ?? x.kind} · {x.name}</h3>
                     <span className="small muted">{x.createdAt.toLocaleString("de-CH", { timeZone: hotel.timezone })} · Sprache {x.language.toUpperCase()}{x.pageSlug ? ` · Seite /${x.pageSlug}` : ""}</span>
                   </div>

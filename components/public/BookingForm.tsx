@@ -116,7 +116,7 @@ export function BookingForm(props: {
                 {max === 1 ? (
                   <label className="check m0"><input type="checkbox" checked={q === 1} onChange={(ev) => setQty({ ...qty, [e.id]: ev.target.checked ? 1 : 0 })} aria-label={e.name} /></label>
                 ) : (
-                  <select value={q} onChange={(ev) => setQty({ ...qty, [e.id]: Number(ev.target.value) })} aria-label={`${e.name}: ${perPerson(e.unit) ? d.extrasPersons : d.extrasQty}`} style={{ width: 130 }}>
+                  <select className="u-w-130px" value={q} onChange={(ev) => setQty({ ...qty, [e.id]: Number(ev.target.value) })} aria-label={`${e.name}: ${perPerson(e.unit) ? d.extrasPersons : d.extrasQty}`}>
                     {Array.from({ length: max + 1 }, (_, i) => <option key={i} value={i}>{i}{perPerson(e.unit) && i ? ` ${d.extrasPersons}` : ""}</option>)}
                   </select>
                 )}
@@ -138,7 +138,7 @@ export function BookingForm(props: {
       {props.vouchers && !props.payOnInvoice ? (
         <details className="voucher-redeem mt12">
           <summary className="small">{d.voucherHave}</summary>
-          <div style={{ marginTop: 8, maxWidth: 320 }}>
+          <div className="mt8 mw320">
             <label htmlFor="bf-voucher">{d.voucherCodeLabel}</label>
             <input id="bf-voucher" className="upper" name="voucher" placeholder="GS-XXXX-XXXX" autoComplete="off" />
             <p className="small muted">{d.voucherHint}</p>

@@ -205,7 +205,7 @@ export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiabl
       {msg ? <p className="notice" data-testid="msg">{msg}</p> : null}
       {!order ? (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
+          <div className="u-d-grid u-gtc-repeat-auto-fill-minmax-150px-1fr u-gap-12px">
             {(cat?.tables ?? []).map((t) => {
               const mine = openOrders.filter((o) => o.tableId === t.id);
               return (
@@ -246,7 +246,7 @@ export function OfflineKasse({ hotelId, vatLiable }: { hotelId: string; vatLiabl
               </div>
             ) : null}
             {byCategory.map(([c, list]) => (
-              <div key={c}><strong className="small muted">{c}</strong><div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+              <div key={c}><strong className="small muted">{c}</strong><div className="u-d-flex u-fw-wrap gap8 mt6">
                 {list.map((i) => <button key={i.id} className="btn secondary" onClick={() => tap(i)}>{i.name} {formatChf(i.priceRappen)}</button>)}
               </div></div>
             ))}

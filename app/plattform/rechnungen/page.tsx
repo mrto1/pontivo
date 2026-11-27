@@ -35,7 +35,7 @@ export default async function Rechnungen({ searchParams }: { searchParams: Promi
                   <td>{hotelName}</td><td>{formatChf(c.chargeRappen)}</td>
                   <td>{st.warn ? <span className="badge warn">{st.text}</span> : st.text}</td>
                   <td><form action={invoicePaid} className="inline-form">{To}<input type="hidden" name="id" value={c.id} />
-                    <input type="date" name="paidOn" defaultValue={today} aria-label={`Zahlungsdatum ${c.invoiceNo}`} style={{ width: 140 }} />
+                    <input className="u-w-140px" type="date" name="paidOn" defaultValue={today} aria-label={`Zahlungsdatum ${c.invoiceNo}`} />
                     <input className="w120" name="note" placeholder="Notiz" maxLength={200} aria-label={`Notiz ${c.invoiceNo}`} />
                     <button className="btn small">Bezahlt</button></form></td>
                   <td className="inline-form">

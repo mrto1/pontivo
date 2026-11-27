@@ -42,7 +42,7 @@ export default async function WebsiteEditor({ searchParams }: { searchParams: Pr
     );
   };
   return (
-    <div style={{ maxWidth: 820 }}>
+    <div className="u-maxw-820px">
       <p><a href="/" target="_blank">Startseite ansehen ↗</a></p>
       <h1>Texte der Pontivo-Website</h1>
       <section className="card stack">
@@ -61,7 +61,7 @@ export default async function WebsiteEditor({ searchParams }: { searchParams: Pr
               <div className="stack">
                 <p className="small muted">Fragen und Antworten in der gewünschten Reihenfolge. Eine Zeile mit leerer Frage oder leerer Antwort wird weggelassen. Unten sind drei leere Zeilen für neue Fragen.</p>
                 {rows.map((r, i) => (
-                  <div key={i} className="stack" style={{ borderTop: "1px solid var(--line, #ddd)", paddingTop: 8 }}>
+                  <div key={i} className="stack u-bt2-1px-solid-var-line-ddd u-pt-8px">
                     <input name={`q:${i}`} defaultValue={r.q} placeholder="Frage" aria-label={`Frage ${i + 1}`} maxLength={300} />
                     <textarea name={`a:${i}`} defaultValue={r.a} placeholder="Antwort" aria-label={`Antwort ${i + 1}`} rows={3} maxLength={1500} />
                   </div>

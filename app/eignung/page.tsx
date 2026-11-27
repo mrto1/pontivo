@@ -14,7 +14,7 @@ export default async function Eignung({ searchParams }: { searchParams: Promise<
   const r = answered ? suitability({ rooms, restaurantWithPos: sp.restaurant === "yes", software: software! }) : null;
   return (
     <PlatformFrame narrow>
-    <main className="register" style={{ padding: "8px 0 56px" }}>
+    <main className="register u-p-8px-0-56px">
       <h1>Passt Pontivo zu Ihrem Haus?</h1>
       <p className="muted">Drei Fragen, eine ehrliche Antwort. Wir speichern nichts.</p>
       <form method="get" className="card stack">

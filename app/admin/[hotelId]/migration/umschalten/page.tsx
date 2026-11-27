@@ -49,7 +49,7 @@ export default async function Umschalten({ params, searchParams }: { params: Pro
       {sp.msg ? <Notice text={sp.msg} /> : null}
       {sp.error ? <p className="notice warn" role="alert">{sp.error}</p> : null}
       {done ? <p className="notice">Umgeschaltet am {new Date(done).toLocaleDateString("de-CH")}. Ihre Übernahmen lassen sich noch bis {rollbackUntil(done).toLocaleDateString("de-CH")} rückgängig machen (Seite «Datenübernahme»), solange nichts Wesentliches daran bearbeitet wurde.</p> : null}
-      <ol className="stack" style={{ paddingLeft: 0, listStyle: "none" }}>
+      <ol className="stack u-pl-0 u-ls-none">
         {v.items.map((i, n) => (
           <li key={i.key} className="card stack">
             <h2 className="m0">{n + 1}. {i.title} {i.done ? <span className="badge">erledigt</span> : <span className="badge warn">offen</span>}{i.required ? null : <span className="muted small"> (freiwillig)</span>}</h2>

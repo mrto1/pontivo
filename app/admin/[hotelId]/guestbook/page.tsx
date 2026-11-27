@@ -75,7 +75,7 @@ export default async function Guestbook({ params, searchParams }: { params: Prom
                   <td><Link href={`?gast=${encodeURIComponent(r.email)}`} scroll={false}><strong>{r.name || "–"}</strong></Link><div className="small muted">{r.email}</div></td>
                   {lodging ? <><td>{r.stays}</td><td className="small">{r.lastCheckin ? formatDay(r.lastCheckin, "de") : "–"}</td></> : null}
                   {dining ? <><td>{r.visits}{r.visits >= REGULAR_VISITS ? <> <span className="badge">Stammgast</span></> : null}</td><td className="small">{r.lastVisit ? formatDay(r.lastVisit, "de") : "–"}</td></> : null}
-                  <td>{r.tags.map((t) => <span key={t} className="badge" style={{ marginRight: 4 }}>{t}</span>)}</td>
+                  <td>{r.tags.map((t) => <span key={t} className="badge u-mr-4px">{t}</span>)}</td>
                   <td className="small">{r.note.slice(0, 120)}{r.note.length > 120 ? "…" : ""}</td>
                 </tr>
               ))}

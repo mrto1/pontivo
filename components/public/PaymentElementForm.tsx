@@ -145,7 +145,7 @@ export function PaymentElementForm(props: {
   }, [busy, returnUrl, T]);
 
   return (
-    <form onSubmit={submit} style={{ gridColumn: "1 / -1", width: "100%", minWidth: 0 }} noValidate>
+    <form className="col-all u-w-100pct u-minw-0" onSubmit={submit} noValidate>
       {phase === "loading" ? <p className="muted small" role="status">{T.loading}</p> : null}
       {phase === "loadfail" ? (
         <div className="notice warn" role="alert">
@@ -162,7 +162,7 @@ export function PaymentElementForm(props: {
       ) : null}
       {phase === "ready" ? (
         <>
-          <button className="btn mt16" disabled={busy || slow} style={{ width: "100%" }}>{busy ? T.paying : props.payLabel ?? T.pay}</button>
+          <button className="btn mt16 u-w-100pct" disabled={busy || slow}>{busy ? T.paying : props.payLabel ?? T.pay}</button>
           <p className="small muted mt8">{T.secure}</p>
         </>
       ) : null}

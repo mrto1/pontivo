@@ -169,7 +169,7 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
 
       {canEdit ? (
         <section className="card" id="provision">
-          <form action={commissionAction} style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap" }}>
+          <form className="u-d-flex u-gap-12px u-ai-end u-fw-wrap" action={commissionAction}>
             {hidden}
             <div>
               <label htmlFor="pct">Provision der Buchungsportale in %</label>
@@ -177,7 +177,7 @@ export default async function ChannexPage({ params, searchParams }: { params: Pr
             </div>
             <button className="btn secondary small">Speichern</button>
           </form>
-          <p className="muted small" style={{ marginBottom: 0 }}>
+          <p className="muted small u-mb-0">
             Tragen Sie die Provision ein, die Sie Booking.com &amp; Co. tatsächlich zahlen (steht im Vertrag oder auf der Rechnung).
             Gerechnet wird auf den Zimmerpreis ohne Kurtaxe. Damit zeigt Finanzen → Statistik, wie viel Sie mit Direktbuchungen sparen.
           </p>

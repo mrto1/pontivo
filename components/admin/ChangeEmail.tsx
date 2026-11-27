@@ -27,7 +27,7 @@ export function ChangeEmail({ current, needsCode }: { current: string; needsCode
   if (sent) return <p className="notice" role="status">Wir haben einen Bestätigungslink an {email} geschickt (60 Minuten gültig). Ihre bisherige Adresse bleibt bis zur Bestätigung gültig und wird ebenfalls informiert.</p>;
   if (!open) return <button type="button" className="btn secondary small" onClick={() => setOpen(true)}>E-Mail-Adresse ändern</button>;
   return (
-    <form onSubmit={submit} className="stack" style={{ maxWidth: 420 }}>
+    <form onSubmit={submit} className="stack u-maxw-420px">
       <label>Neue E-Mail-Adresse<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="neu@beispiel.ch" /></label>
       {needsCode ? <label>Code der Authenticator-App<input inputMode="numeric" autoComplete="one-time-code" required value={code} onChange={(e) => setCode(e.target.value)} /></label> : null}
       <p className="muted small">Aktuell: {current}. Der Link zur Bestätigung geht an die neue Adresse.</p>

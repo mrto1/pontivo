@@ -97,7 +97,7 @@ export default async function ReservationsPage({ params, searchParams }: { param
                 <td>{r.time}</td><td>{r.party}</td>
                 <td>{r.name}{r.source === "online" ? " (online)" : ""}
                   {(visits.get(r.email.toLowerCase())?.visits ?? 0) >= REGULAR_VISITS ? <> <span className="badge">Stammgast</span></> : null}
-                  {prof.get(r.email.toLowerCase())?.tags.map((t) => <span key={t} className="badge" style={{ marginLeft: 4 }}>{t}</span>)}
+                  {prof.get(r.email.toLowerCase())?.tags.map((t) => <span key={t} className="badge u-ml-4px">{t}</span>)}
                   <div className="small muted">{[r.phone, r.email, r.note].filter(Boolean).join(" · ")}</div>
                   {r.preorder?.length ? <div className="small" data-testid="preorder-lines"><strong>Vorbestellung{r.depositStatus === "paid" ? " (bezahlt)" : ""}:</strong> {r.preorder.map((l) => `${l.quantity}× ${l.description}`).join(", ")} · {formatChf(r.preorderRappen)}{!r.tableId && !r.preorderOrderId && r.status === "confirmed" ? <span className="badge warn ml8">Tisch fehlt: geht erst mit Tisch in die Küche</span> : null}</div> : null}
                   {prof.get(r.email.toLowerCase())?.note ? <div className="small">Kartei: {prof.get(r.email.toLowerCase())!.note.slice(0, 120)}</div> : null}
@@ -109,7 +109,7 @@ export default async function ReservationsPage({ params, searchParams }: { param
                   {r.tableId ? <span className="small muted">{[r.tableId, ...(r.extraTableIds ?? [])].map((x) => tname.get(x)).join(" + ")}</span> : null}</td>
                 <td>{STATUS[r.status]}{r.depositStatus !== "none" ? <div className="small muted">Anzahlung {formatChf(r.depositRappen)}: {r.depositStatus === "paid" ? "bezahlt (bei der Rechnung abziehen)" : r.depositStatus === "refunded" ? "zurückerstattet" : "offen"}</div> : null}</td>
                 <td className="res-actions">{r.status === "pending" ? null : (["seated", "noshow", "cancelled"] as const).filter((x) => x !== r.status).map((x) => (
-                  <form key={x} action={status} style={{ display: "contents" }}>{H}{D}<input type="hidden" name="id" value={r.id} /><input type="hidden" name="status" value={x} /><button className={x === "seated" ? "btn small" : "linklike"}>{x === "seated" ? "Am Tisch" : x === "noshow" ? "Nicht erschienen" : "Stornieren"}</button></form>
+                  <form className="u-d-contents" key={x} action={status}>{H}{D}<input type="hidden" name="id" value={r.id} /><input type="hidden" name="status" value={x} /><button className={x === "seated" ? "btn small" : "linklike"}>{x === "seated" ? "Am Tisch" : x === "noshow" ? "Nicht erschienen" : "Stornieren"}</button></form>
                 ))}</td>
               </tr>
             ))}

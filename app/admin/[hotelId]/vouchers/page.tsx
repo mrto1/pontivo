@@ -56,7 +56,7 @@ export default async function Vouchers({ params, searchParams }: { params: Promi
           {hidden}
           <div><label htmlFor="f92f71">Code</label><input className="upper" id="f92f71" name="code" required placeholder="GS-XXXX-XXXX" defaultValue={sp.q ?? ""} /></div>
           <div><label htmlFor="f92f72">Betrag CHF</label><input id="f92f72" name="amount" required inputMode="decimal" placeholder="z. B. 120" /></div>
-          <div style={{ minWidth: 220 }}><label htmlFor="f92f73">Notiz (optional)</label><input id="f92f73" name="note" maxLength={200} placeholder="z. B. Abendessen 12.3." /></div>
+          <div className="u-minw-220px"><label htmlFor="f92f73">Notiz (optional)</label><input id="f92f73" name="note" maxLength={200} placeholder="z. B. Abendessen 12.3." /></div>
           <button className="btn">Einlösen</button>
         </form>
         <p className="muted small">Teilbeträge sind möglich, der Restwert bleibt auf dem Gutschein. Abgelaufene oder unbezahlte Gutscheine werden abgelehnt.</p>

@@ -70,7 +70,7 @@ export default async function OfferAdmin({ params, searchParams }: { params: Pro
         {rows.map(({ l }, i) => (
           <div key={l?.id ?? `new${i}`} className="card stack">
             <div className="row">
-              <label style={{ flex: 3 }}>Beschreibung<input name="desc" defaultValue={l?.description ?? ""} maxLength={200} /></label>
+              <label className="u-fx-3">Beschreibung<input name="desc" defaultValue={l?.description ?? ""} maxLength={200} /></label>
               <label>Menge<input name="qty" type="number" min={1} defaultValue={l?.quantity ?? 1} className="w80" /></label>
               <label>Preis CHF<input className="w110" name="unit" defaultValue={l ? rappenToDecimal(l.unitRappen) : ""} placeholder="0.00" /></label>
               <label>MWST<select name="vat" defaultValue={l?.vatKind ?? "standard"}><option value="standard">Normal</option><option value="stay">Beherbergung</option><option value="none">Keine</option></select></label>

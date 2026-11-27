@@ -12,7 +12,7 @@ export default async function StatementPrint({ params }: { params: Promise<{ hot
   let x;
   try { x = await ownerStatement(hotel.id, ownerId, month); } catch (e) { if (e instanceof OwnerError) notFound(); throw e; }
   return (
-    <div className="stack" style={{ maxWidth: 640 }}>
+    <div className="stack u-maxw-640px">
       <h1>Abrechnung {month}</h1>
       <p>{hotel.name}<br />für {x.owner.name}</p>
       <table className="table"><tbody>

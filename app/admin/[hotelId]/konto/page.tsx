@@ -38,9 +38,9 @@ export default async function MyPontivo({ params }: { params: Promise<{ hotelId:
   const others = user.isPlatformAdmin ? [] : (await hotelsForUser(user.id)).filter((x) => x.hotel.id !== hotel.id);
   const preview = hotel.primaryDomain ? `//${hotel.primaryDomain}` : `/h/${hotel.slug}/de`;
   return (
-    <div className="stack" style={{ gap: 28, maxWidth: 760 }}>
+    <div className="stack u-gap-28px u-maxw-760px">
       <header>
-        <h1 style={{ marginBottom: 4 }}>Mein Konto</h1>
+        <h1 className="u-mb-4px">Mein Konto</h1>
         <div className="mp-top">
           <strong>{user.email}</strong>
           <span className="muted">{user.isPlatformAdmin ? "Plattformbetreiber" : roleLabel(role)} bei {hotel.name}</span>
@@ -75,8 +75,8 @@ export default async function MyPontivo({ params }: { params: Promise<{ hotelId:
         <form action={savePrefs} className="stack" data-testid="push-prefs">
           <input type="hidden" name="hotelId" value={hotel.id} />
           {kinds.map((k) => (
-            <label key={k} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-              <input type="checkbox" name={`k_${k}`} defaultChecked={prefs[k] !== false} style={{ marginTop: 4 }} />
+            <label className="u-d-flex u-gap-10px u-ai-flex-start" key={k}>
+              <input className="u-mt-4px" type="checkbox" name={`k_${k}`} defaultChecked={prefs[k] !== false} />
               <span><strong>{PUSH_KIND_LABEL[k].title}</strong><br /><span className="muted small">{PUSH_KIND_LABEL[k].hint}</span></span>
             </label>
           ))}

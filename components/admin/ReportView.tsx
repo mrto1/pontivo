@@ -19,7 +19,7 @@ export function ReportView({ r }: { r: Awaited<ReturnType<typeof monthlyReport>>
           ))}
         </tbody>
       </table>
-      <h3 style={{ marginTop: 24 }}>Buchungen</h3>
+      <h3 className="mt24">Buchungen</h3>
       <table className="table small">
         <thead><tr><th>Ref.</th><th>Bestätigt</th><th>Quelle</th><th>Status</th><th>Aufenthalt</th><th>Gast</th><th>Total</th><th>Erstattet</th><th>Gebühr netto</th></tr></thead>
         <tbody>

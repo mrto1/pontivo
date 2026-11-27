@@ -42,9 +42,9 @@ export default async function Buchhaltung({ params, searchParams }: { params: Pr
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <div><InfoTip label="Worum geht es hier?">Rechnungen (nach Ausstelldatum) und Zahlungen (nach Zahldatum) als Einzelbuchungen für Ihren Treuhänder. Allgemeines CSV mit Soll- und Haben-Konto, kein Format eines bestimmten Programms: Ihr Treuhänder kann es in bexio, Abacus oder andere Software übernehmen.</InfoTip></div>
       <form method="get" className="inline-form">
-        <div><label htmlFor="f29ac1">Zeitraum</label><input id="f29ac1" name="p" defaultValue={period} placeholder="2026-11, 2026-Q4 oder 2026" style={{ width: 170 }} /></div>
+        <div><label htmlFor="f29ac1">Zeitraum</label><input className="u-w-170px" id="f29ac1" name="p" defaultValue={period} placeholder="2026-11, 2026-Q4 oder 2026" /></div>
         <button className="btn secondary small">Anzeigen</button>
-        <span className="small">Schnell: {choices.map((c) => <a key={c} href={`?p=${c}`} style={{ marginRight: 8 }}>{c.replace("-Q", " Q")}</a>)}</span>
+        <span className="small">Schnell: {choices.map((c) => <a className="u-mr-8px" key={c} href={`?p=${c}`}>{c.replace("-Q", " Q")}</a>)}</span>
       </form>
       <section className="card stack">
         <h2>{r.label}: {rows.length} Buchungen</h2>

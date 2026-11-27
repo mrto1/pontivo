@@ -59,7 +59,7 @@ const GROUPS = [...new Set(CONFIGURABLE_AREAS.map((a) => a.group))];
 
 function AreaChecks({ selected }: { selected: readonly string[] }) {
   return (
-    <div className="stack" style={{ gap: 10 }}>
+    <div className="stack u-gap-10px">
       {GROUPS.map((g) => (
         <fieldset key={g} className="plain">
           <legend className="small muted">{g}</legend>

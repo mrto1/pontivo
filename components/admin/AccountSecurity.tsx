@@ -90,7 +90,7 @@ export function AccountSecurity({ passkeys, totpOn, codesLeft, passkeyOnly, pass
         {pks.length ? (
           <ul>
             {pks.map((p) => (
-              <li key={p.id} style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
+              <li className="u-d-flex u-gap-12px u-ai-center u-jc-space-between" key={p.id}>
                 <span><strong>{p.name}</strong> <span className="muted small">angelegt {fmt(p.createdAt)}, zuletzt {fmt(p.lastUsedAt)}</span></span>
                 <button className="btn secondary small" onClick={() => removePasskey(p.id)}>Entfernen</button>
               </li>
@@ -121,7 +121,7 @@ export function AccountSecurity({ passkeys, totpOn, codesLeft, passkeyOnly, pass
             <img src={setup.qr} alt="QR-Code für die Authenticator-App" width={220} height={220} />
             <p className="small">Schlüssel: <code>{setup.secret}</code></p>
             <p>2. Den angezeigten 6-stelligen Code eingeben:</p>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="u-d-flex gap8">
               <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" placeholder="123456" aria-label="Code" data-testid="totp-code" />
               <button className="btn" onClick={confirm2} data-testid="totp-confirm">Bestätigen und aktivieren</button>
             </div>

@@ -179,7 +179,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
           <h3>Suchleiste mit Daten und Personen</h3>
           <p className="small muted">Der Gast wählt die Daten direkt auf Ihrer Website und sieht danach sofort die freien Zimmer.</p>
           <CopyBox text={search} label="Code für die Suchleiste" />
-          <div className="card" style={{ background: "var(--accent-soft)" }}><WidgetPreview src={scriptSrc} slug={hotel.slug} mode="search" /></div>
+          <div className="card u-bg-var-accent-soft"><WidgetPreview src={scriptSrc} slug={hotel.slug} mode="search" /></div>
           {hotel.status !== "live" ? <p className="notice warn small">Das Hotel ist noch nicht live – Gäste sehen auf der Buchungsseite einen Hinweis statt Angeboten.</p> : null}
         </section>
       ) : null}
@@ -233,7 +233,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
                   <td>{p.published ? "sichtbar" : <span className="badge warn">Entwurf</span>}</td>
                   <td>
                     {canEdit ? (
-                      <div className="inline-form" style={{ gap: 4 }}>
+                      <div className="inline-form u-gap-4px">
                         <form action={move}>{hidden}<input type="hidden" name="pageId" value={p.id} /><input type="hidden" name="dir" value="up" /><button className="btn secondary small" disabled={i === 0} aria-label="nach oben">↑</button></form>
                         <form action={move}>{hidden}<input type="hidden" name="pageId" value={p.id} /><input type="hidden" name="dir" value="down" /><button className="btn secondary small" disabled={i === others.length - 1} aria-label="nach unten">↓</button></form>
                         <form action={remove}>{hidden}<input type="hidden" name="pageId" value={p.id} /><button className="btn secondary small">Löschen</button></form>
@@ -257,7 +257,7 @@ export default async function Site({ params, searchParams }: { params: Promise<{
       <section className="card stack" id="bilder">
         <h2>Logo und Fotos</h2>
         <h3 className="m0" id="logo">Logo</h3>
-        {brand.logoUrl ? <img src={brand.logoUrl} alt="Logo" style={{ maxHeight: 60, maxWidth: 240, objectFit: "contain", alignSelf: "flex-start" }} /> : <p className="muted small">Noch kein Logo – oben auf der Buchungsseite steht dann der Hotelname.</p>}
+        {brand.logoUrl ? <img className="u-maxh-60px u-maxw-240px u-of-contain u-as-flex-start" src={brand.logoUrl} alt="Logo" /> : <p className="muted small">Noch kein Logo – oben auf der Buchungsseite steht dann der Hotelname.</p>}
         {canEdit ? (
           <div className="inline-form">
             <form action={`/api/admin/hotels/${hotel.id}/photos`} method="post" encType="multipart/form-data" className="inline-form">
@@ -373,8 +373,8 @@ export default async function Site({ params, searchParams }: { params: Promise<{
             <div><label htmlFor="f1c501">Adresse der eigenen Website</label><input id="f1c501" name="websiteUrl" type="url" placeholder="https://www.hotel.ch" defaultValue={brand.websiteUrl ?? ""} disabled={!canEdit} /></div>
             <div>
               <label htmlFor="sp-color">Hauptfarbe (Knöpfe, Links)</label>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <input id="sp-color" name="color" type="color" defaultValue={brand.color ?? "#2f5d50"} style={{ width: 64, height: 42, padding: 2 }} disabled={!canEdit} />
+              <div className="u-d-flex u-gap-10px u-ai-center">
+                <input className="u-w-64px u-h-42px u-p-2px" id="sp-color" name="color" type="color" defaultValue={brand.color ?? "#2f5d50"} disabled={!canEdit} />
                 <label className="check m0"><input type="checkbox" name="useColor" defaultChecked={!!brand.color} disabled={!canEdit} />verwenden</label>
               </div>
             </div>

@@ -27,10 +27,10 @@ export default async function FirstWeekPage({ params }: { params: Promise<{ hote
   return (
     <div className="stack">
       <h1>Erste Woche: {GUIDE_ROLE_LABEL[guideRole(role)]}<InfoTip>{p.done} von {p.total} erledigt. Jede Aufgabe führt direkt an die richtige Stelle. Unter «Hilfe» steht, was jede Funktion kann.</InfoTip></h1>
-      <ul className="stack" style={{ listStyle: "none", padding: 0 }}>
+      <ul className="stack u-ls-none u-p-0">
         {tasks.map((t) => (
           <li key={t.key} className="card">
-            <form action={toggle} style={{ display: "flex", gap: 12, alignItems: "flex-start", justifyContent: "space-between" }}>
+            <form className="u-d-flex u-gap-12px u-ai-flex-start u-jc-space-between" action={toggle}>
               <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="task" value={t.key} /><input type="hidden" name="done" value={done.has(t.key) ? "0" : "1"} />
               <div>
                 <strong style={done.has(t.key) ? { textDecoration: "line-through" } : undefined}>{t.title}</strong>

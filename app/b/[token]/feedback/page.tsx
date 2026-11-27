@@ -55,10 +55,10 @@ export default async function FeedbackPage({ params, searchParams }: { params: P
             <p className="muted">{f.intro}</p>
             <input type="hidden" name="token" value={token} />
             <input type="hidden" name="lang" value={locale} />
-            <fieldset style={{ border: 0, padding: 0 }}>
+            <fieldset className="u-b-0 u-p-0">
               <legend>{f.scoreLabel}</legend>
               {[5, 4, 3, 2, 1].map((n) => (
-                <label key={n} style={{ display: "block", padding: "6px 0" }}><input type="radio" name="score" value={n} required /> {n} · {f.scores[n - 1]}</label>
+                <label className="u-d-block u-p-6px-0" key={n}><input type="radio" name="score" value={n} required /> {n} · {f.scores[n - 1]}</label>
               ))}
             </fieldset>
             <label>{f.commentLabel}<textarea name="comment" rows={4} maxLength={2000} /></label>

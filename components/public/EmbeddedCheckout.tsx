@@ -57,7 +57,7 @@ export function EmbeddedCheckout(props: { clientSecret: string; publishableKey: 
   }, [props.clientSecret, props.publishableKey, props.stripeAccount]);
   return (
     // Im Raster der Angebotskarte über die ganze Breite (sonst schrumpft der Stripe-Rahmen auf die Spaltenbreite des Knopfs)
-    <div style={{ gridColumn: "1 / -1", width: "100%", minWidth: 0 }}>
+    <div className="col-all u-w-100pct u-minw-0">
       {failed ? <p className="notice warn" role="alert">{props.errorText}</p> : null}
       <div ref={box} className="stripe-embed" />
       {props.cancelHref ? <p className="small mt16"><a href={props.cancelHref}>{props.cancelText}</a></p> : null}

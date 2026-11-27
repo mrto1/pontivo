@@ -220,7 +220,7 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
 
       {manager ? (
         <section className="card stack">
-          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
+          <div className="u-d-flex u-gap-12px u-ai-center u-fw-wrap u-jc-space-between">
             <h2 className="m0">Zimmer verwalten</h2>
             <Link className="btn" href={`${base}?from=${from}&room=neu`} scroll={false}>+ Zimmer hinzufügen</Link>
           </div>
@@ -246,7 +246,7 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
                     <li key={r.id}>
                       <Link href={`${base}?from=${from}&room=${r.id}`} scroll={false} className="plan-row" aria-label={`Zimmer ${r.number} bearbeiten`}>
                         <span><strong>{r.number}</strong>{r.floor ? <span className="muted small"> · {r.floor}</span> : null}{r.note ? <><br /><span className="muted small">{r.note}</span></> : null}</span>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>{r.active ? null : <span className="badge warn">gesperrt</span>}<span className="rt-arrow" aria-hidden="true">›</span></span>
+                        <span className="u-d-inline-flex u-ai-center u-gap-10px">{r.active ? null : <span className="badge warn">gesperrt</span>}<span className="rt-arrow" aria-hidden="true">›</span></span>
                       </Link>
                     </li>
                   ))}

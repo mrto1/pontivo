@@ -36,7 +36,7 @@ export async function OrderPage({ hotel, locale, base, sp }: { hotel: Hotel; loc
   const slotsBy = new Map(await Promise.all(extras.map(async (m) => [m, (await slotsToday(hotel, "delivery", m)).filter((x) => x.ok).map((x) => x.time)] as const)));
   return (
     <Shell hotel={hotel} locale={locale} base={base} path="/bestellen" noBookButton>
-      <h1 style={{ marginTop: 32 }}>{t.title}</h1>
+      <h1 className="mt32">{t.title}</h1>
       <OrderCart hotelId={hotel.id} locale={locale} base={base} menu={menu} phone={hotel.contactPhone} msg={one(sp, "msg") ?? null} aborted={!!one(sp, "abgebrochen")} cardOk={cardOk}
         pickup={{ on: open.pickup, slots: pickupSlots.filter((x) => x.ok).map((x) => x.time), cash: open.cashPickup }}
         delivery={{ on: open.delivery, cash: open.cashDelivery, cashMaxRappen: open.cashMaxRappen, zones: active.map((z) => ({ id: z.id, name: z.name, active: true, postalCodes: z.postalCodes, minOrderRappen: z.minOrderRappen, feeRappen: z.feeRappen, freeFromRappen: z.freeFromRappen, extraMinutes: z.extraMinutes, slots: slotsBy.get(z.extraMinutes) ?? [] })) }} />

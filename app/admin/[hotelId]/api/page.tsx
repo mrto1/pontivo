@@ -109,7 +109,7 @@ export default async function ApiPage({ params, searchParams }: { params: Promis
         {hooks.map((h) => (
           <form key={h.id} action={hookAction} className="row small">
             <input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="id" value={h.id} />
-            <code style={{ flex: 1, wordBreak: "break-all" }}>{h.url}</code><span className="muted">{h.events.join(", ")}</span>
+            <code className="flex1 break-all">{h.url}</code><span className="muted">{h.events.join(", ")}</span>
             <button className="btn secondary small" name="do" value="ping">Test senden</button><button className="btn secondary small" name="do" value="delete">Löschen</button>
           </form>
         ))}
@@ -126,7 +126,7 @@ export default async function ApiPage({ params, searchParams }: { params: Promis
         <p><code>GET {base}/hotel</code><br /><span className="small muted">Betrieb, Sprachen, Check-in/out-Zeiten, Zimmertypen und Tarife (IDs für die Buchung).</span></p>
         <p><code>GET {base}/availability?checkin=2026-12-20&amp;checkout=2026-12-23&amp;adults=2&amp;children=0&amp;rooms=1</code><br /><span className="small muted">Angebote mit Nachtpreisen, Total inkl. Kurtaxe und Pflicht-Zusatzleistungen, Stornobedingung. Bei Kindern ggf. <code>ages=7,9</code> (Antwort 422 <code>child_ages_required</code>).</span></p>
         <p><code>POST {base}/bookings</code></p>
-        <pre style={{ overflow: "auto" }}>{`{
+        <pre className="u-ov-auto">{`{
   "room_type_id": "…", "rate_plan_id": "…",
   "checkin": "2026-12-20", "checkout": "2026-12-23",
   "adults": 2, "children": 0, "rooms": 1,

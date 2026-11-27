@@ -22,7 +22,7 @@ export function TaxTable({ r }: { r: TaxList }) {
       </table>
       <p className="small muted">Alle bestätigten Aufenthalte mit Übernachtungen im Monat, auch über Portale. Alter und Pflicht nach Meldeschein, sonst nach Buchung. Satz gemäss Kurtaxe-Regel am Anreisetag.</p>
       {r.months ? (
-        <table className="table" style={{ marginTop: 16, width: "auto" }}>
+        <table className="table mt16 u-w-auto">
           <thead><tr><th>Monat</th><th>Nächte</th><th>Logiernächte pflichtig</th><th>Kurtaxe</th></tr></thead>
           <tbody>{r.months.map((m) => <tr key={m.month}><td>{m.month}</td><td>{m.total.nights}</td><td>{m.total.personNights}</td><td>{formatChf(m.total.amountRappen)}</td></tr>)}</tbody>
         </table>

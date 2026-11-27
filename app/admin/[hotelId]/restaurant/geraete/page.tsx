@@ -56,7 +56,7 @@ export default async function PosDevicesPage({ params, searchParams }: { params:
           <div><button className="btn">{conn ? "Ersetzen" : "Verbinden"}</button></div>
         </form>
         {totals.length ? (
-          <table className="table small"><caption className="small muted" style={{ textAlign: "left" }}>Aufs Zimmer gebucht (Grundlage für Ihre Abrechnung mit dem Hotel)</caption>
+          <table className="table small"><caption className="small muted u-ta-left">Aufs Zimmer gebucht (Grundlage für Ihre Abrechnung mit dem Hotel)</caption>
             <thead><tr><th>Monat</th><th>Hotel</th><th>Bons</th><th>Betrag</th></tr></thead>
             <tbody>{totals.map((t) => <tr key={`${t.month}-${t.label}`}><td>{t.month}</td><td>{t.label}</td><td>{t.count}</td><td>{formatChf(t.totalRappen)}</td></tr>)}</tbody></table>
         ) : null}

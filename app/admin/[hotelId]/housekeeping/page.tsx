@@ -110,7 +110,7 @@ export default async function Housekeeping({ params, searchParams }: { params: P
           <h2 className="m0">Minibar nachfüllen</h2>
           <ul className="plan-list">
             {refills.map((r) => (
-              <li key={r.roomId} className="plan-row" style={{ cursor: "default" }}>
+              <li key={r.roomId} className="plan-row u-cur-default">
                 <span><strong>Zimmer {r.number}</strong><br /><span className="muted small">{r.items.map((i) => `${i.quantity} × ${i.name}`).join(", ")}</span></span>
                 <form action={refilled}>{hid(r.roomId)}<button className="btn secondary small">Aufgefüllt</button></form>
               </li>

@@ -28,7 +28,7 @@ export default async function Statistik({ params, searchParams }: { params: Prom
   const o = showSavings ? await overview(hotel, period) : null;
   const chf0 = (r: number) => formatChf(Math.round(r / 100) * 100).replace(/\.00$/, "");
   const Tile = ({ label, value, hint }: { label: string; value: string; hint: string }) => (
-    <div className="card" style={{ flex: "1 1 150px" }}><div className="small muted">{label}</div><div style={{ fontSize: "1.6rem", fontWeight: 700 }}>{value}</div><div className="small muted">{hint}</div></div>
+    <div className="card u-fx-1-1-150px"><div className="small muted">{label}</div><div className="u-fs-1-6rem u-fwt-700">{value}</div><div className="small muted">{hint}</div></div>
   );
   return (
     <div className="stack">
@@ -57,10 +57,10 @@ export default async function Statistik({ params, searchParams }: { params: Prom
             <div className="card tile"><span className="muted small">Gutscheine verkauft</span><strong>{o.vouchers.sold}</strong><span className="muted small">{formatChf(o.vouchers.rappen)}</span></div>
             <div className="card tile"><span className="muted small">Anfragen</span><strong>{o.inquiries}</strong><span className="muted small"><a href={`/admin/${hotel.id}/inbox?quelle=web`}>ansehen</a></span></div>
           </div>
-          <section className="card"><h2 style={{ fontSize: "1.15rem" }}>Buchungen pro Monat</h2><DirectChart data={o.chart} /></section>
+          <section className="card"><h2 className="u-fs-1-15rem">Buchungen pro Monat</h2><DirectChart data={o.chart} /></section>
         </>
       ) : null}
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+      <div className="u-d-flex u-gap-12px u-fw-wrap">
         <Tile label="Belegung" value={pct(s.total.occupancyPct)} hint={`${s.total.sold} von ${s.total.available} Zimmernächten`} />
         <Tile label="Ø Preis pro Nacht (ADR)" value={`${formatChf(s.total.adrRappen)}`} hint="Zimmerumsatz / verkaufte Nächte" />
         <Tile label="RevPAR" value={`${formatChf(s.total.revparRappen)}`} hint="Zimmerumsatz / verfügbare Nächte" />

@@ -12,9 +12,9 @@ export function OfferSheet({ hotel, offer, lines, resourceNames = {} }: { hotel:
   const d = (x: string) => x.split("-").reverse().join(".");
   const logo = hotel.content.brand?.logoUrl;
   return (
-    <article className="card stack" style={{ maxWidth: 820 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-        <div>{logo ? <img src={logo} alt={hotel.name} style={{ maxHeight: 56 }} /> : <strong>{hotel.name}</strong>}<p className="small muted m0">{hotel.contactEmail}</p></div>
+    <article className="card stack u-maxw-820px">
+      <div className="u-d-flex u-jc-space-between u-gap-16px u-fw-wrap">
+        <div>{logo ? <img className="u-maxh-56px" src={logo} alt={hotel.name} /> : <strong>{hotel.name}</strong>}<p className="small muted m0">{hotel.contactEmail}</p></div>
         <div className="ta-r"><strong>Angebot {offerNumber(offer.seq, String(offer.createdAt.getFullYear()))}</strong><p className="small muted m0">Gültig bis {d(offer.validUntil)}</p></div>
       </div>
       <p className="m0">{offer.company ? <>{offer.company}<br /></> : null}{offer.customerName}</p>

@@ -45,7 +45,7 @@ export default async function Uebersicht() {
       <PageHead title="Plattform-Verwaltung">Nur für Pontivo-Admins. Hier siehst du den Stand der Plattform und was Aufmerksamkeit braucht. Die Bereiche findest du oben im Menü.</PageHead>
 
       <section className="tiles">
-        <a className="card tile plain-link" href="/plattform/betriebe"><span className="muted small">Betriebe online</span><strong>{live} <span className="muted small" style={{ fontWeight: 400 }}>von {hotels.length}</span></strong></a>
+        <a className="card tile plain-link" href="/plattform/betriebe"><span className="muted small">Betriebe online</span><strong>{live} <span className="muted small u-fwt-400">von {hotels.length}</span></strong></a>
         <a className="card tile plain-link" href="/plattform/benutzer"><span className="muted small">Benutzer</span><strong>{users.length}</strong></a>
         <a className="card tile plain-link" href="/plattform/vertrieb"><span className="muted small">Offene Leads</span><strong>{sales.funnel.open}</strong></a>
         <a className="card tile plain-link" href="/plattform/rechnungen"><span className="muted small">Fehlgeschlagene Belastungen</span><strong>{failed.length}</strong></a>
@@ -64,10 +64,10 @@ export default async function Uebersicht() {
 
       <section className="stack">
         <h2 className="m0">Bereiche</h2>
-        <div className="tiles" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))" }}>
+        <div className="tiles u-gtc-repeat-auto-fit-minmax-min-100pct-240px-1fr">
           {AREAS.map((a) => (
             <a key={a.href} className="card tile plain-link" href={a.href}>
-              <strong style={{ fontSize: "1.05rem" }}>{a.title}</strong><span className="muted small">{a.text}</span>
+              <strong className="u-fs-1-05rem">{a.title}</strong><span className="muted small">{a.text}</span>
             </a>
           ))}
         </div>
