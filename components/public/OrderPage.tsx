@@ -14,6 +14,7 @@ import { db } from "@/src/db/client";
 import { posReceipts } from "@/src/db/schema";
 import { invoicingSettings } from "@/src/services/invoicing";
 import { formatBps } from "@/src/domain/invoice";
+import { requestNow } from "@/src/lib/clock";
 
 type Sp = Record<string, string | string[] | undefined>;
 const one = (sp: Sp, k: string) => { const v = sp[k]; return Array.isArray(v) ? v[0] : v; };
@@ -21,7 +22,8 @@ const one = (sp: Sp, k: string) => { const v = sp[k]; return Array.isArray(v) ? 
 /** Öffentliche Online-Bestellung (SPEC 20.4/20.5): Speisekarte, Warenkorb, Abholung oder Lieferung, Bezahlung */
 export async function OrderPage({ hotel, locale, base, sp }: { hotel: Hotel; locale: Locale; base: string; sp: Sp }) {
   const t = ORD[locale];
-  const open = (await onlineOrderingOn(hotel.id)) ? await orderingOpen(hotel) : null;
+  const now = await requestNow();
+  const open = (await onlineOrderingOn(hotel.id)) ? await orderingOpen(hotel, now) : null;
   if (!open) {
     return (
       <Shell hotel={hotel} locale={locale} base={base} path="/bestellen" noBookButton>
@@ -30,10 +32,10 @@ export async function OrderPage({ hotel, locale, base, sp }: { hotel: Hotel; loc
     );
   }
   const cardOk = env().PAYMENT_PROVIDER !== "stripe" || !!(hotel.stripeAccountId && hotel.stripeChargesEnabled);
-  const [menu, zones, pickupSlots] = await Promise.all([onlineMenu(hotel.id), open.delivery ? listZones(hotel.id) : Promise.resolve([]), open.pickup ? slotsToday(hotel, "pickup") : Promise.resolve([])]);
+  const [menu, zones, pickupSlots] = await Promise.all([onlineMenu(hotel.id), open.delivery ? listZones(hotel.id) : Promise.resolve([]), open.pickup ? slotsToday(hotel, "pickup", 0, now) : Promise.resolve([])]);
   const active = zones.filter((z) => z.active);
   const extras = [...new Set(active.map((z) => z.extraMinutes))];
-  const slotsBy = new Map(await Promise.all(extras.map(async (m) => [m, (await slotsToday(hotel, "delivery", m)).filter((x) => x.ok).map((x) => x.time)] as const)));
+  const slotsBy = new Map(await Promise.all(extras.map(async (m) => [m, (await slotsToday(hotel, "delivery", m, now)).filter((x) => x.ok).map((x) => x.time)] as const)));
   return (
     <Shell hotel={hotel} locale={locale} base={base} path="/bestellen" noBookButton>
       <h1 className="mt32">{t.title}</h1>

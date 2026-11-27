@@ -7,5 +7,5 @@ export default defineConfig({
   use: { baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000" },
   webServer: process.env.E2E_BASE_URL
     ? undefined
-    : { command: "npm run dev", url: "http://localhost:3000", reuseExistingServer: true, timeout: 120000 },
+    : { command: "npm run dev", url: "http://localhost:3000", reuseExistingServer: true, timeout: 120000, env: { E2E_CLOCK: "1" } },
 });

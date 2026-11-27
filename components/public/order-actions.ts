@@ -5,6 +5,7 @@ import { PosError } from "@/src/services/pos";
 import { createOnlineOrder, type CartLine } from "@/src/services/online-orders";
 import { isLocale } from "@/src/i18n/dict";
 import { s } from "@/src/lib/form";
+import { requestNow } from "@/src/lib/clock";
 
 const baseOf = (f: FormData) => (/^\/h\/[a-z0-9-]+$/.test(s(f, "base")) ? s(f, "base") : "");
 const UUID = /^[0-9a-f-]{36}$/i;
@@ -41,7 +42,7 @@ export async function orderAction(f: FormData) {
     const r = await createOnlineOrder(hotel, {
       kind, time: s(f, "time") || "asap", payment: s(f, "payment") === "cash" ? "cash" : "card", name: s(f, "name"), phone: s(f, "phone"), email: s(f, "email"), note: s(f, "note"), language: locale, lines: lines!,
       address: kind === "delivery" ? { street: s(f, "street"), houseNo: s(f, "houseNo"), postalCode: s(f, "postalCode"), city: s(f, "city"), floor: s(f, "floor"), bell: s(f, "bell"), hint: s(f, "hint") } : undefined,
-    });
+    }, { now: await requestNow() });
     token = r.order.publicToken;
     go = r.checkoutUrl ?? "";
   } catch (e) {

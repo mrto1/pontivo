@@ -6,6 +6,12 @@ import { SESSION_COOKIE, createSessionValue } from "../../src/auth/session";
 import { addMember } from "../../src/services/settings";
 import { acceptOrder, createOnlineOrder, saveZone } from "../../src/services/online-orders";
 import { makeHotel } from "../helpers";
+import { todayIn, zonedToUtc } from "../../src/domain/dates";
+import { TEST_NOW_HEADER } from "../../src/lib/clock-header";
+
+/** Feste Tageszeit (heute 12:00 in Zürich): Abholzeiten hängen nicht von der echten Uhrzeit ab (kurz vor Mitternacht gäbe es keine) */
+const NOON = zonedToUtc(todayIn("Europe/Zurich"), "12:00", "Europe/Zurich");
+test.use({ extraHTTPHeaders: { [TEST_NOW_HEADER]: NOON.toISOString() } });
 
 const uid = () => Math.random().toString(36).slice(2, 8);
 const allDay = Object.fromEntries([0, 1, 2, 3, 4, 5, 6].map((d) => [String(d), [{ from: "00:00", to: "23:59" }]]));
@@ -33,7 +39,7 @@ async function restaurant(extra: Partial<typeof onlineOrderSettings.$inferInsert
 test("Gast bestellt zum Abholen (bar), Restaurant nimmt an, meldet bereit und abgeholt", async ({ page, context, baseURL, browser }) => {
   const { h } = await restaurant();
   // Gast
-  const guest = await browser.newPage();
+  const guest = await browser.newPage({ extraHTTPHeaders: { [TEST_NOW_HEADER]: NOON.toISOString() } });
   await guest.goto(`/h/${h.slug}/de/bestellen`);
   await expect(guest.getByTestId("menu-Margherita")).toContainText("Allergene: Gluten, Milch (Laktose)");
   await expect(guest.getByText("Fragen zu Allergenen: bitte anrufen.")).toBeVisible();
@@ -76,7 +82,7 @@ test("Gast bestellt zum Abholen (bar), Restaurant nimmt an, meldet bereit und ab
 test("Lieferung: Fahrer sieht Adresse und Betrag, fährt los und liefert bar", async ({ page, context, baseURL }) => {
   const { h, item } = await restaurant({ delivery: true, cashDelivery: true });
   await saveZone(h.id, null, { name: "Stadt", postalCodes: ["9000"], minOrderRappen: 0, feeRappen: 500, freeFromRappen: null, extraMinutes: 0 }, "e2e");
-  const { order } = await createOnlineOrder(h, { kind: "delivery", time: "asap", payment: "cash", name: "Ben", phone: "079 222 33 44", email: "", language: "de", lines: [{ itemId: item.id, quantity: 1, optionIds: [], note: "" }], address: { street: "Marktgasse", houseNo: "5", postalCode: "9000", city: "St. Gallen", bell: "Muster" } });
+  const { order } = await createOnlineOrder(h, { kind: "delivery", time: "asap", payment: "cash", name: "Ben", phone: "079 222 33 44", email: "", language: "de", lines: [{ itemId: item.id, quantity: 1, optionIds: [], note: "" }], address: { street: "Marktgasse", houseNo: "5", postalCode: "9000", city: "St. Gallen", bell: "Muster" } }, { now: NOON });
   await acceptOrder(h, order.id, 0, "e2e");
   await login(context, baseURL!, h.id, "driver");
   await page.goto(`/admin/${h.id}`);
