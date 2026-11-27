@@ -11,8 +11,8 @@ describe("Pontivo-Startseite: Texte", () => {
   });
   it("ohne Überschreibung gelten die Standardtexte, Platzhalter werden ersetzt", () => {
     const s = resolveSite(null, vars);
-    expect(s.text("hero.lead")).toContain("Pontivo bringt Online-Buchung");
-    expect(s.text("hero.lead")).toContain("Booking.com läuft weiter");
+    expect(s.text("hero.lead")).toContain("Pontivo bringt Gäste von Google");
+    expect(s.text("hero.lead")).toContain("Booking.com und Airbnb");
     expect(s.faq[9].a).toContain("1.9 %");
     expect(s.text("hero.lead")).not.toContain("{");
     expect(s.faq[9].a).toContain("per E-Mail an info@pontivo.ch;");
