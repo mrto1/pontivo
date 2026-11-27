@@ -35,7 +35,7 @@ Hotels bekommen eine Website mit Direktbuchung. Der Gast bucht, zahlt mit TWINT,
 - E-Mails an Gast und Hotel.
 - DE und EN.
 
-**Nicht in v1** (nicht bauen): eigene Hotelverwaltung ausser Modul „Online-Check-in“ (Phase 2), Google-Hotel-Anbindung, WhatsApp, KI-Rezeption (der kostenpflichtige KI-Chat für Gäste ist davon ausgenommen, siehe 14b), Programm-Marktplatz, Gutscheine, Pakete, Restaurant-Kasse, Zahlung im Hotel, Kreditkarten-Garantie.
+**Nicht in v1** (nicht bauen): eigene Hotelverwaltung ausser Modul „Online-Check-in“ (Phase 2), WhatsApp, KI-Rezeption (der kostenpflichtige KI-Chat für Gäste ist davon ausgenommen, siehe 14b), Programm-Marktplatz, Gutscheine, Pakete, Restaurant-Kasse, Zahlung im Hotel, Kreditkarten-Garantie.
 
 ---
 
@@ -1386,3 +1386,35 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 - **Weitere Funktionen:** Funktionen, die zur Betriebsart passen (`modulesForKind`), aber aus sind, stehen als «Weitere Funktionen für Ihren Betrieb» mit Kurzbeschreibung und den Abläufen, die sie mitbringen; Inhaber und Manager mit Link zu Einstellungen → Funktionen, alle anderen mit dem Hinweis, die Inhaberin oder den Inhaber zu fragen. Ebenso «Mit weiteren Funktionen» bei den Abläufen und «Begriffe zu weiteren Funktionen».
 - Die Checkliste «Erste Woche» nutzt dieselben Menüs; Inhaber eines Restaurants bekommen Aufgaben zu Speisekarte, Tischen, Reservation und Tisch-QR.
 - Abnahme: `tests/integration/help.test.ts`, `tests/unit/help-content.test.ts`, `tests/unit/guide.test.ts`.
+
+## 19.66 Bauweise: gemeinsame Formular-Aktion, Fehler, Stile, Test-Uhr
+
+- **Formular-Aktionen im Admin** laufen über `hotelAction` (`src/lib/hotel-action.ts`): Betrieb aus dem Feld `hotelId`, Rolle, Bereich und Modul prüfen, Aktion ausführen, zurück auf die Seite mit `?msg=`. Optionen: `keep` (Parameter immer), `reopen` (nur bei Fehler, Seitenleiste bleibt offen), `anchor`, `fail` (Vorsatz der Fehlermeldung, Standard «Nicht gespeichert»). Die Aktion darf `{ to }` zurückgeben (eigenes Ziel).
+- **Fehler:** Fachliche Fehlerklassen erben von `UserError` (`src/domain/errors.ts`); nur ihre Meldung und Eingabefehler (Zod) erscheinen beim Benutzer. Alle anderen Fehler sind Programmfehler (Fehlerseite, Protokoll). Meldungen von Stripe gehen über `viaStripe` (`src/integrations/stripe/errors.ts`) als «Stripe: …».
+- **Grosse Seiten:** Aktionen in `actions.ts` neben der Seite, Formular-Umwandlung als reine Logik in `src/domain` (z. B. `src/domain/block-form.ts` für den Website-Editor).
+- **Stile:** `app/globals.css` bindet in fester Reihenfolge ein: `styles/base.css`, `admin.css`, `site.css`, `features.css`, `consistency.css`, `utilities.css`. Keine festen Inline-Styles; Hilfsklassen stehen in `utilities.css`.
+- **Test-Uhr:** End-to-End-Tests geben die Uhrzeit per Kopfzeile `x-pontivo-now` vor (`src/lib/clock.ts`), nur mit `E2E_CLOCK=1` und nie in Produktion. Genutzt von der Online-Bestellung (Abholzeiten).
+- Abnahme: `tests/unit/hotel-action.test.ts`, `tests/unit/build-patterns.test.ts` (neue Admin-Seiten ohne eigene Fehlerbehandlung, keine festen Inline-Styles), `tests/unit/block-form.test.ts`, `tests/unit/clock.test.ts`, `tests/e2e/online-orders.spec.ts`.
+
+## 19.67 Google: Unternehmensprofil, kostenlose Buchungslinks, Reservieren und Bestellen
+
+- **Modul `google`** (Standard an, Gruppe «Verkauf und Schnittstellen»), Seite `/admin/<id>/google` (Einstellungen → Verkauf → Google), Rolle Manager. Einstellungen in `hotel_modules.settings`: `reserve`, `order`, `hotelLinks` (`off` | `requested` | `active`), `requestedAt`, `activeAt`.
+- **Herkunft:** Links mit `?ref=google` (`src/domain/google.ts`, nur Werte aus `REFERRERS`). Die Buchungsseite, die Tischreservation und die Online-Bestellung tragen die Herkunft durch (Suchformular, Formularfeld) und speichern sie in `bookings.referrer`, `pos_reservations.referrer`, `online_orders.referrer` (Migration 0109). Die Statistik zeigt Direktbuchungen mit Herkunft Google als «Direkt über Google»; die Google-Seite zählt Buchungen, Reservationen und Bestellungen der letzten 30 Tage.
+- **1. Unternehmensprofil:** Links zum Kopieren für Website, Buchen (Unterkunft), Tisch reservieren (wenn Online-Reservation an) und Online bestellen (wenn Online-Bestellung live), mit Anleitung für business.google.com.
+- **2. Kostenlose Buchungslinks (nur Unterkunft):** Prüfliste nach den Inhaltsanforderungen von Channex für den Kanal «Google Hotel Search» (docs.channex.io/google/google-hotel-ads): live, Adresse, Telefon, Koordinaten (Baustein «Lage»), Foto, Beschreibung, Tarif mit Stornoregel, Channel-Manager verbunden. Erst vollständig kann der Betrieb anfragen; die Plattform erhält einen Alarm, legt den Kanal in Channex an, ordnet Zimmer und Tarife zu und setzt unter Plattform-Verwaltung → Vertrieb → Google den Status auf «aktiv». Der Buchungslink mit den Platzhaltern von Channex (`(CHECKIN_DATE)`, `(CHECKOUT_DATE)`, `(ADULTS)`) führt auf `/<lang>/book?…&ref=google`.
+- **3. Reservieren und Bestellen mit Google (Restaurant):** Schalter `reserve`/`order`, nur wenn Online-Reservation bzw. Online-Bestellung läuft. Pontivo erzeugt die Feeds für das Google Actions Center (Reservations Redirect und Ordering Redirect, developers.google.com/actions-center): Entity-Feed (`entity_id` = ID des Betriebs, Name, Telefon im Format +41, Website, Lage), Action-Feed (`TABLE_RESERVATION` bzw. `food_ordering_info` mit `DELIVERY`/`TAKEOUT`), Beschreibungen `reservewithgoogle.entity` und `reservewithgoogle.action.v2`. Plattform-Verwaltung → Google: Liste der Betriebe und Feeds zum Herunterladen. Der tägliche Upload per SFTP folgt, sobald Pontivo im Actions Center als Partner zugelassen ist.
+- Abnahme: `tests/unit/google.test.ts`, `tests/integration/google.test.ts`.
+
+## 19.68 SMS-Erinnerung vor Tischreservationen
+
+- Freiwillig je Betrieb (Einstellungen → Reservation → «SMS-Erinnerung»): `restaurant_settings.sms_reminder`, `sms_reminder_hours` (1–48, Standard 3), `sms_reminder_accepted_at` (Migration 0110). Einschalten nur mit Häkchen «Kosten akzeptiert» (Zeitpunkt wird gespeichert, Protokoll).
+- **Kosten trägt der Betrieb:** jede gesendete SMS ist eine verrechenbare Gast-SMS (`sms_outbox.billable`) zum Selbstkostenpreis `SMS_GUEST_PRICE_RAPPEN` auf der Monatsrechnung (wie SPEC 20.4). Nicht gesendete SMS (ASPSMS nicht eingerichtet, Nummer unbrauchbar) kosten nichts. Die Seite zeigt Preis und Anzahl des laufenden Monats.
+- Job `table-reservations` (alle 5 Minuten): einmal je bestätigter Reservation mit Telefonnummer, ohne Halbpension-Reservationen, wenn der Beginn innerhalb der eingestellten Stunden liegt (`pos_reservations.sms_reminder_sent_at`). Text in der Sprache des Gastes (DE, EN, FR, IT) mit Datum, Zeit, Personen und Link zum Absagen oder Ändern (`/<lang>/tisch/<token>`).
+- Abnahme: `tests/integration/sms-reminder.test.ts`.
+
+## 19.69 Funktionspakete
+
+- Pakete (`src/domain/packages.ts`) schalten mehrere Funktionen auf einmal: **Unterkunft Basis** (Rechnung, Statistik, Gutscheine, Gäste-Mails, Anfragen, Bewertungen, Monatsmail, Google), **Hotelbetrieb** (Rezeption, Housekeeping, Online-Check-in, Gäste-Notizen, Gruppen, Posteingang), **Ferienwohnungen verwalten** (Eigentümerabrechnung, Nuki; nur ganze Wohnungen), **Restaurant**, **Restaurant-Kasse** (CHF 29 pro Monat), **Mehr Direktbuchungen** (Preisempfehlung, Newsletter, Google), **Firmen und Treuhand** (Debitoren, Buchhaltungs-Export). Funktionen, die es für die Betriebsart nicht gibt, fallen aus dem Paket; reine Restaurants sehen keine Unterkunftspakete.
+- **Einrichtung:** Schritt «Was brauchen Sie?» zeigt die Pakete als Kacheln. Vorauswahl beim ersten Besuch: Unterkunft Basis, bei Hotels und B&Bs dazu Hotelbetrieb; Restaurants: Restaurant. Gewählte Pakete schalten ihre Funktionen ein, nicht gewählte ihre Funktionen aus (ausser ein gewähltes Paket enthält sie). Funktionen ausserhalb der Pakete bleiben unberührt.
+- **Funktionen-Seite:** oben die Pakete mit Stand (An, Teilweise, Aus) und Knopf zum Ein- oder Ausschalten; beim Ausschalten bleiben Funktionen an, die ein anderes ganz eingeschaltetes Paket braucht. Darunter wie bisher jede Funktion einzeln.
+- Abnahme: `tests/unit/packages.test.ts`, `tests/e2e/onboarding.spec.ts`.

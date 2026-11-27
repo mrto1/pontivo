@@ -301,3 +301,17 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 
 - [x] Entschieden (SPEC 19.61): QR-Bestellungen gehen ohne Freigabe durch das Personal direkt in die Küche (Begrenzung 5 Bestellungen je Tisch in 10 Minuten bleibt).
 - [ ] ASSUMPTION (SPEC 19.62): Halbpension-Gäste bekommen eine feste Abendessenszeit (Einstellung) und einen automatisch zugeteilten Tisch; keine Zeitwahl und keine Mitteilung an den Gast. Gewünscht: Gast wählt die Zeit im Buchungsprozess oder per Link? Auswahlmenü für Halbpension?
+
+## Google (SPEC 19.67)
+- [ ] **Kostenlose Buchungslinks:** Mit dem Channex-Konto als Hotel Center gehen Buchungen aus Google laut Channex auf die «Instant booking page» von Channex, nicht zu Pontivo. Damit Google auf die Pontivo-Buchung führt, braucht Pontivo ein eigenes Hotel Center (Vereinbarung mit Google, meist ab rund 25 Häusern) und trägt dort den Buchungslink mit Platzhaltern ein. Entscheid Betreiber: wann beantragen?
+- [ ] **Actions Center (Reservieren/Bestellen):** Pontivo muss als Partner zugelassen werden (Partner Portal, SFTP-Zugang). Bis dahin nur Feeds zum Herunterladen; Upload per SFTP noch nicht gebaut (Zugangsdaten in env, täglicher Job).
+- [ ] ASSUMPTION: Adresse im Entity-Feed als `location.address` mit `street_address`, `locality`, `postal_code`, `country` (Beispiele der Doku); beim Onboarding mit Google prüfen.
+- [ ] Google Business Profile API (Links automatisch setzen) bewusst nicht genutzt: braucht Zugang von Google und Anmeldung des Betriebs; heute kopiert der Betrieb die Links selbst.
+- [ ] ASSUMPTION: Prüfliste «Tarif mit Stornoregel» = mindestens ein aktiver Tarif (jeder Tarif hat eine Stornoregel).
+
+## SMS-Erinnerung (SPEC 19.68)
+- [ ] Preis je SMS = `SMS_GUEST_PRICE_RAPPEN` (Standard CHF 0.08, Selbstkosten ASPSMS). Bei Preisänderung von ASPSMS anpassen; die Zustimmung der Betriebe nennt den Preis zum Zeitpunkt des Einschaltens nicht ausdrücklich als fix.
+- [ ] SMS-Erinnerung auch für Hotelgäste vor der Anreise? Heute nur Tischreservationen.
+
+## Funktionspakete (SPEC 19.69)
+- [ ] Preise je Paket: heute nur «Restaurant-Kasse» mit Aufpreis; die übrigen Pakete sind in der Gebühr enthalten. Soll die Preisseite nach Paketen gegliedert werden?
