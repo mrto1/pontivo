@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://www.opentravel.org/OTA/2003/05"
+           targetNamespace="http://www.opentravel.org/OTA/2003/05"
+           elementFormDefault="qualified">
+  <xs:include schemaLocation="ota_common_types.xsd" />
+  <xs:include schemaLocation="common_types.xsd" />
+  <xs:simpleType name="timeUnit">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Day" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="minMaxMessageType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="SetMinLOS" />
+      <xs:enumeration value="SetMaxLOS" />
+      <xs:enumeration value="SetForwardMinStay" />
+      <xs:enumeration value="SetForwardMaxStay" />
+      <xs:enumeration value="FullPatternLOS" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="restrictionStatusStatus">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Open" />
+      <xs:enumeration value="Close" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="restrictionStatusRestriction">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Arrival" />
+      <xs:enumeration value="Departure" />
+      <xs:enumeration value="Master" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="advancedBookingOffset">
+    <xs:union memberTypes="AdvancedBookingWindowValue Duration" />
+  </xs:simpleType>
+  <xs:simpleType name="fullPatternLos">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[YyNn]{1,30}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="availStatusMessage">
+    <xs:sequence>
+      <xs:element name="StatusApplicationControl" type="statusApplicationControl" />
+      <xs:element name="RestrictionStatus" minOccurs="0">
+        <xs:complexType>
+          <xs:attribute name="Status" type="restrictionStatusStatus" />
+          <xs:attribute name="Restriction" type="restrictionStatusRestriction" />
+          <xs:attribute name="MinAdvancedBookingOffset" type="advancedBookingOffset" />
+          <xs:attribute name="MaxAdvancedBookingOffset" type="advancedBookingOffset" />
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="LengthsOfStay" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence minOccurs="1" maxOccurs="unbounded">
+            <xs:element name="LengthOfStay">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="LOS_Pattern" minOccurs="0">
+                    <xs:complexType>
+                      <xs:attribute name="FullPatternLOS" type="fullPatternLos" />
+                    </xs:complexType>
+                  </xs:element>
+                </xs:sequence>
+                <xs:attribute name="Time" type="xs:integer" />
+                <xs:attribute name="TimeUnit" type="timeUnit" />
+                <xs:attribute name="MinMaxMessageType" type="minMaxMessageType" use="required" />
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+          <xs:attribute name="FixedPatternLength" type="xs:nonNegativeInteger" />
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="BookingLimit" type="xs:nonNegativeInteger" />
+  </xs:complexType>
+  <xs:element name="OTA_HotelAvailNotifRQ">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="POS" type="pos" minOccurs="0" />
+        <xs:element name="AvailStatusMessages">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="AvailStatusMessage" type="availStatusMessage" minOccurs="1" maxOccurs="unbounded" />
+            </xs:sequence>
+            <xs:attribute name="HotelCode" type="xs:string" use="required" />
+          </xs:complexType>
+        </xs:element>
+      </xs:all>
+      <xs:attribute name="TimeStamp" type="xs:dateTime" use="required" />
+      <xs:attribute name="EchoToken" type="xs:string" />
+      <xs:attribute name="Version" type="xs:decimal" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

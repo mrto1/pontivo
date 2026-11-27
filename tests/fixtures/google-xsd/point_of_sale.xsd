@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="private_rates.xsd" />
+  <xs:element name="PointsOfSale">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="PointOfSale" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="DisplayNames" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="display_text" type="xs:string" use="required" />
+                  <xs:attribute name="display_language" type="xs:language" use="required" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="Match" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="country">
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:pattern value="[A-Z][A-Z]" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="language" type="xs:language" />
+                  <xs:attribute name="currency">
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:pattern value="[A-Z][A-Z][A-Z]" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="device">
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:enumeration value="desktop" />
+                        <xs:enumeration value="mobile" />
+                        <xs:enumeration value="tablet" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="sitetype">
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:enumeration value="localuniversal" />
+                        <xs:enumeration value="placepage" />
+                        <xs:enumeration value="mapresults" />
+                        <xs:enumeration value="hotelfinder" />
+                        <xs:enumeration value="contentads" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="brand">
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:minLength value="1"/>
+                        <xs:maxLength value="50"/>
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                  <xs:attribute name="status">
+                    <xs:simpleType>
+                      <xs:restriction base="xs:string">
+                        <xs:enumeration value="yes" />
+                        <xs:enumeration value="never" />
+                      </xs:restriction>
+                    </xs:simpleType>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="Phone" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Fee" minOccurs="2" maxOccurs="2">
+                      <xs:complexType>
+                        <xs:attribute name="type">
+                          <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                              <xs:enumeration value="per_minute" />
+                              <xs:enumeration value="booking" />
+                            </xs:restriction>
+                          </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="value">
+                          <xs:simpleType>
+                            <xs:restriction base="xs:decimal">
+                              <xs:fractionDigits value="2" />
+                            </xs:restriction>
+                          </xs:simpleType>
+                        </xs:attribute>
+                        <xs:attribute name="currency">
+                          <xs:simpleType>
+                            <xs:restriction base="xs:string">
+                              <xs:pattern value="[A-Z][A-Z][A-Z]" />
+                            </xs:restriction>
+                          </xs:simpleType>
+                        </xs:attribute>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="number" use="required" type="xs:string" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="URL" type="xs:anyURI" minOccurs="0" maxOccurs="1" />
+              <xs:element name="LPURL" type="xs:anyURI" minOccurs="0" maxOccurs="1"/>
+              <xs:element name="LogoURL" type="xs:anyURI" minOccurs="0" maxOccurs="1" />
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="type">
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:enumeration value="country_exclusive_match" />
+                  <xs:enumeration value="exclusive" />
+                  <xs:enumeration value="phone" />
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:attribute>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="PrivateRates" type="PrivateRatesType" minOccurs="0" />
+      </xs:sequence>
+      <xs:attribute name="partner" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

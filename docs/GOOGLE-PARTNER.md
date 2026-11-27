@@ -28,12 +28,12 @@ Gesendet wird erst, wenn `GOOGLE_HOTELS_PARTNER_KEY` und `GOOGLE_HOTELS_SEND=1` 
    - Abruf-Adresse der Hotelliste und Landingpage-Datei (mit `?token=` aus `GOOGLE_HOTELS_FEED_TOKEN`)
    - Anzeigename und Symbol der Landingpage («Pontivo» bzw. «Direkt beim Hotel»)
 4. **Hotelliste hochladen** und im Matching-Report prüfen, ob Google die Häuser zuordnet (Maps-Eintrag muss zur Adresse passen).
-5. **Nachrichten prüfen:** je Pilothaus die Downloads (Plattform → Google) gegen Googles Schemas validieren, mit Googles Testwerkzeugen (Feed-Status im Hotel Center) und den Testreisen von Google (Landingpage-Test).
+5. **Nachrichten prüfen:** je Pilothaus die Downloads (Plattform → Google) gegen Googles Schemas vergleichen (die Schema-Prüfung läuft schon in den Tests), mit Googles Testwerkzeugen (Feed-Status im Hotel Center) und den Testreisen von Google (Landingpage-Test).
 6. **Zertifizierung** mit dem technischen Ansprechpartner von Google; danach «Live on Google» je Haus.
 7. Betriebe auf der Plattform-Seite **aufnehmen** (nur wenn die Voraussetzungen erfüllt sind). Betriebe, die schon über Channex bei Google laufen, dort zuerst abschalten.
 
 ## Bekannte Grenzen (QUESTIONS.md)
 
-- Pflicht-Zusatzleistungen: Betriebe damit sind noch nicht zugelassen.
-- Reihenfolge einzelner XML-Elemente und das Zeitformat der Stornofrist beruhen auf den Beispielen der Doku und sind vor dem Livegang gegen die Schemas zu prüfen.
+- Pflicht-Zusatzleistungen gehen als `Fee` an Google (Betrag je Einheit, nur Typ «Betrag»); Prozentgebühren und Staffeln gibt es bei Pontivo nicht.
+- Reihenfolge einzelner XML-Elemente und das Zeitformat der Stornofrist beruhen auf den Beispielen der Doku und sind durch die XSD-Prüfung in den Tests abgedeckt (`tests/fixtures/google-xsd`, Stand 2026-11). Bei Änderungen von Google die Dateien neu laden: `https://www.gstatic.com/ads-travel/hotels/api/<name>.xsd`.
 - Pull-Modus (Live-Preise) und Promotions nicht gebaut.

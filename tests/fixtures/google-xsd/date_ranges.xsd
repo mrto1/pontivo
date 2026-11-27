@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="DaySet">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[MmTtWwHhFfSsUu]{1,7}"/>
+      <!-- Each (case-insensitive) day-letter must appear no more than once. -->
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="DateOrDateTime">
+    <xs:union memberTypes="xs:date xs:dateTime"/>
+  </xs:simpleType>
+
+  <xs:complexType name="DateRange">
+    <!-- At least one of "start" or "end" is required -->
+    <xs:attribute name="start" type="xs:date"/>
+    <xs:attribute name="end" type="xs:date"/>
+    <!-- If both are specified, start must be <= end. -->
+    <xs:attribute name="days_of_week" type="DaySet"/>
+  </xs:complexType>
+
+  <xs:complexType name="DateRanges">
+    <xs:sequence>
+      <xs:element name="DateRange" type="DateRange" minOccurs="1"
+                  maxOccurs="99"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DateTimeRange">
+    <!-- At least one of "start" or "end" is required -->
+    <!-- If both are specified, "start" must be <= "end" -->
+    <!-- If "start" is provided as date "YYYY-MM-DD", it is interpreted as datetime "YYYY-MM-DDT00:00:00". -->
+    <!-- If "end" is provided as date "YYYY-MM-DD", it is interpreted as datetime "YYYY-MM-DDT23:59:59". -->
+    <xs:attribute name="start" type="DateOrDateTime"/>
+    <xs:attribute name="end" type="DateOrDateTime"/>
+    <xs:attribute name="days_of_week" type="DaySet"/>
+  </xs:complexType>
+
+  <xs:complexType name="DateTimeRanges">
+    <xs:sequence>
+      <xs:element name="DateRange" type="DateTimeRange" minOccurs="1"
+                  maxOccurs="99"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="StayDates">
+    <xs:sequence>
+      <xs:element name="DateRange" type="DateRange" minOccurs="1"
+                  maxOccurs="99"/>
+    </xs:sequence>
+    <xs:attribute name="application" type="xs:string"  use="required"/>
+  </xs:complexType>
+</xs:schema>

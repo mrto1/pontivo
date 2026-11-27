@@ -4,7 +4,7 @@ import { extras, googleAriState, hotels, inventoryDays, ratePlans, ratesDays, ro
 import { todayIn, type Day } from "../domain/dates";
 import {
   availabilityMessage, availRuns, GOOGLE_ARI_DAYS, hotelListFeed, inventoryMessage, inventoryRuns, landingPagesFile, propertyDataMessage,
-  rangeDays, rateMessage, rateRuns, sha, taxFeeMessage, taxSeparate, type GoogleKind, type GoogleReply, type ListingHotel, type Meta, type PlanModel, type RoomModel,
+  pricesBeforeTax, rangeDays, rateMessage, rateRuns, sha, taxFeeMessage, type FeeModel, type GoogleKind, type GoogleReply, type ListingHotel, type Meta, type PlanModel, type RoomModel,
 } from "../domain/google-hotels";
 import { env } from "../env";
 import { googleSendEnabled, partnerKey, postGoogle, GoogleHttpError } from "../integrations/google-hotels/client";
@@ -35,9 +35,6 @@ export async function listingEligibility(hotel: Hotel, now = new Date()): Promis
   if (!plans.length) missing.push("Kein aktives Zimmer mit Tarif");
   const rule = await taxRuleFor(hotel, todayIn(hotel.timezone, now));
   if (!rule || rule.status === "needs_confirmation") missing.push("Kurtaxe-Satz der Gemeinde nicht bestätigt");
-  // ASSUMPTION: Pflicht-Zusatzleistungen hängen von Personen und Nächten ab; Google bekäme einen zu tiefen Preis, darum vorerst nicht zulassen.
-  const [mand] = await db().select({ id: extras.id }).from(extras).where(and(eq(extras.hotelId, hotel.id), eq(extras.active, true), eq(extras.mandatory, true))).limit(1);
-  if (mand) missing.push("Pflicht-Zusatzleistungen sind in den Google-Preisen noch nicht möglich");
   const s = await googleSettings(hotel.id);
   if (s.hotelLinks === "active") missing.push("Kostenlose Buchungslinks laufen schon über Channex (dort zuerst abschalten)");
   const ok = missing.length === 0;
@@ -79,7 +76,7 @@ export const landingPagesXml = () => landingPagesFile(env().APP_BASE_URL);
 type Item<T> = { key: string; hash: string; value: T };
 export type Snapshot = {
   property: { hash: string; rooms: RoomModel[]; plans: PlanModel[] };
-  taxes: { hash: string; rule: Awaited<ReturnType<typeof taxRuleFor>>; included: boolean };
+  taxes: { hash: string; rule: Awaited<ReturnType<typeof taxRuleFor>>; included: boolean; fees: FeeModel[] };
   separate: boolean;
   inventory: Item<ReturnType<typeof inventoryRuns>>[];
   rate: Item<ReturnType<typeof rateRuns>>[];
@@ -98,7 +95,15 @@ export async function buildSnapshot(hotel: Hotel, now = new Date()): Promise<Sna
   const rates = rps.length ? await db().select().from(ratesDays).where(and(eq(ratesDays.hotelId, hotel.id), inArray(ratesDays.ratePlanId, rps.map((r) => r.id)), sql`${ratesDays.night} BETWEEN ${today}::date AND ${last}::date`)) : [];
   const rule = await taxRuleFor(hotel, today);
   const included = hotel.touristTaxIncludedInPrice;
-  const separate = taxSeparate(rule, included);
+  // Pflicht-Zusatzleistungen (z. B. Endreinigung) gehen als Gebühr an Google; nur für Zimmer, die es gibt
+  const mand = await db().select().from(extras).where(and(eq(extras.hotelId, hotel.id), eq(extras.active, true), eq(extras.mandatory, true)));
+  const roomIds = new Set(rts.map((r) => r.id));
+  const fees: FeeModel[] = mand
+    .map((x) => ({ unit: x.unit, rappen: x.priceRappen, roomIds: x.roomTypeIds.filter((r) => roomIds.has(r)), restricted: x.roomTypeIds.length > 0 }))
+    .filter((x) => !x.restricted || x.roomIds.length > 0)
+    .map(({ unit, rappen, roomIds: ids }) => ({ unit, rappen, roomIds: ids.sort() }))
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+  const separate = pricesBeforeTax(rule, included, fees);
 
   const rooms: RoomModel[] = rts.map((r) => ({
     id: r.id, name: r.name, description: r.description ?? "", photos: r.photos, maxOccupancy: r.maxOccupancy, maxAdults: r.maxAdults, maxChildren: r.maxChildren,
@@ -113,7 +118,7 @@ export async function buildSnapshot(hotel: Hotel, now = new Date()): Promise<Sna
   const item = <T>(key: string, value: T, extra: unknown = null): Item<T> => ({ key, value, hash: sha({ value, extra }) });
   return {
     property: { hash: sha({ rooms, plans, lang: hotel.defaultLanguage }), rooms, plans },
-    taxes: { hash: sha({ rule, included, currency: hotel.currency }), rule, included },
+    taxes: { hash: sha({ rule, included, fees, currency: hotel.currency }), rule, included, fees },
     separate,
     roomOf,
     inventory: rts.map((r) => item(r.id, inventoryRuns(inv.filter((i) => i.roomTypeId === r.id), true, days))),
@@ -143,7 +148,7 @@ function buildJobs(hotel: Hotel, snap: Snapshot, state: Map<string, string | nul
     jobs.push({ kind: "property", stateKind: "property", keys: [{ key: hotel.id, hash: snap.property.hash }], xml: propertyDataMessage(metaOf("prop", 0), hotel.id, snap.property.rooms, snap.property.plans, hotel.defaultLanguage) });
   }
   if (state.get(`taxes|${hotel.id}`) !== snap.taxes.hash) {
-    jobs.push({ kind: "taxes", stateKind: "taxes", keys: [{ key: hotel.id, hash: snap.taxes.hash }], xml: taxFeeMessage(metaOf("tax", 0), hotel.id, snap.taxes.rule, snap.taxes.included, hotel.currency) });
+    jobs.push({ kind: "taxes", stateKind: "taxes", keys: [{ key: hotel.id, hash: snap.taxes.hash }], xml: taxFeeMessage(metaOf("tax", 0), hotel.id, snap.taxes.rule, snap.taxes.included, hotel.currency, snap.taxes.fees) });
   }
   chunks(changed("inventory", snap.inventory)).forEach((c, n) => jobs.push({ kind: "inventory", stateKind: "inventory", keys: c.map(({ key, hash }) => ({ key, hash })), xml: inventoryMessage(metaOf("inv", n), hotel.id, c.map((i) => ({ roomId: i.key, runs: i.value }))) }));
   chunks(changed("rate", snap.rate)).forEach((c, n) => jobs.push({ kind: "rate", stateKind: "rate", keys: c.map(({ key, hash }) => ({ key, hash })), xml: rateMessage(metaOf("rate", n), hotel.id, c.map((i) => ({ roomId: snap.roomOf.get(i.key)!, planId: i.key, runs: i.value })), hotel.currency, snap.separate) }));

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://www.opentravel.org/OTA/2003/05"
+           targetNamespace="http://www.opentravel.org/OTA/2003/05"
+           elementFormDefault="qualified">
+  <xs:include schemaLocation="ota_common_types.xsd" />
+  <xs:simpleType name="currencyCode">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Z][A-Z][A-Z]" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="rateAmountMessage">
+    <xs:sequence>
+      <xs:element name="StatusApplicationControl" type="statusApplicationControl" />
+      <xs:element name="Rates" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Rate">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="BaseByGuestAmts">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="BaseByGuestAmt" minOccurs="1" maxOccurs="unbounded">
+                          <xs:complexType>
+                            <xs:attribute name="AmountBeforeTax" type="xs:decimal" />
+                            <xs:attribute name="AmountAfterTax" type="xs:decimal" />
+                            <xs:attribute name="CurrencyCode" type="currencyCode" use="required" />
+                            <xs:attribute name="NumberOfGuests" type="xs:nonNegativeInteger" />
+                          </xs:complexType>
+                        </xs:element>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                  <xs:element name="AdditionalGuestAmounts" minOccurs="0">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="AdditionalGuestAmount" minOccurs="1" maxOccurs="unbounded">
+                          <xs:complexType>
+                            <xs:attribute name="AgeQualifyingCode" type="xs:positiveInteger" use="required" />
+                            <xs:attribute name="Amount" type="xs:decimal" use="required" />
+                            <xs:attribute name="MaxAge" type="xs:positiveInteger" />
+                          </xs:complexType>
+                        </xs:element>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:sequence>
+                <xs:attribute name="UnitMultiplier" type="xs:positiveInteger" />
+                <xs:attribute name="RateTimeUnit">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:enumeration value="Day" />
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:attribute>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="OTA_HotelRateAmountNotifRQ">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="POS" type="pos" minOccurs="0" />
+        <xs:element name="RateAmountMessages">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="RateAmountMessage" type="rateAmountMessage" minOccurs="1" maxOccurs="unbounded"  />
+            </xs:sequence>
+            <xs:attribute name="HotelCode" type="xs:string" use="required" />
+          </xs:complexType>
+        </xs:element>
+      </xs:all>
+      <xs:attribute name="TimeStamp" type="xs:dateTime" use="required" />
+      <xs:attribute name="EchoToken" type="xs:string" />
+      <xs:attribute name="Version" type="xs:decimal" />
+      <xs:attribute name="NotifType">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="Delta" />
+            <xs:enumeration value="Overlay" />
+            <xs:enumeration value="Remove" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="NotifScopeType">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="ProductRate" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

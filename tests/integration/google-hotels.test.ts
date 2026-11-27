@@ -31,7 +31,7 @@ function recorder(fail: (k: GoogleKind) => boolean = () => false) {
 }
 
 describe("Google Hotelpreise: Partner-Anbindung (SPEC 19.70)", () => {
-  it("Voraussetzungen: ohne Lage nicht zugelassen; Pflicht-Extras und Channex-Kanal blockieren; Aufnahme nur wenn erfüllt", async () => {
+  it("Voraussetzungen: ohne Lage nicht zugelassen; der Channex-Kanal blockiert; Aufnahme nur wenn erfüllt", async () => {
     const h = await makeHotel({}, [{ name: "DZ", roomCount: 1, maxAdults: 2, maxChildren: 0, maxOccupancy: 2, basePriceRappen: 15000 }]);
     await db().update(hotels).set({ addressLine: "Marktplatz 1", postalCode: "8750", city: "Glarus" }).where(eq(hotels.id, h.hotel.id));
     let e = await listingEligibility(await reload(h.hotel.id));
@@ -44,9 +44,8 @@ describe("Google Hotelpreise: Partner-Anbindung (SPEC 19.70)", () => {
     expect(e).toMatchObject({ ok: true, missing: [] });
     expect(e.entry).toMatchObject({ id: r.hotel.id, canton: "GL", lat: 47.04, lng: 9.07, phone: "+41556401010", country: "CH" });
 
-    const [x] = await db().insert(extras).values({ hotelId: r.hotel.id, name: { de: "Endreinigung" }, priceRappen: 5000, unit: "per_booking", mandatory: true }).returning();
-    expect((await listingEligibility(r.hotel)).missing.join()).toMatch(/Pflicht-Zusatzleistungen/);
-    await db().update(extras).set({ active: false }).where(eq(extras.id, x!.id));
+    // Pflicht-Zusatzleistungen blockieren nicht mehr, sie gehen als Gebühr an Google
+    await db().insert(extras).values({ hotelId: r.hotel.id, name: { de: "Endreinigung" }, priceRappen: 5000, unit: "per_booking", mandatory: true });
     expect((await listingEligibility(r.hotel)).ok).toBe(true);
 
     await setHotelLinksStatus(r.hotel.id, "active", "t");
@@ -59,6 +58,25 @@ describe("Google Hotelpreise: Partner-Anbindung (SPEC 19.70)", () => {
     expect(ov).toMatchObject({ partner: true, missing: [] });
     await setPartner(r.hotel, false, "t");
     expect((await googleSettings(r.hotel.id)).partner).toBe(false);
+  });
+
+  it("Pflicht-Zusatzleistungen gehen als Gebühr an Google, Preise «vor Steuern»", async () => {
+    const r = await ready();
+    const rt = r.rooms[0]!.roomType.id;
+    await db().insert(extras).values([
+      { hotelId: r.hotel.id, name: { de: "Endreinigung" }, priceRappen: 5000, unit: "per_booking", mandatory: true },
+      { hotelId: r.hotel.id, name: { de: "Bettwäsche" }, priceRappen: 800, unit: "per_person_night", mandatory: true, roomTypeIds: [rt] },
+      { hotelId: r.hotel.id, name: { de: "Frühstück" }, priceRappen: 2000, unit: "per_person_night", mandatory: false },
+    ]);
+    const snap = await buildSnapshot(r.hotel);
+    expect(snap.taxes.fees).toHaveLength(2);
+    expect(snap.separate).toBe(true);
+    const xml = (await previewMessages(r.hotel)).find((m) => m.kind === "taxes")!.xml;
+    expect(xml).toContain("<Fees>");
+    expect(xml).toContain("<Amount>50.00</Amount>");
+    expect(xml).toContain("<Amount>8.00</Amount>");
+    expect(xml).not.toContain("20.00");
+    expect(xml).toContain(`<RoomType id="${rt}"/>`);
   });
 
   it("Hotelliste enthält nur Betriebe im Feed; Landingpage-Datei zeigt auf die Plattform", async () => {

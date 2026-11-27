@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://www.opentravel.org/OTA/2003/05"
+           targetNamespace="http://www.opentravel.org/OTA/2003/05"
+           elementFormDefault="qualified">
+  <xs:include schemaLocation="ota_common_types.xsd" />
+  <xs:complexType name="inventory">
+    <xs:sequence>
+      <xs:element name="StatusApplicationControl">
+        <xs:complexType>
+          <xs:attribute name="Start" type="xs:date" use="required" />
+          <xs:attribute name="End" type="xs:date" use="required" />
+          <xs:attribute name="Mon" type="xs:boolean" />
+          <xs:attribute name="Tue" type="xs:boolean" />
+          <xs:attribute name="Weds" type="xs:boolean" />
+          <xs:attribute name="Thur" type="xs:boolean" />
+          <xs:attribute name="Fri" type="xs:boolean" />
+          <xs:attribute name="Sat" type="xs:boolean" />
+          <xs:attribute name="Sun" type="xs:boolean" />
+          <xs:attribute name="InvTypeCode" type="xs:string" use="required" />
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="InvCounts">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="InvCount">
+              <xs:complexType>
+                <xs:attribute name="Count" type="xs:integer" use="required" />
+                <xs:attribute name="CountType" use="required">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:integer">
+                        <xs:enumeration value="2" />
+                    </xs:restriction>
+                </xs:simpleType>
+                </xs:attribute>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="OTA_HotelInvCountNotifRQ">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="POS" type="pos" minOccurs="0" />
+        <xs:element name="Inventories">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Inventory" type="inventory" minOccurs="1" maxOccurs="unbounded" />
+            </xs:sequence>
+            <xs:attribute name="HotelCode" type="xs:string" use="required" />
+          </xs:complexType>
+        </xs:element>
+      </xs:all>
+      <xs:attribute name="TimeStamp" type="xs:dateTime" use="required" />
+      <xs:attribute name="EchoToken" type="xs:string" />
+      <xs:attribute name="Version" type="xs:decimal" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

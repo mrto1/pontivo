@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="date_ranges.xsd" />
+  <xs:include schemaLocation="common_types.xsd" />
+  <xs:simpleType name="Id">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Za-z0-9_\-.]{1,50}"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="RatePlan">
+    <xs:attribute name="id" type="Id" use="required"/>
+  </xs:complexType>
+  <xs:complexType name="RoomType">
+    <xs:attribute name="id" type="Id" use="required"/>
+  </xs:complexType>
+  <xs:complexType name="RoomTypes">
+    <xs:sequence>
+      <xs:element name="RoomType" type="RoomType" minOccurs="1"
+                  maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="RatePlans">
+    <xs:sequence>
+      <xs:element name="RatePlan" type="RatePlan" minOccurs="1"
+                  maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="applicableNights">
+    <xs:attribute name="max" type="xs:integer" />
+    <xs:attribute name="excluded" type="xs:integer" />
+  </xs:complexType>
+  <xs:complexType name="Brackets">
+    <xs:sequence>
+      <xs:element name="Bracket" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:attribute name="starts_at" type="xs:decimal" />
+          <xs:attribute name="amount" type="xs:decimal" />
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="base_amount" type="xs:decimal" />
+  </xs:complexType>
+  <xs:simpleType name="MaxAgeRange">
+    <xs:restriction base="xs:integer">
+      <xs:minInclusive value="0"/>
+      <xs:maxInclusive value="17"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="AgeBrackets">
+    <xs:sequence>
+      <xs:element name="AdultCharge" minOccurs="0">
+        <xs:complexType>
+          <xs:attribute name="amount" type="xs:decimal" />
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="ChildAgeBrackets" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="ChildAgeBracket" maxOccurs="unbounded">
+              <xs:complexType>
+                <xs:attribute name="max_age" type="MaxAgeRange" />
+                <xs:attribute name="amount" type="xs:decimal" />
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="taxFeeType">
+    <xs:all>
+      <xs:element name="BookingDates" type="DateRanges" minOccurs="0"/>
+      <xs:element name="CheckinDates" type="DateRanges" minOccurs="0"/>
+      <xs:element name="CheckoutDates" type="DateRanges" minOccurs="0"/>
+      <xs:element name="StayDates" type="StayDates" minOccurs="0"/>
+      <xs:element name="ApplicableNights" type="applicableNights" minOccurs="0" maxOccurs="1" />
+      <xs:element name="LengthOfStay" type="LengthOfStayRange" minOccurs="0"/>
+      <xs:element name="RoomTypes" type="RoomTypes" minOccurs="0"/>
+      <xs:element name="RatePlans" type="RatePlans" minOccurs="0"/>
+      <xs:element name="Brackets" type="Brackets" minOccurs="0"/>
+      <xs:element name="AgeBrackets" type="AgeBrackets" minOccurs="0"/>
+      <xs:element name="UserCountries" type="UserCountries" minOccurs="0"/>
+      <xs:element name="Type">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="amount" />
+            <xs:enumeration value="percent" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="Basis">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="room" />
+            <xs:enumeration value="person" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="Period">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="night" />
+            <xs:enumeration value="stay" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="Currency" minOccurs="0">
+        <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:pattern value="[A-Z][A-Z][A-Z]" />
+            </xs:restriction>
+          </xs:simpleType>
+      </xs:element>
+      <xs:element name="Amount" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:decimal">
+            <xs:minInclusive value="0.00" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+    </xs:all>
+  </xs:complexType>
+  <xs:element name="TaxFeeInfo">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Property" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="ID" type="xs:string" />
+              <xs:element name="Taxes" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Tax" type="taxFeeType" maxOccurs="unbounded" />
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="Fees" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Fee" type="taxFeeType" maxOccurs="unbounded" />
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:all>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="timestamp" type="xs:dateTime" use="required" />
+      <xs:attribute name="id" type="xs:string" use="required" />
+      <xs:attribute name="partner" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

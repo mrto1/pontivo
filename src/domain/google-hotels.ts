@@ -117,10 +117,10 @@ export function propertyDataMessage(m: Meta, hotelId: string, rooms: RoomModel[]
       <RoomID>${xmlText(r.id)}</RoomID>
       ${text("Name", r.name, lang)}
       ${text("Description", r.description || r.name, lang)}
-      <AllowablePackageIDs>${r.planIds.map((p) => `<AllowablePackageID>${xmlText(p)}</AllowablePackageID>`).join("")}</AllowablePackageIDs>${r.photos.slice(0, 10).map((p) => `
-      <PhotoURL><URL>${xmlText(p.url)}</URL>${p.alt ? `<Caption><Text text="${xmlText(p.alt)}" language="${xmlText(lang)}"/></Caption>` : ""}</PhotoURL>`).join("")}
+      <AllowablePackageIDs>${r.planIds.map((p) => `<AllowablePackageID>${xmlText(p)}</AllowablePackageID>`).join("")}</AllowablePackageIDs>
       <Capacity>${Math.min(99, Math.max(1, r.maxOccupancy))}</Capacity>
-      <AdultCapacity>${Math.min(99, Math.max(1, r.maxAdults))}</AdultCapacity>${r.maxChildren > 0 ? `\n      <ChildCapacity>${Math.min(99, r.maxChildren)}</ChildCapacity>` : ""}
+      <AdultCapacity>${Math.min(99, Math.max(1, r.maxAdults))}</AdultCapacity>${r.maxChildren > 0 ? `\n      <ChildCapacity>${Math.min(99, r.maxChildren)}</ChildCapacity>` : ""}${r.photos.slice(0, 10).map((p) => `
+      <PhotoURL>${p.alt ? `<Caption><Text text="${xmlText(p.alt)}" language="${xmlText(lang)}"/></Caption>` : ""}<URL>${xmlText(p.url)}</URL></PhotoURL>`).join("")}
     </RoomData>`).join("\n");
   const planXml = plans.map((p) => {
     const days = refundableDays(p.freeCancelHours);
@@ -268,9 +268,15 @@ ${msgs.join("\n")}
 
 // ---------------------------------------------------------------- Kurtaxe (TaxFeeInfo)
 
+/** Pflicht-Zusatzleistung (z. B. Endreinigung) als Gebühr: gleiche Einheiten wie in der Buchung; leere Zimmerliste = alle Zimmer */
+export type FeeModel = { unit: "per_booking" | "per_night" | "per_person" | "per_person_night"; rappen: number; roomIds: string[] };
+
 /** Ob die Kurtaxe zum Preis dazukommt und darum an Google gemeldet werden muss */
 export const taxSeparate = (rule: TaxRule | null, includedInPrice: boolean): boolean =>
   !includedInPrice && !!rule && rule.status !== "none" && (rule.adultRappen ?? 0) > 0;
+
+/** Ob Preise «vor Steuern» gemeldet werden: Kurtaxe oder Pflichtgebühren kommen zum Betrag dazu */
+export const pricesBeforeTax = (rule: TaxRule | null, includedInPrice: boolean, fees: FeeModel[]): boolean => taxSeparate(rule, includedInPrice) || fees.length > 0;
 
 /** Altersstufen der Kinder (0 … 17) aus der Kurtaxe-Regel: gleiche Sätze wie `ratePerPerson` */
 export function childBrackets(rule: TaxRule): { maxAge: number; rappen: number }[] {
@@ -285,8 +291,14 @@ export function childBrackets(rule: TaxRule): { maxAge: number; rappen: number }
   return out;
 }
 
-/** Kurtaxe je Person und Nacht als Steuer; ohne getrennte Kurtaxe eine leere Property (löscht frühere Angaben, Overlay) */
-export function taxFeeMessage(m: Meta, hotelId: string, rule: TaxRule | null, includedInPrice: boolean, currency: string): string {
+const FEE_BASIS = { per_booking: ["room", "stay"], per_night: ["room", "night"], per_person: ["person", "stay"], per_person_night: ["person", "night"] } as const;
+
+/**
+ * Kurtaxe (Steuer je Person und Nacht mit Altersstufen) und Pflichtgebühren (Fee) als TaxFeeInfo.
+ * Das Schema kennt weder action noch Rank an dieser Stelle; die Nachricht ersetzt den Stand des Betriebs.
+ * Ohne beides eine leere Property (löscht frühere Angaben).
+ */
+export function taxFeeMessage(m: Meta, hotelId: string, rule: TaxRule | null, includedInPrice: boolean, currency: string, fees: FeeModel[] = []): string {
   const taxes = rule && taxSeparate(rule, includedInPrice)
     ? `
     <Taxes>
@@ -299,13 +311,25 @@ export function taxFeeMessage(m: Meta, hotelId: string, rule: TaxRule | null, in
           <AdultCharge amount="${rappenToDecimal(rule.adultRappen ?? 0)}"/>
           <ChildAgeBrackets>${childBrackets(rule).map((b) => `<ChildAgeBracket max_age="${b.maxAge}" amount="${rappenToDecimal(b.rappen)}"/>`).join("")}</ChildAgeBrackets>
         </AgeBrackets>
-        <Rank>1</Rank>
       </Tax>
     </Taxes>`
     : "";
+  const feeXml = fees.length
+    ? `
+    <Fees>${fees.map((f) => `
+      <Fee>${f.roomIds.length ? `
+        <RoomTypes>${f.roomIds.map((r) => `<RoomType id="${xmlText(r)}"/>`).join("")}</RoomTypes>` : ""}
+        <Type>amount</Type>
+        <Basis>${FEE_BASIS[f.unit][0]}</Basis>
+        <Period>${FEE_BASIS[f.unit][1]}</Period>
+        <Currency>${currency}</Currency>
+        <Amount>${rappenToDecimal(f.rappen)}</Amount>
+      </Fee>`).join("")}
+    </Fees>`
+    : "";
   return `${HEAD}<TaxFeeInfo timestamp="${m.ts.toISOString()}" id="${messageId(m.id)}" partner="${xmlText(m.partner)}">
-  <Property action="overlay">
-    <ID>${xmlText(hotelId)}</ID>${taxes}
+  <Property>
+    <ID>${xmlText(hotelId)}</ID>${taxes}${feeXml}
   </Property>
 </TaxFeeInfo>
 `;

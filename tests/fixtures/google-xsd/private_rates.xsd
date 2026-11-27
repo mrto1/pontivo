@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="DeviceType">
+    <xs:restriction base='xs:string'>
+      <xs:enumeration value='mobile' />
+      <xs:enumeration value='tablet' />
+      <xs:enumeration value='desktop' />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="CountryCode">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Z][A-Z]" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="Percentage">
+    <xs:restriction base="xs:integer">
+      <xs:minInclusive value="0" />
+      <xs:maxInclusive value="100" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="Op">
+    <xs:restriction base='xs:string'>
+      <xs:enumeration value='all' />
+      <xs:enumeration value='any' />
+      <xs:enumeration value='none' />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="DayOfWeek">
+    <xs:restriction base='xs:string'>
+      <xs:enumeration value='SUNDAY' />
+      <xs:enumeration value='MONDAY' />
+      <xs:enumeration value='TUESDAY' />
+      <xs:enumeration value='WEDNESDAY' />
+      <xs:enumeration value='THURSDAY' />
+      <xs:enumeration value='FRIDAY' />
+      <xs:enumeration value='SATURDAY' />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="RateModificationEnum">
+    <xs:restriction base='xs:string'>
+      <xs:enumeration value='percent_discount' />
+      <xs:enumeration value='absolute_discount' />
+      <xs:enumeration value='absolute_price' />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="CurrencyCode">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Z][A-Z][A-Z]" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="PackageTypeEnum">
+    <xs:restriction base='xs:string'>
+      <xs:enumeration value='flight' />
+      <xs:enumeration value='miles' />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="IneligibilityHintType">
+    <xs:restriction base='xs:string'>
+      <xs:enumeration value='exact' />
+      <xs:enumeration value='price_band' />
+      <xs:enumeration value='existence' />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="IneligibilityReasonType">
+    <xs:restriction base='xs:string'>
+      <xs:enumeration value='program_member' />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="UserRateConditionBaseType">
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0" />
+      <xs:element name="LimitedOffer" type="xs:boolean" minOccurs="0" />
+      <xs:element name="MaxUsersPercent" type="Percentage" minOccurs="0" />
+      <xs:element name="UserDeviceType" type="DeviceType" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="UserSignedIn" type="xs:boolean" minOccurs="0" />
+      <xs:element name="UserCountry" type="CountryCode" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="UserCorporateDomain" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="MinCheckinDate" type="xs:date" minOccurs="0" />
+      <xs:element name="MaxCheckinDate" type="xs:date" minOccurs="0" />
+      <xs:element name="MinCheckoutDate" type="xs:date" minOccurs="0" />
+      <xs:element name="MaxCheckoutDate" type="xs:date" minOccurs="0" />
+      <xs:element name="MinLengthOfStay" type="xs:integer" minOccurs="0" />
+      <xs:element name="MaxLengthOfStay" type="xs:integer" minOccurs="0" />
+      <xs:element name="MinBookingTime" type="xs:dateTime" minOccurs="0" />
+      <xs:element name="MaxBookingTime" type="xs:dateTime" minOccurs="0" />
+      <xs:element name="DayOfWeek" type="DayOfWeek" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="CheckinDayOfWeek" type="DayOfWeek" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="MembershipProgram" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="PackageType" type="PackageTypeEnum" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="UserRateCondition" type="UserRateConditionReferenceOrDefinitionType" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="op" type="Op" />
+  </xs:complexType>
+  <xs:complexType name="UserRateConditionType">
+    <xs:complexContent>
+      <xs:extension base="UserRateConditionBaseType">
+        <xs:attribute name="id" use="required">
+          <xs:simpleType>
+            <xs:restriction base='xs:string'>
+              <xs:minLength value="1" />
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="UserRateConditionReferenceOrDefinitionType">
+    <xs:complexContent>
+      <xs:extension base="UserRateConditionBaseType">
+        <xs:attribute name="reference_id" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="RateModificationType">
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0" />
+      <xs:element name="TotalModification" type="xs:decimal" minOccurs="0" />
+      <xs:element name="BaseModification" type="xs:decimal" minOccurs="0" />
+      <xs:element name="TaxesAndFeesModification" type="xs:decimal" minOccurs="0" />
+      <xs:element name="PointOfSaleId" type="xs:string" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="action" type="RateModificationEnum" use="required" />
+    <xs:attribute name="currency" type="CurrencyCode" />
+  </xs:complexType>
+  <xs:complexType name="RateIneligibilityType">
+    <xs:sequence>
+      <xs:element name="IneligibilityReason" type="IneligibilityReasonType" maxOccurs="unbounded" />
+      <xs:element name="IneligibilityType" type="IneligibilityHintType" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="RateRuleType">
+    <xs:sequence>
+      <xs:element name="Description" type="xs:string" minOccurs="0" />
+      <xs:element name="UserRateCondition" type="UserRateConditionReferenceOrDefinitionType" />
+      <xs:element name="RateModification" type="RateModificationType" minOccurs="0" />
+      <xs:element name="RateIneligibility" type="RateIneligibilityType" minOccurs="0" />
+      <xs:element name="PromoCode" type="xs:string" minOccurs="0" />
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" />
+  </xs:complexType>
+  <xs:complexType name="PrivateRatesType">
+    <xs:sequence>
+      <xs:element name="UserRateCondition" type="UserRateConditionType" minOccurs="0" maxOccurs="unbounded" />
+      <xs:element name="RateRule" type="RateRuleType" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="PrivateRates" type="PrivateRatesType">
+    <xs:unique name="unique_user_rate_condition_id">
+      <xs:selector xpath="UserRateCondition" />
+      <xs:field xpath="@id" />
+    </xs:unique>
+    <xs:unique name="unique_rate_rule_id">
+      <xs:selector xpath="RateRule" />
+      <xs:field xpath="@id" />
+    </xs:unique>
+    <xs:key name="user_rate_condition_id">
+      <xs:selector xpath="UserRateCondition" />
+      <xs:field xpath="@id" />
+    </xs:key>
+    <xs:keyref name="user_rate_condition_reference_id" refer="user_rate_condition_id">
+      <xs:selector xpath="UserRateCondition/UserRateCondition|RateRule/UserRateCondition" />
+      <xs:field xpath="@reference_id" />
+    </xs:keyref>
+  </xs:element>
+</xs:schema>
