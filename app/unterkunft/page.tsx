@@ -18,8 +18,8 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const name = env().PLATFORM_NAME;
   return {
-    title: `${name} für Unterkünfte – Direktbuchung für Hotels, B&B und Ferienwohnungen`,
-    description: `Website mit Online-Buchung, TWINT und Abgleich mit Booking.com für kleine Hotels, B&B und Ferienwohnungen in der Schweiz. ${name} kostet ${feePercentText()} % pro Direktbuchung.`,
+    title: `${name} für Unterkünfte – Direktbuchung und Hotelbetrieb für Hotels, B&B und Ferienwohnungen`,
+    description: `Website mit Online-Buchung und TWINT, Abgleich mit Booking.com und Airbnb, Rezeption, Online-Check-in mit Meldeschein, Rechnung mit QR und Kurtaxe für kleine Hotels, B&B und Ferienwohnungen in der Schweiz. ${name} kostet ${feePercentText()} % pro Direktbuchung.`,
     alternates: { canonical: "/unterkunft" },
   };
 }

@@ -63,7 +63,7 @@ const GROUPS: Group[] = [
   {
     id: "web", title: "Website und Auftritt", lead: "Neue Website oder Buchung auf Ihrer bestehenden.",
     mods: [
-      { icon: "palette", title: "Hotel-Website", text: "9 Layouts und 8 Schriftpaare, Logo und Farbe, Texte auf Deutsch und Englisch mit KI-Übersetzung.", tag: "Standard" },
+      { icon: "palette", title: "Hotel-Website", text: "9 Layouts und 8 Schriftpaare, Logo und Farbe, Texte in fünf Sprachen mit KI-Übersetzung.", tag: "Standard" },
       { icon: "globe", title: "In Ihre Website einbauen", text: "Knopf oder Suchleiste für Wix, WordPress, Jimdo und jede andere Seite.", tag: "Standard" },
       { icon: "chat", title: "KI-Chat für Gäste", text: "Beantwortet Fragen zum Haus und zur Umgebung, auch während des Aufenthalts.", tag: "Zusatzpreis" },
       { icon: "mail", title: "Eigene Mail-Texte", text: "Ihre Worte in Bestätigung, Vor der Anreise und Nachher. Rechtliche Teile bleiben fest.", tag: "Standard" },
@@ -78,6 +78,7 @@ const GROUPS: Group[] = [
       { icon: "idcard", title: "Online-Check-in", text: "Gäste füllen vor der Anreise das Meldeformular aus. Sensible Daten sind verschlüsselt.", tag: "Standard" },
       { icon: "house", title: "Gruppen", text: "Zimmerblock mit Freigabefrist, Rooming-Liste und eine Rechnung an die Firma.", tag: "Optional" },
       { icon: "users", title: "Team und Rollen", text: "Inhaber, Manager und Mitarbeitende, dazu Rezeption, Housekeeping und Buchhaltung mit eigenem Zugang.", tag: "Standard" },
+      { icon: "notebook", title: "Restaurant im Haus", text: "Tischplan und Reservation, Halbpension mit automatisch reserviertem Tisch, Konsumation mit einem Klick aufs Zimmer.", tag: "Optional" },
       { icon: "question", title: "Anfragen", text: "Anfragen von der Website und aus dem Chat an einem Ort.", tag: "Standard" },
       { icon: "phone", title: "Admin als App", text: "Auf dem Handy installierbar, mit Mitteilung bei neuer Buchung.", tag: "Standard" },
     ],
@@ -96,6 +97,7 @@ const GROUPS: Group[] = [
     mods: [
       { icon: "plug", title: "Booking.com-Abgleich", text: "Zimmer und Preise werden automatisch abgeglichen. Doppelbuchungen werden gemeldet.", tag: "Standard" },
       { icon: "link", title: "Kalender-Abgleich", text: "iCal-Kalender von Airbnb und anderen Portalen einlesen und ausgeben.", tag: "Standard" },
+      { icon: "globe", title: "Google", text: "Knöpfe «Buchen», «Reservieren» und «Bestellen» im Google-Unternehmensprofil, kostenlose Buchungslinks in der Hotelsuche. Buchungen über Google zeigt die Statistik.", tag: "Neu" },
       { icon: "reader", title: "Kartenterminal", text: "Karte am Empfang mit einem Stripe-Leser. Die Zahlung landet automatisch in der Buchung.", tag: "Neu" },
       { icon: "lock", title: "Türcodes mit Nuki", text: "Pro Buchung ein Code für Eingang und Zimmer, nur für die Dauer des Aufenthalts.", tag: "Neu" },
     ],

@@ -13,14 +13,14 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "Kopfbereich",
     "label": "Titel",
     "multiline": false,
-    "default": "Direktbuchung und Website für Hotels, B&Bs und Ferienwohnungen."
+    "default": "Mehr Gäste direkt, weniger Provision. Ein System für Ihr ganzes Haus."
   },
   {
     "key": "hero.lead",
     "group": "Kopfbereich",
     "label": "Einleitung",
     "multiline": true,
-    "default": "{name} bringt Online-Buchung mit TWINT und Kartenzahlung auf Ihre bestehende Website – oder gibt Ihnen eine neue. Mit Kalender, Rezeption, Rechnung und Kurtaxe, wenn Sie wollen. Booking.com läuft weiter und wird automatisch abgeglichen."
+    "default": "{name} bringt Gäste von Google und Ihrer Website direkt zu Ihrer eigenen Buchung, mit TWINT und Karte. Dazu alles für den Betrieb: Kalender mit Abgleich zu Booking.com und Airbnb, Rezeption, Reinigung, Online-Check-in mit Meldeschein, Rechnung mit QR und Kurtaxe. Sie schalten nur ein, was Sie brauchen."
   },
   {
     "key": "hero.ctaMain",
@@ -48,7 +48,7 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "Angebot (drei Wege)",
     "label": "Baukasten: Einleitung",
     "multiline": true,
-    "default": "Der Kern, also Direktbuchung und Zahlung, ist immer dabei. Alles andere schalten Sie mit einem Klick ein oder aus. Ein Chalet braucht keine Rezeption, ein Hotel mit Team schon. Ausgeschaltetes verschwindet aus dem Menü, Ihre Daten bleiben erhalten."
+    "default": "Website, Direktbuchung und Zahlung sind immer dabei. Dazu wählen Sie Pakete wie «Unterkunft Basis», «Hotelbetrieb», «Ferienwohnungen verwalten», «Restaurant» oder «Mehr Direktbuchungen». Jede Funktion lässt sich auch einzeln ein- und ausschalten. Ein Chalet braucht keine Rezeption, ein Hotel mit Team schon. Ausgeschaltetes verschwindet aus dem Menü, Ihre Daten bleiben erhalten."
   },
   {
     "key": "web.title",
@@ -76,7 +76,7 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "Angebot (drei Wege)",
     "label": "Variante 1: Text",
     "multiline": true,
-    "default": "Eine Website, die zu Ihrem Haus passt, mit allen Möglichkeiten: Layout, Schrift, Farbe, Logo und Inhalte stellen Sie selbst ein, auf Deutsch und Englisch."
+    "default": "Eine Website, die zu Ihrem Haus passt, mit allen Möglichkeiten: Layout, Schrift, Farbe, Logo und Inhalte stellen Sie selbst ein, in bis zu fünf Sprachen (Deutsch, Englisch, Französisch, Italienisch, Niederländisch) mit Übersetzung auf Knopfdruck."
   },
   {
     "key": "web.1.bullets",
@@ -167,35 +167,35 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "In drei Schritten",
     "label": "Einleitung",
     "multiline": true,
-    "default": "Sie müssen nichts installieren und keine neue Software lernen. Wir richten alles ein und bleiben Ihr Ansprechpartner."
+    "default": "Sie müssen nichts installieren. Der Einrichtungs-Assistent führt Sie Schritt für Schritt, und auf Wunsch übernimmt die KI Texte, Zimmer und Fotos aus Ihrer bisherigen Website. Lieber mit Unterstützung? Dann richten wir es gemeinsam mit Ihnen ein."
   },
   {
     "key": "step.1.title",
     "group": "In drei Schritten",
     "label": "Schritt 1: Titel",
     "multiline": false,
-    "default": "Kennenlernen"
+    "default": "Registrieren"
   },
   {
     "key": "step.1.text",
     "group": "In drei Schritten",
     "label": "Schritt 1: Text",
     "multiline": true,
-    "default": "Wir schauen Ihre heutige Website und Ihre Buchungswege an und zeigen Ihnen am Beispiel, wie Ihre Seite aussehen würde."
+    "default": "Konto eröffnen, Betriebsart wählen und die passenden Pakete ankreuzen. Das dauert wenige Minuten und kostet nichts, solange Sie nicht online sind."
   },
   {
     "key": "step.2.title",
     "group": "In drei Schritten",
     "label": "Schritt 2: Titel",
     "multiline": false,
-    "default": "Wir richten ein"
+    "default": "Einrichten"
   },
   {
     "key": "step.2.text",
     "group": "In drei Schritten",
     "label": "Schritt 2: Text",
     "multiline": true,
-    "default": "Zimmer, Preise, Fotos, Zahlungskonto und Abgleich mit Booking.com – und je nach Weg den Buchungs-Knopf auf Ihrer Website oder die neue Website."
+    "default": "Zimmer, Preise, Fotos, Zahlungskonto und Abgleich mit Booking.com: Der Assistent zeigt bei jedem Schritt, was noch fehlt. Je nach Weg kommt der Buchungsknopf auf Ihre Website oder Sie nutzen die neue Website."
   },
   {
     "key": "step.3.title",
@@ -230,7 +230,7 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "Vorteile",
     "label": "Vorteil 1: Text",
     "multiline": true,
-    "default": "Für jede Buchung, die direkt statt übers Portal kommt, bleibt der Grossteil der Provision bei Ihnen."
+    "default": "Für jede Buchung, die über Google oder Ihre Website direkt statt übers Portal kommt, bleibt der Grossteil der Provision bei Ihnen."
   },
   {
     "key": "benefit.2.title",
@@ -265,7 +265,7 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "Vorteile",
     "label": "Vorteil 4: Titel",
     "multiline": false,
-    "default": "Booking.com läuft weiter"
+    "default": "Booking.com und Airbnb laufen weiter"
   },
   {
     "key": "benefit.4.text",
@@ -307,14 +307,14 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "Vorteile",
     "label": "Vorteil 7: Titel",
     "multiline": false,
-    "default": "Alles an einem Ort"
+    "default": "Ein System statt fünf"
   },
   {
     "key": "benefit.7.text",
     "group": "Vorteile",
     "label": "Vorteil 7: Text",
     "multiline": true,
-    "default": "Kalender, Preise, Buchungen und Monatsabrechnung – einfach genug, dass auch Mitarbeitende damit arbeiten."
+    "default": "Website, Buchung, Kalender, Rezeption, Reinigung, Online-Check-in mit Meldeschein, Rechnung mit QR und Tagesabschluss. Einfach genug, dass auch Mitarbeitende damit arbeiten."
   },
   {
     "key": "benefit.8.title",
@@ -419,14 +419,14 @@ export const SITE_FIELDS: SiteField[] = [
     "group": "Fusszeile",
     "label": "Zeile",
     "multiline": false,
-    "default": "Direktbuchung für Unterkünfte in der Schweiz · Server und Datenbank bei Infomaniak in Genf"
+    "default": "Direktbuchung und Hotelbetrieb für Unterkünfte in der Schweiz · Server und Datenbank bei Infomaniak in Genf"
   }
 ];
 
 export const DEFAULT_FAQ: FaqItem[] = [
   {
     "q": "Muss ich alle Funktionen nutzen?",
-    "a": "Nein. Direktbuchung und Zahlung sind der Kern. Rezeption, Housekeeping, Rechnung, Gruppen, Kartenterminal und mehr schalten Sie einzeln ein oder aus. Was Sie nicht brauchen, sehen Sie nicht, und Ihre Daten bleiben erhalten."
+    "a": "Nein. Direktbuchung und Zahlung sind der Kern. Dazu wählen Sie Pakete, etwa «Hotelbetrieb» mit Rezeption, Reinigung und Online-Check-in, oder schalten jede Funktion einzeln ein oder aus. Was Sie nicht brauchen, sehen Sie nicht, und Ihre Daten bleiben erhalten."
   },
   {
     "q": "Ersetzt {name} meine Hotelsoftware?",
@@ -434,7 +434,7 @@ export const DEFAULT_FAQ: FaqItem[] = [
   },
   {
     "q": "Muss ich Booking.com kündigen?",
-    "a": "Nein. Booking.com bleibt ein wichtiger Kanal für neue Gäste. {name} sorgt dafür, dass Gäste, die Sie bereits kennen oder auf Google finden, direkt buchen können."
+    "a": "Nein. Booking.com bleibt ein wichtiger Kanal für neue Gäste. {name} sorgt dafür, dass Gäste, die Sie bereits kennen oder auf Google finden, direkt buchen können: mit den Links für Ihr Google-Unternehmensprofil und, sobald freigeschaltet, mit Ihrem eigenen Preis in der Hotelsuche von Google."
   },
   {
     "q": "Darf ich auf meiner Website günstiger sein als auf Booking.com?",

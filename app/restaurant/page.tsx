@@ -18,8 +18,8 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const name = env().PLATFORM_NAME;
   return {
-    title: `${name} für Restaurants – Website, Reservation, Online-Bestellung und Kasse`,
-    description: `Website, Tischreservation, Online-Bestellung mit Abholung und Lieferung und Kasse in einem System, aus der Schweiz, mit TWINT. Online-Bestellung 1,9 % pro Bestellung, zum Start 3 Monate pauschal CHF 59, ohne Gebühr pro Gast.`,
+    title: `${name} für Restaurants – Reservation, Bestellung, Tisch-QR und Kasse ohne Provision`,
+    description: `Website, Tischreservation mit Tischplan, Bestellen und Bezahlen am Tisch per QR, Online-Bestellung mit Abholung und Lieferung und Kasse in einem System, aus der Schweiz, mit TWINT. Online-Bestellung 1,9 % pro Bestellung, zum Start 3 Monate pauschal CHF 59, ohne Gebühr pro Gast.`,
     alternates: { canonical: "/restaurant" },
   };
 }
@@ -38,6 +38,7 @@ export default async function Restaurant() {
       feeBps={DEFAULT_PLATFORM_FEE_BPS}
       minimum={formatChf(DEFAULT_MONTHLY_MINIMUM_RAPPEN).replace(".00", "")}
       today={todayIn("Europe/Zurich")}
+      smsRappen={e.SMS_GUEST_PRICE_RAPPEN}
       introRappen={ORDER_MODULE_RAPPEN}
       introMonths={ORDER_INTRO_MONTHS}
       pilot={left > 0 ? { left, slots: PILOT_SLOTS, capRappen: PILOT_CAP_RAPPEN, months: PILOT_MONTHS } : null}

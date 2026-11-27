@@ -15,7 +15,8 @@ const SWITCH_UNTIL = "2027-04-30";
  * Seite für Restaurants (SPEC 20.9, Texte: Claude Docs «Pontivo Website-Texte», Abschnitt 3).
  * Preise nach Restaurant-Konzept Abschnitt 6 (Anzahlung für Tischreservation gebührenfrei, Entscheid 21.11.2026).
  */
-export function RestaurantHome({ contact, account, fee, feeBps, minimum, today, introRappen, introMonths, pilot }: {
+export function RestaurantHome({ contact, account, fee, feeBps, minimum, today, introRappen, introMonths, pilot, smsRappen = 8 }: {
+  /** Preis je Gast-SMS (SMS_GUEST_PRICE_RAPPEN) */ smsRappen?: number;
   contact: ShellContact; account: { label: string } | null; fee: string; feeBps: number; minimum: string; today: string;
   /** Sonderangebot Online-Bestellung (SPEC 20.4): pauschal pro Monat in den ersten Monaten */ introRappen: number; introMonths: number;
   /** Pilotbetriebe: Kostendach pro Monat, Dauer; null = alle Plätze vergeben (Abschnitt verschwindet). Freie Plätze werden bewusst nicht angezeigt. */ pilot: { left: number; slots: number; capRappen: number; months: number } | null;
@@ -24,6 +25,7 @@ export function RestaurantHome({ contact, account, fee, feeBps, minimum, today, 
   const talk = mailHref(contact, "Pontivo für unser Restaurant");
   const ours = (TURNOVER * feeBps) / 10_000;
   const intro = `CHF ${fmt(introRappen / 100)}`;
+  const sms = `CHF ${(smsRappen / 100).toFixed(2)}`;
   const cap = pilot ? `CHF ${fmt(pilot.capRappen / 100)}` : "";
   const rows = [
     { label: "Lieferplattform, Restaurant liefert selbst (ca. 13 %)", cost: TURNOVER * 0.13, ours: false },
@@ -34,20 +36,24 @@ export function RestaurantHome({ contact, account, fee, feeBps, minimum, today, 
   const max = TURNOVER * 0.3;
   const blocks = [
     ["Website", "Ihre Restaurant-Website mit Speisekarte in mehreren Sprachen, Öffnungszeiten, Fotos und Allergenen. Oder Pontivo auf Ihrer bestehenden Seite."],
-    ["Tischreservation", "Gäste reservieren rund um die Uhr. Erinnerung vor dem Besuch, Warteliste, auf Wunsch mit Anzahlung als Garantie gegen leere Tische."],
+    ["Tischreservation und Tischplan", "Gäste reservieren rund um die Uhr, auch direkt aus Google. Tischplan mit Räumen und Kellnern, Erinnerung per Mail oder SMS, Warteliste, Vorbestellung für Gruppen und auf Wunsch Anzahlung als Garantie gegen leere Tische."],
+    ["Am Tisch per QR", "Gäste scannen den Code am Tisch, bestellen nach, bezahlen mit TWINT oder Karte, geben Trinkgeld und bewerten den Besuch. Zufriedene Gäste landen bei Ihrer Google-Bewertung."],
     ["Online-Bestellung", "Zum Abholen oder mit Lieferung: Gäste wählen aus Ihrer Karte, mit Extras und Abholzeit oder Lieferadresse, und bezahlen vorab mit TWINT oder Karte. Sie bekommen die Bestellung mit Alarm auf Tablet oder Handy."],
     ["Kasse", "Tische, Bestellungen, Getrennt-Zahlen, Trinkgeld, bar, Karte und TWINT. Unveränderbare Bons, Tagesabschluss, MWST für Restaurant und Take-away richtig getrennt. Funktioniert auch ohne Internet."],
+    ["Auswertung", "Umsatz, Trinkgeld, beliebteste Gerichte und Stosszeiten je Monat, dazu die Bewertungen Ihrer Gäste."],
   ];
   const prices = [
-    ["Grundgebühr", `mindestens ${minimum} pro Monat`, "Website auf Wunsch, Tischreservation, Erinnerungen, Gästeliste"],
+    ["Grundgebühr", `mindestens ${minimum} pro Monat`, "Website auf Wunsch, Tischreservation mit Tischplan, Erinnerung per Mail, Gästeliste, Google-Links"],
     ["Online-Bestellung", `${fee} % pro Bestellung`, `Abholung und Lieferung, Bestellbildschirm mit Alarm. Sonderangebot: die ersten ${introMonths} Monate pauschal ${intro} pro Monat, egal wie viele Bestellungen`],
     ["Online-Gutscheine", `${fee} % auf den bezahlten Betrag`, "Gutscheine auf Ihrer Website"],
     ["Anzahlung bei Reservation", "ohne Gebühr", "Schutz vor leeren Tischen"],
+    ["SMS-Erinnerung", `${sms} je SMS`, "Freiwillig, zum Selbstkostenpreis auf der Monatsrechnung"],
     ["Kasse", "CHF 29 pro Monat", "Kasse mit Bons, Tagesabschluss, offline-fähig; keine Gebühr von uns auf Kartenzahlungen im Lokal"],
     ["KI-Chat", "ab CHF 19 pro Monat", "Beantwortet Gastfragen auf Ihrer Website"],
   ];
   const faq = [
-    { q: "Brauche ich alle vier Bausteine?", a: "Nein. Sie starten zum Beispiel nur mit der Reservation und schalten Bestellung oder Kasse später dazu. Ihre bisherige Kasse können Sie behalten." },
+    { q: "Brauche ich alle Bausteine?", a: "Nein. Sie starten zum Beispiel nur mit der Reservation und schalten Bestellung, Tisch-QR oder Kasse später dazu. Ihre bisherige Kasse können Sie behalten." },
+    { q: "Erscheine ich mit Reservieren und Bestellen bei Google?", a: "Sie bekommen die Links für Ihr Google-Unternehmensprofil, damit dort «Reservieren» und «Online bestellen» direkt zu Ihnen führen. Reservationen und Bestellungen über Google sehen Sie in der Auswertung." },
     { q: "Ist die Auslieferung mit dabei?", a: "Ja. Gäste wählen Abholung oder Lieferung. Sie liefern mit Ihren eigenen Fahrern in den Postleitzahlen-Gebieten, die Sie festlegen. Bar bei Lieferung können Sie erlauben oder ausschalten." },
     { q: "Brauche ich spezielle Geräte?", a: "Nein. Kasse und Bestellbildschirm laufen im Browser auf Tablet, Handy oder Computer." },
     { q: "Was passiert, wenn niemand eine Bestellung annimmt?", a: "Nach fünf Minuten kommt ein Alarm per SMS und Mail, nach zehn Minuten wird die Bestellung storniert und der Gast bekommt sein Geld zurück. Ist kein Bestellbildschirm erreichbar, pausiert die Online-Bestellung von selbst." },
@@ -56,11 +62,11 @@ export function RestaurantHome({ contact, account, fee, feeBps, minimum, today, 
     { q: "Wem gehören die Gästedaten?", a: "Ihnen. Wir verkaufen keine Daten und betreiben keinen Marktplatz, auf dem Ihre Gäste zur Konkurrenz weitergeleitet werden." },
   ];
   return (
-    <MarketingShell contact={contact} account={account} current="restaurant" tagline="Website, Reservation, Bestellung und Kasse für Schweizer Restaurants · Server und Datenbank bei Infomaniak in Genf" signupHref="/registrieren?art=restaurant">
+    <MarketingShell contact={contact} account={account} current="restaurant" tagline="Reservation, Bestellung, Tisch-QR und Kasse für Schweizer Restaurants · Server und Datenbank bei Infomaniak in Genf" signupHref="/registrieren?art=restaurant">
       <section className={s.hero}>
         <div>
-          <h1 className={s.heroTitle}>Website, Reservation, Bestellung und Kasse. Aus einer Hand.</h1>
-          <p className={s.heroLead}>{contact.name} ist das System für Restaurants, Cafés und Take-aways in der Schweiz. Ihre Gäste reservieren und bestellen direkt bei Ihnen, bezahlen mit TWINT oder Karte, und an der Kasse läuft alles zusammen. Ohne Gebühr pro Gast.</p>
+          <h1 className={s.heroTitle}>Reservationen und Bestellungen ohne Provision. Ein System für Ihr Restaurant.</h1>
+          <p className={s.heroLead}>{contact.name} ist das System für Restaurants, Cafés und Take-aways in der Schweiz. Ihre Gäste reservieren und bestellen direkt bei Ihnen, auch aus Google, bestellen und bezahlen am Tisch per QR, und an der Kasse läuft alles zusammen. Ohne Gebühr pro Gast.</p>
           <div className={s.heroActions}>
             {st ? <a className={s.btn} href={talk}>Gespräch vereinbaren</a> : (<>
               <a className={s.btn} href="/registrieren?art=restaurant">Jetzt loslegen</a>
@@ -86,7 +92,7 @@ export function RestaurantHome({ contact, account, fee, feeBps, minimum, today, 
       </section>
 
       <section className={s.section}>
-        <h2 className={s.h2}>Statt vier Anbietern einer</h2>
+        <h2 className={s.h2}>Statt vieler Anbieter einer</h2>
         <p className={s.intro}>Ein Login, eine Rechnung, eine Gästeliste, und keine Daten, die zwischen Systemen verloren gehen.</p>
         <ul className={`${s.modGrid} ${s.modGrid2}`}>
           {blocks.map(([t, d]) => <li key={t} className={s.mod}><div><strong>{t}</strong><p>{d}</p></div></li>)}
@@ -101,7 +107,7 @@ export function RestaurantHome({ contact, account, fee, feeBps, minimum, today, 
             ["Kein Abtippen", "Eine Online-Bestellung landet als Bon im Küchenbildschirm und in der Tagesabrechnung. Keine zweite Abrechnung."],
             ["Eine Karte", "Artikel und Preise pflegen Sie einmal. Sie gelten in der Kasse, in der Online-Bestellung und auf der Speisekarte der Website."],
             ["Ihre Gäste", "Ihre Gästeliste wächst aus Reservationen. Sie gehört Ihnen."],
-            ["Hotel mit Restaurant", "Die Konsumation geht mit einem Klick auf die Zimmerrechnung."],
+            ["Hotel mit Restaurant", "Gäste mit Halbpension bekommen automatisch einen Tisch, die Konsumation geht mit einem Klick auf die Zimmerrechnung."],
           ].map(([t, d]) => <div key={t} className={s.benefit}><dt>{t}</dt><dd>{d}</dd></div>)}
         </dl>
       </section>

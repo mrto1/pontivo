@@ -14,8 +14,8 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const name = env().PLATFORM_NAME;
   return {
-    title: `${name} – Direktbuchungen, Reservationen und Bestellungen für Schweizer Gastgeber`,
-    description: `Gäste buchen, bestellen und reservieren direkt bei Ihrem Hotel, B&B oder Restaurant – mit TWINT, Karte oder bar. Nur ${feePercentText()} % pro Buchung und Bestellung.`,
+    title: `${name} – Mehr Gäste direkt, weniger Provision: ein System für Hotel und Restaurant`,
+    description: `Gäste finden Sie bei Google und auf Ihrer Website und buchen, reservieren oder bestellen direkt bei Ihrem Hotel, B&B oder Restaurant, mit TWINT, Karte oder bar. Dazu Rezeption, Tischplan, Kasse und Rechnung. Nur ${feePercentText()} % pro Buchung und Bestellung.`,
   };
 }
 

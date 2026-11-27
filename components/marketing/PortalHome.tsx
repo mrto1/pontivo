@@ -10,28 +10,28 @@ export function PortalHome({ contact, account, fee, minimum }: { contact: ShellC
   const st = contact.staticSite;
   const talk = mailHref(contact, "Pontivo für unseren Betrieb");
   const paths = [
-    { title: "Unterkunft", text: "Hotel, B&B, Ferienwohnung, Chalet oder Berggasthaus. Gäste buchen auf Ihrer Website und zahlen sofort. Mit Kalender, Rechnung und Rezeption, wenn Sie wollen.", href: pageHref("/unterkunft", st), cta: "Mehr für Unterkünfte" },
-    { title: "Restaurant", text: "Restaurant, Café oder Take-away. Website, Tischreservation, Online-Bestellung und Kasse in einem System.", href: pageHref("/restaurant", st), cta: "Mehr für Restaurants" },
-    { title: "Beides", text: "Hotel mit Restaurant? Dann läuft alles zusammen: Die Konsumation kommt mit einem Klick auf die Zimmerrechnung.", href: pageHref("/unterkunft", st), cta: "Mehr für Hotels mit Restaurant" },
+    { title: "Unterkunft", text: "Hotel, B&B, Ferienwohnung, Chalet oder Berggasthaus. Gäste buchen auf Ihrer Website und zahlen sofort. Dazu Kalender mit Portal-Abgleich, Rezeption, Reinigung, Online-Check-in und Rechnung, wenn Sie wollen.", href: pageHref("/unterkunft", st), cta: "Mehr für Unterkünfte" },
+    { title: "Restaurant", text: "Restaurant, Café oder Take-away. Website, Tischreservation mit Tischplan, Bestellen und Bezahlen am Tisch, Online-Bestellung und Kasse in einem System.", href: pageHref("/restaurant", st), cta: "Mehr für Restaurants" },
+    { title: "Beides", text: "Hotel mit Restaurant? Dann läuft alles zusammen: Gäste mit Halbpension bekommen automatisch einen Tisch, die Konsumation kommt mit einem Klick auf die Zimmerrechnung.", href: pageHref("/unterkunft", st), cta: "Mehr für Hotels mit Restaurant" },
   ];
   const benefits = [
     ["Ihre Gastbeziehung bleibt bei Ihnen.", "Name, E-Mail und Vorlieben Ihrer Gäste gehören Ihnen, nicht einem Portal."],
     ["Bezahlen wie in der Schweiz üblich.", "TWINT und Karte über Stripe. Das Geld geht direkt auf Ihr Konto."],
-    ["Eine Website, die verkauft.", `Wir bauen sie Ihnen, oder ${contact.name} kommt auf Ihre bestehende Seite. Texte in mehreren Sprachen auf Knopfdruck.`],
-    ["Nur einschalten, was Sie brauchen.", "Jede Funktion ist ein Schalter. Ein Chalet braucht keine Kasse, eine Pizzeria keinen Zimmerplan."],
+    ["Eine Website, die verkauft.", `Wir bauen sie Ihnen, oder ${contact.name} kommt auf Ihre bestehende Seite. Texte in mehreren Sprachen auf Knopfdruck, bei Google mit den Knöpfen «Buchen», «Reservieren» und «Bestellen».`],
+    ["Nur einschalten, was Sie brauchen.", "Pakete wie «Hotelbetrieb» oder «Restaurant», oder jede Funktion einzeln. Ein Chalet braucht keine Kasse, eine Pizzeria keinen Zimmerplan."],
     ["Pontivo auf dem Handy.", "Neue Buchungen und Bestellungen kommen als Push-Mitteilung."],
     ["Aus der Schweiz.", "Server und Daten bei Infomaniak in Genf, Rechnungen mit QR-Code, MWST nach Schweizer Sätzen."],
   ];
   const faq = [
-    { q: "Brauche ich alles?", a: `Nein. Der Kern ist die Buchung bzw. Bestellung mit Zahlung. Alles andere schalten Sie einzeln ein oder aus.` },
+    { q: "Brauche ich alles?", a: `Nein. Der Kern ist die Buchung bzw. Bestellung mit Zahlung. Dazu wählen Sie Pakete wie «Hotelbetrieb» oder «Restaurant» oder schalten jede Funktion einzeln ein oder aus.` },
     { q: "Wem gehören die Daten?", a: `Immer Ihrem Betrieb. ${contact.name} stellt nur die Technik zur Verfügung.` },
     { q: "Kann ich meine Website behalten?", a: `Ja. ${contact.name} lässt sich in bestehende Websites einbinden.` },
   ];
   return (
     <MarketingShell contact={contact} account={account} current="home" heroImage tagline="Direktbuchung, Reservation und Bestellung für das Schweizer Gastgewerbe · Server und Datenbank bei Infomaniak in Genf" signupHref="/registrieren">
       <section className={s.heroSolo}>
-        <h1 className={s.heroTitle}>Direktbuchungen, Reservationen und Bestellungen für Schweizer Gastgeber.</h1>
-        <p className={s.heroLead}>Gäste buchen, bestellen und reservieren direkt bei Ihrem Hotel, B&amp;B oder Restaurant – mit TWINT, Karte oder bar. Nur {fee} % pro Buchung und Bestellung.</p>
+        <h1 className={s.heroTitle}>Mehr Gäste direkt, weniger Provision. Ein System für Hotel und Restaurant.</h1>
+        <p className={s.heroLead}>Gäste finden Sie bei Google und auf Ihrer Website und buchen, reservieren oder bestellen direkt bei Ihnen, mit TWINT, Karte oder bar. Dazu alles für den Betrieb, von der Rezeption bis zur Kasse. Nur {fee} % pro Buchung und Bestellung.</p>
         <div className={s.heroActions}>
           <a className={s.btn} href={pageHref("/unterkunft", st)}>Für Unterkünfte</a>
           <a className={s.btn} href={pageHref("/restaurant", st)}>Für Restaurants</a>
