@@ -11,18 +11,19 @@ import { addTask, board, generateTasks, HousekeepingError, reportIssue, doneIssu
 import { addDays, isDay, todayIn } from "@/src/domain/dates";
 import { formatDay } from "@/src/i18n/dict";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 
 const LABEL: Record<CleanStatus, string> = { dirty: "Schmutzig", clean: "Sauber", inspected: "Geprüft" };
 const LABEL_BTN = LABEL;
 
-async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<void>) {
-  const c = await requireHotelModule("housekeeping", s(f, "hotelId"), "staff", "housekeeping");
-  let msg = "";
-  try { await fn(c); } catch (e) { if (!(e instanceof HousekeepingError)) throw e; msg = e.message; }
-  redirect(`/admin/${c.hotel.id}/housekeeping?day=${s(f, "day")}${msg ? `&msg=${encodeURIComponent(msg)}` : ""}`);
-}
+/** Zurück zum Tag; Erfolg ohne Meldung (die Karte zeigt den neuen Stand) */
+const act = (f: FormData, fn: (c: HotelCtx) => Promise<void>) =>
+  hotelAction(f, { page: "housekeeping", module: "housekeeping", area: "housekeeping", fail: "Nicht möglich", keep: { day: s(f, "day") } }, async (c) => {
+    await fn(c);
+    return { to: `/admin/${c.hotel.id}/housekeeping?day=${s(f, "day")}` };
+  });
 async function status(f: FormData) {
   "use server";
   await act(f, (c) => setCleanStatus(c.hotel.id, s(f, "roomId"), s(f, "to") as CleanStatus, c.actor));
@@ -35,18 +36,12 @@ async function report(f: FormData) {
 }
 async function minibar(f: FormData) {
   "use server";
-  const c = await requireHotelModule("housekeeping", s(f, "hotelId"), "staff", "housekeeping");
-  await requireModule(c.hotel.id, "shop");
-  let msg: string;
-  try {
+  await hotelAction(f, { page: "housekeeping", module: "housekeeping", area: "housekeeping", keep: { day: s(f, "day"), room: s(f, "roomId") } }, async (c) => {
+    await requireModule(c.hotel.id, "shop");
     const counts = [...f.keys()].filter((k) => k.startsWith("n_")).map((k) => ({ goodId: k.slice(2), present: Number(s(f, k)) }));
     const r = await countMinibar(c.hotel.id, s(f, "roomId"), s(f, "day"), counts, c.actor);
-    msg = r.billed.length ? `Minibar verrechnet: ${r.billed.map((b) => `${b.quantity} × ${b.name}`).join(", ")}.` : "Minibar vollständig.";
-  } catch (e) {
-    if (!(e instanceof GoodsError)) throw e;
-    msg = `Nicht gespeichert: ${e.message}`;
-  }
-  redirect(`/admin/${c.hotel.id}/housekeeping?day=${s(f, "day")}&room=${s(f, "roomId")}&msg=${encodeURIComponent(msg)}`);
+    return r.billed.length ? `Minibar verrechnet: ${r.billed.map((b) => `${b.quantity} × ${b.name}`).join(", ")}.` : "Minibar vollständig.";
+  });
 }
 async function refilled(f: FormData) {
   "use server";

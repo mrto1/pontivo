@@ -13,24 +13,16 @@ import { BUCKET_LABEL, DUNNING_LABEL, type Bucket } from "@/src/domain/debtors";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { formatDay } from "@/src/i18n/dict";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 const BUCKETS: Bucket[] = ["not_due", "d1_30", "d31_60", "d60_plus"];
 
-async function guard(f: FormData) {
-  const c = await requireHotelModule("invoicing", s(f, "hotelId"), "staff", "debtors");
-  await requireModule(c.hotel.id, "debtors");
-  return c;
-}
-async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof guard>>) => Promise<string>) {
-  const c = await guard(f);
-  let msg: string;
-  try { msg = await fn(c); } catch (e) {
-    if (!(e instanceof DebtorError) && !(e instanceof InvoiceError)) throw e;
-    msg = `Nicht möglich: ${e.message}`;
-  }
-  redirect(`/admin/${c.hotel.id}/invoices/debitoren?msg=${encodeURIComponent(msg)}`);
-}
+const run = (f: FormData, fn: (c: HotelCtx) => Promise<string>) =>
+  hotelAction(f, { page: "invoices/debitoren", module: "invoicing", area: "debtors", fail: "Nicht möglich" }, async (c) => {
+    await requireModule(c.hotel.id, "debtors");
+    return fn(c);
+  });
 
 async function pay(f: FormData) {
   "use server";
@@ -56,15 +48,11 @@ async function importFile(f: FormData) {
 }
 async function company(f: FormData) {
   "use server";
-  const c0 = await guard(f);
   const days0 = s(f, "days");
-  try {
-    await saveCompany(c0.hotel.id, s(f, "id") || null, { name: s(f, "name"), street: s(f, "street"), zip: s(f, "zip"), city: s(f, "city"), country: s(f, "country"), vatId: s(f, "vatId"), email: s(f, "email"), paymentDays: days0 === "" ? null : Number(days0), note: s(f, "note"), active: f.get("active") === "on" }, c0.actor);
-  } catch (e) {
-    if (!(e instanceof DebtorError) && !(e instanceof InvoiceError)) throw e;
-    redirect(`/admin/${c0.hotel.id}/invoices/debitoren?firma=${s(f, "id") || "neu"}&msg=${encodeURIComponent(`Nicht gespeichert: ${e.message}`)}`); // Seitenleiste bleibt offen
-  }
-  redirect(`/admin/${c0.hotel.id}/invoices/debitoren?msg=${encodeURIComponent("Firma gespeichert.")}`);
+  await hotelAction(f, { page: "invoices/debitoren", module: "invoicing", area: "debtors", ok: "Firma gespeichert.", reopen: { firma: s(f, "id") || "neu" } }, async (c) => {
+    await requireModule(c.hotel.id, "debtors");
+    await saveCompany(c.hotel.id, s(f, "id") || null, { name: s(f, "name"), street: s(f, "street"), zip: s(f, "zip"), city: s(f, "city"), country: s(f, "country"), vatId: s(f, "vatId"), email: s(f, "email"), paymentDays: days0 === "" ? null : Number(days0), note: s(f, "note"), active: f.get("active") === "on" }, c.actor);
+  });
 }
 
 export default async function Debtors({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {

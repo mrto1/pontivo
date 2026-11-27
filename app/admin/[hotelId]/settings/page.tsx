@@ -12,62 +12,51 @@ import { getSettings, saveOpeningHours } from "@/src/services/reservations";
 import { todayIn } from "@/src/domain/dates";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { s } from "@/src/lib/form";
+import { hotelAction } from "@/src/lib/hotel-action";
+import { UserError } from "@/src/domain/errors";
 
 export const dynamic = "force-dynamic";
 
-const back = (hotelId: string, msg: string) => redirect(`/admin/${hotelId}/settings?msg=${encodeURIComponent(msg)}`);
 
 async function saveHotel(f: FormData) {
   "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "manager");
-  try {
+  await hotelAction(f, { page: "settings", role: "manager", ok: "Gespeichert" }, async ({ hotel, actor }) => {
     await updateHotelSettings(hotel, {
       name: s(f, "name"), legalName: s(f, "legalName"), addressLine: s(f, "addressLine"), postalCode: s(f, "postalCode"), city: s(f, "city"),
       contactEmail: s(f, "contactEmail"), contactPhone: s(f, "contactPhone"), checkinTime: s(f, "checkinTime").slice(0, 5), checkoutTime: s(f, "checkoutTime").slice(0, 5),
       defaultLanguage: s(f, "defaultLanguage") === "en" ? "en" : "de", touristTaxIncludedInPrice: f.get("taxIncluded") === "on",
     }, actor);
-  } catch (e) {
-    back(hotel.id, `Fehler: ${(e as Error).message}`);
-  }
-  back(hotel.id, "Gespeichert");
+  });
 }
 
 async function saveTax(f: FormData) {
   "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "manager");
   const opt = (k: string) => (s(f, k) === "" ? null : s(f, k));
-  try {
+  await hotelAction(f, { page: "settings", role: "manager", ok: "Kurtaxe bestätigt" }, async ({ hotel, actor }) => {
     await confirmTouristTax(hotel, {
       adultRappen: decimalToRappen(s(f, "adult").replace(",", ".")),
       reducedRappen: opt("reduced") === null ? null : decimalToRappen(opt("reduced")!.replace(",", ".")),
       freeUnderAge: Number(s(f, "freeUnder") || 0),
       reducedUnderAge: opt("reducedUnder") === null ? null : Number(opt("reducedUnder")),
     }, actor);
-  } catch (e) {
-    back(hotel.id, `Fehler: ${(e as Error).message}`);
-  }
-  back(hotel.id, "Kurtaxe bestätigt");
+  });
 }
 
 /** Gastronomie: Bezeichnung im Umschalter und Öffnungszeiten (SPEC 20.1) */
 async function saveDining(f: FormData) {
   "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "manager");
-  try {
+  await hotelAction(f, { page: "settings", role: "manager", ok: "Gespeichert" }, async ({ hotel, actor }) => {
     let hours: Record<string, { from: string; to: string }[]> | null = null;
     if (f.get("useHours") === "on") {
       hours = {};
       for (let d = 0; d < 7; d++) {
         const w = parseHoursText(s(f, `h${d}`));
-        if (!w) throw new Error(`${WEEKDAYS_DE[d]}: bitte so schreiben: 11:30-14:00, 17:30-22:00 (leer = Ruhetag).`);
+        if (!w) throw new UserError(`${WEEKDAYS_DE[d]}: bitte so schreiben: 11:30-14:00, 17:30-22:00 (leer = Ruhetag).`);
         hours[String(d)] = w;
       }
     }
     await saveOpeningHours(hotel.id, hours, actor);
-  } catch (e) {
-    back(hotel.id, `Nicht gespeichert: ${(e as Error).message}`);
-  }
-  back(hotel.id, "Gespeichert");
+  });
 }
 
 export default async function Settings({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {

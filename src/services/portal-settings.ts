@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client";
@@ -30,10 +31,10 @@ export async function savePortalSettings(hotel: Hotel, actor: string, input: { r
 
 export async function addPortalTip(hotel: Hotel, actor: string, input: { title: PortalI18n; text: PortalI18n }) {
   const title = clean(input.title), text = clean(input.text);
-  if (!title.de && !title.en) throw new Error("Titel fehlt.");
+  if (!title.de && !title.en) throw new UserError("Titel fehlt.");
   await mutate(hotel, actor, "hotel.portal_tip_add", (p) => {
     const tips = [...(p.tips ?? []), { id: randomUUID().slice(0, 8), title, text }];
-    if (tips.length > MAX_TIPS) throw new Error(`Höchstens ${MAX_TIPS} Tipps.`);
+    if (tips.length > MAX_TIPS) throw new UserError(`Höchstens ${MAX_TIPS} Tipps.`);
     return { ...p, tips };
   });
 }

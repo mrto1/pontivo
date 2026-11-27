@@ -1,5 +1,5 @@
 import { Notice } from "@/components/admin/Notice";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { bookingDetail, bookingErrorText, moveBooking } from "@/src/services/admin-bookings";
@@ -9,27 +9,15 @@ import { formatChf } from "@/src/domain/money";
 import { addDays, nightsOf, todayIn } from "@/src/domain/dates";
 import { bookingExtrasOf } from "@/src/services/extras";
 import { moduleOn } from "@/src/services/modules";
-import { DebtorError, listCompanies, setBookingCompany } from "@/src/services/debtors";
+import { listCompanies, setBookingCompany } from "@/src/services/debtors";
 import { CashCard } from "./CashCard";
 import { AccessCard } from "./AccessCard";
 import { GuestNoteCard } from "./GuestNoteCard";
+import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
+import { UserError } from "@/src/domain/errors";
 
 export const dynamic = "force-dynamic";
-
-async function cancelAction(formData: FormData) {
-  "use server";
-  const hotelId = String(formData.get("hotelId"));
-  const bookingId = String(formData.get("bookingId"));
-  const { actor } = await requireHotel(hotelId, "manager");
-  let msg = "Buchung storniert";
-  try {
-    const r = await cancelBooking(bookingId, { by: "hotel", actor, hotelId, reason: String(formData.get("reason") || "by_hotel") });
-    msg = `Storniert, Rückerstattung ${formatChf(r.refundRappen)}`;
-  } catch (e) {
-    msg = e instanceof BookingError ? `Nicht möglich: ${e.code}` : `Fehler: ${(e as Error).message}`;
-  }
-  redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}`);
-}
 
 const MOVE_ERRORS: Record<string, string> = {
   same_dates: "Das ist schon die aktuelle Anreise.",
@@ -38,59 +26,52 @@ const MOVE_ERRORS: Record<string, string> = {
   not_confirmed: "Nur bestätigte Buchungen können verschoben werden.",
 };
 
-async function moveAction(formData: FormData) {
-  "use server";
-  const hotelId = String(formData.get("hotelId"));
-  const bookingId = String(formData.get("bookingId"));
-  const { actor } = await requireHotel(hotelId, "staff", "bookings");
-  let msg = "Aufenthalt verschoben";
-  try {
-    const b = await moveBooking(hotelId, bookingId, String(formData.get("checkin")), { actor, notifyGuest: formData.get("notify") === "on" });
-    msg = `Aufenthalt verschoben auf ${b.checkin} → ${b.checkout}`;
-  } catch (e) {
-    msg = e instanceof BookingError ? MOVE_ERRORS[e.code] ?? bookingErrorText(e.code) : `Fehler: ${(e as Error).message}`;
-  }
-  redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}`);
+/** Aktion zur Buchung; Buchungsfehler mit Code erscheinen als verständlicher Text */
+async function run(f: FormData, o: { role?: "staff" | "manager"; area?: string; texts?: Record<string, string> }, fn: (c: HotelCtx, bookingId: string) => Promise<string>) {
+  const bookingId = s(f, "bookingId");
+  await hotelAction(f, { page: `bookings/${bookingId}`, role: o.role ?? "staff", area: o.area, fail: "Nicht möglich" }, async (c) => {
+    try {
+      return await fn(c, bookingId);
+    } catch (e) {
+      if (e instanceof BookingError && e.message === e.code) throw new UserError(o.texts?.[e.code] ?? bookingErrorText(e.code));
+      throw e;
+    }
+  });
 }
 
-async function balanceOnsiteAction(formData: FormData) {
+async function cancelAction(f: FormData) {
   "use server";
-  const hotelId = String(formData.get("hotelId"));
-  const bookingId = String(formData.get("bookingId"));
-  const { actor } = await requireHotel(hotelId, "staff", "bookings");
-  let msg = "Restbetrag als erhalten markiert";
-  try {
-    await markBalanceOnsite(hotelId, bookingId, actor);
-  } catch (e) {
-    msg = e instanceof BookingError ? `Nicht möglich: ${e.message}` : String(e);
-  }
-  redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}`);
+  await run(f, { role: "manager" }, async ({ hotel, actor }, bookingId) => {
+    const r = await cancelBooking(bookingId, { by: "hotel", actor, hotelId: hotel.id, reason: s(f, "reason") || "by_hotel" });
+    return `Storniert, Rückerstattung ${formatChf(r.refundRappen)}`;
+  });
 }
 
-async function companyAction(formData: FormData) {
+async function moveAction(f: FormData) {
   "use server";
-  const hotelId = String(formData.get("hotelId"));
-  const bookingId = String(formData.get("bookingId"));
-  const { hotel, actor } = await requireHotel(hotelId, "staff", "debtors");
-  if (!(await moduleOn(hotel.id, "debtors"))) notFound();
-  let msg = "Firma gespeichert.";
-  try { await setBookingCompany(hotel.id, bookingId, String(formData.get("companyId") ?? "") || null, actor); }
-  catch (e) { if (!(e instanceof DebtorError)) throw e; msg = `Nicht gespeichert: ${e.message}`; }
-  redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}`);
+  await run(f, { area: "bookings", texts: MOVE_ERRORS }, async ({ hotel, actor }, bookingId) => {
+    const b = await moveBooking(hotel.id, bookingId, s(f, "checkin"), { actor, notifyGuest: f.get("notify") === "on" });
+    return `Aufenthalt verschoben auf ${b.checkin} → ${b.checkout}`;
+  });
 }
 
-async function noShowAction(formData: FormData) {
+async function balanceOnsiteAction(f: FormData) {
   "use server";
-  const hotelId = String(formData.get("hotelId"));
-  const bookingId = String(formData.get("bookingId"));
-  const { actor } = await requireHotel(hotelId, "staff", "bookings");
-  let msg = "Als No-Show markiert";
-  try {
-    await markNoShow(hotelId, bookingId, actor);
-  } catch (e) {
-    msg = e instanceof BookingError ? `Nicht möglich: ${e.message}` : String(e);
-  }
-  redirect(`/admin/${hotelId}/bookings/${bookingId}?msg=${encodeURIComponent(msg)}`);
+  await run(f, { area: "bookings" }, async ({ hotel, actor }, bookingId) => { await markBalanceOnsite(hotel.id, bookingId, actor); return "Restbetrag als erhalten markiert"; });
+}
+
+async function companyAction(f: FormData) {
+  "use server";
+  await run(f, { area: "debtors" }, async ({ hotel, actor }, bookingId) => {
+    if (!(await moduleOn(hotel.id, "debtors"))) notFound();
+    await setBookingCompany(hotel.id, bookingId, s(f, "companyId") || null, actor);
+    return "Firma gespeichert.";
+  });
+}
+
+async function noShowAction(f: FormData) {
+  "use server";
+  await run(f, { area: "bookings" }, async ({ hotel, actor }, bookingId) => { await markNoShow(hotel.id, bookingId, actor); return "Als No-Show markiert"; });
 }
 
 export default async function BookingDetail({ params, searchParams }: { params: Promise<{ hotelId: string; bookingId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {

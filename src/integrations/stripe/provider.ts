@@ -1,3 +1,4 @@
+import { UserError } from "../../domain/errors";
 import type { CardSetupArgs, ChargeSavedCardArgs, ChargeResult, CheckoutArgs, PaymentCheckoutArgs, PaymentProvider, RefundArgs } from "../../payments/provider";
 import type { Hotel } from "../../db/schema";
 import { feeShare } from "../../domain/deposit";
@@ -144,7 +145,7 @@ export class StripePaymentProvider implements PaymentProvider {
   async finishCardSetup(hotel: Hotel, sessionId: string) {
     const session = await stripe().checkout.sessions.retrieve(sessionId, { expand: ["setup_intent.payment_method"] });
     if (session.metadata?.hotel_id !== hotel.id) throw new Error("Setup-Session gehört nicht zu diesem Betrieb");
-    if (session.status !== "complete") throw new Error("Karte wurde nicht hinterlegt");
+    if (session.status !== "complete") throw new UserError("Karte wurde nicht hinterlegt");
     const si = session.setup_intent as Stripe.SetupIntent | null;
     const pm = si?.payment_method as Stripe.PaymentMethod | null;
     if (!pm || typeof session.customer !== "string") throw new Error("Kein Zahlungsmittel in der Session");

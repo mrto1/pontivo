@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import type pg from "pg";
 import { pool } from "../db/client";
 
@@ -88,7 +89,7 @@ export async function platformOverview(): Promise<{ hotels: HotelRow[]; users: U
 export async function deleteHotelCascade(hotelId: string, actor: string): Promise<Map<string, number>> {
   return inTx(async (c) => {
     const h = (await c.query(`SELECT id, name, status FROM hotels WHERE id = $1`, [hotelId])).rows[0];
-    if (!h) throw new Error("Betrieb nicht gefunden");
+    if (!h) throw new UserError("Betrieb nicht gefunden");
     const counts = new Map<string, number>();
     await purge(c, "hotels", "id = $1", [hotelId], counts);
     await record(c, actor, "hotel.deleted", hotelId, { name: h.name, status: h.status, rows: Object.fromEntries(counts) });
@@ -100,8 +101,8 @@ export async function deleteHotelCascade(hotelId: string, actor: string): Promis
 export async function deleteUserAccount(userId: string, actor: string): Promise<Map<string, number>> {
   return inTx(async (c) => {
     const u = (await c.query(`SELECT id, email, is_platform_admin FROM users WHERE id = $1`, [userId])).rows[0];
-    if (!u) throw new Error("Benutzer nicht gefunden");
-    if (u.is_platform_admin) throw new Error("Plattform-Admins werden nicht gelöscht");
+    if (!u) throw new UserError("Benutzer nicht gefunden");
+    if (u.is_platform_admin) throw new UserError("Plattform-Admins werden nicht gelöscht");
     const counts = new Map<string, number>();
     await purge(c, "users", "id = $1", [userId], counts);
     await record(c, actor, "user.deleted", userId, { email: u.email, rows: Object.fromEntries(counts) });
@@ -125,7 +126,7 @@ export const soleHotelsOf = async (userId: string) =>
 export async function resetUserSecurity(userId: string, actor: string): Promise<void> {
   await inTx(async (c) => {
     const u = (await c.query(`SELECT email FROM users WHERE id = $1`, [userId])).rows[0];
-    if (!u) throw new Error("Benutzer nicht gefunden");
+    if (!u) throw new UserError("Benutzer nicht gefunden");
     await c.query(`DELETE FROM user_passkeys WHERE user_id = $1`, [userId]);
     await c.query(`DELETE FROM user_totp WHERE user_id = $1`, [userId]);
     await c.query(`DELETE FROM user_recovery_codes WHERE user_id = $1`, [userId]);
@@ -144,10 +145,10 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 export async function addPlatformAdmin(email: string, name: string | null, actor: string): Promise<{ id: string; email: string; created: boolean }> {
   const e = email.trim().toLowerCase();
-  if (!EMAIL_RE.test(e)) throw new Error("E-Mail-Adresse ungültig");
+  if (!EMAIL_RE.test(e)) throw new UserError("E-Mail-Adresse ungültig");
   return inTx(async (c) => {
     const ex = (await c.query(`SELECT id, is_platform_admin FROM users WHERE lower(email) = $1`, [e])).rows[0] as { id: string; is_platform_admin: boolean } | undefined;
-    if (ex?.is_platform_admin) throw new Error("Diese Person ist schon Plattform-Admin");
+    if (ex?.is_platform_admin) throw new UserError("Diese Person ist schon Plattform-Admin");
     let id = ex?.id;
     if (id) await c.query(`UPDATE users SET is_platform_admin = true WHERE id = $1`, [id]);
     else id = (await c.query(`INSERT INTO users (email, name, is_platform_admin) VALUES ($1, $2, true) RETURNING id`, [e, (name ?? "").trim() || null])).rows[0].id as string;
@@ -158,12 +159,12 @@ export async function addPlatformAdmin(email: string, name: string | null, actor
 
 /** Plattform-Admin-Recht entziehen. Nicht sich selbst und nie den letzten Admin; das Konto bleibt bestehen. */
 export async function removePlatformAdmin(userId: string, actorUserId: string, actor: string): Promise<void> {
-  if (userId === actorUserId) throw new Error("Du kannst dir das Recht nicht selbst entziehen");
+  if (userId === actorUserId) throw new UserError("Du kannst dir das Recht nicht selbst entziehen");
   await inTx(async (c) => {
     const u = (await c.query(`SELECT email, is_platform_admin FROM users WHERE id = $1 FOR UPDATE`, [userId])).rows[0];
-    if (!u?.is_platform_admin) throw new Error("Diese Person ist kein Plattform-Admin");
+    if (!u?.is_platform_admin) throw new UserError("Diese Person ist kein Plattform-Admin");
     const n = Number((await c.query(`SELECT count(*) FROM users WHERE is_platform_admin`)).rows[0].count);
-    if (n <= 1) throw new Error("Der letzte Plattform-Admin kann nicht entfernt werden");
+    if (n <= 1) throw new UserError("Der letzte Plattform-Admin kann nicht entfernt werden");
     await c.query(`UPDATE users SET is_platform_admin = false WHERE id = $1`, [userId]);
     await record(c, actor, "platform_admin.removed", userId, { email: u.email });
   });

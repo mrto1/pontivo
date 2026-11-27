@@ -1,11 +1,9 @@
 import { Notice } from "@/components/admin/Notice";
-import { redirect } from "next/navigation";
-import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
 import { atLeast } from "@/src/auth/session";
 import { setDeposit } from "@/src/services/settings";
 import { onboardingLink, refreshAccountStatus } from "@/src/integrations/stripe/onboarding";
-import { BillingError, chargesOf, setBillingMethod, startCardSetup } from "@/src/services/billing";
+import { chargesOf, setBillingMethod, startCardSetup } from "@/src/services/billing";
 import { billingReady, chargeStatusText } from "@/src/domain/platform-invoice";
 import { todayIn } from "@/src/domain/dates";
 import { getPlatformBilling } from "@/src/services/platform-settings";
@@ -14,113 +12,82 @@ import { env } from "@/src/env";
 import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
 import { paymentUi, setPaymentUi, type PaymentUi } from "@/src/services/payment-settings";
 import { s } from "@/src/lib/form";
-import { applyStripeBranding, BrandingError } from "@/src/integrations/stripe/branding";
+import { hotelAction, userErrorText, type ActionResult, type HotelCtx } from "@/src/lib/hotel-action";
+import { isStripeError, viaStripe } from "@/src/integrations/stripe/errors";
+import { applyStripeBranding } from "@/src/integrations/stripe/branding";
 import { domainStates, domainSummary, methodStates, registerDomains, setMethods, type DomainState, type MethodState } from "@/src/integrations/stripe/payment-methods";
 
 export const dynamic = "force-dynamic";
 
-const back = (hotelId: string, msg: string) => redirect(`/admin/${hotelId}/zahlungen?msg=${encodeURIComponent(msg)}`);
+/** Rückkehr auf diese Seite; Stripe-Meldungen erscheinen als «Stripe: …» (viaStripe) */
+const run = (f: FormData, role: "manager" | "owner", fn: (c: HotelCtx) => Promise<ActionResult>) =>
+  hotelAction(f, { page: "zahlungen", role, fail: "Nicht möglich" }, fn);
+/** Meldung eines Teilschritts, der scheitern darf, ohne das Speichern rückgängig zu machen */
+function soft(e: unknown): string {
+  if (isStripeError(e)) return `Stripe: ${e.message}`;
+  const t = userErrorText(e);
+  if (t === null) throw e;
+  return t;
+}
 
 async function saveDeposit(f: FormData) {
   "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "manager");
-  try {
-    await setDeposit(hotel, { percent: Number(s(f, "percent")), dueDays: Number(s(f, "dueDays")) }, actor);
-  } catch (e) {
-    if (e instanceof ZodError) back(hotel.id, `Fehler: ${e.issues.map((i) => i.message).join(", ")}`);
-    throw e;
-  }
-  back(hotel.id, "Gespeichert");
+  await run(f, "manager", async ({ hotel, actor }) => { await setDeposit(hotel, { percent: Number(s(f, "percent")), dueDays: Number(s(f, "dueDays")) }, actor); });
 }
 
 async function savePaymentUi(f: FormData) {
   "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
-  const ui = s(f, "ui");
-  const next: PaymentUi = ui === "element" || ui === "embedded" ? (ui as PaymentUi) : "hosted";
-  await setPaymentUi(hotel, next, actor);
-  // Apple Pay braucht bei Formular und eingebettetem Checkout die Domain im Stripe-Konto des Hotels (gehostet nicht): gleich eintragen
-  if (next !== "hosted" && hotel.stripeAccountId) {
-    const r = await registerDomains(hotel, actor).then(domainSummary, (e) => `Domain-Eintrag fehlgeschlagen: ${(e as Error).message}`);
-    back(hotel.id, `Gespeichert. ${r}`);
-  }
-  back(hotel.id, "Gespeichert");
+  await run(f, "owner", async ({ hotel, actor }) => {
+    const ui = s(f, "ui");
+    const next: PaymentUi = ui === "element" || ui === "embedded" ? (ui as PaymentUi) : "hosted";
+    await setPaymentUi(hotel, next, actor);
+    // Apple Pay braucht bei Formular und eingebettetem Checkout die Domain im Stripe-Konto des Hotels (gehostet nicht): gleich eintragen
+    if (next !== "hosted" && hotel.stripeAccountId) return `Gespeichert. ${await registerDomains(hotel, actor).then(domainSummary, (e) => `Domain-Eintrag fehlgeschlagen: ${soft(e)}`)}`;
+  });
 }
 
 async function saveMethods(f: FormData) {
   "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
-  let msg: string;
-  try {
+  await run(f, "owner", ({ hotel, actor }) => viaStripe(async () => {
     await setMethods(hotel, { apple_pay: s(f, "apple_pay") === "on", google_pay: s(f, "google_pay") === "on", twint: s(f, "twint") === "on" }, actor);
-    msg = `Zahlarten gespeichert. ${domainSummary(await registerDomains(hotel, actor))}`;
-  } catch (e) {
-    msg = `Stripe: ${(e as Error).message}`;
-  }
-  back(hotel.id, msg);
+    return `Zahlarten gespeichert. ${domainSummary(await registerDomains(hotel, actor))}`;
+  }));
 }
 
 async function registerDomainsAction(f: FormData) {
   "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
-  back(hotel.id, await registerDomains(hotel, actor).then(domainSummary, (e) => `Stripe: ${(e as Error).message}`));
+  await run(f, "owner", ({ hotel, actor }) => viaStripe(async () => domainSummary(await registerDomains(hotel, actor))));
 }
 
 async function stripeOnboarding(f: FormData) {
   "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
-  let url: string;
-  try {
-    url = await onboardingLink(hotel, actor);
-  } catch (e) {
-    back(hotel.id, `Stripe: ${(e as Error).message}`);
-    return;
-  }
-  redirect(url);
+  await run(f, "owner", async ({ hotel, actor }) => ({ to: await viaStripe(() => onboardingLink(hotel, actor)) }));
 }
 
 async function cardSetup(f: FormData) {
   "use server";
-  const { hotel } = await requireHotel(s(f, "hotelId"), "owner");
-  let url = "";
-  try {
-    url = await startCardSetup(hotel, `/admin/${hotel.id}/zahlungen`);
-  } catch (e) {
-    back(hotel.id, `Karte: ${(e as Error).message}`);
-  }
-  redirect(url);
+  await run(f, "owner", async ({ hotel }) => ({ to: await viaStripe(() => startCardSetup(hotel, `/admin/${hotel.id}/zahlungen`), "Karte") }));
 }
 
 async function billingMethod(f: FormData) {
   "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
-  try { await setBillingMethod(hotel, s(f, "method") === "qr" ? "qr" : "card", actor); } catch (e) { if (!(e instanceof BillingError)) throw e; back(hotel.id, e.message); }
-  back(hotel.id, s(f, "method") === "qr" ? "Grundgebühr per QR-Rechnung: gilt ab der nächsten Monatsrechnung." : "Grundgebühr per Karte: gilt ab der nächsten Monatsrechnung.");
+  await run(f, "owner", async ({ hotel, actor }) => {
+    await setBillingMethod(hotel, s(f, "method") === "qr" ? "qr" : "card", actor);
+    return s(f, "method") === "qr" ? "Grundgebühr per QR-Rechnung: gilt ab der nächsten Monatsrechnung." : "Grundgebühr per Karte: gilt ab der nächsten Monatsrechnung.";
+  });
 }
 
 async function brandingApply(f: FormData) {
   "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
-  let msg: string;
-  try {
+  await run(f, "owner", ({ hotel, actor }) => viaStripe(async () => {
     const r = await applyStripeBranding(hotel, actor);
-    msg = `Auf Stripe übernommen: Farbe ${r.color}${r.logo ? ", Logo" : ""}${r.icon ? " und Icon" : ""}.`;
-  } catch (e) {
-    if (!(e instanceof BrandingError)) { back(hotel.id, `Stripe: ${(e as Error).message}`); return; }
-    msg = e.message;
-  }
-  back(hotel.id, msg);
+    return `Auf Stripe übernommen: Farbe ${r.color}${r.logo ? ", Logo" : ""}${r.icon ? " und Icon" : ""}.`;
+  }));
 }
 
 async function stripeRefresh(f: FormData) {
   "use server";
-  const { hotel } = await requireHotel(s(f, "hotelId"), "owner");
-  try {
-    await refreshAccountStatus(hotel);
-  } catch (e) {
-    back(hotel.id, `Stripe: ${(e as Error).message}`);
-  }
-  back(hotel.id, "Stripe-Status aktualisiert");
+  await run(f, "owner", ({ hotel }) => viaStripe(async () => { await refreshAccountStatus(hotel); return "Stripe-Status aktualisiert"; }));
 }
 
 /** Zahlungsmethoden (SPEC 19.47): Stripe-Konto (Karte, TWINT), Anzahlung, Grundgebühr und Karte des Betriebs. Früher unter Grunddaten. */

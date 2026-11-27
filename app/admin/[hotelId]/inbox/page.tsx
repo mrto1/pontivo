@@ -14,6 +14,7 @@ import { OFFER_STATUS_LABEL } from "@/src/domain/offers";
 import { formatDay } from "@/src/i18n/dict";
 import { listGuestRequests, openGuestRequestCount, setGuestRequestDone } from "@/src/services/guest-requests";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 const KIND: Record<string, string> = { table: "Tisch reservieren", group: "Gruppe", seminar: "Seminar / Tagung", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anderes" };
@@ -21,29 +22,19 @@ const fmt = (d: Date) => d.toLocaleString("de-CH", { timeZone: "Europe/Zurich", 
 
 async function reply(f: FormData) {
   "use server";
-  const c = await requireHotelModule("inbox", s(f, "hotelId"), "staff", "inbox");
   const id = s(f, "threadId");
-  let msg = "Antwort gesendet.";
-  try {
+  await hotelAction(f, { page: "inbox", module: "inbox", area: "inbox", fail: "Nicht gesendet", keep: { thread: id } }, async (c) => {
     await replyToThread(c.hotel.id, id, String(f.get("text") ?? ""), c.actor);
-  } catch (e) {
-    if (!(e instanceof InboxError)) throw e;
-    msg = `Nicht gesendet: ${e.message}`;
-  }
-  redirect(`/admin/${c.hotel.id}/inbox?thread=${id}&msg=${encodeURIComponent(msg)}`);
+    return "Antwort gesendet.";
+  });
 }
 
 async function close(f: FormData) {
   "use server";
-  const c = await requireHotelModule("inbox", s(f, "hotelId"), "staff", "inbox");
-  let msg = "Unterhaltung abgeschlossen.";
-  try {
+  await hotelAction(f, { page: "inbox", module: "inbox", area: "inbox", fail: "Nicht abgeschlossen" }, async (c) => {
     await closeThread(c.hotel.id, s(f, "threadId"), c.actor);
-  } catch (e) {
-    if (!(e instanceof InboxError)) throw e;
-    msg = `Nicht abgeschlossen: ${e.message}`;
-  }
-  redirect(`/admin/${c.hotel.id}/inbox?msg=${encodeURIComponent(msg)}`);
+    return "Unterhaltung abgeschlossen.";
+  });
 }
 
 async function toggle(f: FormData) {

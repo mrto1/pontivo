@@ -15,23 +15,19 @@ import {
   PricingError, addEvent, applyProposals, deleteEvent, dismissProposals, generateProposals, listEvents, listProposals, listRules, saveRule,
 } from "@/src/services/pricing-rules";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 const num = (f: FormData, k: string) => Math.round(Number(s(f, k).replace(",", ".")) || 0);
 const chf = (r: number) => (r / 100).toLocaleString("de-CH", { minimumFractionDigits: 0 });
 const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
-async function guard(f: FormData) {
-  const c = await requireHotelModule("pricing_rules", s(f, "hotelId"), "manager");
-  return c;
-}
-const back = (id: string, msg: string) => redirect(`/admin/${id}/preise?msg=${encodeURIComponent(msg)}`);
+const run = (f: FormData, fn: (c: HotelCtx) => Promise<string>, fail = "Nicht gespeichert") =>
+  hotelAction(f, { page: "preise", module: "pricing_rules", role: "manager", fail }, fn);
 
 async function saveAction(f: FormData) {
   "use server";
-  const c = await guard(f);
-  let msg = "Regel gespeichert.";
-  try {
+  await run(f, async (c) => {
     const steps = [1, 2, 3].filter((i) => s(f, `st${i}p`) !== "").map((i) => ({ fromPct: num(f, `st${i}p`), bps: num(f, `st${i}b`) * 100 }));
     const lmDays = s(f, "lmDays");
     await saveRule(c.hotel.id, s(f, "ratePlanId"), {
@@ -41,59 +37,49 @@ async function saveAction(f: FormData) {
       weekdayBps: [0, 1, 2, 3, 4, 5, 6].map((d) => num(f, `wd${d}`) * 100),
       autoApply: f.get("auto") === "on", active: f.get("active") === "on",
     }, c.actor);
-  } catch (e) {
-    if (!(e instanceof PricingError)) throw e;
-    msg = `Nicht gespeichert: ${e.message}`;
-  }
-  back(c.hotel.id, msg);
+    return "Regel gespeichert.";
+  });
 }
 async function eventAction(f: FormData) {
   "use server";
-  const c = await guard(f);
-  let msg = "Ereignis gespeichert.";
-  try { await addEvent(c.hotel.id, { name: s(f, "name"), fromDay: s(f, "from"), toDay: s(f, "to") || s(f, "from"), adjustBps: num(f, "pct") * 100 }, c.actor); }
-  catch (e) { if (!(e instanceof PricingError)) throw e; msg = `Nicht gespeichert: ${e.message}`; }
-  back(c.hotel.id, msg);
+  await run(f, async (c) => { await addEvent(c.hotel.id, { name: s(f, "name"), fromDay: s(f, "from"), toDay: s(f, "to") || s(f, "from"), adjustBps: num(f, "pct") * 100 }, c.actor); return "Ereignis gespeichert."; });
 }
 async function deleteEventAction(f: FormData) {
   "use server";
-  const c = await guard(f);
-  await deleteEvent(c.hotel.id, s(f, "id"), c.actor);
-  back(c.hotel.id, "Ereignis gelöscht.");
+  await run(f, async (c) => { await deleteEvent(c.hotel.id, s(f, "id"), c.actor); return "Ereignis gelöscht."; });
 }
 async function adoptAction(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const keys = f.getAll("pick").map(String);
-  let msg = "Nichts ausgewählt.";
-  if (keys.length) {
-    try {
-      const n = await adoptSuggestions(c.hotel, todayIn(c.hotel.timezone), keys, { feiertag: num(f, "pctFeiertag"), schulferien: num(f, "pctSchule") }, c.actor);
-      msg = `${n} Ereignisse übernommen.`;
-    } catch (e) { if (!(e instanceof PricingError)) throw e; msg = `Nicht gespeichert: ${e.message}`; }
-  }
-  back(c.hotel.id, msg);
+  await run(f, async (c) => {
+    const keys = f.getAll("pick").map(String);
+    if (!keys.length) return "Nichts ausgewählt.";
+    const n = await adoptSuggestions(c.hotel, todayIn(c.hotel.timezone), keys, { feiertag: num(f, "pctFeiertag"), schulferien: num(f, "pctSchule") }, c.actor);
+    return `${n} Ereignisse übernommen.`;
+  });
 }
 async function computeAction(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const r = await generateProposals(c.hotel.id, todayIn(c.hotel.timezone), c.actor);
-  back(c.hotel.id, r.applied ? `${r.applied} Preise automatisch übernommen.` : `${r.proposed} Vorschläge berechnet.`);
+  await run(f, async (c) => {
+    const r = await generateProposals(c.hotel.id, todayIn(c.hotel.timezone), c.actor);
+    return r.applied ? `${r.applied} Preise automatisch übernommen.` : `${r.proposed} Vorschläge berechnet.`;
+  });
 }
 async function aiAction(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const r = await refreshProposals(c.hotel, c.actor);
-  if ("aiError" in r && r.aiError) back(c.hotel.id, `Nicht berechnet: ${r.aiError}`);
-  back(c.hotel.id, r.ai ? `KI-Empfehlung fertig: ${r.ai.proposed} Vorschläge${r.ai.applied ? `, ${r.ai.applied} automatisch übernommen` : ""}.` : "Keine KI-Berechnung (Modul aus).");
+  await run(f, async (c) => {
+    const r = await refreshProposals(c.hotel, c.actor);
+    if ("aiError" in r && r.aiError) throw new PricingError(r.aiError);
+    return r.ai ? `KI-Empfehlung fertig: ${r.ai.proposed} Vorschläge${r.ai.applied ? `, ${r.ai.applied} automatisch übernommen` : ""}.` : "Keine KI-Berechnung (Modul aus).";
+  }, "Nicht berechnet");
 }
 async function decideAction(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const ids = f.getAll("id").map(String);
-  if (s(f, "do") === "apply") back(c.hotel.id, `${await applyProposals(c.hotel.id, ids, c.actor)} Preise übernommen.`);
-  await dismissProposals(c.hotel.id, ids, c.actor);
-  back(c.hotel.id, "Vorschläge verworfen.");
+  await run(f, async (c) => {
+    const ids = f.getAll("id").map(String);
+    if (s(f, "do") === "apply") return `${await applyProposals(c.hotel.id, ids, c.actor)} Preise übernommen.`;
+    await dismissProposals(c.hotel.id, ids, c.actor);
+    return "Vorschläge verworfen.";
+  });
 }
 
 export default async function PricingAdmin({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {

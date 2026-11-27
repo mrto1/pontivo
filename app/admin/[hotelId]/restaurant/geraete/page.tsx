@@ -5,33 +5,28 @@ import { PosError, createDevice, listDevices, releaseDevice } from "@/src/servic
 import { RoomLinkError, activeLink, connectRoomLink, disconnectRoomLink, roomLinkTotals } from "@/src/services/room-link";
 import { formatChf } from "@/src/domain/money";
 import { s } from "@/src/lib/form";
+import { hotelAction, type ActionResult, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
-const here = (h: string, msg: string) => redirect(`/admin/${h}/restaurant/geraete?msg=${encodeURIComponent(msg)}`);
+const run = (f: FormData, fail: string, fn: (c: HotelCtx) => Promise<string>, role: "manager" | "owner" = "manager") =>
+  hotelAction(f, { page: "restaurant/geraete", module: "pos", role, fail }, fn);
 
-async function guard(f: FormData) {
-  const c = await requireHotelModule("pos", s(f, "hotelId"), "manager");
-  return c;
-}
 async function release(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try { await releaseDevice(c.hotel.id, s(f, "id"), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht freigegeben: ${e.message}`); }
-  here(c.hotel.id, "Gerät freigegeben. Das nächste Tablet kann es wählen.");
+  await run(f, "Nicht freigegeben", async (c) => { await releaseDevice(c.hotel.id, s(f, "id"), c.actor); return "Gerät freigegeben. Das nächste Tablet kann es wählen."; });
 }
 async function device(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try { await createDevice(c.hotel.id, s(f, "code"), s(f, "label"), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht angelegt: ${e.message}`); }
-  here(c.hotel.id, "Gerät angelegt.");
+  await run(f, "Nicht angelegt", async (c) => { await createDevice(c.hotel.id, s(f, "code"), s(f, "label"), c.actor); return "Gerät angelegt."; });
 }
 
 async function link(f: FormData) {
   "use server";
-  const c = await requireHotelModule("pos", s(f, "hotelId"), "owner");
-  if (s(f, "do") === "off") { await disconnectRoomLink(c.hotel.id, c.actor); here(c.hotel.id, "Verbindung zum Hotel getrennt."); }
-  try { const l = await connectRoomLink(c.hotel.id, s(f, "key"), c.actor); here(c.hotel.id, `Verbunden mit ${l.label}. «Aufs Zimmer» bucht jetzt auf die Hotelrechnung.`); }
-  catch (e) { if (!(e instanceof RoomLinkError)) throw e; here(c.hotel.id, `Nicht verbunden: ${e.message}`); }
+  await run(f, "Nicht verbunden", async (c) => {
+    if (s(f, "do") === "off") { await disconnectRoomLink(c.hotel.id, c.actor); return "Verbindung zum Hotel getrennt."; }
+    const l = await connectRoomLink(c.hotel.id, s(f, "key"), c.actor);
+    return `Verbunden mit ${l.label}. «Aufs Zimmer» bucht jetzt auf die Hotelrechnung.`;
+  }, "owner");
 }
 
 /** Kassen-Geräte (Einstellungen → Gastronomie → Kasse): jedes Gerät hat einen eigenen, lückenlosen Bon-Nummernkreis */

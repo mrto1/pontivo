@@ -7,23 +7,13 @@ import { formatChf } from "@/src/domain/money";
 import { formatBps } from "@/src/domain/invoice";
 import { formatDay } from "@/src/i18n/dict";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 
 
-async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>, id: string) => Promise<string | { to: string }>) {
-  const c = await requireHotelModule("invoicing", s(f, "hotelId"), "staff", "invoices");
-  const id = s(f, "invoiceId");
-  let out: string | { to: string };
-  try {
-    out = await fn(c, id);
-  } catch (e) {
-    if (!(e instanceof InvoiceError)) throw e;
-    out = `Nicht möglich: ${e.message}`;
-  }
-  if (typeof out !== "string") redirect(out.to);
-  redirect(`/admin/${c.hotel.id}/invoices/${id}?msg=${encodeURIComponent(out)}`);
-}
+const act = (f: FormData, fn: (c: HotelCtx, id: string) => Promise<string | { to: string }>) =>
+  hotelAction(f, { page: `invoices/${s(f, "invoiceId")}`, module: "invoicing", area: "invoices", fail: "Nicht möglich" }, (c) => fn(c, s(f, "invoiceId")));
 
 async function save(f: FormData) {
   "use server";
@@ -49,16 +39,10 @@ async function discard(f: FormData) {
 }
 async function credit(f: FormData) {
   "use server";
-  const c = await requireHotelModule("invoicing", s(f, "hotelId"), "manager");
-  let to: string;
-  try {
+  await hotelAction(f, { page: `invoices/${s(f, "invoiceId")}`, module: "invoicing", role: "manager", fail: "Nicht möglich" }, async (c) => {
     const cn = await createCreditNote(c.hotel, s(f, "invoiceId"), c.actor);
-    to = `/admin/${c.hotel.id}/invoices/${cn.id}?msg=${encodeURIComponent(`Gutschrift ${cn.number} erstellt.`)}`;
-  } catch (e) {
-    if (!(e instanceof InvoiceError)) throw e;
-    to = `/admin/${c.hotel.id}/invoices/${s(f, "invoiceId")}?msg=${encodeURIComponent(`Nicht möglich: ${e.message}`)}`;
-  }
-  redirect(to);
+    return { to: `/admin/${c.hotel.id}/invoices/${cn.id}?msg=${encodeURIComponent(`Gutschrift ${cn.number} erstellt.`)}` };
+  });
 }
 
 export default async function InvoicePage({ params, searchParams }: { params: Promise<{ hotelId: string; invoiceId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {

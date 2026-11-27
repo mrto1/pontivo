@@ -15,6 +15,7 @@ import { EXTRA_UNITS, perPerson } from "@/src/domain/extras";
 import { hotelLocales, LOCALE_NAMES } from "@/src/i18n/dict";
 import type { Extra } from "@/src/db/schema";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 
@@ -31,19 +32,8 @@ function input(f: FormData): ExtraInput {
   };
 }
 
-async function run(f: FormData, fn: (hotelId: string, actor: string) => Promise<string>) {
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  let msg: string;
-  try {
-    msg = await fn(c.hotel.id, c.actor);
-  } catch (e) {
-    if (!(e instanceof ZodError) && !(e instanceof ExtraAdminError) && !(e instanceof Error && /Betrag/.test(e.message))) throw e;
-    msg = `Nicht gespeichert: ${e instanceof ZodError ? e.issues.map((i) => i.message).join(", ") : e.message}`;
-  }
-  // bei einem Fehler bleibt die Seitenleiste offen
-  const reopen = msg.startsWith("Nicht gespeichert") ? `e=${s(f, "id") || "neu"}&` : "";
-  redirect(`/admin/${c.hotel.id}/rooms/extras?${reopen}msg=${encodeURIComponent(msg)}`);
-}
+const run = (f: FormData, fn: (hotelId: string, actor: string) => Promise<string>) =>
+  hotelAction(f, { page: "rooms/extras", role: "manager", reopen: { e: s(f, "id") || "neu" } }, (c) => fn(c.hotel.id, c.actor));
 
 async function save(f: FormData) {
   "use server";

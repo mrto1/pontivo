@@ -1,31 +1,27 @@
 import { Notice } from "@/components/admin/Notice";
 import { DownloadLink } from "@/components/admin/DownloadLink";
 import { TableEditor } from "@/components/admin/TableEditor";
-import { redirect } from "next/navigation";
-import { requireHotel, requireHotelModule } from "@/src/auth/guard";
+import { requireHotelModule } from "@/src/auth/guard";
 import { PosError, importTables, listTables, saveTable } from "@/src/services/pos";
-import { FloorplanError, deleteArea, deleteWaiter, listAreas, listPlanItems, listWaiters, saveArea, saveAreaLayout, saveWaiter } from "@/src/services/floorplan";
+import { deleteArea, deleteWaiter, listAreas, listPlanItems, listWaiters, saveArea, saveAreaLayout, saveWaiter } from "@/src/services/floorplan";
 import { parsePosTables } from "@/src/domain/pos-import";
 import { s } from "@/src/lib/form";
+import { hotelAction, type ActionResult, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
-const here = (h: string, msg: string) => redirect(`/admin/${h}/restaurant/tische?msg=${encodeURIComponent(msg)}`);
+/** Aktionen des Tischplans: Modul Restaurant, Manager */
+const run = (f: FormData, fn: (c: HotelCtx) => Promise<ActionResult>, fail = "Nicht gespeichert") =>
+  hotelAction(f, { page: "restaurant/tische", module: "restaurant", role: "manager", fail }, fn);
 
-async function guard(f: FormData) {
-  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "manager");
-  return c;
-}
 async function table(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try { await saveTable(c.hotel.id, s(f, "name"), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht angelegt: ${e.message}`); }
-  here(c.hotel.id, "Tisch angelegt.");
+  await run(f, async (c) => { await saveTable(c.hotel.id, s(f, "name"), c.actor); return "Tisch angelegt."; }, "Nicht angelegt");
 }
 async function tablesSave(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try {
-    const raw = JSON.parse(s(f, "layout")) as { tables: { id: string; areaId: string; waiterId?: string | null; online?: boolean; seats: number; shape: string; x: number | null; y: number | null }[]; items: { areaId: string; kind: string; label: string; x: number; y: number; w: number; h: number }[] };
+  await run(f, async (c) => {
+    let raw: { tables: { id: string; areaId: string; waiterId?: string | null; online?: boolean; seats: number; shape: string; x: number | null; y: number | null }[]; items: { areaId: string; kind: string; label: string; x: number; y: number; w: number; h: number }[] };
+    try { raw = JSON.parse(s(f, "layout")); } catch { throw new PosError("Eingabe ungültig."); }
     if (!raw || !Array.isArray(raw.tables) || !Array.isArray(raw.items)) throw new PosError("Eingabe ungültig.");
     const areas = await listAreas(c.hotel.id);
     for (const a of areas) {
@@ -34,45 +30,38 @@ async function tablesSave(f: FormData) {
         raw.items.filter((i) => i.areaId === a.id).map((i) => ({ kind: i.kind as import("@/src/db/schema").PlanItemKind, label: String(i.label ?? ""), x: Number(i.x), y: Number(i.y), w: Number(i.w), h: Number(i.h) })),
         c.actor);
     }
-  } catch (e) { if (!(e instanceof PosError) && !(e instanceof FloorplanError) && !(e instanceof SyntaxError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e instanceof SyntaxError ? "Eingabe ungültig." : (e as Error).message}`); }
-  here(c.hotel.id, "Tischplan gespeichert.");
+    return "Tischplan gespeichert.";
+  });
 }
 async function waiterSave(f: FormData) {
   "use server";
-  const c = await guard(f);
   const id = s(f, "waiterId") || null;
-  try { await saveWaiter(c.hotel.id, id, { name: s(f, "name"), color: s(f, "color") || undefined }, c.actor); } catch (e) { if (!(e instanceof FloorplanError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
-  here(c.hotel.id, id ? "Kellner gespeichert." : "Kellner angelegt.");
+  await run(f, async (c) => { await saveWaiter(c.hotel.id, id, { name: s(f, "name"), color: s(f, "color") || undefined }, c.actor); return id ? "Kellner gespeichert." : "Kellner angelegt."; });
 }
 async function waiterDelete(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try { await deleteWaiter(c.hotel.id, s(f, "waiterId"), c.actor); } catch (e) { if (!(e instanceof FloorplanError)) throw e; here(c.hotel.id, `Nicht gelöscht: ${e.message}`); }
-  here(c.hotel.id, "Kellner entfernt, seine Tische sind nicht mehr zugewiesen.");
+  await run(f, async (c) => { await deleteWaiter(c.hotel.id, s(f, "waiterId"), c.actor); return "Kellner entfernt, seine Tische sind nicht mehr zugewiesen."; }, "Nicht gelöscht");
 }
 async function areaSave(f: FormData) {
   "use server";
-  const c = await guard(f);
   const id = s(f, "areaId") || null;
-  try { await saveArea(c.hotel.id, id, s(f, "name"), c.actor, f.get("online") === "on"); } catch (e) { if (!(e instanceof FloorplanError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
-  here(c.hotel.id, id ? "Raum umbenannt." : "Raum angelegt.");
+  await run(f, async (c) => { await saveArea(c.hotel.id, id, s(f, "name"), c.actor, f.get("online") === "on"); return id ? "Raum umbenannt." : "Raum angelegt."; });
 }
 async function areaDelete(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try { await deleteArea(c.hotel.id, s(f, "areaId"), c.actor); } catch (e) { if (!(e instanceof FloorplanError)) throw e; here(c.hotel.id, `Nicht gelöscht: ${e.message}`); }
-  here(c.hotel.id, "Raum gelöscht. Die Tische sind im ersten Raum, ohne Platz im Plan.");
+  await run(f, async (c) => { await deleteArea(c.hotel.id, s(f, "areaId"), c.actor); return "Raum gelöscht. Die Tische sind im ersten Raum, ohne Platz im Plan."; }, "Nicht gelöscht");
 }
 async function csvTables(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const file = f.get("file");
-  if (!(file instanceof File) || !file.size) return here(c.hotel.id, "Nicht importiert: Bitte eine CSV-Datei wählen.");
-  if (file.size > 1_000_000) return here(c.hotel.id, "Nicht importiert: Die Datei ist zu gross (höchstens 1 MB).");
-  const r = parsePosTables(await file.text());
-  if (r.problems.length) return here(c.hotel.id, `Nicht importiert (${r.problems.length} Fehler, es wurde nichts gespeichert). ${r.problems.slice(0, 3).map((p) => `Zeile ${p.row}: ${p.message}`).join(" ")}`);
-  const res = await importTables(c.hotel.id, r.names, c.actor);
-  here(c.hotel.id, `${res.created} Tische importiert${res.skipped ? `, ${res.skipped} übersprungen (gab es schon)` : ""}.`);
+  await run(f, async (c) => {
+    const file = f.get("file");
+    if (!(file instanceof File) || !file.size) throw new PosError("Bitte eine CSV-Datei wählen.");
+    if (file.size > 1_000_000) throw new PosError("Die Datei ist zu gross (höchstens 1 MB).");
+    const r = parsePosTables(await file.text());
+    if (r.problems.length) throw new PosError(`${r.problems.length} Fehler, es wurde nichts gespeichert. ${r.problems.slice(0, 3).map((p) => `Zeile ${p.row}: ${p.message}`).join(" ")}`);
+    const res = await importTables(c.hotel.id, r.names, c.actor);
+    return `${res.created} Tische importiert${res.skipped ? `, ${res.skipped} übersprungen (gab es schon)` : ""}.`;
+  }, "Nicht importiert");
 }
 
 /** Tischplan (SPEC 20.1, Zahnrad → Gastronomie): Tische anlegen, Plätze und Form, Plan, Import per CSV */

@@ -1,3 +1,4 @@
+import { UserError } from "../../domain/errors";
 import { env, requireEnv } from "../../env";
 
 /**
@@ -17,7 +18,7 @@ export function setChannexFetch(f: FetchLike | null) {
   fetchOverride = f;
 }
 
-export class ChannexHttpError extends Error {
+export class ChannexHttpError extends UserError {
   constructor(public status: number, public body: unknown, msg: string) {
     super(msg);
   }

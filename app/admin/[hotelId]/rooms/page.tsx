@@ -19,6 +19,7 @@ import { PhotoManager } from "@/components/admin/PhotoManager";
 import { DrawerKeys } from "@/components/admin/DrawerKeys";
 import { translateRooms, translationEnabled, translationsLeft, TranslateError } from "@/src/services/translate";
 import { s } from "@/src/lib/form";
+import { hotelAction, userErrorText, type HotelCtx } from "@/src/lib/hotel-action";
 
 /** Sprachen ausser Deutsch (Deutsch steht im Hauptfeld) */
 const EXTRA = ["en", "fr", "it", "nl"] as const;
@@ -27,13 +28,6 @@ export const dynamic = "force-dynamic";
 
 const n = (f: FormData, k: string) => Number(s(f, k) || 0);
 const chf = (f: FormData, k: string) => (s(f, k) ? decimalToRappen(s(f, k).replace(",", ".").replace(/'/g, "")) : 0);
-
-function errorText(e: unknown): string {
-  if (e instanceof ZodError) return e.issues.map((i) => i.message).join(", ");
-  if (e instanceof RoomError) return e.message;
-  if (e instanceof Error && /ungültiger Betrag/.test(e.message)) return "Ungültiger Betrag";
-  throw e;
-}
 
 function roomInput(f: FormData): RoomTypeInput {
   return {
@@ -68,19 +62,15 @@ function planInput(f: FormData): RatePlanInput {
   };
 }
 
-/** Hilfsfunktion für die Server Actions unten: Rechte prüfen, ausführen, Meldung anzeigen */
-async function act(f: FormData, fn: (ctx: Awaited<ReturnType<typeof requireHotel>>) => Promise<string | { msg: string; q: string }>, q = "") {
-  const ctx = await requireHotel(s(f, "hotelId"), "manager");
-  let msg: string;
-  try {
+/** Hilfsfunktion für die Server Actions unten: Rechte prüfen, ausführen, Meldung anzeigen.
+ * q = Adressteil der Seitenleiste (z. B. «rt=…&tab=tarife»), damit sie nach dem Speichern und bei einem Fehler offen bleibt */
+async function act(f: FormData, fn: (ctx: HotelCtx) => Promise<string | { msg: string; q: string }>, q = "") {
+  await hotelAction(f, { page: "rooms", role: "manager", reopen: Object.fromEntries(new URLSearchParams(q)) }, async (ctx) => {
     const r = await fn(ctx);
-    if (typeof r === "string") msg = r; else { msg = r.msg; q = r.q; }
-  } catch (e) {
-    msg = `Nicht gespeichert: ${errorText(e)}`;
-  }
-  revalidatePath(`/admin/${ctx.hotel.id}/rooms`);
-  // q = Adressteil der Seitenleiste (z. B. «rt=…&tab=tarife»), damit sie nach dem Speichern offen bleibt
-  redirect(`/admin/${ctx.hotel.id}/rooms?${q ? `${q}&` : ""}msg=${encodeURIComponent(msg)}`);
+    revalidatePath(`/admin/${ctx.hotel.id}/rooms`);
+    const [msg, query] = typeof r === "string" ? [r, q] : [r.msg, r.q];
+    return { to: `/admin/${ctx.hotel.id}/rooms?${query ? `${query}&` : ""}msg=${encodeURIComponent(msg)}` };
+  });
 }
 
 async function translateAll(f: FormData) {

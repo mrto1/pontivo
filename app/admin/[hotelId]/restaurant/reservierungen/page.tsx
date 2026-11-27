@@ -19,42 +19,42 @@ import { guestProfiles } from "@/src/db/schema";
 import { db } from "@/src/db/client";
 import { and, eq, inArray } from "drizzle-orm";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 const here = (h: string, day: string, msg: string) => redirect(`/admin/${h}/restaurant/reservierungen?day=${day}&msg=${encodeURIComponent(msg)}`);
 const STATUS = { pending: "Zahlung offen", confirmed: "bestätigt", seated: "am Tisch", cancelled: "storniert", noshow: "nicht erschienen" } as const;
 
-async function guard(f: FormData) {
-  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "staff", "reservations");
-  return c;
-}
+/** Zurück zum Tag der Liste (ungültiger Tag → heute) */
+const run = (f: FormData, fail: string, fn: (c: HotelCtx) => Promise<string>) =>
+  hotelAction(f, { page: "restaurant/reservierungen", module: "restaurant", area: "reservations", fail, keep: { day: isDay(s(f, "day")) ? s(f, "day") : "" } }, fn);
+
 async function create(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const day = s(f, "day");
-  try { await createReservation(c.hotel, { day, time: s(f, "time"), party: Number(s(f, "party")), name: s(f, "name"), phone: s(f, "phone"), email: s(f, "email"), note: s(f, "note"), tableId: s(f, "tableId") || null }, "admin", c.actor); }
-  catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, isDay(day) ? day : todayIn(c.hotel.timezone), `Nicht gespeichert: ${e.message}`); }
-  here(c.hotel.id, day, "Reservation gespeichert.");
+  await run(f, "Nicht gespeichert", async (c) => {
+    await createReservation(c.hotel, { day: s(f, "day"), time: s(f, "time"), party: Number(s(f, "party")), name: s(f, "name"), phone: s(f, "phone"), email: s(f, "email"), note: s(f, "note"), tableId: s(f, "tableId") || null }, "admin", c.actor);
+    return "Reservation gespeichert.";
+  });
 }
 async function status(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const st = s(f, "status") as "confirmed" | "seated" | "cancelled" | "noshow";
-  if (!["confirmed", "seated", "cancelled", "noshow"].includes(st)) return here(c.hotel.id, s(f, "day"), "Status ungültig.");
-  try { await setReservationStatus(c.hotel.id, s(f, "id"), st, c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, s(f, "day"), e.message); }
-  here(c.hotel.id, s(f, "day"), "Gespeichert.");
+  await run(f, "Nicht gespeichert", async (c) => {
+    const st = s(f, "status") as "confirmed" | "seated" | "cancelled" | "noshow";
+    if (!["confirmed", "seated", "cancelled", "noshow"].includes(st)) throw new PosError("Status ungültig.");
+    await setReservationStatus(c.hotel.id, s(f, "id"), st, c.actor);
+    return "Gespeichert.";
+  });
 }
 async function table(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try { await assignTables(c.hotel.id, s(f, "id"), [s(f, "tableId"), s(f, "tableId2")].filter(Boolean), c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, s(f, "day"), `Nicht zugewiesen: ${e.message}`); }
-  here(c.hotel.id, s(f, "day"), "Tisch zugewiesen.");
+  await run(f, "Nicht zugewiesen", async (c) => { await assignTables(c.hotel.id, s(f, "id"), [s(f, "tableId"), s(f, "tableId2")].filter(Boolean), c.actor); return "Tisch zugewiesen."; });
 }
 async function autoAssign(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const n = await autoAssignDay(c.hotel.id, s(f, "day"), c.actor);
-  here(c.hotel.id, s(f, "day"), n ? `${n} Reservationen einem Tisch zugeteilt.` : "Nichts zuzuteilen: alle haben einen Tisch oder es passt keiner.");
+  await run(f, "Nicht zugeteilt", async (c) => {
+    const n = await autoAssignDay(c.hotel.id, s(f, "day"), c.actor);
+    return n ? `${n} Reservationen einem Tisch zugeteilt.` : "Nichts zuzuteilen: alle haben einen Tisch oder es passt keiner.";
+  });
 }
 
 /** Kartei-Notiz und Tags zum Gast der Reservation (SPEC 20.2, gleiche Kartei wie bei Hotelbuchungen) */

@@ -9,52 +9,35 @@ import { todayIn } from "@/src/domain/dates";
 import { PeriodNav } from "@/components/admin/PeriodNav";
 import { shiftMonth } from "@/src/services/overview";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
-const back = (h: string, month: string, msg: string) => redirect(`/admin/${h}/owners?month=${month}&msg=${encodeURIComponent(msg)}`);
 const prevMonth = (tz: string) => { const t = todayIn(tz); const [y, m] = t.split("-").map(Number); return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`; };
+/** Zurück zum gewählten Monat */
+const run = (f: FormData, fail: string, fn: (c: HotelCtx) => Promise<string>) =>
+  hotelAction(f, { page: "owners", module: "owners", role: "manager", fail, keep: { month: s(f, "month") } }, fn);
 
 async function save(f: FormData) {
   "use server";
-  const c = await requireHotelModule("owners", s(f, "hotelId"), "manager");
-  let msg = "Eigentümer gespeichert.";
-  try {
+  await run(f, "Nicht gespeichert", async (c) => {
     await saveOwner(c.hotel.id, s(f, "id") || null, { name: s(f, "name"), email: s(f, "email"), commissionPercent: Number(s(f, "commission").replace(",", ".") || 0), roomTypeIds: f.getAll("roomTypeIds").map(String), note: s(f, "note"), active: f.get("active") === "on" }, c.actor);
-  } catch (e) {
-    if (!(e instanceof OwnerError)) throw e;
-    msg = `Nicht gespeichert: ${e.message}`;
-  }
-  back(c.hotel.id, s(f, "month"), msg);
+    return "Eigentümer gespeichert.";
+  });
 }
 async function cost(f: FormData) {
   "use server";
-  const c = await requireHotelModule("owners", s(f, "hotelId"), "manager");
-  let msg = "Kosten erfasst.";
-  try {
+  await run(f, "Nicht erfasst", async (c) => {
     await addCost(c.hotel.id, s(f, "ownerId"), s(f, "month"), s(f, "description"), Math.round(Number(s(f, "amount").replace(",", ".")) * 100), c.actor);
-  } catch (e) {
-    if (!(e instanceof OwnerError)) throw e;
-    msg = `Nicht erfasst: ${e.message}`;
-  }
-  back(c.hotel.id, s(f, "month"), msg);
+    return "Kosten erfasst.";
+  });
 }
 async function delCost(f: FormData) {
   "use server";
-  const c = await requireHotelModule("owners", s(f, "hotelId"), "manager");
-  await deleteCost(c.hotel.id, s(f, "costId"), c.actor);
-  back(c.hotel.id, s(f, "month"), "Kosten gelöscht.");
+  await run(f, "Nicht gelöscht", async (c) => { await deleteCost(c.hotel.id, s(f, "costId"), c.actor); return "Kosten gelöscht."; });
 }
 async function send(f: FormData) {
   "use server";
-  const c = await requireHotelModule("owners", s(f, "hotelId"), "manager");
-  let msg = "Abrechnung wird versendet.";
-  try {
-    await sendStatement(c.hotel, s(f, "ownerId"), s(f, "month"), c.actor);
-  } catch (e) {
-    if (!(e instanceof OwnerError)) throw e;
-    msg = `Nicht versendet: ${e.message}`;
-  }
-  back(c.hotel.id, s(f, "month"), msg);
+  await run(f, "Nicht versendet", async (c) => { await sendStatement(c.hotel, s(f, "ownerId"), s(f, "month"), c.actor); return "Abrechnung wird versendet."; });
 }
 
 export default async function OwnersPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {

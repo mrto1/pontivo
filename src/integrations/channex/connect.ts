@@ -1,3 +1,4 @@
+import { UserError } from "../../domain/errors";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client";
 import { channexOutbox, hotels, ratePlans, roomTypes, type Hotel } from "../../db/schema";
@@ -96,7 +97,7 @@ export async function saveMapping(
 /** Abgleich einschalten: channex_enabled + Vollabgleich */
 export async function enableChannex(hotel: Hotel, actor: string) {
   const [fresh] = await db().select().from(hotels).where(eq(hotels.id, hotel.id));
-  if (!fresh.channexPropertyId) throw new Error("Zuerst Property-ID speichern oder in Channex anlegen");
+  if (!fresh.channexPropertyId) throw new UserError("Zuerst Property-ID speichern oder in Channex anlegen");
   await db().update(hotels).set({ channexEnabled: true, updatedAt: new Date() }).where(eq(hotels.id, hotel.id));
   await enqueueFullSync({ ...fresh, channexEnabled: true }, actor);
 }

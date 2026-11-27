@@ -8,41 +8,35 @@ import { atLeast } from "@/src/domain/roles";
 import { formatChf } from "@/src/domain/money";
 import { db } from "@/src/db/client";
 import { s } from "@/src/lib/form";
+import { hotelAction, type ActionResult, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 const chf = (v: string) => Math.round(Number(v.replace(",", ".")) * 100);
-const back = (h: string, o: string, msg: string) => redirect(`/admin/${h}/restaurant/bestellung/${o}?msg=${encodeURIComponent(msg)}`);
-
-async function guard(f: FormData, manager = false) {
-  const c = manager ? await requireHotelModule("pos", s(f, "hotelId"), "manager") : await requireHotelModule("pos", s(f, "hotelId"), "staff", "restaurant");
-  return c;
-}
+/** Aktion zur Bestellung: zurück zur Bestellung (ohne Erfolgsmeldung, wenn die Aktion keine liefert) */
+const run = (f: FormData, fail: string, fn: (c: HotelCtx, orderId: string) => Promise<ActionResult>, manager = false, reopen?: Record<string, string>) => {
+  const o = s(f, "orderId");
+  return hotelAction(f, { page: `restaurant/bestellung/${o}`, module: "pos", role: manager ? "manager" : "staff", area: manager ? undefined : "restaurant", fail, reopen },
+    async (c) => (await fn(c, o)) ?? { to: `/admin/${c.hotel.id}/restaurant/bestellung/${o}` });
+};
 async function add(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const o = s(f, "orderId");
   const itemId = s(f, "itemId"), quantity = Number(s(f, "quantity") || 1), mode = s(f, "mode") === "takeaway" ? "takeaway" : "dine_in";
-  // Hat der Artikel Optionen und wurden noch keine gewählt, erst die Auswahl zeigen (SPEC 19.49)
-  if (s(f, "step") !== "options" && (await groupsOfItem(db(), c.hotel.id, itemId)).length)
-    redirect(`/admin/${c.hotel.id}/restaurant/bestellung/${o}?artikel=${encodeURIComponent(itemId)}&menge=${quantity}&art=${mode}&note=${encodeURIComponent(s(f, "note"))}`);
-  try {
+  const options = { artikel: itemId, menge: String(quantity), art: mode, note: s(f, "note") };
+  // Bei einem Fehler in der Optionen-Auswahl bleibt die Auswahl offen
+  await run(f, "Nicht hinzugefügt", async (c, o) => {
+    // Hat der Artikel Optionen und wurden noch keine gewählt, erst die Auswahl zeigen (SPEC 19.49)
+    if (s(f, "step") !== "options" && (await groupsOfItem(db(), c.hotel.id, itemId)).length)
+      return { to: `/admin/${c.hotel.id}/restaurant/bestellung/${o}?${new URLSearchParams(options)}` };
     await addLines(c.hotel, o, [{ itemId, quantity, mode, optionIds: f.getAll("opt").map(String), note: s(f, "note") }], c.actor);
-  } catch (e) {
-    if (!(e instanceof PosError)) throw e;
-    if (s(f, "step") === "options") redirect(`/admin/${c.hotel.id}/restaurant/bestellung/${o}?artikel=${encodeURIComponent(itemId)}&menge=${quantity}&art=${mode}&note=${encodeURIComponent(s(f, "note"))}&msg=${encodeURIComponent(`Nicht hinzugefügt: ${e.message}`)}`);
-    back(c.hotel.id, o, `Nicht hinzugefügt: ${e.message}`);
-  }
-  redirect(`/admin/${c.hotel.id}/restaurant/bestellung/${o}`);
+  }, false, s(f, "step") === "options" ? options : undefined);
 }
 async function payAction(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const o = s(f, "orderId");
-  const v = await orderView(c.hotel.id, o);
-  if (!v) notFound();
-  const sel = v.lines.flatMap(({ line }) => { const q = Number(s(f, `q_${line.id}`) || 0); return q ? [{ lineId: line.id, quantity: q }] : []; });
-  const method = s(f, "method") as Method;
-  try {
+  await run(f, "Nicht bezahlt", async (c, o) => {
+    const v = await orderView(c.hotel.id, o);
+    if (!v) notFound();
+    const sel = v.lines.flatMap(({ line }) => { const q = Number(s(f, `q_${line.id}`) || 0); return q ? [{ lineId: line.id, quantity: q }] : []; });
+    const method = s(f, "method") as Method;
     if (!sel.length) throw new PosError("Nichts zum Bezahlen gewählt.");
     if (!METHODS.includes(method)) throw new PosError("Zahlart ungültig.");
     const byId = new Map(v.lines.map((l) => [l.line.id, l.line]));
@@ -50,35 +44,26 @@ async function payAction(f: FormData) {
     const total = selectionTotal(sel.map((x) => byId.get(x.lineId)!), sel).totalRappen;
     const dev = await webDevice(c.hotel.id);
     const r = await pay(c.hotel, { orderId: o, deviceId: dev.id, selection: sel, payments: [{ method, amountRappen: total }], tipRappen: s(f, "tip") ? chf(s(f, "tip")) : 0, bookingReference: s(f, "reference") }, c.actor);
-    back(c.hotel.id, o, `Bon ${r.number} über ${formatChf(r.totalRappen)} gebucht.`);
-  } catch (e) { if (!(e instanceof PosError)) throw e; back(c.hotel.id, o, `Nicht bezahlt: ${e.message}`); }
+    return `Bon ${r.number} über ${formatChf(r.totalRappen)} gebucht.`;
+  });
 }
 async function discount(f: FormData) {
   "use server";
-  const c = await guard(f, true);
-  const o = s(f, "orderId");
-  try {
+  await run(f, "Kein Rabatt", async (c, o) => {
     await addDiscount(c.hotel, o, { description: s(f, "description") || "Rabatt", amountRappen: chf(s(f, "amount")), vatBps: Number(s(f, "vat") || 810), reason: s(f, "reason") }, c.actor);
-  } catch (e) { if (!(e instanceof PosError)) throw e; back(c.hotel.id, o, `Kein Rabatt: ${e.message}`); }
-  redirect(`/admin/${c.hotel.id}/restaurant/bestellung/${o}`);
+  }, true);
 }
 async function storno(f: FormData) {
   "use server";
-  const c = await guard(f, true);
-  const o = s(f, "orderId");
-  try { await reverseLine(c.hotel.id, s(f, "lineId"), Number(s(f, "quantity") || 1), s(f, "reason"), c.actor); }
-  catch (e) { if (!(e instanceof PosError)) throw e; back(c.hotel.id, o, `Nicht storniert: ${e.message}`); }
-  redirect(`/admin/${c.hotel.id}/restaurant/bestellung/${o}`);
+  await run(f, "Nicht storniert", async (c) => { await reverseLine(c.hotel.id, s(f, "lineId"), Number(s(f, "quantity") || 1), s(f, "reason"), c.actor); }, true);
 }
 async function gegenbon(f: FormData) {
   "use server";
-  const c = await guard(f, true);
-  const o = s(f, "orderId");
-  try {
+  await run(f, "Kein Gegenbon", async (c) => {
     const dev = await webDevice(c.hotel.id);
     const g = await reverseReceipt(c.hotel, s(f, "receiptId"), dev.id, s(f, "reason"), c.actor);
-    back(c.hotel.id, o, `Gegenbon ${g.number} gebucht.`);
-  } catch (e) { if (!(e instanceof PosError)) throw e; back(c.hotel.id, o, `Kein Gegenbon: ${e.message}`); }
+    return `Gegenbon ${g.number} gebucht.`;
+  }, true);
 }
 
 export default async function OrderPage({ params, searchParams }: { params: Promise<{ hotelId: string; orderId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {

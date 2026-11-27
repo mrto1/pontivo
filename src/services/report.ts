@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
 import { bpsOf } from "../domain/money";
@@ -42,7 +43,7 @@ export function isMonth(s: string | undefined | null): s is string {
 }
 
 export async function monthlyReport(hotelId: string, month: string) {
-  if (!isMonth(month)) throw new Error("Monat im Format YYYY-MM");
+  if (!isMonth(month)) throw new UserError("Monat im Format YYYY-MM");
   const lines = rows<Omit<ReportLine, "net_fee_rappen">>(
     await db().execute(sql`
       SELECT b.id, b.reference, b.source, b.status, b.checkin::text, b.checkout::text,

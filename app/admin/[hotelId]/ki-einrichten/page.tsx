@@ -6,21 +6,14 @@ import { env } from "@/src/env";
 import { LIMITS, setupImportGate, type Draft } from "@/src/domain/setup-import";
 import { adoptImport, discardImport, getImport, importFromPdf, importFromUrl, importsThisMonth, listImports, setupImportEnabled, SetupImportError } from "@/src/services/setup-import";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 
-const back = (hotelId: string, q: string): never => redirect(`/admin/${hotelId}/ki-einrichten?${q}`);
-const msg = (hotelId: string, m: string, id?: string): never => back(hotelId, `msg=${encodeURIComponent(m)}${id ? `&draft=${id}` : ""}`);
 
-async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<string>) {
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  let target: string;
-  try { target = await fn(c); } catch (e) {
-    if (e instanceof SetupImportError) return msg(c.hotel.id, `Nicht möglich: ${e.message}`);
-    throw e;
-  }
-  return back(c.hotel.id, target);
-}
+/** Aktion liefert die Suchparameter der Rückkehr (z. B. `draft=…`) */
+const run = (f: FormData, fn: (c: HotelCtx) => Promise<string>) =>
+  hotelAction(f, { page: "ki-einrichten", role: "manager", fail: "Nicht möglich" }, async (c) => ({ to: `/admin/${c.hotel.id}/ki-einrichten?${await fn(c)}` }));
 
 async function fromUrl(f: FormData) {
   "use server";

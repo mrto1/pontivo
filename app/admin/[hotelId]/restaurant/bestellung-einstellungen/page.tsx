@@ -15,21 +15,13 @@ import { orderPriceText } from "@/src/domain/order-fee";
 import { feePercentText } from "@/src/domain/fee";
 import { todayIn } from "@/src/domain/dates";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 const chf = (v: string) => Math.round(Number(v.replace(",", ".")) * 100);
-const here = (h: string, msg: string): never => redirect(`/admin/${h}/restaurant/bestellung-einstellungen?msg=${encodeURIComponent(msg)}`);
 
-async function guard(f: FormData) {
-  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "manager");
-  return c;
-}
-async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof guard>>) => Promise<string>) {
-  const c = await guard(f);
-  let msg: string;
-  try { msg = await fn(c); } catch (e) { if (!(e instanceof PosError)) throw e; return here(c.hotel.id, `Nicht möglich: ${e.message}`); }
-  here(c.hotel.id, msg);
-}
+const run = (f: FormData, fn: (c: HotelCtx) => Promise<string | { to: string }>) =>
+  hotelAction(f, { page: "restaurant/bestellung-einstellungen", module: "restaurant", role: "manager", fail: "Nicht möglich" }, fn);
 async function settings(f: FormData) {
   "use server";
   await run(f, async (c) => {
@@ -52,9 +44,7 @@ async function zone(f: FormData) {
 }
 async function test(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try { await startTestOrder(c.hotel, c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht möglich: ${e.message}`); }
-  redirect(`/admin/${c.hotel.id}/restaurant/bestellungen?probe=1`);
+  await run(f, async (c) => { await startTestOrder(c.hotel, c.actor); return { to: `/admin/${c.hotel.id}/restaurant/bestellungen?probe=1` }; });
 }
 async function toggle(f: FormData) {
   "use server";

@@ -1,3 +1,4 @@
+import { UserError } from "../../domain/errors";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../../db/client";
 import { hotels, ratePlans, roomTypes, type Hotel } from "../../db/schema";
@@ -11,7 +12,7 @@ import type { PlanOption } from "./booking-mapping";
  */
 export async function channexGroupId(hotel: Hotel): Promise<string> {
   if (hotel.channexGroupId) return hotel.channexGroupId;
-  if (!hotel.channexPropertyId) throw new Error("Zuerst den Betrieb in Channex anlegen");
+  if (!hotel.channexPropertyId) throw new UserError("Zuerst den Betrieb in Channex anlegen");
   const res = await channex.getProperty(hotel.channexPropertyId);
   const groupId = res.data.relationships?.groups?.data?.[0]?.id;
   if (!groupId) throw new Error("Channex liefert keine Gruppe für diese Property");

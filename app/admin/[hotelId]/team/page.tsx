@@ -10,23 +10,13 @@ import { CONFIGURABLE_AREAS, ROLE_LABEL } from "@/src/domain/roles";
 import { listMembers, removeMember } from "@/src/services/settings";
 import { changeMemberRole, deleteRole, listRoles, listStandardRoles, resetStandardRole, ROLE_TEMPLATES, saveRole, saveStandardRole, setMemberRole, STANDARD_ROLES, TeamError } from "@/src/services/team";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 
-const back = (hotelId: string, msg: string, anchor = "", reopen = ""): never => redirect(`/admin/${hotelId}/team?${reopen ? `rolle=${encodeURIComponent(reopen)}&` : ""}msg=${encodeURIComponent(msg)}${anchor}`);
-
 /** `reopen`: bei einem Fehler bleibt diese Seitenleiste offen */
-async function run(f: FormData, ok: string, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<void>, anchor = "", reopen = "") {
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  try {
-    await fn(c);
-  } catch (e) {
-    if (e instanceof TeamError) back(c.hotel.id, `Nicht gespeichert: ${e.message}`, anchor, reopen);
-    if (e instanceof ZodError) back(c.hotel.id, `Nicht gespeichert: ${e.issues.map((i) => i.message).join(", ")}`, anchor, reopen);
-    throw e;
-  }
-  back(c.hotel.id, ok, anchor);
-}
+const run = (f: FormData, ok: string, fn: (c: HotelCtx) => Promise<void>, anchor = "", reopen = "") =>
+  hotelAction(f, { page: "team", role: "owner", ok, anchor, reopen: reopen ? { rolle: reopen } : undefined }, fn);
 
 async function memberAdd(f: FormData) {
   "use server";

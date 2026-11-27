@@ -3,32 +3,23 @@ import { WeekdayPick } from "@/components/admin/WeekdayPick";
 import { Drawer, DrawerActions } from "@/components/admin/Drawer";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { feePercentText } from "@/src/domain/fee";
-import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
 import { billingReady } from "@/src/domain/platform-invoice";
 import { atLeast } from "@/src/auth/session";
-import {
-  addUnit, bookingOnly, CANCEL_TEMPLATES, chooseModules, detectEmbed, goLiveFromWizard, markEmbedded, isWholeUnit, nextOpenStep, onboardingSteps, OnboardingError, PROPERTY_LABEL,
-  goLiveRestaurant, isRestaurant, markSetupCompleteIfDone, quickTables, setArrivalInfo, setGuestInfo, unitWord, updateBasics, type StepKey,
-} from "@/src/services/onboarding";
+import { bookingOnly, CANCEL_TEMPLATES, isWholeUnit, nextOpenStep, onboardingSteps, PROPERTY_LABEL, isRestaurant, unitWord, type StepKey } from "@/src/services/onboarding";
 import { choicesFor, choiceOn } from "@/src/domain/module-choice";
-import { WEEKDAYS_DE, hoursText, parseHoursText } from "@/src/domain/reservations";
-import { getSettings, saveOpeningHours, saveSettings } from "@/src/services/reservations";
-import { listItems, listTables, PosError } from "@/src/services/pos";
+import { WEEKDAYS_DE, hoursText } from "@/src/domain/reservations";
+import { getSettings } from "@/src/services/reservations";
+import { listItems, listTables } from "@/src/services/pos";
 import { isOn } from "@/src/domain/modules";
 import { moduleRows } from "@/src/services/modules";
-import { setPreviousSoftware } from "@/src/services/migration";
-import { confirmTouristTax } from "@/src/services/settings";
 import { taxRuleFor } from "@/src/services/hotels";
-import { listRooms, MAX_PHOTOS, RoomError } from "@/src/services/rooms";
+import { listRooms, MAX_PHOTOS } from "@/src/services/rooms";
 import { PhotoGrid } from "@/components/admin/PhotoGrid";
 import { photoAction } from "../photo-actions";
 import { listExtras } from "@/src/services/extras";
-import { setBillingMethod, startCardSetup } from "@/src/services/billing";
-import { onboardingLink, refreshAccountStatus } from "@/src/integrations/stripe/onboarding";
-import { decimalToRappen, formatChf } from "@/src/domain/money";
+import { formatChf } from "@/src/domain/money";
 import { todayIn } from "@/src/domain/dates";
 import { env } from "@/src/env";
 import { publicBase } from "@/src/services/brand";
@@ -36,179 +27,12 @@ import { CopyBox } from "@/components/admin/CopyBox";
 import { StripeOnboarding } from "@/components/admin/StripeOnboarding";
 import QRCode from "qrcode";
 import { s } from "@/src/lib/form";
+import { saveBasics, saveRestaurantBasics, saveTablesStep, saveOnlineStep, saveModules, saveUmstieg, saveTax, saveUnit, saveArrival, saveGuestInfoAction, skip, stripeStart, stripeReload, cardStart, chooseQr, embedCheck, goLive } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-const chf = (v: string) => decimalToRappen((v || "0").replace(",", ".").replace(/'/g, "").replace(/\.?[–-]+$/, "") || "0");
 const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 
-function errText(e: unknown): string {
-  if (e instanceof ZodError) return e.issues.map((i) => i.message).join(" · ");
-  if (e instanceof OnboardingError || e instanceof RoomError || e instanceof PosError) return e.message;
-  if (e instanceof Error && /Betrag|Gemeinde|Wert|Stripe|Kurtaxe/.test(e.message)) return e.message;
-  throw e;
-}
-
-/** Aktion ausführen, dann zum nächsten offenen Schritt (oder bei Fehler zurück zum gleichen) */
-async function step(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<void>, min: "manager" | "owner" = "manager") {
-  const c = await requireHotel(s(f, "hotelId"), min);
-  const here = s(f, "step");
-  try {
-    await fn(c);
-  } catch (e) {
-    const reopen = /^[a-z]+$/.test(s(f, "drawer")) ? `&${s(f, "drawer")}=1` : ""; // Seitenleiste bleibt bei einem Fehler offen
-    redirect(`/admin/${c.hotel.id}/einrichten?step=${here}${reopen}&error=${encodeURIComponent(errText(e))}`);
-  }
-  let fresh = (await requireHotel(c.hotel.id, min)).hotel;
-  if (isRestaurant(fresh.propertyType)) { await markSetupCompleteIfDone(fresh); fresh = (await requireHotel(c.hotel.id, min)).hotel; }
-  revalidatePath(`/admin/${c.hotel.id}`, "layout"); // Chip und Banner in der Kopfzeile aktualisieren
-  const stay = s(f, "stay") === "1";
-  redirect(`/admin/${c.hotel.id}/einrichten?step=${stay ? here : nextOpenStep(await onboardingSteps(fresh))}&ok=1`);
-}
-
-async function saveBasics(f: FormData) {
-  "use server";
-  await step(f, ({ hotel, actor }) => updateBasics(hotel, {
-    name: s(f, "name"), addressLine: s(f, "addressLine"), postalCode: s(f, "postalCode"), city: s(f, "city"), contactPhone: s(f, "phone"),
-    checkinTime: s(f, "checkin"), checkoutTime: s(f, "checkout"),
-  }, actor));
-}
-
-/** Restaurant (SPEC 20.1): Angaben ohne Check-in/out, dazu Öffnungszeiten (leer = Ruhetag; alles leer = keine Einschränkung) */
-async function saveRestaurantBasics(f: FormData) {
-  "use server";
-  await step(f, async ({ hotel, actor }) => {
-    await updateBasics(hotel, { name: s(f, "name"), addressLine: s(f, "addressLine"), postalCode: s(f, "postalCode"), city: s(f, "city"), contactPhone: s(f, "phone"), checkinTime: hotel.checkinTime.slice(0, 5), checkoutTime: hotel.checkoutTime.slice(0, 5), intro: s(f, "intro") }, actor);
-    const hours: Record<string, { from: string; to: string }[]> = {};
-    for (let d = 0; d < 7; d++) {
-      const w = parseHoursText(s(f, `h${d}`));
-      if (!w) throw new OnboardingError(`${WEEKDAYS_DE[d]}: bitte so schreiben: 11:30-14:00, 17:30-22:00 (leer = Ruhetag).`);
-      hours[String(d)] = w;
-    }
-    await saveOpeningHours(hotel.id, Object.values(hours).some((w) => w.length) ? hours : null, actor);
-  });
-}
-
-async function saveTablesStep(f: FormData) {
-  "use server";
-  await step(f, async ({ hotel, actor }) => { await quickTables(hotel, Number(s(f, "count")), Number(s(f, "seats")), actor); });
-}
-
-async function saveOnlineStep(f: FormData) {
-  "use server";
-  await step(f, async ({ hotel, actor }) => {
-    const cur = await getSettings(hotel.id);
-    const windows = [1, 2].flatMap((n) => (s(f, `from${n}`) && s(f, `to${n}`) ? [{ from: s(f, `from${n}`), to: s(f, `to${n}`) }] : []));
-    await saveSettings(hotel.id, { ...cur, onlineEnabled: true, windows, capacity: Number(s(f, "capacity") || cur.capacity), maxParty: Number(s(f, "maxParty") || cur.maxParty) }, actor);
-    // Konzept 7a Schritt 3: Reservation und Website sofort live, ohne auf Stripe zu warten
-    try { await goLiveRestaurant(hotel, actor); } catch (e) { throw new OnboardingError(`Reservation ist eingestellt, aber noch nicht online: ${(e as Error).message}`); }
-  });
-}
-
-async function saveModules(f: FormData) {
-  "use server";
-  await step(f, async ({ hotel, actor }) => {
-    const shown = choicesFor({ restaurant: isRestaurant(hotel.propertyType), wholeUnit: isWholeUnit(hotel.propertyType) });
-    // Reines Restaurant: das Modul «restaurant» bleibt an
-    await chooseModules(hotel, { ...Object.fromEntries(shown.flatMap((c) => c.modules.map((m) => [m, f.get(`c_${c.key}`) === "1"]))), ...(isRestaurant(hotel.propertyType) ? { restaurant: true } : {}) }, actor);
-  });
-}
-
-async function saveUmstieg(f: FormData) {
-  "use server";
-  await step(f, ({ hotel, actor }) => setPreviousSoftware(hotel, s(f, "answer") === "yes" ? "yes" : "none", actor));
-}
-
-async function saveTax(f: FormData) {
-  "use server";
-  await step(f, async ({ hotel, actor }) => {
-    const none = f.get("none") === "1";
-    const reduced = s(f, "reduced");
-    await confirmTouristTax(hotel, {
-      adultRappen: none ? 0 : chf(s(f, "adult")), reducedRappen: none || !reduced ? null : chf(reduced),
-      freeUnderAge: Number(s(f, "freeUnder") || 0), reducedUnderAge: none || !s(f, "reducedUnder") ? null : Number(s(f, "reducedUnder")),
-      notes: none ? "Keine Kurtaxe (Angabe Gastgeber)" : "Angabe Gastgeber im Einrichtungs-Assistenten",
-    }, actor);
-  });
-}
-
-async function saveUnit(f: FormData) {
-  "use server";
-  await step(f, async ({ hotel, actor }) => {
-    await addUnit(hotel, {
-      name: s(f, "name"), description: s(f, "description"), count: Number(s(f, "count") || 1), maxPersons: Number(s(f, "maxPersons") || 2),
-      priceRappen: chf(s(f, "price")), minNights: Number(s(f, "minNights") || 1), arrivalWeekdays: f.getAll("arrival").map(Number),
-      cancel: s(f, "cancel") as never, breakfast: f.get("breakfast") === "on", cleaningRappen: chf(s(f, "cleaning")),
-    }, actor);
-  });
-}
-
-async function saveArrival(f: FormData) {
-  "use server";
-  await step(f, ({ hotel, actor }) => setArrivalInfo(hotel, { de: s(f, "de"), en: s(f, "en") }, actor));
-}
-
-async function saveGuestInfoAction(f: FormData) {
-  "use server";
-  await step(f, ({ hotel, actor }) => setGuestInfo(hotel, { de: s(f, "de"), en: s(f, "en") }, actor));
-}
-
-async function skip(f: FormData) {
-  "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  redirect(`/admin/${c.hotel.id}/einrichten?step=${s(f, "to")}`);
-}
-
-async function stripeStart(f: FormData) {
-  "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
-  let url = "";
-  try {
-    url = await onboardingLink(hotel, actor, `/admin/${hotel.id}/einrichten?step=zahlungen`);
-  } catch (e) {
-    redirect(`/admin/${hotel.id}/einrichten?step=zahlungen&error=${encodeURIComponent(`Stripe: ${(e as Error).message}`)}`);
-  }
-  redirect(url);
-}
-
-async function stripeReload(f: FormData) {
-  "use server";
-  await step(f, async ({ hotel }) => { await refreshAccountStatus(hotel); }, "owner");
-}
-
-async function cardStart(f: FormData) {
-  "use server";
-  const { hotel } = await requireHotel(s(f, "hotelId"), "owner");
-  let url = "";
-  try {
-    url = await startCardSetup(hotel, `/admin/${hotel.id}/einrichten?step=karte`);
-  } catch (e) {
-    redirect(`/admin/${hotel.id}/einrichten?step=karte&error=${encodeURIComponent((e as Error).message)}`);
-  }
-  redirect(url);
-}
-
-async function chooseQr(f: FormData) {
-  "use server";
-  await step(f, ({ hotel, actor }) => setBillingMethod(hotel, "qr", actor), "owner");
-}
-
-async function embedCheck(f: FormData) {
-  "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "manager");
-  if (s(f, "confirm") === "1") {
-    await markEmbedded(hotel, "confirmed", actor);
-    redirect(`/admin/${hotel.id}/einrichten?step=einbinden`);
-  }
-  const found = await detectEmbed(hotel);
-  if (found) await markEmbedded(hotel, "detected", actor);
-  redirect(`/admin/${hotel.id}/einrichten?step=einbinden&${found ? "msg=" + encodeURIComponent("Gefunden: Ihre Website verweist auf die Buchung.") : "error=" + encodeURIComponent("Auf der Startseite Ihrer Website haben wir noch keinen Link zur Buchung gefunden. Ist die Änderung schon veröffentlicht?")}`);
-}
-
-async function goLive(f: FormData) {
-  "use server";
-  await step(f, ({ hotel, actor }) => goLiveFromWizard(hotel, actor), "owner");
-}
 
 export default async function Wizard({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;

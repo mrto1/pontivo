@@ -10,6 +10,7 @@ import { tr } from "@/src/domain/blocks";
 import { env } from "@/src/env";
 import { isBookable } from "@/src/services/hotels";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 
@@ -37,17 +38,12 @@ async function disable(f: FormData) {
 
 async function add(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  try {
+  await hotelAction(f, { page: "upsell", role: "manager", ok: "Angebot gespeichert." }, async (c) => {
     await addItem(c.hotel.id, {
       nameDe: s(f, "nameDe"), nameEn: s(f, "nameEn"), descDe: s(f, "descDe"), descEn: s(f, "descEn"),
       priceRappen: decimalToRappen(s(f, "price").replace(/[^\d.]/g, "") || "0"), unit: s(f, "unit") as keyof typeof UNITS, maxQuantity: Number(s(f, "max")) || 1,
     }, c.actor);
-  } catch (e) {
-    if (!(e instanceof ZodError)) throw e;
-    back(c.hotel.id, `Nicht gespeichert: ${e.issues.map((i) => i.message).join(", ")}`);
-  }
-  back(c.hotel.id, "Angebot gespeichert.");
+  });
 }
 
 async function toggle(f: FormData) {

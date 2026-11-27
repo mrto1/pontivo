@@ -11,60 +11,43 @@ import { env } from "@/src/env";
 import { addFeed, exportUrl, IcalError, listFeeds, regenerateToken, removeFeed, syncFeed } from "@/src/services/ical";
 import { CopyBox } from "@/components/admin/CopyBox";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 
-const back = (hotelId: string, msg: string) => redirect(`/admin/${hotelId}/ical?msg=${encodeURIComponent(msg)}`);
-const errText = (e: unknown) => {
-  if (e instanceof ZodError) return e.issues.map((i) => i.message).join(", ");
-  if (e instanceof IcalError || e instanceof Error) return e.message;
-  return "Unbekannter Fehler";
-};
+const run = (f: FormData, fail: string, fn: (c: HotelCtx) => Promise<string>) =>
+  hotelAction(f, { page: "ical", role: "manager", fail }, fn);
 
 async function add(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  let msg = "";
-  try {
+  await run(f, "Nicht gespeichert", async (c) => {
     const feed = await addFeed(c.hotel.id, s(f, "roomTypeId"), { name: s(f, "name"), url: s(f, "url") }, c.actor);
     const r = await syncFeed(feed.id);
-    msg = r.ok ? `Kalender hinzugefügt: ${r.added} belegte Nächte übernommen.` : `Kalender gespeichert, aber der erste Abruf klappte nicht: ${r.error}`;
-  } catch (e) {
-    msg = `Nicht gespeichert: ${errText(e)}`;
-  }
-  back(c.hotel.id, msg);
+    return r.ok ? `Kalender hinzugefügt: ${r.added} belegte Nächte übernommen.` : `Kalender gespeichert, aber der erste Abruf klappte nicht: ${r.error}`;
+  });
 }
 
 async function remove(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  try {
-    await removeFeed(c.hotel.id, s(f, "feedId"), c.actor);
-  } catch (e) {
-    back(c.hotel.id, `Nicht entfernt: ${errText(e)}`);
-  }
-  back(c.hotel.id, "Kalender entfernt, die Nächte sind wieder frei.");
+  await run(f, "Nicht entfernt", async (c) => { await removeFeed(c.hotel.id, s(f, "feedId"), c.actor); return "Kalender entfernt, die Nächte sind wieder frei."; });
 }
 
 async function syncNow(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  const feeds = await listFeeds(c.hotel.id);
-  const feed = feeds.find((x) => x.id === s(f, "feedId"));
-  if (!feed) back(c.hotel.id, "Kalender nicht gefunden");
-  const r = await syncFeed(feed!.id);
-  back(c.hotel.id, r.ok ? `Abgeglichen: ${r.added} neu belegt, ${r.removed} freigegeben.` : `Abruf fehlgeschlagen: ${r.error}`);
+  await run(f, "Nicht abgeglichen", async (c) => {
+    const feed = (await listFeeds(c.hotel.id)).find((x) => x.id === s(f, "feedId"));
+    if (!feed) throw new IcalError("Kalender nicht gefunden");
+    const r = await syncFeed(feed.id);
+    return r.ok ? `Abgeglichen: ${r.added} neu belegt, ${r.removed} freigegeben.` : `Abruf fehlgeschlagen: ${r.error}`;
+  });
 }
 
 async function renew(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  try {
+  await run(f, "Nicht erneuert", async (c) => {
     await regenerateToken(c.hotel.id, s(f, "roomTypeId"), c.actor);
-  } catch (e) {
-    back(c.hotel.id, `Nicht erneuert: ${errText(e)}`);
-  }
-  back(c.hotel.id, "Neue Adresse erzeugt. Die alte funktioniert nicht mehr, tragen Sie die neue überall ein.");
+    return "Neue Adresse erzeugt. Die alte funktioniert nicht mehr, tragen Sie die neue überall ein.";
+  });
 }
 
 const when = (d: Date | null) => (d ? d.toLocaleString("de-CH", { dateStyle: "short", timeStyle: "short" }) : "noch nie");

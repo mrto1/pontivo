@@ -7,6 +7,7 @@ Einstieg: `docs/MODULES.md` (Modul → Seiten, Tabellen, SPEC-Abschnitt; erzeugt
 - Keine externen API-Felder erfinden (Stripe, Channex): verlinkte Doku in SPEC 13 lesen.
 - Geld immer als Integer in Rappen. Kalendertage als `'YYYY-MM-DD'`-Strings (`src/domain/dates.ts`), Zeitpunkte als `timestamptz`.
 - Jede Abfrage filtert nach `hotel_id` (Mandantentrennung). Admin-Seiten und Server Actions immer über `requireHotel()` (`src/auth/guard.ts`).
+- Formular-Aktionen im Admin über `hotelAction()` (`src/lib/hotel-action.ts`): Zugriff, Rückkehr mit `?msg=`, offene Seitenleiste bei Fehler. Fachliche Fehler erben von `UserError` (`src/domain/errors.ts`), nur deren Meldung sieht der Benutzer. Grössere Seiten: Aktionen in `actions.ts` daneben, reine Umwandlung von Formularen in `src/domain`.
 - Keine Kartendaten speichern; Zahlungen nur über Stripe (Checkout gehostet/eingebettet oder Payment Element, SPEC 19.52), Karteneingabe immer in Stripe-Rahmen.
 - Geheimnisse nur aus Umgebungsvariablen (`src/env.ts`, `.env.example`).
 - Schemaänderung = neue Datei in `db/migrations/` UND `src/db/schema.ts` nachführen.

@@ -9,12 +9,14 @@ import { IMPORT_COLUMNS, KIND_LABEL } from "@/src/domain/import-csv";
 import { todayIn } from "@/src/domain/dates";
 import { inParallel, setPreviousSoftware, createImportCheck, getImport, ImportError, invoiceCounter, listImports, runImport, setInvoiceStart, undoImport } from "@/src/services/migration";
 import { s } from "@/src/lib/form";
+import { userErrorText } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 const back = (id: string, q: string) => { revalidatePath(`/admin/${id}`, "layout"); return redirect(`/admin/${id}/migration?${q}`); }; // Layout neu: Banner und Chip hängen vom Stand ab
 const err = (id: string, e: unknown, job?: string): never => {
-  if (!(e instanceof ImportError)) throw e;
-  return back(id, `${job ? `job=${job}&` : ""}error=${encodeURIComponent(e.message)}`);
+  const text = userErrorText(e);
+  if (text === null) throw e;
+  return back(id, `${job ? `job=${job}&` : ""}error=${encodeURIComponent(text)}`);
 };
 
 async function upload(f: FormData) {

@@ -10,44 +10,29 @@ import { formatDay } from "@/src/i18n/dict";
 import { env } from "@/src/env";
 import { isBookable } from "@/src/services/hotels";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 
 const chf = (v: string) => decimalToRappen(v.replace(/[^\d.]/g, "") || "0");
 
-async function back(hotelId: string, msg: string, q = "") {
-  redirect(`/admin/${hotelId}/vouchers?msg=${encodeURIComponent(msg)}${q ? `&q=${encodeURIComponent(q)}` : ""}`);
-}
-
 async function saveSettings(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  let msg = "Einstellungen gespeichert";
-  try {
+  await hotelAction(f, { page: "vouchers", role: "manager", ok: "Einstellungen gespeichert" }, async (c) => {
     await updateVoucherSettings(c.hotel.id, {
       enabled: f.get("enabled") === "on",
       amounts: s(f, "amounts").split(/[,;\s]+/).filter(Boolean).map(chf),
       minRappen: chf(s(f, "min")), maxRappen: chf(s(f, "max")), validityYears: Number(s(f, "years")) || 3,
     }, c.actor);
-  } catch (e) {
-    if (!(e instanceof ZodError) && !(e instanceof Error && /Betrag/.test(e.message))) throw e;
-    msg = `Nicht gespeichert: ${e instanceof ZodError ? e.issues.map((i) => i.message).join(", ") : e.message}`;
-  }
-  await back(c.hotel.id, msg);
+  });
 }
 
 async function redeem(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "staff", "vouchers");
-  let msg: string;
-  try {
+  await hotelAction(f, { page: "vouchers", area: "vouchers", fail: "Nicht eingelöst", keep: { q: s(f, "code") } }, async (c) => {
     const v = await redeemVoucher(c.hotel, s(f, "code"), chf(s(f, "amount")), s(f, "note"), c.actor);
-    msg = `Eingelöst. Restwert ${v.code}: ${formatChf(v.remainingRappen)}`;
-  } catch (e) {
-    if (!(e instanceof VoucherError)) throw e;
-    msg = `Nicht eingelöst: ${e.message}`;
-  }
-  await back(c.hotel.id, msg, s(f, "code"));
+    return `Eingelöst. Restwert ${v.code}: ${formatChf(v.remainingRappen)}`;
+  });
 }
 
 export default async function Vouchers({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {

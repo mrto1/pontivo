@@ -262,7 +262,7 @@ export type RegisterRow = Omit<GuestRegistration, "birthDateEnc" | "idDocumentNu
 };
 
 export async function registerRows(hotelId: string, from: string, to: string): Promise<RegisterRow[]> {
-  if (!isDay(from) || !isDay(to) || from > to) throw new Error("Zeitraum ungültig");
+  if (!isDay(from) || !isDay(to) || from > to) throw new UserError("Zeitraum ungültig");
   const list = await db().select({ r: guestRegistrations, reference: bookings.reference }).from(guestRegistrations)
     .innerJoin(bookings, eq(bookings.id, guestRegistrations.bookingId))
     .where(and(eq(guestRegistrations.hotelId, hotelId), sql`${guestRegistrations.arrivalDate} BETWEEN ${from} AND ${to}`))

@@ -2,10 +2,9 @@ import { Notice } from "@/components/admin/Notice";
 import { DownloadLink } from "@/components/admin/DownloadLink";
 import { Drawer, DrawerActions } from "@/components/admin/Drawer";
 import { RowList } from "@/components/admin/RowList";
-import { redirect } from "next/navigation";
-import { requireHotel, requireHotelModule } from "@/src/auth/guard";
+import { requireHotelModule } from "@/src/auth/guard";
 import { moduleOn, requireModule } from "@/src/services/modules";
-import { GoodsError, linkPosItem, listGoods } from "@/src/services/goods";
+import { linkPosItem, listGoods } from "@/src/services/goods";
 import { PosError, importItems, listItems, listOptionGroups, saveItem, saveOption, saveOptionGroup, setGroupItems, setOptionActive } from "@/src/services/pos";
 import { FormSwitch } from "@/components/admin/FormSwitch";
 import { env } from "@/src/env";
@@ -18,92 +17,79 @@ import { ALLERGENS, ALLERGEN_LABEL } from "@/src/domain/online-order";
 import { saveItemOnline } from "@/src/services/online-orders";
 import { photoLibrary } from "@/src/services/site";
 import { s } from "@/src/lib/form";
+import { hotelAction, type ActionOptions, type ActionResult, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
-const here = (h: string, msg: string) => redirect(`/admin/${h}/restaurant/artikel?msg=${encodeURIComponent(msg)}`);
 const bps = (v: string) => Math.round(Number(v.replace(",", ".")) * 100);
-
-async function guard(f: FormData) {
-  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "manager");
-  return c;
-}
-async function item(f: FormData) {
-  "use server";
-  const c = await guard(f);
-  try {
-    await saveItem(c.hotel.id, s(f, "id") || null, { category: s(f, "category"), name: s(f, "name"), priceRappen: Math.round(Number(s(f, "price").replace(",", ".")) * 100), vatDineInBps: bps(s(f, "vatDineIn")), vatTakeawayBps: bps(s(f, "vatTakeaway")), dailySpecial: f.get("dailySpecial") === "on", active: f.get("active") !== "off", station: stationOf(s(f, "station")) }, c.actor);
-  } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
-  here(c.hotel.id, "Gespeichert.");
-}
 const stationOf = (v: string) => (v === "bar" || v === "none" ? v : "kitchen") as "kitchen" | "bar" | "none";
 const STATION = { kitchen: "Küche", bar: "Bar", none: "Keine" } as const;
+
+/** Alle Aktionen der Speisekarte: Modul Restaurant, Manager; `extra` z. B. Anker oder offene Seitenleiste bei Fehler */
+const run = (f: FormData, fn: (c: HotelCtx) => Promise<ActionResult>, extra: Partial<ActionOptions> = {}) =>
+  hotelAction(f, { page: "restaurant/artikel", module: "restaurant", role: "manager", ...extra }, fn);
+
+async function item(f: FormData) {
+  "use server";
+  await run(f, async (c) => {
+    await saveItem(c.hotel.id, s(f, "id") || null, { category: s(f, "category"), name: s(f, "name"), priceRappen: Math.round(Number(s(f, "price").replace(",", ".")) * 100), vatDineInBps: bps(s(f, "vatDineIn")), vatTakeawayBps: bps(s(f, "vatTakeaway")), dailySpecial: f.get("dailySpecial") === "on", active: f.get("active") !== "off", station: stationOf(s(f, "station")) }, c.actor);
+  });
+}
 async function station(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const it = (await listItems(c.hotel.id)).find((i) => i.id === s(f, "id"));
-  if (it) await saveItem(c.hotel.id, it.id, { ...it, category: it.category ?? "", station: stationOf(s(f, "station")) }, c.actor);
-  here(c.hotel.id, "Station gespeichert.");
+  await run(f, async (c) => {
+    const it = (await listItems(c.hotel.id)).find((i) => i.id === s(f, "id"));
+    if (it) await saveItem(c.hotel.id, it.id, { ...it, category: it.category ?? "", station: stationOf(s(f, "station")) }, c.actor);
+    return "Station gespeichert.";
+  });
 }
 async function linkGood(f: FormData) {
   "use server";
-  const c = await guard(f);
-  await requireModule(c.hotel.id, "shop");
-  let msg = "Verknüpfung gespeichert.";
-  try { await linkPosItem(c.hotel.id, s(f, "id"), s(f, "goodId") || null, c.actor); } catch (e) { if (!(e instanceof GoodsError)) throw e; msg = e.message; }
-  here(c.hotel.id, msg);
+  await run(f, async (c) => {
+    await requireModule(c.hotel.id, "shop");
+    await linkPosItem(c.hotel.id, s(f, "id"), s(f, "goodId") || null, c.actor);
+    return "Verknüpfung gespeichert.";
+  });
 }
 async function toggle(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const it = (await listItems(c.hotel.id)).find((i) => i.id === s(f, "id"));
-  if (it) await saveItem(c.hotel.id, it.id, { ...it, category: it.category ?? "", active: !it.active }, c.actor);
-  here(c.hotel.id, it?.active ? "Ausgeblendet." : "Eingeblendet.");
+  await run(f, async (c) => {
+    const it = (await listItems(c.hotel.id)).find((i) => i.id === s(f, "id"));
+    if (it) await saveItem(c.hotel.id, it.id, { ...it, category: it.category ?? "", active: !it.active }, c.actor);
+    return it?.active ? "Ausgeblendet." : "Eingeblendet.";
+  });
 }
 async function online(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try {
+  await run(f, async (c) => {
     await saveItemOnline(c.hotel.id, s(f, "id"), { online: f.get("online") === "on", description: s(f, "description"), photoUrl: s(f, "photoUrl") || null, allergens: f.getAll("allergen").map(String) }, c.actor);
-  } catch (e) { if (!(e instanceof PosError)) throw e; redirect(`/admin/${c.hotel.id}/restaurant/artikel?artikel=${s(f, "id")}&msg=${encodeURIComponent(`Nicht gespeichert: ${e.message}`)}#online`); }
-  redirect(`/admin/${c.hotel.id}/restaurant/artikel?msg=${encodeURIComponent("Online-Angaben gespeichert.")}#online`);
+    return "Online-Angaben gespeichert.";
+  }, { anchor: "#online", reopen: { artikel: s(f, "id") } });
 }
 async function group(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try { await saveOptionGroup(c.hotel.id, s(f, "id") || null, { name: s(f, "name"), required: f.get("required") === "on", maxChoices: Number(s(f, "maxChoices") || 1) }, c.actor); }
-  catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Gruppe nicht gespeichert: ${e.message}`); }
-  here(c.hotel.id, "Gruppe gespeichert.");
+  await run(f, async (c) => {
+    await saveOptionGroup(c.hotel.id, s(f, "id") || null, { name: s(f, "name"), required: f.get("required") === "on", maxChoices: Number(s(f, "maxChoices") || 1) }, c.actor);
+    return "Gruppe gespeichert.";
+  }, { fail: "Gruppe nicht gespeichert" });
 }
 async function option(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try { await saveOption(c.hotel.id, s(f, "groupId"), { name: s(f, "name"), priceRappen: s(f, "price") ? Math.round(Number(s(f, "price").replace(",", ".")) * 100) : 0 }, c.actor); }
-  catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Option nicht gespeichert: ${e.message}`); }
-  here(c.hotel.id, "Option gespeichert.");
+  await run(f, async (c) => {
+    await saveOption(c.hotel.id, s(f, "groupId"), { name: s(f, "name"), priceRappen: s(f, "price") ? Math.round(Number(s(f, "price").replace(",", ".")) * 100) : 0 }, c.actor);
+    return "Option gespeichert.";
+  }, { fail: "Option nicht gespeichert" });
 }
 async function optionToggle(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try { await setOptionActive(c.hotel.id, s(f, "id"), s(f, "active") === "1", c.actor); } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, e.message); }
-  here(c.hotel.id, "Gespeichert.");
+  await run(f, async (c) => { await setOptionActive(c.hotel.id, s(f, "id"), s(f, "active") === "1", c.actor); });
 }
 async function groupItems(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try { await setGroupItems(c.hotel.id, s(f, "groupId"), f.getAll("itemId").map(String), c.actor); }
-  catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, e.message); }
-  here(c.hotel.id, "Zuordnung gespeichert.");
+  await run(f, async (c) => { await setGroupItems(c.hotel.id, s(f, "groupId"), f.getAll("itemId").map(String), c.actor); return "Zuordnung gespeichert."; });
 }
-const kiBack = (h: string, q: string): never => redirect(`/admin/${h}/restaurant/artikel?${q}#ki`);
-async function kiRun(f: FormData, fn: (c: Awaited<ReturnType<typeof guard>>) => Promise<string>) {
-  const c = await guard(f);
-  let target: string;
-  try { target = await fn(c); } catch (e) {
-    if (e instanceof SetupImportError || e instanceof PosError) return kiBack(c.hotel.id, `msg=${encodeURIComponent(`Nicht möglich: ${e.message}`)}`);
-    throw e;
-  }
-  return kiBack(c.hotel.id, target);
-}
+/** KI-Import der Speisekarte: zurück zum Abschnitt #ki, die Aktion liefert die Suchparameter */
+const kiRun = (f: FormData, fn: (c: HotelCtx) => Promise<string>) =>
+  run(f, async (c) => ({ to: `/admin/${c.hotel.id}/restaurant/artikel?${await fn(c)}#ki` }), { anchor: "#ki", fail: "Nicht möglich" });
 async function menuUrl(f: FormData) {
   "use server";
   await kiRun(f, async (c) => `draft=${await importMenuFromUrl(c.hotel, s(f, "url"), c.actor)}`);
@@ -131,18 +117,18 @@ async function menuDiscard(f: FormData) {
 }
 async function csvImport(f: FormData) {
   "use server";
-  const c = await guard(f);
-  const file = f.get("file");
-  if (!(file instanceof File) || !file.size) return here(c.hotel.id, "Nicht importiert: Bitte eine CSV-Datei wählen.");
-  if (file.size > 1_000_000) return here(c.hotel.id, "Nicht importiert: Die Datei ist zu gross (höchstens 1 MB).");
-  const text = await file.text();
-  const r = parsePosItems(text);
-  if (r.problems.length) {
-    const first = r.problems.slice(0, 3).map((p) => `Zeile ${p.row}: ${p.message}`).join(" ");
-    return here(c.hotel.id, `Nicht importiert (${r.problems.length} Fehler, es wurde nichts gespeichert). ${first}${r.problems.length > 3 ? " …" : ""}`);
-  }
-  const res = await importItems(c.hotel.id, r.rows, c.actor);
-  here(c.hotel.id, `${res.created} Artikel importiert${res.skipped ? `, ${res.skipped} übersprungen (gab es schon)` : ""}.`);
+  await run(f, async (c) => {
+    const file = f.get("file");
+    if (!(file instanceof File) || !file.size) throw new PosError("Bitte eine CSV-Datei wählen.");
+    if (file.size > 1_000_000) throw new PosError("Die Datei ist zu gross (höchstens 1 MB).");
+    const r = parsePosItems(await file.text());
+    if (r.problems.length) {
+      const first = r.problems.slice(0, 3).map((p) => `Zeile ${p.row}: ${p.message}`).join(" ");
+      throw new PosError(`${r.problems.length} Fehler, es wurde nichts gespeichert. ${first}${r.problems.length > 3 ? " …" : ""}`);
+    }
+    const res = await importItems(c.hotel.id, r.rows, c.actor);
+    return `${res.created} Artikel importiert${res.skipped ? `, ${res.skipped} übersprungen (gab es schon)` : ""}.`;
+  }, { fail: "Nicht importiert" });
 }
 
 export default async function PosItemsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {

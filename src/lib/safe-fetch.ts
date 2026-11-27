@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import dns from "node:dns";
 import https from "node:https";
 import net from "node:net";
@@ -26,13 +27,13 @@ export function checkFeedUrl(raw: string): URL {
   try {
     u = new URL(raw.trim());
   } catch {
-    throw new Error("Ungültige Adresse");
+    throw new UserError("Ungültige Adresse");
   }
-  if (u.protocol !== "https:") throw new Error("Die Adresse muss mit https:// beginnen");
-  if (u.username || u.password) throw new Error("Adresse ohne Benutzername/Passwort angeben");
-  if (u.port && u.port !== "443") throw new Error("Nur der Standard-Port ist erlaubt");
-  if (net.isIP(u.hostname.replace(/^\[|\]$/g, "")) && isPrivateIp(u.hostname.replace(/^\[|\]$/g, ""))) throw new Error("Interne Adressen sind nicht erlaubt");
-  if (!u.hostname.includes(".") && !net.isIP(u.hostname)) throw new Error("Ungültiger Servername");
+  if (u.protocol !== "https:") throw new UserError("Die Adresse muss mit https:// beginnen");
+  if (u.username || u.password) throw new UserError("Adresse ohne Benutzername/Passwort angeben");
+  if (u.port && u.port !== "443") throw new UserError("Nur der Standard-Port ist erlaubt");
+  if (net.isIP(u.hostname.replace(/^\[|\]$/g, "")) && isPrivateIp(u.hostname.replace(/^\[|\]$/g, ""))) throw new UserError("Interne Adressen sind nicht erlaubt");
+  if (!u.hostname.includes(".") && !net.isIP(u.hostname)) throw new UserError("Ungültiger Servername");
   return u;
 }
 

@@ -1,3 +1,4 @@
+import { UserError } from "./errors";
 /**
  * Rechnung der Plattform an das Hotel (SPEC 19.30), reine Logik ohne I/O.
  * Preise der Plattform verstehen sich ohne MWST (Bedingungen für Gastgeber, Ziffer 2): ist die Plattform MWST-pflichtig, kommt die MWST obendrauf.
@@ -12,11 +13,11 @@ const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export function cleanPlatformVat(raw: { liableFrom?: string | null; bps?: number | string; number?: string }): PlatformVat {
   const from = String(raw.liableFrom ?? "").trim();
-  if (from && (!DAY_RE.test(from) || Number.isNaN(Date.parse(`${from}T00:00:00Z`)))) throw new Error("Datum ungültig (JJJJ-MM-TT)");
+  if (from && (!DAY_RE.test(from) || Number.isNaN(Date.parse(`${from}T00:00:00Z`)))) throw new UserError("Datum ungültig (JJJJ-MM-TT)");
   const bps = Math.round(Number(raw.bps ?? DEFAULT_PLATFORM_VAT.bps));
-  if (!Number.isFinite(bps) || bps < 0 || bps > MAX_VAT_BPS) throw new Error("MWST-Satz ungültig (0 bis 25 %)");
+  if (!Number.isFinite(bps) || bps < 0 || bps > MAX_VAT_BPS) throw new UserError("MWST-Satz ungültig (0 bis 25 %)");
   const number = String(raw.number ?? "").replace(/\s+/g, " ").trim().slice(0, 40);
-  if (from && !number) throw new Error("Für die MWST-Pflicht die MWST-Nummer eintragen (CHE-123.456.789 MWST)");
+  if (from && !number) throw new UserError("Für die MWST-Pflicht die MWST-Nummer eintragen (CHE-123.456.789 MWST)");
   return { liableFrom: (from || null) as Day | null, bps, number };
 }
 

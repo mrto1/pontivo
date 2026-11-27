@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, eq, isNull, lt } from "drizzle-orm";
 import QRCode from "qrcode";
 import {
@@ -97,7 +98,7 @@ export async function hasTotp(userId: string): Promise<boolean> {
 
 /** Einrichtung starten: neues Geheimnis (noch unbestätigt) + QR-Code. Überschreibt nur eine unbestätigte Einrichtung. */
 export async function beginTotp(userId: string) {
-  if (await hasTotp(userId)) throw new Error("2FA ist bereits aktiv");
+  if (await hasTotp(userId)) throw new UserError("2FA ist bereits aktiv");
   const [u] = await db().select().from(users).where(eq(users.id, userId));
   if (!u) throw new Error("Benutzer nicht gefunden");
   const secret = generateTotpSecret();

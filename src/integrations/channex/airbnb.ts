@@ -1,3 +1,4 @@
+import { UserError } from "../../domain/errors";
 import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client";
@@ -35,7 +36,7 @@ const returnUrl = (hotelId: string) => `${env().APP_BASE_URL.replace(/\/$/, "")}
  */
 export async function airbnbConnectLink(hotel: Hotel, actor: string): Promise<string> {
   const [fresh] = await db().select().from(hotels).where(eq(hotels.id, hotel.id));
-  if (!fresh.channexPropertyId) throw new Error("Zuerst den Betrieb in Channex anlegen");
+  if (!fresh.channexPropertyId) throw new UserError("Zuerst den Betrieb in Channex anlegen");
   const groupId = await channexGroupId(fresh);
   const existing = await getAirbnbChannel(hotel.id);
   const token = crypto.randomBytes(24).toString("base64url");
@@ -81,12 +82,12 @@ export async function airbnbHandleReturn(
     crypto.timingSafeEqual(Buffer.from(token), Buffer.from(ch.authToken)) &&
     !!ch.authExpiresAt &&
     ch.authExpiresAt.getTime() > Date.now();
-  if (!ok || !ch) throw new Error("Der Rücksprung von Airbnb ist ungültig oder abgelaufen. Bitte die Verbindung neu starten.");
+  if (!ok || !ch) throw new UserError("Der Rücksprung von Airbnb ist ungültig oder abgelaufen. Bitte die Verbindung neu starten.");
   const channelId = String(q.channel_id ?? "");
-  if (!/^[0-9a-f-]{36}$/i.test(channelId)) throw new Error("Ungültige Verbindungs-ID von Channex");
+  if (!/^[0-9a-f-]{36}$/i.test(channelId)) throw new UserError("Ungültige Verbindungs-ID von Channex");
   const remote = await channex.getChannel(channelId);
   if (hotel.channexPropertyId && !remote.data.attributes.properties.includes(hotel.channexPropertyId)) {
-    throw new Error("Die Airbnb-Verbindung gehört nicht zu diesem Betrieb");
+    throw new UserError("Die Airbnb-Verbindung gehört nicht zu diesem Betrieb");
   }
   await db()
     .update(channexChannels)
@@ -113,14 +114,14 @@ export async function airbnbListings(hotelId: string): Promise<AirbnbListing[]> 
 /** Schritt 5: ein Inserat einem Pontivo-Tarif zuordnen (Airbnb bestätigt im Hintergrund, ca. 30 Sekunden) */
 export async function mapAirbnbListing(hotel: Hotel, listingId: string, ratePlanId: string, actor: string): Promise<void> {
   const ch = await getAirbnbChannel(hotel.id);
-  if (!ch?.channexChannelId) throw new Error("Zuerst das Airbnb-Konto verbinden");
-  if (ch.mappings.some((m) => m.listingId === listingId)) throw new Error("Dieses Inserat ist schon zugeordnet");
-  if (ch.mappings.some((m) => m.ratePlanId === ratePlanId)) throw new Error("Dieser Tarif ist schon einem anderen Inserat zugeordnet");
+  if (!ch?.channexChannelId) throw new UserError("Zuerst das Airbnb-Konto verbinden");
+  if (ch.mappings.some((m) => m.listingId === listingId)) throw new UserError("Dieses Inserat ist schon zugeordnet");
+  if (ch.mappings.some((m) => m.ratePlanId === ratePlanId)) throw new UserError("Dieser Tarif ist schon einem anderen Inserat zugeordnet");
   const [plan] = await db().select().from(ratePlans).where(and(eq(ratePlans.id, ratePlanId), eq(ratePlans.hotelId, hotel.id)));
-  if (!plan) throw new Error("Unbekannter Tarif");
-  if (!plan.channexRatePlanId) throw new Error(`Tarif «${plan.name}» ist noch nicht in Channex angelegt`);
+  if (!plan) throw new UserError("Unbekannter Tarif");
+  if (!plan.channexRatePlanId) throw new UserError(`Tarif «${plan.name}» ist noch nicht in Channex angelegt`);
   const listing = (await airbnbListings(hotel.id)).find((l) => l.id === listingId);
-  if (!listing) throw new Error("Inserat nicht im verbundenen Airbnb-Konto gefunden");
+  if (!listing) throw new UserError("Inserat nicht im verbundenen Airbnb-Konto gefunden");
   const res = await channex.createMapping(ch.channexChannelId, { rate_plan_id: plan.channexRatePlanId, settings: { listing_id: listingId } });
   const mappings = [...ch.mappings, { mappingId: res.data.id, listingId, listingTitle: listing.title, ratePlanId }];
   await db()
@@ -136,7 +137,7 @@ export async function mapAirbnbListing(hotel: Hotel, listingId: string, ratePlan
 export async function unmapAirbnbListing(hotel: Hotel, listingId: string, actor: string): Promise<void> {
   const ch = await getAirbnbChannel(hotel.id);
   const m = ch?.mappings.find((x) => x.listingId === listingId);
-  if (!ch?.channexChannelId || !m) throw new Error("Zuordnung nicht gefunden");
+  if (!ch?.channexChannelId || !m) throw new UserError("Zuordnung nicht gefunden");
   await channex.deleteMapping(ch.channexChannelId, m.mappingId);
   await db()
     .update(channexChannels)
@@ -148,15 +149,15 @@ export async function unmapAirbnbListing(hotel: Hotel, listingId: string, actor:
 /** Schritt 6+7: aktivieren und bestehende Reservationen je Inserat laden */
 export async function activateAirbnb(hotel: Hotel, actor: string): Promise<{ loaded: boolean }> {
   const ch = await getAirbnbChannel(hotel.id);
-  if (!ch?.channexChannelId) throw new Error("Zuerst das Airbnb-Konto verbinden");
-  if (!ch.mappings.length) throw new Error("Zuerst mindestens ein Inserat zuordnen");
+  if (!ch?.channexChannelId) throw new UserError("Zuerst das Airbnb-Konto verbinden");
+  if (!ch.mappings.length) throw new UserError("Zuerst mindestens ein Inserat zuordnen");
   const [fresh] = await db().select().from(hotels).where(eq(hotels.id, hotel.id));
-  if (!fresh.channexEnabled) throw new Error("Zuerst auf der Channex-Seite den Abgleich einschalten, damit Preise und Verfügbarkeit in Channex aktuell sind");
+  if (!fresh.channexEnabled) throw new UserError("Zuerst auf der Channex-Seite den Abgleich einschalten, damit Preise und Verfügbarkeit in Channex aktuell sind");
   const issues = (await channex.checkReadiness(ch.channexChannelId)).data;
   if (issues.length) {
     const text = issues.map((i) => `${i.entity} ${i.relation}: ${i.error_code}`).join("; ");
     await setError(hotel.id, ch.id, `Noch nicht bereit: ${text}`);
-    throw new Error(`Die Verbindung ist noch nicht bereit (${text})`);
+    throw new UserError(`Die Verbindung ist noch nicht bereit (${text})`);
   }
   await channex.activateChannel(ch.channexChannelId);
   await db()

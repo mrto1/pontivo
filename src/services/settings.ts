@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client";
@@ -68,8 +69,8 @@ export async function confirmTouristTax(
   v: { adultRappen: number; reducedRappen: number | null; freeUnderAge: number; reducedUnderAge: number | null; notes?: string },
   actor: string,
 ) {
-  if (!hotel.municipality) throw new Error("Gemeinde fehlt");
-  for (const n of [v.adultRappen, v.freeUnderAge]) if (!Number.isSafeInteger(n) || n < 0) throw new Error("Ungültiger Wert");
+  if (!hotel.municipality) throw new UserError("Gemeinde fehlt");
+  for (const n of [v.adultRappen, v.freeUnderAge]) if (!Number.isSafeInteger(n) || n < 0) throw new UserError("Ungültiger Wert");
   const today = todayIn(hotel.timezone);
   await db().transaction(async (tx) => {
     await tx
@@ -109,7 +110,7 @@ export async function goLiveProblems(hotel: Hotel): Promise<string[]> {
 export async function setHotelStatus(hotel: Hotel, status: "live" | "paused" | "draft", actor: string) {
   if (status === "live") {
     const p = await goLiveProblems(hotel);
-    if (p.length) throw new Error(p.join(" "));
+    if (p.length) throw new UserError(p.join(" "));
   }
   await db().update(hotels).set({ status, updatedAt: new Date() }).where(eq(hotels.id, hotel.id));
   await audit(db(), { hotelId: hotel.id, actor, action: "hotel.status", entity: "hotel", entityId: hotel.id, details: { status } });
@@ -124,7 +125,7 @@ export async function listMembers(hotelId: string) {
 }
 
 export async function addMember(hotelId: string, email: string, role: Role, actor: string) {
-  if (!(role in ROLE_LABEL)) throw new Error("Unbekannte Rolle."); // eigene Rollen: src/services/team.ts
+  if (!(role in ROLE_LABEL)) throw new UserError("Unbekannte Rolle."); // eigene Rollen: src/services/team.ts
   const e = z.string().trim().email().parse(email).toLowerCase();
   const [u] = await db().insert(users).values({ email: e }).onConflictDoUpdate({ target: users.email, set: { email: e } }).returning();
   await db().insert(hotelMembers).values({ hotelId, userId: u.id, role }).onConflictDoUpdate({ target: [hotelMembers.hotelId, hotelMembers.userId], set: { role } });
@@ -150,7 +151,7 @@ export async function setDeposit(hotel: Hotel, input: z.infer<typeof depositSche
 /** Bezeichnung des Bereichs Gastronomie (SPEC 20.1, feste Liste) */
 export async function setDiningLabel(hotel: Hotel, label: string, actor: string) {
   const allowed = ["restaurant", "cafe", "bar", "beiz", "takeaway", "kitchen"] as const;
-  if (!(allowed as readonly string[]).includes(label)) throw new Error("Bezeichnung ungültig.");
+  if (!(allowed as readonly string[]).includes(label)) throw new UserError("Bezeichnung ungültig.");
   await db().update(hotels).set({ diningLabel: label as (typeof allowed)[number], updatedAt: new Date() }).where(eq(hotels.id, hotel.id));
   await audit(db(), { hotelId: hotel.id, actor, action: "hotel.dining_label", entity: "hotel", entityId: hotel.id, details: { label } });
 }

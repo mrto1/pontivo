@@ -18,34 +18,18 @@ import { tr } from "@/src/domain/blocks";
 
 import { goLiveProblems, setHotelStatus, updateHotelIntro } from "@/src/services/settings";
 import { s } from "@/src/lib/form";
+import { hotelAction, userErrorText, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 
 
-async function run(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<string | { to: string }>) {
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  let r: string | { to: string };
-  try {
-    r = await fn(c);
-  } catch (e) {
-    if (e instanceof SiteError) r = `Nicht möglich: ${e.message}`;
-    else if (e instanceof ZodError) r = `Nicht möglich: ${e.issues.map((i) => i.message).join(", ")}`;
-    else throw e;
-  }
-  redirect(typeof r === "string" ? `/admin/${c.hotel.id}/site?msg=${encodeURIComponent(r)}` : r.to);
-}
+const run = (f: FormData, fn: (c: HotelCtx) => Promise<string | { to: string }>) =>
+  hotelAction(f, { page: "site", role: "manager", fail: "Nicht möglich" }, fn);
 
 async function changeStatus(f: FormData) {
   "use server";
-  const { hotel, actor } = await requireHotel(s(f, "hotelId"), "owner");
   const status = s(f, "status") as "live" | "paused" | "draft";
-  let msg = `Status: ${status}`;
-  try {
-    await setHotelStatus(hotel, status, actor);
-  } catch (e) {
-    msg = `Nicht möglich: ${(e as Error).message}`;
-  }
-  redirect(`/admin/${hotel.id}/site?msg=${encodeURIComponent(msg)}`);
+  await hotelAction(f, { page: "site", role: "owner", fail: "Nicht möglich" }, async ({ hotel, actor }) => { await setHotelStatus(hotel, status, actor); return `Status: ${status}`; });
 }
 
 async function saveIntro(f: FormData) {

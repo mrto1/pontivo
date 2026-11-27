@@ -8,33 +8,22 @@ import { formatDay } from "@/src/i18n/dict";
 import { addDays, todayIn } from "@/src/domain/dates";
 import { PeriodNav } from "@/components/admin/PeriodNav";
 import { s } from "@/src/lib/form";
+import { hotelAction, userErrorText, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
-const back = (h: string, day: string, msg: string) => redirect(`/admin/${h}/resources?day=${day}&msg=${encodeURIComponent(msg)}`);
+const run = (f: FormData, fail: string, fn: (c: HotelCtx) => Promise<string>) =>
+  hotelAction(f, { page: "resources", module: "resources", area: "resources", fail, keep: { day: s(f, "day") } }, fn);
 
 async function book(f: FormData) {
   "use server";
-  const c = await requireHotelModule("resources", s(f, "hotelId"), "staff", "resources");
-  let msg = "Gebucht.";
-  try {
+  await run(f, "Nicht gebucht", async (c) => {
     await createResourceBooking(c.hotel.id, { resourceId: s(f, "resourceId"), day: s(f, "day"), start: s(f, "start"), end: s(f, "end"), persons: Number(s(f, "persons")), guestName: s(f, "guestName"), bookingReference: s(f, "reference"), note: s(f, "note") }, c.actor);
-  } catch (e) {
-    if (!(e instanceof ResourceError)) throw e;
-    msg = `Nicht gebucht: ${e.message}`;
-  }
-  back(c.hotel.id, s(f, "day"), msg);
+    return "Gebucht.";
+  });
 }
 async function cancel(f: FormData) {
   "use server";
-  const c = await requireHotelModule("resources", s(f, "hotelId"), "staff", "resources");
-  let msg = "Storniert.";
-  try {
-    await cancelResourceBooking(c.hotel.id, s(f, "id"), c.actor);
-  } catch (e) {
-    if (!(e instanceof ResourceError)) throw e;
-    msg = `Nicht storniert: ${e.message}`;
-  }
-  back(c.hotel.id, s(f, "day"), msg);
+  await run(f, "Nicht storniert", async (c) => { await cancelResourceBooking(c.hotel.id, s(f, "id"), c.actor); return "Storniert."; });
 }
 
 export default async function ResourcesPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {

@@ -9,58 +9,40 @@ import { todayIn } from "@/src/domain/dates";
 import { decimalToRappen, formatChf } from "@/src/domain/money";
 import { env } from "@/src/env";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 
-const back = (hotelId: string, msg: string) => redirect(`/admin/${hotelId}/ki-chat?msg=${encodeURIComponent(msg)}`);
+const run = (f: FormData, fail: string, fn: (c: HotelCtx) => Promise<string>) =>
+  hotelAction(f, { page: "ki-chat", role: "owner", fail }, fn);
 
 async function enable(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  let msg = "KI-Chat eingeschaltet. Er erscheint jetzt auf Ihrer Website.";
-  try {
+  await run(f, "Nicht eingeschaltet", async (c) => {
     // Ohne API-Schlüssel läuft der Chat nicht: dann nicht einschalten und nichts verrechnen, statt «läuft» zu melden.
     if (!env().ANTHROPIC_API_KEY) throw new AiModuleError("Der Chat ist technisch noch nicht eingerichtet (API-Schlüssel fehlt). Bitte beim Betreiber melden.");
     if (f.get("accept") !== "on") throw new AiModuleError("Bitte bestätigen Sie Preis und Bedingungen.");
     await enableAiChat(c.hotel, s(f, "plan"), Number(s(f, "price")), c.actor);
-  } catch (e) {
-    if (!(e instanceof AiModuleError)) throw e;
-    msg = `Nicht eingeschaltet: ${e.message}`;
-  }
-  back(c.hotel.id, msg);
+    return "KI-Chat eingeschaltet. Er erscheint jetzt auf Ihrer Website.";
+  });
 }
 
 async function cancel(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  await cancelAiChat(c.hotel, c.actor);
-  back(c.hotel.id, "Gekündigt. Der Chat läuft noch bis Ende des Monats.");
+  await run(f, "Nicht gekündigt", async (c) => { await cancelAiChat(c.hotel, c.actor); return "Gekündigt. Der Chat läuft noch bis Ende des Monats."; });
 }
 
 async function booking(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  let msg = f.get("on") === "1" ? "Der Chat prüft jetzt Verfügbarkeit und Preise und zeigt Angebote." : "Der Chat beantwortet wieder nur Fragen zum Haus.";
-  try {
+  await run(f, "Nicht gespeichert", async (c) => {
     await setAiBooking(c.hotel, f.get("on") === "1", c.actor);
-  } catch (e) {
-    if (!(e instanceof AiModuleError)) throw e;
-    msg = `Nicht gespeichert: ${e.message}`;
-  }
-  back(c.hotel.id, msg);
+    return f.get("on") === "1" ? "Der Chat prüft jetzt Verfügbarkeit und Preise und zeigt Angebote." : "Der Chat beantwortet wieder nur Fragen zum Haus.";
+  });
 }
 
 async function budget(f: FormData) {
   "use server";
-  const c = await requireHotel(s(f, "hotelId"), "owner");
-  let msg = "Budget gespeichert";
-  try {
-    await setAiBudget(c.hotel, decimalToRappen(s(f, "budget").replace(/[^\d.]/g, "") || "0"), c.actor);
-  } catch (e) {
-    if (!(e instanceof AiModuleError)) throw e;
-    msg = `Nicht gespeichert: ${e.message}`;
-  }
-  back(c.hotel.id, msg);
+  await run(f, "Nicht gespeichert", async (c) => { await setAiBudget(c.hotel, decimalToRappen(s(f, "budget").replace(/[^\d.]/g, "") || "0"), c.actor); return "Budget gespeichert"; });
 }
 
 export default async function AiChatPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {

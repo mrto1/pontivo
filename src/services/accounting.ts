@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { and, asc, eq } from "drizzle-orm";
@@ -38,7 +39,7 @@ export function toTsv(lines: AccountingLine[]): string {
  * Offene oder fehlgeschlagene Belastungen erscheinen in `skipped`, nicht in der Datei.
  */
 export async function accountingExport(month: string): Promise<AccountingExport> {
-  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error("Monat im Format JJJJ-MM angeben");
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new UserError("Monat im Format JJJJ-MM angeben");
   const e = env();
   const date = lastDayOf(month);
   const all = await db().select().from(hotels).orderBy(asc(hotels.createdAt));

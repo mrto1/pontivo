@@ -3,35 +3,28 @@ import { redirect } from "next/navigation";
 import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { NewsletterError, listNewsletters, previewRecipients, saveDraft, sendNewsletter, sendTest } from "@/src/services/newsletter";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
-const back = (h: string, msg: string, id?: string) => redirect(`/admin/${h}/marketing?${id ? `edit=${id}&` : ""}msg=${encodeURIComponent(msg)}`);
 const seg = (f: FormData) => ({ language: s(f, "language"), tag: s(f, "tag"), stayedSince: s(f, "stayedSince"), minStays: Number(s(f, "minStays") || 0) });
+/** Entwurf bleibt offen (`edit`), auch bei einem Fehler */
+const run = (f: FormData, fail: string, fn: (c: HotelCtx) => Promise<string | { to: string }>, edit = s(f, "id")) =>
+  hotelAction(f, { page: "marketing", module: "marketing", role: "manager", fail, keep: { edit } }, fn);
 
 async function save(f: FormData) {
   "use server";
-  const c = await requireHotelModule("marketing", s(f, "hotelId"), "manager");
-  try {
+  await run(f, "Nicht gespeichert", async (c) => {
     const n = await saveDraft(c.hotel.id, s(f, "id") || null, { subject: s(f, "subject"), body: String(f.get("body") ?? ""), segment: seg(f) }, c.actor);
-    back(c.hotel.id, "Entwurf gespeichert.", n.id);
-  } catch (e) {
-    if (!(e instanceof NewsletterError)) throw e;
-    back(c.hotel.id, `Nicht gespeichert: ${e.message}`, s(f, "id") || undefined);
-  }
+    return { to: `/admin/${c.hotel.id}/marketing?edit=${n.id}&msg=${encodeURIComponent("Entwurf gespeichert.")}` };
+  });
 }
 async function test(f: FormData) {
   "use server";
-  const c = await requireHotelModule("marketing", s(f, "hotelId"), "manager");
-  let msg = "Testmail wird versendet.";
-  try { await sendTest(c.hotel, s(f, "id"), s(f, "to"), c.actor); } catch (e) { if (!(e instanceof NewsletterError)) throw e; msg = `Nicht gesendet: ${e.message}`; }
-  back(c.hotel.id, msg, s(f, "id"));
+  await run(f, "Nicht gesendet", async (c) => { await sendTest(c.hotel, s(f, "id"), s(f, "to"), c.actor); return "Testmail wird versendet."; });
 }
 async function send(f: FormData) {
   "use server";
-  const c = await requireHotelModule("marketing", s(f, "hotelId"), "manager");
-  let msg: string;
-  try { msg = `Versand an ${await sendNewsletter(c.hotel, s(f, "id"), c.actor)} Gäste gestartet.`; } catch (e) { if (!(e instanceof NewsletterError)) throw e; msg = `Nicht versendet: ${e.message}`; }
-  back(c.hotel.id, msg);
+  await run(f, "Nicht versendet", async (c) => `Versand an ${await sendNewsletter(c.hotel, s(f, "id"), c.actor)} Gäste gestartet.`, "");
 }
 
 export default async function MarketingPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {

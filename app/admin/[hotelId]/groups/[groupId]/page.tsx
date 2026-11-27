@@ -12,20 +12,21 @@ import { ratePlans, roomTypes } from "@/src/db/schema";
 import { formatChf } from "@/src/domain/money";
 import { formatDay } from "@/src/i18n/dict";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 
 
-async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>, groupId: string) => Promise<string>) {
-  const c = await requireHotelModule("groups", s(f, "hotelId"), "staff", "groups");
-  const id = s(f, "groupId");
-  let msg: string;
-  try { msg = await fn(c, id); } catch (e) {
-    msg = e instanceof GroupError ? e.message : e instanceof BookingError ? bookingErrorText(e.message) : e instanceof ZodError ? e.issues[0]?.message ?? "Eingabe prüfen" : "";
-    if (!msg) throw e;
-  }
-  redirect(`/admin/${c.hotel.id}/groups/${id}?msg=${encodeURIComponent(msg)}`);
-}
+/** Buchungsfehler mit Code erscheinen als verständlicher Text */
+const act = (f: FormData, fn: (c: HotelCtx, groupId: string) => Promise<string>) =>
+  hotelAction(f, { page: `groups/${s(f, "groupId")}`, module: "groups", area: "groups", fail: "Nicht möglich" }, async (c) => {
+    try {
+      return await fn(c, s(f, "groupId"));
+    } catch (e) {
+      if (e instanceof BookingError) throw new GroupError(bookingErrorText(e.code));
+      throw e;
+    }
+  });
 async function block(f: FormData) {
   "use server";
   await act(f, async (c, id) => { await changeBlock(c.hotel, id, s(f, "roomTypeId"), Number(s(f, "delta")), c.actor); return "Block geändert."; });

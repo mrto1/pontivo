@@ -10,56 +10,40 @@ import { GoodsError, adjustStock, deleteGood, listGoods, saveGood } from "@/src/
 import { VAT_LABEL, needsReorder } from "@/src/domain/goods";
 import { formatChf } from "@/src/domain/money";
 import { s } from "@/src/lib/form";
+import { hotelAction, type ActionResult, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 const int = (v: string) => (v === "" ? 0 : Number(v));
 const hasMinibar = (type: string) => type !== "restaurant"; // reine Restaurants haben keine Minibar
 
-async function guard(f: FormData) {
-  const c = await requireHotelModule("shop", s(f, "hotelId"), "manager");
-  return c;
-}
-const back = (hotelId: string, q: string) => redirect(`/admin/${hotelId}/shop${q}`);
+const run = (f: FormData, fn: (c: HotelCtx) => Promise<ActionResult>, reopen?: Record<string, string>) =>
+  hotelAction(f, { page: "shop", module: "shop", role: "manager", reopen }, fn);
 
 async function saveAction(f: FormData) {
   "use server";
-  const c = await guard(f);
   const id = s(f, "id");
-  let msg = "Artikel gespeichert.";
-  let ok = true;
-  try {
+  await run(f, async (c) => {
     await saveGood(c.hotel.id, id || null, {
       name: s(f, "name"), category: s(f, "category"), priceRappen: Math.round(Number(s(f, "price").replace(",", ".") || 0) * 100), vat: s(f, "vat") as "standard",
       sellable: f.get("sellable") === "on", active: f.get("active") === "on", minibar: f.get("minibar") === "on", minibarPar: int(s(f, "minibarPar")),
       trackStock: f.get("trackStock") === "on", stock: int(s(f, "stock")), minStock: int(s(f, "minStock")),
     }, c.actor, hasMinibar(c.hotel.propertyType));
-  } catch (e) {
-    if (!(e instanceof GoodsError)) throw e;
-    msg = `Nicht gespeichert: ${e.message}`;
-    ok = false;
-  }
-  back(c.hotel.id, `?${ok ? "" : `g=${id || "neu"}&`}msg=${encodeURIComponent(msg)}`);
+    return "Artikel gespeichert.";
+  }, { g: id || "neu" });
 }
 
 async function receiveAction(f: FormData) {
   "use server";
-  const c = await guard(f);
   const id = s(f, "id");
-  let msg = "Bestand angepasst.";
-  try {
+  await run(f, async (c) => {
     await adjustStock(c.hotel.id, id, Math.trunc(Number(s(f, "delta"))), c.actor, s(f, "reason") || "Wareneingang");
-  } catch (e) {
-    if (!(e instanceof GoodsError)) throw e;
-    msg = `Nicht gespeichert: ${e.message}`;
-  }
-  back(c.hotel.id, `?g=${id}&msg=${encodeURIComponent(msg)}`);
+    return { to: `/admin/${c.hotel.id}/shop?g=${id}&msg=${encodeURIComponent("Bestand angepasst.")}` };
+  }, { g: id });
 }
 
 async function removeAction(f: FormData) {
   "use server";
-  const c = await guard(f);
-  try { await deleteGood(c.hotel.id, s(f, "id"), c.actor); } catch (e) { if (!(e instanceof GoodsError)) throw e; }
-  back(c.hotel.id, `?msg=${encodeURIComponent("Artikel gelöscht.")}`);
+  await run(f, async (c) => { await deleteGood(c.hotel.id, s(f, "id"), c.actor); return "Artikel gelöscht."; });
 }
 
 /** Shop & Lager (SPEC 19.51): Waren, Minibar-Zuweisung, optionaler Bestand, Nachbestellen */

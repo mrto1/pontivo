@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, eq, sql } from "drizzle-orm";
 import { db, type Executor } from "../db/client";
 import { hotels, inventoryDays, ratePlans, ratesDays, roomTypes } from "../db/schema";
@@ -98,7 +99,7 @@ export type RateRow = { ratePlanId: string; from: string; to: string; change: Ra
 export async function updateRatesBatch(hotelId: string, rowsIn: RateRow[], opts: { weekdays?: number[]; actor: string }): Promise<number> {
   for (const r of rowsIn) {
     if (r.change.priceRappen !== undefined && (!Number.isSafeInteger(r.change.priceRappen) || r.change.priceRappen <= 0)) {
-      throw new Error("Preis muss > 0 Rappen sein");
+      throw new UserError("Preis muss > 0 Rappen sein");
     }
   }
   const work = rowsIn.map((r) => ({ ...r, days: filterDays(r.from, r.to, opts.weekdays) })).filter((r) => r.days.length && Object.keys(r.change).length);
@@ -151,7 +152,7 @@ export async function setBlocked(
   blocked: number,
   opts: { weekdays?: number[]; actor: string },
 ): Promise<number> {
-  if (!Number.isSafeInteger(blocked) || blocked < 0) throw new Error("Anzahl gesperrter Zimmer ungültig");
+  if (!Number.isSafeInteger(blocked) || blocked < 0) throw new UserError("Anzahl gesperrter Zimmer ungültig");
   const days = filterDays(from, to, opts.weekdays);
   if (!days.length) return 0;
   return db().transaction(async (tx) => {

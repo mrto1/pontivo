@@ -1,3 +1,4 @@
+import { UserError } from "./errors";
 /** Geld immer als Integer in Rappen (SPEC 0.4). */
 
 /** round_half_up(a * bps / 10000) mit reiner Ganzzahl-Arithmetik (a, bps >= 0) */
@@ -24,7 +25,7 @@ export function rappenToDecimal(r: number): string {
 export function decimalToRappen(s: string | number): number {
   const str = String(s).trim();
   const m = /^(-?)(\d+)(?:\.(\d{1,2})\d*)?$/.exec(str);
-  if (!m) throw new Error(`ungültiger Betrag: ${s}`);
+  if (!m) throw new UserError(`ungültiger Betrag: ${s}`);
   const frac = (m[3] ?? "0").padEnd(2, "0");
   const v = Number(m[2]) * 100 + Number(frac);
   return m[1] ? -v : v;

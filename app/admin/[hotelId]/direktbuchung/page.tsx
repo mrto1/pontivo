@@ -4,31 +4,19 @@ import { Drawer, DrawerActions } from "@/components/admin/Drawer";
 import { LangTabs } from "@/components/admin/LangTabs";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { InfoTip } from "@/components/admin/InfoTip";
-import { redirect } from "next/navigation";
-import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
 import { hotelLocales, formatDay, LOCALE_NAMES, type Locale } from "@/src/i18n/dict";
 import { gapSettings, MAX_BENEFITS, MAX_GAP_NIGHTS, recoveryEnabled, waitlistEnabled, winbackSettings, WINBACK_MAX_DAYS, WINBACK_MIN_DAYS, type Benefit } from "@/src/domain/direct-tools";
 import { moduleOn } from "@/src/services/modules";
 import { listCompanies } from "@/src/services/debtors";
-import { cancelWaitlistEntry, deleteCode, DirectError, listCodes, listGaps, listWaitlist, saveCode, saveDirectSettings } from "@/src/services/direct-tools";
+import { cancelWaitlistEntry, deleteCode, listCodes, listGaps, listWaitlist, saveCode, saveDirectSettings } from "@/src/services/direct-tools";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
 
-const back = (hotelId: string, msg: string, anchor = ""): never => redirect(`/admin/${hotelId}/direktbuchung?msg=${encodeURIComponent(msg)}${anchor}`);
-
-async function run(f: FormData, ok: string, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<unknown>, anchor = "") {
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  try {
-    await fn(c);
-  } catch (e) {
-    if (e instanceof DirectError) back(c.hotel.id, `Nicht gespeichert: ${e.message}`, anchor);
-    if (e instanceof ZodError) back(c.hotel.id, `Nicht gespeichert: ${e.issues.map((i) => i.message).join(", ")}`, anchor);
-    throw e;
-  }
-  back(c.hotel.id, ok, anchor);
-}
+const run = (f: FormData, ok: string, fn: (c: HotelCtx) => Promise<unknown>, anchor = "") =>
+  hotelAction(f, { page: "direktbuchung", role: "manager", ok, anchor }, async (c) => { await fn(c); });
 
 async function benefitsSave(f: FormData) {
   "use server";
@@ -60,15 +48,9 @@ async function winbackSave(f: FormData) {
 async function codeSave(f: FormData) {
   "use server";
   const id = s(f, "codeId") || null;
-  const c = await requireHotel(s(f, "hotelId"), "manager");
-  try {
-    await saveCode(c.hotel.id, id, { companyId: s(f, "companyId"), code: s(f, "code"), discountPct: Number(s(f, "discount").replace(",", ".")) || 0, payOnInvoice: f.get("invoice") === "on", validFrom: s(f, "from") || null, validUntil: s(f, "until") || null, active: id ? f.get("active") === "on" : true }, c.actor);
-  } catch (e) {
-    if (!(e instanceof DirectError) && !(e instanceof ZodError)) throw e;
-    const m = e instanceof ZodError ? e.issues.map((i) => i.message).join(", ") : e.message;
-    redirect(`/admin/${c.hotel.id}/direktbuchung?code=${id ?? "neu"}&msg=${encodeURIComponent(`Nicht gespeichert: ${m}`)}#codes`); // Seitenleiste bleibt offen
-  }
-  back(c.hotel.id, id ? "Code gespeichert" : "Code angelegt", "#codes");
+  await hotelAction(f, { page: "direktbuchung", role: "manager", ok: id ? "Code gespeichert" : "Code angelegt", anchor: "#codes", reopen: { code: id ?? "neu" } }, async ({ hotel, actor }) => {
+    await saveCode(hotel.id, id, { companyId: s(f, "companyId"), code: s(f, "code"), discountPct: Number(s(f, "discount").replace(",", ".")) || 0, payOnInvoice: f.get("invoice") === "on", validFrom: s(f, "from") || null, validUntil: s(f, "until") || null, active: id ? f.get("active") === "on" : true }, actor);
+  });
 }
 async function codeDelete(f: FormData) {
   "use server";

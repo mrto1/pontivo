@@ -1,3 +1,4 @@
+import { UserError } from "../../domain/errors";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db/client";
 import { channexChannels, hotels, ratePlans, roomTypes, type Hotel } from "../../db/schema";
@@ -38,7 +39,7 @@ export const META_CHANNELS: Record<
 
 export function parseMetaChannel(v: unknown): MetaChannel {
   if (v === "BookingCom" || v === "Expedia") return v;
-  throw new Error("Unbekannter Kanal");
+  throw new UserError("Unbekannter Kanal");
 }
 
 /** Expedia-Einstellungen laut Channex-Adapter (GET /channels/adapter?code=Expedia): min_stay_type, booking_amount_settings */
@@ -99,18 +100,18 @@ export async function probeMetaChannel(
   const id = externalHotelId.trim();
   if (!/^\d{3,12}$/.test(id)) {
     // ASSUMPTION: Auch Expedia-Hotel-IDs bestehen nur aus Ziffern (Channex-Beispiel/Erfahrung; auf Staging nicht geprüft).
-    throw new Error(`Die ${cfg.label} Hotel-ID besteht nur aus Ziffern`);
+    throw new UserError(`Die ${cfg.label} Hotel-ID besteht nur aus Ziffern`);
   }
-  if (!hotel.channexPropertyId) throw new Error("Zuerst den Betrieb in Channex anlegen (Abschnitt Zuordnung)");
+  if (!hotel.channexPropertyId) throw new UserError("Zuerst den Betrieb in Channex anlegen (Abschnitt Zuordnung)");
   const existing = await getMetaChannel(hotel.id, channel);
   if (existing?.channexChannelId && existing.externalId !== id) {
-    throw new Error(`Es besteht schon eine Verbindung zu einer anderen ${cfg.label} Hotel-ID. Zuerst diese Verbindung entfernen.`);
+    throw new UserError(`Es besteht schon eine Verbindung zu einer anderen ${cfg.label} Hotel-ID. Zuerst diese Verbindung entfernen.`);
   }
   const minStayType = channel === "Expedia" ? pick(EXPEDIA_MIN_STAY, opts.minStayType, existing?.details.minStayType) : undefined;
   const bookingAmount = channel === "Expedia" ? pick(EXPEDIA_BOOKING_AMOUNT, opts.bookingAmount, existing?.details.bookingAmount) : undefined;
   const settings = { hotel_id: id };
   const test = await channex.testConnection(channel, settings);
-  if (!test.data.success) throw new Error(cfg.notAccepted);
+  if (!test.data.success) throw new UserError(cfg.notAccepted);
   const mapping = (await channex.mappingDetails(channel, settings)).data;
   let currency: string | null = null;
   try {
@@ -141,7 +142,7 @@ export async function probeMetaChannel(
 
 function pick<T extends string>(allowed: readonly T[], value: string | undefined, fallback: T | undefined): T | undefined {
   if (value === undefined || value === "") return fallback;
-  if (!(allowed as readonly string[]).includes(value)) throw new Error("Ungültige Einstellung");
+  if (!(allowed as readonly string[]).includes(value)) throw new UserError("Ungültige Einstellung");
   return value as T;
 }
 
@@ -161,15 +162,15 @@ export async function mappablePlans(hotelId: string) {
 export async function saveMetaMapping(hotel: Hotel, channel: MetaChannel, selection: Record<string, string>, actor: string): Promise<void> {
   const cfg = META_CHANNELS[channel];
   const ch = await getMetaChannel(hotel.id, channel);
-  if (!ch) throw new Error(`Zuerst die ${cfg.label} Hotel-ID prüfen`);
+  if (!ch) throw new UserError(`Zuerst die ${cfg.label} Hotel-ID prüfen`);
   const [fresh] = await db().select().from(hotels).where(eq(hotels.id, hotel.id));
-  if (!fresh.channexPropertyId) throw new Error("Zuerst den Betrieb in Channex anlegen");
+  if (!fresh.channexPropertyId) throw new UserError("Zuerst den Betrieb in Channex anlegen");
   const plans = await mappablePlans(hotel.id);
   const own = new Set(plans.map((p) => p.id));
   const clean: Record<string, string> = {};
   for (const [k, v] of Object.entries(selection)) {
     if (!v) continue;
-    if (!own.has(v)) throw new Error("Unbekannter Tarif in der Auswahl");
+    if (!own.has(v)) throw new UserError("Unbekannter Tarif in der Auswahl");
     clean[k] = v;
   }
   const options = await channexPlanOptions(fresh, plans);
@@ -210,14 +211,14 @@ export const saveBookingMapping = (hotel: Hotel, selection: Record<string, strin
 export async function activateMetaChannel(hotel: Hotel, channel: MetaChannel, actor: string): Promise<{ loaded: boolean }> {
   const cfg = META_CHANNELS[channel];
   const ch = await getMetaChannel(hotel.id, channel);
-  if (!ch?.channexChannelId) throw new Error("Zuerst die Zuordnung speichern");
+  if (!ch?.channexChannelId) throw new UserError("Zuerst die Zuordnung speichern");
   const [fresh] = await db().select().from(hotels).where(eq(hotels.id, hotel.id));
-  if (!fresh.channexEnabled) throw new Error("Zuerst auf der Channex-Seite den Abgleich einschalten, damit Preise und Verfügbarkeit in Channex aktuell sind");
+  if (!fresh.channexEnabled) throw new UserError("Zuerst auf der Channex-Seite den Abgleich einschalten, damit Preise und Verfügbarkeit in Channex aktuell sind");
   const issues = (await channex.checkReadiness(ch.channexChannelId)).data;
   if (issues.length) {
     const text = issues.map((i) => `${i.entity} ${i.relation}: ${i.error_code}`).join("; ");
     await setError(hotel.id, ch.id, `Noch nicht bereit: ${text}`);
-    throw new Error(`Die Verbindung ist noch nicht bereit (${text})`);
+    throw new UserError(`Die Verbindung ist noch nicht bereit (${text})`);
   }
   await channex.activateChannel(ch.channexChannelId);
   await db()
@@ -239,7 +240,7 @@ export const activateBookingChannel = (hotel: Hotel, actor: string) => activateM
 
 export async function deactivateMetaChannel(hotel: Hotel, channel: MetaChannel, actor: string): Promise<void> {
   const ch = await getMetaChannel(hotel.id, channel);
-  if (!ch?.channexChannelId) throw new Error("Keine Verbindung vorhanden");
+  if (!ch?.channexChannelId) throw new UserError("Keine Verbindung vorhanden");
   await channex.deactivateChannel(ch.channexChannelId);
   await db()
     .update(channexChannels)
