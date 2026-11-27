@@ -1,6 +1,7 @@
 import { SeenMark } from "@/components/admin/SeenMark";
 import { redirect } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
+import { DialogButton } from "@/components/admin/DialogButton";
 import { Notice } from "@/components/admin/Notice";
 import { OrderScreen } from "@/components/admin/OrderScreen";
 import { requireHotel, requireHotelModule } from "@/src/auth/guard";
@@ -72,11 +73,12 @@ export default async function OrdersScreenPage({ params, searchParams }: { param
               <Btn o={o} d="accept" extra={{ extra: "0" }}>Annehmen {hm(o.requestedAt)}</Btn>
               {[10, 20, 30].map((m) => <Btn key={m} o={o} d="accept" extra={{ extra: String(m) }} cls="btn secondary">+{m} Min.</Btn>)}
             </div>
-            <details><summary className="small">Ablehnen</summary>
-              <form action={act} className="inline-form">{H}<input type="hidden" name="id" value={o.id} /><input type="hidden" name="do" value="reject" />
-                <select name="reason" aria-label="Grund">{REASONS.map((r) => <option key={r}>{r}</option>)}</select>
-                <button className="btn danger small">Ablehnen{o.payment === "card" ? " und erstatten" : ""}</button></form>
-            </details>
+            <DialogButton label="Ablehnen" title={`Bestellung ${o.number} ablehnen`}>
+              <form action={act} className="stack">{H}<input type="hidden" name="id" value={o.id} /><input type="hidden" name="do" value="reject" />
+                <div><label htmlFor={`rj-${o.id}`}>Grund (sieht der Gast)</label><select id={`rj-${o.id}`} name="reason">{REASONS.map((r) => <option key={r}>{r}</option>)}</select></div>
+                {o.payment === "card" ? <p className="small muted m0">Der bezahlte Betrag wird dem Gast zurückerstattet.</p> : null}
+                <div><button className="btn danger">Ablehnen{o.payment === "card" ? " und erstatten" : ""}</button></div></form>
+            </DialogButton>
           </>
         ) : o.status === "accepted" ? (
           <div className="inline-form"><Btn o={o} d="ready">Bereit</Btn>{o.kind === "pickup" ? <Btn o={o} d="complete" cls="btn secondary">Abgeholt</Btn> : null}</div>

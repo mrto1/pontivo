@@ -36,11 +36,11 @@ async function act(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>>
 
 async function assign(f: FormData) {
   "use server";
-  await act(f, async (c) => { await assignRoom(c.hotel.id, s(f, "bookingRoomId"), s(f, "roomId") || null, c.actor); return "Zimmer zugewiesen."; });
+  await act(f, async (c) => { await assignRoom(c.hotel.id, s(f, "bookingRoomId"), s(f, "roomId") || null, c.actor); return s(f, "roomId") ? "Zimmer zugewiesen." : "Zuweisung aufgehoben."; }, `zuweisung=${s(f, "bookingRoomId")}`);
 }
 async function move(f: FormData) {
   "use server";
-  await act(f, async (c) => { await moveRoom(c.hotel.id, s(f, "bookingRoomId"), s(f, "roomId"), s(f, "day"), s(f, "reason"), c.actor); return "Zimmerwechsel gespeichert."; });
+  await act(f, async (c) => { await moveRoom(c.hotel.id, s(f, "bookingRoomId"), s(f, "roomId"), s(f, "day"), s(f, "reason"), c.actor); return "Zimmerwechsel gespeichert."; }, `zuweisung=${s(f, "bookingRoomId")}`);
 }
 async function auto(f: FormData) {
   "use server";
@@ -84,7 +84,7 @@ function cells(bs: PlanBooking[], from: string, hotelId: string) {
     const len = Math.min(DAYS - i, diffDays(day, b.checkout));
     out.push(
       <td key={i} colSpan={len} className={`plan-bar ${b.status === "hold" ? "hold" : ""}`} tabIndex={0} data-tip-title={b.guest} data-tip={`Referenz\t${b.reference}\nAnreise\t${b.checkin}\nAbreise\t${b.checkout}${b.status === "hold" ? "\nStatus\treserviert (offen)" : ""}`}>
-        <a href={`/admin/${hotelId}/bookings/${b.bookingId}`}>{b.guest}</a>
+        <a href={`?from=${from}&zuweisung=${b.bookingRoomId}`} aria-label={`${b.guest}: Zimmer und Buchung`}>{b.guest}</a>
       </td>,
     );
     i += len;
@@ -110,6 +110,9 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
   // Seitenleiste: ?room=<id> bearbeitet ein Zimmer, ?room=neu legt eines an
   const editRoom = manager && sp.room && sp.room !== "neu" ? rms.find((r) => r.id === sp.room) : undefined;
   const drawerOpen = manager && types.length > 0 && (sp.room === "neu" || !!editRoom);
+  // Seitenleiste: ?zuweisung=<bookingRoomId> zeigt die Buchung im Plan mit Zimmer ändern, aufheben und wechseln
+  const zb = sp.zuweisung ? bookings.find((b) => b.bookingRoomId === sp.zuweisung) ?? null : null;
+  const zOptions = zb ? rms.filter((r) => r.active && r.roomTypeId === zb.roomTypeId) : [];
 
   return (
     <div className="stack">
@@ -121,7 +124,36 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
           <p>Der Zimmerplan ist optional: Buchen funktioniert auch ohne.</p>
         </InfoTip>
       </div>
-      {sp.msg && !drawerOpen ? <Notice text={sp.msg} /> : null}
+      {sp.msg && !drawerOpen && !zb ? <Notice text={sp.msg} /> : null}
+      {zb ? (
+        <Drawer title={zb.guest} closeHref={`${base}?from=${from}`}>
+          {sp.msg ? <Notice text={sp.msg} /> : null}
+          <p className="m0">{formatDay(zb.checkin, "de")} – {formatDay(zb.checkout, "de")} · {types.find((t) => t.id === zb.roomTypeId)?.name} · {zb.reference}{zb.status === "hold" ? " · reserviert" : ""}</p>
+          <div><a className="btn secondary small" href={`/admin/${hotel.id}/bookings/${zb.bookingId}`}>Buchung öffnen</a></div>
+          {zOptions.length ? (
+            <>
+              <form action={assign} className="stack" data-testid="assign-room">
+                {hid}{fromField}<input type="hidden" name="bookingRoomId" value={zb.bookingRoomId} />
+                <h3 className="m0">Zimmer</h3>
+                <div><label htmlFor="za-room">Zugewiesenes Zimmer</label><select id="za-room" name="roomId" defaultValue={zb.roomId ?? ""}><option value="">(keines, Zuweisung aufheben)</option>{zOptions.map((r) => <option key={r.id} value={r.id}>{r.number}</option>)}</select></div>
+                <div><button className="btn">Speichern</button></div>
+              </form>
+              {zb.roomId && zOptions.length > 1 ? (
+                <form action={move} className="stack">
+                  {hid}{fromField}<input type="hidden" name="bookingRoomId" value={zb.bookingRoomId} />
+                  <h3 className="m0">Zimmerwechsel während des Aufenthalts</h3>
+                  <div className="form-grid">
+                    <div><label htmlFor="zm-day">Wechsel ab</label><input id="zm-day" type="date" name="day" min={zb.checkin} max={zb.checkout} required /></div>
+                    <div><label htmlFor="zm-room">Neues Zimmer</label><select id="zm-room" name="roomId" required>{zOptions.filter((r) => r.id !== zb.roomId).map((r) => <option key={r.id} value={r.id}>{r.number}</option>)}</select></div>
+                  </div>
+                  <div><label htmlFor="zm-reason">Grund (optional)</label><input id="zm-reason" name="reason" maxLength={200} /></div>
+                  <div><button className="btn secondary">Zimmer wechseln</button></div>
+                </form>
+              ) : null}
+            </>
+          ) : <p className="muted small m0">Für diesen Zimmertyp sind keine Zimmer angelegt.</p>}
+        </Drawer>
+      ) : null}
       <PeriodNav prev={`${base}?from=${addDays(from, -7)}`} next={`${base}?from=${addDays(from, 7)}`} todayHref={base} todayActive={from === today} prevLabel="Woche zurück" nextLabel="Woche vor" jump={{ value: from, param: "from" }} />
 
       {rms.length === 0 ? (
@@ -184,38 +216,6 @@ export default async function Plan({ params, searchParams }: { params: Promise<{
             <form action={auto}>{hid}{fromField}<button className="btn small">Automatisch zuweisen (nächste 14 Tage)</button></form>
           </>
         ) : <p className="muted small">Alle Buchungen in diesem Zeitraum haben ein Zimmer{rms.length ? "" : " (oder es gibt noch keine Zimmer)"}.</p>}
-        {rms.length ? (
-          <details>
-            <summary className="small">Zugewiesenes Zimmer ändern oder aufheben</summary>
-            <div className="scroll-x"><table className="table">
-              <tbody>
-                {bookings.filter((b) => b.roomId).map((b) => {
-                  const options = rms.filter((r) => r.active && r.roomTypeId === b.roomTypeId);
-                  return (
-                    <tr key={b.bookingRoomId}>
-                      <td className="small">{b.guest} · {formatDay(b.checkin, "de")} – {formatDay(b.checkout, "de")}</td>
-                      <td>
-                        <form action={assign} className="inline-form">
-                          {hid}{fromField}<input type="hidden" name="bookingRoomId" value={b.bookingRoomId} />
-                          <select name="roomId" defaultValue={b.roomId ?? ""}><option value="">(keines)</option>{options.map((r) => <option key={r.id} value={r.id}>{r.number}</option>)}</select>
-                          <button className="btn secondary small">Speichern</button>
-                        </form>
-                        <form action={move} className="inline-form">
-                          {hid}{fromField}<input type="hidden" name="bookingRoomId" value={b.bookingRoomId} />
-                          <span className="small">Wechsel ab</span>
-                          <input type="date" name="day" min={b.checkin} max={b.checkout} required />
-                          <select name="roomId" required>{options.filter((r) => r.id !== b.roomId).map((r) => <option key={r.id} value={r.id}>{r.number}</option>)}</select>
-                          <input name="reason" placeholder="Grund (optional)" maxLength={200} />
-                          <button className="btn secondary small">Zimmer wechseln</button>
-                        </form>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table></div>
-          </details>
-        ) : null}
       </section>
 
       {manager ? (

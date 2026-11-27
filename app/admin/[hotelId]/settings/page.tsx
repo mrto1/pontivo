@@ -81,6 +81,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
   const cfg = dining ? await getSettings(hotel.id) : null;
   const hidden = <input type="hidden" name="hotelId" value={hotel.id} />;
 
+  const taxOk = !!rule && (rule.status === "verified" || rule.status === "none");
   return (
     <div className="stack">
       <h1>Betriebsdaten</h1>
@@ -127,7 +128,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
         <p className="small">Gemeinde: <strong>{hotel.municipality ?? "–"}</strong> ({hotel.canton}), Kategorie {hotel.touristTaxCategory}</p>
         {rule ? (
           <div className="kv small">
-            <span className="muted">Status</span><span><span className={`badge ${rule.status === "verified" ? "" : "warn"}`}>{rule.status}</span> (gültig ab {rule.validFrom})</span>
+            <span className="muted">Status</span><span><span className={`badge ${taxOk ? "" : "warn"}`}>{rule.status === "none" ? "keine Kurtaxe (bestätigt)" : taxOk ? "bestätigt" : "noch nicht bestätigt"}</span> (gültig ab {rule.validFrom})</span>
             <span className="muted">Erwachsene</span><span>{rule.adultRappen === null ? "unbekannt" : formatChf(rule.adultRappen)} pro Nacht</span>
             <span className="muted">Reduziert</span><span>{rule.reducedRappen === null ? "–" : `${formatChf(rule.reducedRappen)} unter ${rule.reducedUnderAge} Jahren`}</span>
             <span className="muted">Befreit</span><span>{rule.freeUnderAge ? `unter ${rule.freeUnderAge} Jahren` : "–"}</span>
@@ -136,11 +137,12 @@ export default async function Settings({ params, searchParams }: { params: Promi
           </div>
         ) : <p className="notice warn">Keine Regel für diese Gemeinde hinterlegt.</p>}
         {isManager ? (
-          <details>
-            <summary className="btn secondary small">Satz bestätigen / korrigieren</summary>
+          <details open={!taxOk} data-testid="tax-confirm">
+            <summary className="btn secondary small">{taxOk ? "Satz korrigieren" : "Satz bestätigen"}</summary>
             <form action={saveTax} className="stack mt12">
               {hidden}
-              <div className="inline-form">
+              {!taxOk ? <p className="notice warn small m0">Bitte prüfen Sie den Satz bei Ihrer Gemeinde und bestätigen Sie ihn. Erst dann rechnet Pontivo die Kurtaxe verbindlich ab.</p> : null}
+              <div className="form-grid">
                 <div><label htmlFor="fe5a611">Erwachsene CHF/Nacht</label><input id="fe5a611" name="adult" required inputMode="decimal" defaultValue={rule?.adultRappen != null ? (rule.adultRappen / 100).toFixed(2) : ""} /></div>
                 <div><label htmlFor="fe5a612">Reduziert CHF</label><input id="fe5a612" name="reduced" inputMode="decimal" defaultValue={rule?.reducedRappen != null ? (rule.reducedRappen / 100).toFixed(2) : ""} /></div>
                 <div><label htmlFor="fe5a613">Reduziert unter Alter</label><input id="fe5a613" name="reducedUnder" type="number" min={0} defaultValue={rule?.reducedUnderAge ?? ""} /></div>

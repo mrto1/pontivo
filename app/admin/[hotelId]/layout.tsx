@@ -1,5 +1,4 @@
 import { requireHotel } from "@/src/auth/guard";
-import { hotelsForUser } from "@/src/auth/session";
 import { visibleNav } from "@/src/admin/visible-nav";
 import { hiddenNavKeys } from "@/src/domain/modules";
 import { isLimitedRole, roleLabel } from "@/src/domain/roles";
@@ -46,21 +45,11 @@ export default async function HotelAdminLayout({ children, params }: { children:
   const shown = SEEN_KIND_LIST.filter((k) => itemKeyFor(k, vn.navs[SEEN_KINDS[k].area]) !== null);
   const tasks = (Object.keys(TASK_KINDS) as TaskKind[]).filter((k) => itemKeyForPage(TASK_KINDS[k].page, vn.navs[TASK_KINDS[k].area]) !== null);
   const badges = badgesFor(await unseenCounts(user.id, hotel.id, shown), await openTaskCounts(hotel, tasks), vn.navs);
-  const others = (await hotelsForUser(user.id)).filter((x) => x.hotel.id !== hotel.id);
   return (
     <AreaProvider navs={vn.navs} initialArea={initialArea} cookieName={cookieName} home={home} marked={vn.showSwitch}>
       <header className="admin-head">
         <div className="wrap">
           <a href="/admin" className="brand admin-brand" title="Pontivo: Betrieb wechseln"><BrandMark /><span className="muted brand-name">{hotel.name}</span></a>
-          {others.length > 0 && !user.isPlatformAdmin ? (
-            <details className="small" style={{ display: "inline-block", marginLeft: 12 }}>
-              <summary>Betrieb wechseln</summary>
-              <ul className="stack" style={{ listStyle: "none", padding: 8, margin: 0 }}>
-                {others.map((x) => <li key={x.hotel.id}><a href={`/admin/${x.hotel.id}`}>{x.hotel.name}</a></li>)}
-                <li><a href="/admin">Übersicht aller Betriebe</a></li>
-              </ul>
-            </details>
-          ) : null}
           {vn.showSwitch ? <AreaSwitch lodgingLabel={LODGING_LABEL[hotel.propertyType] ?? "Hotel"} diningLabel={DINING_LABEL[hotel.diningLabel]?.de ?? "Restaurant"} badges={badges.byArea} /> : null}
           <SetupChip split={mixed} lodging={lodgingProgress} dining={diningProgress} />
           <AdminNav nav={nav} home={home} userLabel={`${user.email} · ${roleLabel(role)}`} initials={initials(user.name, user.email)} showSettings={showSettings} badges={badges.byItem} />

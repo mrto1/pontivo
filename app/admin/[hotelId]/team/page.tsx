@@ -1,4 +1,8 @@
 import { Notice } from "@/components/admin/Notice";
+import Link from "next/link";
+import { Drawer, DrawerActions } from "@/components/admin/Drawer";
+import { RowList } from "@/components/admin/RowList";
+import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
 import { requireHotel } from "@/src/auth/guard";
@@ -9,15 +13,16 @@ import { s } from "@/src/lib/form";
 
 export const dynamic = "force-dynamic";
 
-const back = (hotelId: string, msg: string, anchor = ""): never => redirect(`/admin/${hotelId}/team?msg=${encodeURIComponent(msg)}${anchor}`);
+const back = (hotelId: string, msg: string, anchor = "", reopen = ""): never => redirect(`/admin/${hotelId}/team?${reopen ? `rolle=${encodeURIComponent(reopen)}&` : ""}msg=${encodeURIComponent(msg)}${anchor}`);
 
-async function run(f: FormData, ok: string, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<void>, anchor = "") {
+/** `reopen`: bei einem Fehler bleibt diese Seitenleiste offen */
+async function run(f: FormData, ok: string, fn: (c: Awaited<ReturnType<typeof requireHotel>>) => Promise<void>, anchor = "", reopen = "") {
   const c = await requireHotel(s(f, "hotelId"), "owner");
   try {
     await fn(c);
   } catch (e) {
-    if (e instanceof TeamError) back(c.hotel.id, `Nicht gespeichert: ${e.message}`, anchor);
-    if (e instanceof ZodError) back(c.hotel.id, `Nicht gespeichert: ${e.issues.map((i) => i.message).join(", ")}`, anchor);
+    if (e instanceof TeamError) back(c.hotel.id, `Nicht gespeichert: ${e.message}`, anchor, reopen);
+    if (e instanceof ZodError) back(c.hotel.id, `Nicht gespeichert: ${e.issues.map((i) => i.message).join(", ")}`, anchor, reopen);
     throw e;
   }
   back(c.hotel.id, ok, anchor);
@@ -44,7 +49,7 @@ async function memberRemove(f: FormData) {
 async function roleSave(f: FormData) {
   "use server";
   const id = s(f, "roleId") || null;
-  await run(f, id ? "Rolle gespeichert" : "Rolle angelegt", ({ hotel, actor }) => saveRole(hotel.id, id, { name: s(f, "name"), areas: f.getAll("area").map(String) }, actor).then(() => undefined), "#rollen");
+  await run(f, id ? "Rolle gespeichert" : "Rolle angelegt", ({ hotel, actor }) => saveRole(hotel.id, id, { name: s(f, "name"), areas: f.getAll("area").map(String) }, actor).then(() => undefined), "#rollen", id ?? "neu");
 }
 async function roleDelete(f: FormData) {
   "use server";
@@ -53,7 +58,7 @@ async function roleDelete(f: FormData) {
 
 async function standardSave(f: FormData) {
   "use server";
-  await run(f, "Standardrolle gespeichert", ({ hotel, actor }) => saveStandardRole(hotel.id, s(f, "role"), { name: s(f, "name"), areas: f.getAll("area").map(String) }, actor), "#rollen");
+  await run(f, "Standardrolle gespeichert", ({ hotel, actor }) => saveStandardRole(hotel.id, s(f, "role"), { name: s(f, "name"), areas: f.getAll("area").map(String) }, actor), "#rollen", `std:${s(f, "role")}`);
 }
 async function standardReset(f: FormData) {
   "use server";
@@ -98,10 +103,42 @@ export default async function Team({ params, searchParams }: { params: Promise<{
     </>
   );
 
+  const key = sp.rolle ?? "";
+  const std = key.startsWith("std:") ? standard.find((t) => t.key === key.slice(4)) ?? null : null;
+  const own = key && key !== "neu" && !std ? roles.find((r) => r.id === key) ?? null : null;
+  const drawer = key === "neu" || !!std || !!own;
+  const close = `/admin/${hotel.id}/team#rollen`;
   return (
     <div className="stack">
       <h1>Team & Rollen</h1>
-      {sp.msg ? <Notice text={sp.msg} /> : null}
+      {sp.msg && !drawer ? <Notice text={sp.msg} /> : null}
+      {drawer ? (
+        <Drawer title={std ? `${std.name} (Standardrolle)` : own ? own.name : "Eigene Rolle anlegen"} closeHref={close}>
+          {sp.msg ? <Notice text={sp.msg} /> : null}
+          {std ? (
+            <>
+              <form action={standardSave} className="stack">
+                {hidden}<input type="hidden" name="role" value={std.key} />
+                <div className="mw320"><label htmlFor="tr-name">Name der Rolle</label><input id="tr-name" name="name" defaultValue={std.name} required maxLength={40} /></div>
+                <AreaChecks selected={std.areas} />
+                <DrawerActions submit="Speichern" cancelHref={close} />
+              </form>
+              {std.custom ? <form action={standardReset}>{hidden}<input type="hidden" name="role" value={std.key} /><button className="btn secondary small">Auf Vorgabe zurücksetzen</button></form> : null}
+            </>
+          ) : (
+            <>
+              <form action={roleSave} className="stack">
+                {hidden}{own ? <input type="hidden" name="roleId" value={own.id} /> : null}
+                <div className="mw320"><label htmlFor="tr-name">Name der Rolle</label><input id="tr-name" name="name" required maxLength={40} placeholder="z. B. Nachtportier" defaultValue={own?.name ?? (template ? `${template.label} (angepasst)` : "")} /></div>
+                {own ? null : <p className="muted small m0">Vorlage übernehmen: {ROLE_TEMPLATES.map((t, i) => <span key={t.key}>{i ? " · " : ""}<Link href={`?rolle=neu&vorlage=${t.key}`} scroll={false}>{t.label}</Link></span>)}. Danach Seiten an- oder abhaken.</p>}
+                <AreaChecks selected={own?.areas ?? template?.areas ?? []} />
+                <DrawerActions submit={own ? "Rolle speichern" : "Rolle anlegen"} cancelHref={close} />
+              </form>
+              {own ? <form action={roleDelete}>{hidden}<input type="hidden" name="roleId" value={own.id} /><ConfirmButton ask={`Rolle «${own.name}» wirklich löschen?`} className="btn secondary small danger-text">Rolle löschen</ConfirmButton></form> : null}
+            </>
+          )}
+        </Drawer>
+      ) : null}
 
       <section className="card stack" id="personen">
         <h2>Personen</h2>
@@ -142,48 +179,11 @@ export default async function Team({ params, searchParams }: { params: Promise<{
           Seiten zum Ändern von Preisen, Einstellungen und Team bleiben Inhaber und Manager vorbehalten.
         </p>
 
-        {standard.map((t) => (
-          <details key={t.key} className="card">
-            <summary>
-              <strong>{t.name}</strong> <span className="muted small">· Standardrolle{t.custom ? ", angepasst" : ""} · {t.areas.length} Seiten · {members.filter((m) => m.role === t.key).length} Person(en)</span>
-            </summary>
-            <form action={standardSave} className="stack mt12">
-              {hidden}<input type="hidden" name="role" value={t.key} />
-              <div className="mw320"><label htmlFor={`fb48dm1-${t.key}`}>Name der Rolle</label><input id={`fb48dm1-${t.key}`} name="name" defaultValue={t.name} required maxLength={40} /></div>
-              <AreaChecks selected={t.areas} />
-              <div className="inline-form"><button className="btn small">Speichern</button></div>
-            </form>
-            {t.custom ? (
-              <form action={standardReset} className="mt8">{hidden}<input type="hidden" name="role" value={t.key} /><button className="btn secondary small">Auf Vorgabe zurücksetzen</button></form>
-            ) : null}
-          </details>
-        ))}
-
-        {roles.map((r) => (
-          <details key={r.id} className="card">
-            <summary><strong>{r.name}</strong> <span className="muted small">· {r.areas.length} Seite{r.areas.length === 1 ? "" : "n"} · {members.filter((m) => m.role === `custom:${r.id}`).length} Person(en)</span></summary>
-            <form action={roleSave} className="stack mt12">
-              {hidden}<input type="hidden" name="roleId" value={r.id} />
-              <div className="mw320"><label htmlFor={`fb48dm2-${r.id}`}>Name der Rolle</label><input id={`fb48dm2-${r.id}`} name="name" defaultValue={r.name} required maxLength={40} /></div>
-              <AreaChecks selected={r.areas} />
-              <div className="inline-form"><button className="btn small">Rolle speichern</button></div>
-            </form>
-            <form action={roleDelete} className="mt8">{hidden}<input type="hidden" name="roleId" value={r.id} /><button className="btn secondary small">Rolle löschen</button></form>
-          </details>
-        ))}
-
-        <details className="card" id="neu" open={!!template || undefined}>
-          <summary><strong>+ Eigene Rolle anlegen</strong></summary>
-          <form action={roleSave} className="stack mt12">
-            {hidden}
-            <div className="mw320"><label htmlFor="fb48d3">Name der Rolle</label><input id="fb48d3" name="name" required maxLength={40} placeholder="z. B. Nachtportier" defaultValue={template ? `${template.label} (angepasst)` : ""} /></div>
-            <p className="muted small m0">
-              Vorlage übernehmen: {ROLE_TEMPLATES.map((t, i) => <span key={t.key}>{i ? " · " : ""}<a href={`?vorlage=${t.key}#neu`}>{t.label}</a></span>)}. Danach Seiten an- oder abhaken.
-            </p>
-            <AreaChecks selected={template?.areas ?? []} />
-            <div><button className="btn small">Rolle anlegen</button></div>
-          </form>
-        </details>
+        <RowList rows={[
+          ...standard.map((t) => ({ id: `std:${t.key}`, href: `?rolle=std:${t.key}#rollen`, label: `Rolle ${t.name} bearbeiten`, title: t.name, detail: `Standardrolle${t.custom ? ", angepasst" : ""} · ${t.areas.length} Seiten · ${members.filter((m) => m.role === t.key).length} Person(en)` })),
+          ...roles.map((r) => ({ id: r.id, href: `?rolle=${r.id}#rollen`, label: `Rolle ${r.name} bearbeiten`, title: r.name, detail: `Eigene Rolle · ${r.areas.length} Seite${r.areas.length === 1 ? "" : "n"} · ${members.filter((m) => m.role === `custom:${r.id}`).length} Person(en)` })),
+        ]} />
+        <div><Link className="btn secondary" href="?rolle=neu#rollen" scroll={false}>+ Eigene Rolle anlegen</Link></div>
       </section>
     </div>
   );

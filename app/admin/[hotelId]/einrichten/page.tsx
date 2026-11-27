@@ -1,5 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { WeekdayPick } from "@/components/admin/WeekdayPick";
+import { Drawer, DrawerActions } from "@/components/admin/Drawer";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { feePercentText } from "@/src/domain/fee";
@@ -54,7 +56,8 @@ async function step(f: FormData, fn: (c: Awaited<ReturnType<typeof requireHotel>
   try {
     await fn(c);
   } catch (e) {
-    redirect(`/admin/${c.hotel.id}/einrichten?step=${here}&error=${encodeURIComponent(errText(e))}`);
+    const reopen = /^[a-z]+$/.test(s(f, "drawer")) ? `&${s(f, "drawer")}=1` : ""; // Seitenleiste bleibt bei einem Fehler offen
+    redirect(`/admin/${c.hotel.id}/einrichten?step=${here}${reopen}&error=${encodeURIComponent(errText(e))}`);
   }
   let fresh = (await requireHotel(c.hotel.id, min)).hotel;
   if (isRestaurant(fresh.propertyType)) { await markSetupCompleteIfDone(fresh); fresh = (await requireHotel(c.hotel.id, min)).hotel; }
@@ -402,6 +405,28 @@ export default async function Wizard({ params, searchParams }: { params: Promise
     case "unterkunft": {
       const rooms = await listRooms(hotel.id);
       const ex = await listExtras(hotel.id);
+      const unitForm = (
+            <form action={saveUnit} className="stack">{H}<input type="hidden" name="drawer" value={rooms.length ? "neu" : ""} />
+              {rooms.length ? <input type="hidden" name="stay" value="1" /> : null}
+              <div className="form-grid">
+                <div><label htmlFor="f02045">Name</label><input id="f02045" name="name" required placeholder={whole ? "z. B. Wohnung Säntisblick" : "z. B. Doppelzimmer"} /></div>
+                {whole ? <input type="hidden" name="count" value="1" /> : <div><label htmlFor="f02046">Anzahl gleiche Zimmer</label><input id="f02046" name="count" type="number" min={1} max={200} defaultValue={1} required /></div>}
+                <div><label htmlFor="f02047">Max. Personen</label><input id="f02047" name="maxPersons" type="number" min={1} max={30} defaultValue={whole ? 4 : 2} required /></div>
+              </div>
+              <div><label htmlFor="f02048">Beschreibung (optional)</label><textarea id="f02048" name="description" rows={3} maxLength={2000} placeholder={whole ? "Zimmer, Betten, Küche, Balkon, Parkplatz …" : "Bett, Grösse, Aussicht, Bad …"} /></div>
+              <div className="form-grid">
+                <div><label htmlFor="ein-price">Preis pro Nacht CHF{whole ? " (ganze Unterkunft)" : " (für 2 Personen)"}</label><input id="ein-price" name="price" inputMode="decimal" required placeholder={whole ? "180" : "160"} /></div>
+                <div><label htmlFor="f02049">Mindestaufenthalt (Nächte)</label><input id="f02049" name="minNights" type="number" min={1} max={60} defaultValue={whole ? 3 : 1} /></div>
+                {whole ? <div><label htmlFor="f020410">Endreinigung CHF (im Preis ausgewiesen)</label><input id="f020410" name="cleaning" inputMode="decimal" placeholder="80" /></div> : null}
+              </div>
+              <fieldset className="plain"><legend className="small muted">Anreise nur an (keiner gewählt = jeder Tag)</legend>
+                <WeekdayPick name="arrival" />
+              </fieldset>
+              <div><label htmlFor="f020411">Stornoregel</label><select id="f020411" name="cancel" defaultValue={whole ? "moderat" : "flexibel"}>{Object.entries(CANCEL_TEMPLATES).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}</select></div>
+              {whole ? null : <label className="check"><input type="checkbox" name="breakfast" defaultChecked={hotel.propertyType !== "group_house"} />Frühstück im Preis inbegriffen</label>}
+              {rooms.length ? <DrawerActions submit="Hinzufügen" cancelHref={`/admin/${hotel.id}/einrichten?step=${current}`} /> : <div><button className="btn">Speichern und weiter</button></div>}
+            </form>
+      );
       body = (
         <div className="stack">
           {!rooms.length ? <p className="notice small">Sie haben schon eine Website oder einen Prospekt? <a href={`/admin/${hotel.id}/ki-einrichten`}>Mit KI einen Entwurf erstellen lassen</a> (nach Abschluss des Abos, Sie prüfen alles vor der Übernahme).</p> : null}
@@ -420,29 +445,16 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             </table>
           ) : null}
           {ex.some((e) => e.mandatory) ? <p className="small muted">Im Preis enthalten: {ex.filter((e) => e.mandatory).map((e) => `${e.name.de} ${formatChf(e.priceRappen)}`).join(", ")}</p> : null}
-          <details className="card" open={!rooms.length}>
-            <summary><strong>{rooms.length ? (whole ? `Weitere ${unit} hinzufügen` : "Weiteren Zimmertyp hinzufügen") : (whole ? `${unit} erfassen` : "Zimmertyp erfassen")}</strong></summary>
-            <form action={saveUnit} className="stack mt12">{H}
-              {rooms.length ? <input type="hidden" name="stay" value="1" /> : null}
-              <div className="form-grid">
-                <div><label htmlFor="f02045">Name</label><input id="f02045" name="name" required placeholder={whole ? "z. B. Wohnung Säntisblick" : "z. B. Doppelzimmer"} /></div>
-                {whole ? <input type="hidden" name="count" value="1" /> : <div><label htmlFor="f02046">Anzahl gleiche Zimmer</label><input id="f02046" name="count" type="number" min={1} max={200} defaultValue={1} required /></div>}
-                <div><label htmlFor="f02047">Max. Personen</label><input id="f02047" name="maxPersons" type="number" min={1} max={30} defaultValue={whole ? 4 : 2} required /></div>
-              </div>
-              <div><label htmlFor="f02048">Beschreibung (optional)</label><textarea id="f02048" name="description" rows={3} maxLength={2000} placeholder={whole ? "Zimmer, Betten, Küche, Balkon, Parkplatz …" : "Bett, Grösse, Aussicht, Bad …"} /></div>
-              <div className="form-grid">
-                <div><label htmlFor="ein-price">Preis pro Nacht CHF{whole ? " (ganze Unterkunft)" : " (für 2 Personen)"}</label><input id="ein-price" name="price" inputMode="decimal" required placeholder={whole ? "180" : "160"} /></div>
-                <div><label htmlFor="f02049">Mindestaufenthalt (Nächte)</label><input id="f02049" name="minNights" type="number" min={1} max={60} defaultValue={whole ? 3 : 1} /></div>
-                {whole ? <div><label htmlFor="f020410">Endreinigung CHF (im Preis ausgewiesen)</label><input id="f020410" name="cleaning" inputMode="decimal" placeholder="80" /></div> : null}
-              </div>
-              <fieldset className="plain"><legend className="small muted">Anreise nur an (keiner gewählt = jeder Tag)</legend>
-                <WeekdayPick name="arrival" />
-              </fieldset>
-              <div><label htmlFor="f020411">Stornoregel</label><select id="f020411" name="cancel" defaultValue={whole ? "moderat" : "flexibel"}>{Object.entries(CANCEL_TEMPLATES).map(([k, c]) => <option key={k} value={k}>{c.label}</option>)}</select></div>
-              {whole ? null : <label className="check"><input type="checkbox" name="breakfast" defaultChecked={hotel.propertyType !== "group_house"} />Frühstück im Preis inbegriffen</label>}
-              <div><button className="btn">{rooms.length ? "Hinzufügen" : "Speichern und weiter"}</button></div>
-            </form>
-          </details>
+          {rooms.length ? (
+            <div><Link className="btn secondary" href={`?step=${current}&neu=1`} scroll={false}>{whole ? `+ Weitere ${unit} hinzufügen` : "+ Weiteren Zimmertyp hinzufügen"}</Link></div>
+          ) : null}
+          {rooms.length && sp.neu ? (
+            <Drawer title={whole ? `Weitere ${unit}` : "Weiterer Zimmertyp"} closeHref={`/admin/${hotel.id}/einrichten?step=${current}`}>
+              {sp.error ? <p className="notice error" role="alert">{sp.error}</p> : null}
+              {unitForm}
+            </Drawer>
+          ) : null}
+          {!rooms.length ? <section className="card stack"><h2>{whole ? `${unit} erfassen` : "Zimmertyp erfassen"}</h2>{unitForm}</section> : null}
           <p className="small muted">Saisonpreise, Wochenendzuschläge und gesperrte Tage später im <a href={`/admin/${hotel.id}/calendar`}>Kalender</a>; Hund, Parkplatz, Frühstück usw. unter <a href={`/admin/${hotel.id}/rooms/extras`}>Zusatzleistungen</a>.</p>
           {rooms.length ? <form action={skip}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="to" value="fotos" /><button className="btn">Weiter zu den Fotos</button></form> : null}
         </div>
@@ -615,7 +627,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       </aside>
       <section className="card wizard-main">
         <h1 style={{ fontSize: "1.6rem" }}>{steps[idx].title}</h1>
-        {sp.error ? <p className="notice warn" role="alert">{sp.error}</p> : null}
+        {sp.error && !sp.neu ? <p className="notice warn" role="alert">{sp.error}</p> : null}
         {sp.msg ? <Notice text={sp.msg} /> : null}
         {body}
       </section>

@@ -1,5 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
 import { DownloadLink } from "@/components/admin/DownloadLink";
+import { Drawer, DrawerActions } from "@/components/admin/Drawer";
+import { RowList } from "@/components/admin/RowList";
 import { redirect } from "next/navigation";
 import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { moduleOn, requireModule } from "@/src/services/modules";
@@ -62,8 +64,8 @@ async function online(f: FormData) {
   const c = await guard(f);
   try {
     await saveItemOnline(c.hotel.id, s(f, "id"), { online: f.get("online") === "on", description: s(f, "description"), photoUrl: s(f, "photoUrl") || null, allergens: f.getAll("allergen").map(String) }, c.actor);
-  } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Nicht gespeichert: ${e.message}`); }
-  here(c.hotel.id, "Online-Angaben gespeichert.");
+  } catch (e) { if (!(e instanceof PosError)) throw e; redirect(`/admin/${c.hotel.id}/restaurant/artikel?artikel=${s(f, "id")}&msg=${encodeURIComponent(`Nicht gespeichert: ${e.message}`)}#online`); }
+  redirect(`/admin/${c.hotel.id}/restaurant/artikel?msg=${encodeURIComponent("Online-Angaben gespeichert.")}#online`);
 }
 async function group(f: FormData) {
   "use server";
@@ -155,10 +157,24 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   const shopOn = await moduleOn(hotel.id, "shop");
   const goodsList = shopOn ? (await listGoods(hotel.id)).filter((g) => g.trackStock) : [];
+  const edit = sp.artikel ? items.find((i) => i.id === sp.artikel && i.active) ?? null : null;
+  const close = `/admin/${hotel.id}/restaurant/artikel#online`;
   return (
     <div className="stack">
       <h1>Speisekarte</h1>
-      {sp.msg ? <Notice text={sp.msg} /> : null}
+      {sp.msg && !edit ? <Notice text={sp.msg} /> : null}
+      {edit ? (
+        <Drawer title={edit.name} closeHref={close}>
+          {sp.msg ? <Notice text={sp.msg} /> : null}
+          <form action={online} className="stack">{H}<input type="hidden" name="id" value={edit.id} />
+            <FormSwitch name="online" defaultOn={edit.online} label="Online bestellbar" hint="Erscheint in der Online-Bestellung, bei der Vorbestellung zur Reservation und beim Bestellen am Tisch." />
+            <div><label htmlFor="ia-desc">Beschreibung</label><textarea id="ia-desc" name="description" maxLength={400} rows={3} defaultValue={edit.description} /></div>
+            <div><label htmlFor="ia-photo">Foto (aus den Website-Fotos)</label><select id="ia-photo" name="photoUrl" defaultValue={edit.photoUrl ?? ""}><option value="">Kein Foto</option>{photos.map((p) => <option key={p.url} value={p.url}>{p.alt || p.url.split("/").pop()}</option>)}</select></div>
+            <fieldset><legend className="small">Allergene</legend><div className="opt-grid">{ALLERGENS.map((a) => <label key={a} className="opt-row"><input type="checkbox" name="allergen" value={a} defaultChecked={edit.allergens.includes(a)} /> {ALLERGEN_LABEL[a].de}</label>)}</div></fieldset>
+            <DrawerActions submit="Speichern" cancelHref={close} />
+          </form>
+        </Drawer>
+      ) : null}
       <form action={item} className="card stack">
         {H}
         <h2>Neuer Artikel</h2>
@@ -198,18 +214,9 @@ export default async function PosItemsPage({ params, searchParams }: { params: P
         <section className="card stack" id="online" data-testid="items-online">
           <h2>Online-Bestellung: Beschreibung, Foto, Allergene</h2>
           <p className="small muted">Gäste sehen bei jedem Artikel die Allergene (14 deklarationspflichtige nach LIV Anhang 6) und den Hinweis «Fragen zu Allergenen: bitte anrufen». Die Angaben verantworten Sie als Betrieb.</p>
-          {items.filter((i) => i.active).map((i) => (
-            <details key={i.id}>
-              <summary>{i.name} {i.online ? null : <span className="badge warn">nicht online</span>} {i.allergens.length ? <span className="small muted">· {i.allergens.map((a) => ALLERGEN_LABEL[a as keyof typeof ALLERGEN_LABEL]?.de ?? a).join(", ")}</span> : null}</summary>
-              <form action={online} className="stack">{H}<input type="hidden" name="id" value={i.id} />
-                <FormSwitch name="online" defaultOn={i.online} label="Online bestellbar" />
-                <div><label htmlFor={`d-${i.id}`}>Beschreibung</label><textarea id={`d-${i.id}`} name="description" maxLength={400} rows={2} defaultValue={i.description} /></div>
-                <div><label htmlFor={`p-${i.id}`}>Foto (aus den Website-Fotos)</label><select id={`p-${i.id}`} name="photoUrl" defaultValue={i.photoUrl ?? ""}><option value="">Kein Foto</option>{photos.map((p) => <option key={p.url} value={p.url}>{p.alt || p.url.split("/").pop()}</option>)}</select></div>
-                <fieldset><legend className="small">Allergene</legend><div className="opt-grid">{ALLERGENS.map((a) => <label key={a} className="opt-row"><input type="checkbox" name="allergen" value={a} defaultChecked={i.allergens.includes(a)} /> {ALLERGEN_LABEL[a].de}</label>)}</div></fieldset>
-                <div><button className="btn secondary small">Speichern</button></div>
-              </form>
-            </details>
-          ))}
+          <RowList rows={items.filter((i) => i.active).map((i) => ({ id: i.id, href: `?artikel=${i.id}#online`, label: `${i.name}: Online-Angaben bearbeiten`, title: i.name,
+            detail: [i.description, i.allergens.length ? `Allergene: ${i.allergens.map((a) => ALLERGEN_LABEL[a as keyof typeof ALLERGEN_LABEL]?.de ?? a).join(", ")}` : "keine Allergene angegeben"].filter(Boolean).join(" · "),
+            badges: i.online ? [] : [{ text: "nicht online" }] }))} />
         </section>
       ) : null}
       <section className="card stack" id="optionen" data-testid="option-groups">

@@ -1,4 +1,7 @@
 import { Notice } from "@/components/admin/Notice";
+import Link from "next/link";
+import { Drawer, DrawerActions } from "@/components/admin/Drawer";
+import { RowList } from "@/components/admin/RowList";
 import { redirect } from "next/navigation";
 import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { requireModule } from "@/src/services/modules";
@@ -53,11 +56,15 @@ async function importFile(f: FormData) {
 }
 async function company(f: FormData) {
   "use server";
-  await run(f, async (c) => {
-    const days = s(f, "days");
-    await saveCompany(c.hotel.id, s(f, "id") || null, { name: s(f, "name"), street: s(f, "street"), zip: s(f, "zip"), city: s(f, "city"), country: s(f, "country"), vatId: s(f, "vatId"), email: s(f, "email"), paymentDays: days === "" ? null : Number(days), note: s(f, "note"), active: f.get("active") === "on" }, c.actor);
-    return "Firma gespeichert.";
-  });
+  const c0 = await guard(f);
+  const days0 = s(f, "days");
+  try {
+    await saveCompany(c0.hotel.id, s(f, "id") || null, { name: s(f, "name"), street: s(f, "street"), zip: s(f, "zip"), city: s(f, "city"), country: s(f, "country"), vatId: s(f, "vatId"), email: s(f, "email"), paymentDays: days0 === "" ? null : Number(days0), note: s(f, "note"), active: f.get("active") === "on" }, c0.actor);
+  } catch (e) {
+    if (!(e instanceof DebtorError) && !(e instanceof InvoiceError)) throw e;
+    redirect(`/admin/${c0.hotel.id}/invoices/debitoren?firma=${s(f, "id") || "neu"}&msg=${encodeURIComponent(`Nicht gespeichert: ${e.message}`)}`); // Seitenleiste bleibt offen
+  }
+  redirect(`/admin/${c0.hotel.id}/invoices/debitoren?msg=${encodeURIComponent("Firma gespeichert.")}`);
 }
 
 export default async function Debtors({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
@@ -68,10 +75,19 @@ export default async function Debtors({ params, searchParams }: { params: Promis
   const [open, firms] = await Promise.all([listOpenInvoices(hotel), listCompanies(hotel.id)]);
   const aging = agingTotals(open);
   const hid = <input type="hidden" name="hotelId" value={hotel.id} />;
+  const firm = sp.firma && sp.firma !== "neu" ? firms.find((f) => f.id === sp.firma) ?? null : null;
+  const drawer = sp.firma === "neu" || !!firm;
+  const close = `/admin/${hotel.id}/invoices/debitoren`;
   return (
     <div className="stack">
       <h1 className="sr-only">Debitoren</h1>
-      {sp.msg ? <Notice text={sp.msg} /> : null}
+      {sp.msg && !drawer ? <Notice text={sp.msg} /> : null}
+      {drawer ? (
+        <Drawer title={firm ? firm.name : "Neue Firma"} closeHref={close}>
+          {sp.msg ? <Notice text={sp.msg} /> : null}
+          <CompanyForm f={firm ?? undefined} hid={hid} close={close} />
+        </Drawer>
+      ) : null}
 
       <section className="card stack">
         <h2>Offene Rechnungen: {formatChf(open.reduce((a, i) => a + i.openRappen, 0))}</h2>
@@ -119,40 +135,30 @@ export default async function Debtors({ params, searchParams }: { params: Promis
       <section className="card stack">
         <h2>Firmenkunden</h2>
         <p className="muted small">Buchungen lassen sich in der Buchung einer Firma zuordnen. Die Rechnung geht dann an die Firma, mit deren Zahlungsfrist.</p>
-        {firms.map((f) => (
-          <details key={f.id}>
-            <summary>{f.name}{f.active ? "" : " (inaktiv)"} <span className="muted small">{f.city}{f.paymentDays != null ? ` · ${f.paymentDays} Tage` : ""}</span></summary>
-            <CompanyForm f={f} hid={hid} />
-          </details>
-        ))}
-        <details>
-          <summary><strong>Firma hinzufügen</strong></summary>
-          <CompanyForm hid={hid} />
-        </details>
+        {firms.length ? <RowList rows={firms.map((f) => ({ id: f.id, href: `?firma=${f.id}`, label: `${f.name} bearbeiten`, title: f.name, detail: [f.city, f.paymentDays != null ? `${f.paymentDays} Tage Zahlungsfrist` : "", f.email].filter(Boolean).join(" · "), badges: f.active ? [] : [{ text: "inaktiv" }] }))} /> : <p className="muted m0">Noch keine Firma.</p>}
+        <div><Link className="btn secondary" href="?firma=neu" scroll={false}>+ Firma hinzufügen</Link></div>
       </section>
     </div>
   );
 }
 
-function CompanyForm({ f, hid }: { f?: Awaited<ReturnType<typeof listCompanies>>[number]; hid: React.ReactNode }) {
+function CompanyForm({ f, hid, close }: { f?: Awaited<ReturnType<typeof listCompanies>>[number]; hid: React.ReactNode; close: string }) {
   return (
     <form action={company} className="stack">
       {hid}{f ? <input type="hidden" name="id" value={f.id} /> : null}
-      <div className="inline-form">
+      <div className="form-grid">
         <div><label htmlFor="fb0551">Firma</label><input id="fb0551" name="name" required maxLength={120} defaultValue={f?.name} /></div>
         <div><label htmlFor="fb0552">E-Mail für Rechnungen</label><input id="fb0552" type="email" name="email" maxLength={200} defaultValue={f?.email} /></div>
-        <div><label htmlFor="fb0553">Zahlungsfrist (Tage, leer = Standard)</label><input id="fb0553" type="number" name="days" min={0} max={365} defaultValue={f?.paymentDays ?? ""} className="w90" /></div>
-      </div>
-      <div className="inline-form">
         <div><label htmlFor="fb0554">Strasse</label><input id="fb0554" name="street" maxLength={100} defaultValue={f?.street} /></div>
-        <div><label htmlFor="fb0555">PLZ</label><input id="fb0555" name="zip" maxLength={16} defaultValue={f?.zip} className="w90" /></div>
+        <div><label htmlFor="fb0555">PLZ</label><input id="fb0555" name="zip" maxLength={16} defaultValue={f?.zip} /></div>
         <div><label htmlFor="fb0556">Ort</label><input id="fb0556" name="city" maxLength={60} defaultValue={f?.city} /></div>
-        <div><label htmlFor="fb0557">Land</label><input id="fb0557" name="country" maxLength={2} defaultValue={f?.country ?? "CH"} style={{ width: 60 }} /></div>
+        <div><label htmlFor="fb0557">Land</label><input id="fb0557" name="country" maxLength={2} defaultValue={f?.country ?? "CH"} /></div>
         <div><label htmlFor="fb0558">MWST-Nr.</label><input id="fb0558" name="vatId" maxLength={40} defaultValue={f?.vatId} /></div>
+        <div><label htmlFor="fb0553">Zahlungsfrist (Tage, leer = Standard)</label><input id="fb0553" type="number" name="days" min={0} max={365} defaultValue={f?.paymentDays ?? ""} /></div>
       </div>
       <div><label htmlFor="fb0559">Notiz</label><input id="fb0559" name="note" maxLength={500} defaultValue={f?.note} /></div>
       <label className="check"><input type="checkbox" name="active" defaultChecked={f?.active ?? true} />Aktiv</label>
-      <div><button className="btn small">Speichern</button></div>
+      <DrawerActions submit={f ? "Speichern" : "Firma anlegen"} cancelHref={close} />
     </form>
   );
 }

@@ -1,4 +1,5 @@
 import { requireHotel } from "@/src/auth/guard";
+import { hotelsForUser } from "@/src/auth/session";
 import { roleLabel } from "@/src/domain/roles";
 import { hasTotp, listPasskeys, recoveryCodesLeft } from "@/src/services/mfa";
 import { AccountSecurity } from "@/components/admin/AccountSecurity";
@@ -34,6 +35,7 @@ export default async function MyPontivo({ params }: { params: Promise<{ hotelId:
   const navs = visibleNav(hotel, role, hiddenNavKeys(await moduleRows(hotel.id))).navs;
   const kinds = PUSH_KINDS.filter((k) => pushVisible(role, k, navs));
   const prefs = await getPushPrefs(hotel.id, user.id);
+  const others = user.isPlatformAdmin ? [] : (await hotelsForUser(user.id)).filter((x) => x.hotel.id !== hotel.id);
   const preview = hotel.primaryDomain ? `//${hotel.primaryDomain}` : `/h/${hotel.slug}/de`;
   return (
     <div className="stack" style={{ gap: 28, maxWidth: 760 }}>
@@ -45,6 +47,17 @@ export default async function MyPontivo({ params }: { params: Promise<{ hotelId:
         </div>
         <p className="mt8"><ChangeEmail current={user.email} needsCode={totp} /></p>
       </header>
+
+      {others.length ? (
+        <section className="card mp-section" id="betriebe">
+          <h2>Ihre Betriebe</h2>
+          <p className="muted">Sie arbeiten in mehreren Betrieben. Wechseln Sie hierher oder über das Logo oben links.</p>
+          <ul className="plan-list">
+            <li><span className="plan-row"><span><strong>{hotel.name}</strong><br /><span className="muted small">aktuell · {roleLabel(role)}</span></span></span></li>
+            {others.map((x) => <li key={x.hotel.id}><a className="plan-row" href={`/admin/${x.hotel.id}`}><span><strong>{x.hotel.name}</strong><br /><span className="muted small">{roleLabel(x.role)}</span></span><span className="rt-arrow" aria-hidden="true">›</span></a></li>)}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="card mp-section" id="webseite">
         <h2>{hotel.name} Webseite</h2>

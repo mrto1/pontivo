@@ -129,10 +129,12 @@ test("Restaurant-Website: Tisch reservieren, Kartei bei der Reservation", async 
   const [r] = await reservationsBetween(hotel.id, "2000-01-01", "2100-01-01");
   await page.goto(`/admin/${hotel.id}/restaurant/reservierungen?day=${day ?? r.day}`);
   const list = page.getByTestId("res-list");
-  await list.getByText("Kartei").click();
-  await list.getByLabel("Tags (Komma)").fill("Fensterplatz");
-  await list.getByLabel("Notiz").fill("ohne Nüsse");
-  await list.getByRole("button", { name: "Speichern" }).last().click();
+  await list.getByRole("link", { name: "Kartei" }).click();
+  const drawer = page.getByRole("dialog");
+  await drawer.getByLabel("Tags (Komma)").fill("Fensterplatz");
+  await drawer.getByLabel("Notiz").fill("ohne Nüsse");
+  await drawer.getByRole("button", { name: "Speichern" }).click();
+  await expect(page).toHaveURL(/restaurant\/reservierungen/); // zurück zur Liste
   await expect(page.getByText("Kartei gespeichert")).toBeVisible();
   await expect(page.getByTestId("res-list").getByText("Kartei: ohne Nüsse")).toBeVisible();
   await page.goto(`/admin/${hotel.id}/guestbook`);

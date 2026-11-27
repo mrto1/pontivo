@@ -111,8 +111,8 @@ test("Einstellungen: Live-Prüfung nennt Gründe, Liefergebiet anlegen, Speiseka
   await expect(page.getByTestId("order-T-001")).toBeVisible();
   await page.goto(`/admin/${h.id}/restaurant/artikel`);
   await page.getByTestId("items-online").getByText("Margherita").click();
-  await page.getByTestId("items-online").getByLabel("Sesam").check();
-  await page.getByTestId("items-online").getByRole("button", { name: "Speichern" }).click();
+  await page.getByRole("dialog").getByLabel("Sesam").check();
+  await page.getByRole("dialog").getByRole("button", { name: "Speichern" }).click();
   await expect(page.getByTestId("items-online")).toContainText("Gluten, Milch (Laktose), Sesam");
 });
 

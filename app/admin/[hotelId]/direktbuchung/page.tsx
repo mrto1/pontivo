@@ -1,4 +1,8 @@
 import { Notice } from "@/components/admin/Notice";
+import Link from "next/link";
+import { Drawer, DrawerActions } from "@/components/admin/Drawer";
+import { LangTabs } from "@/components/admin/LangTabs";
+import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { InfoTip } from "@/components/admin/InfoTip";
 import { redirect } from "next/navigation";
 import { ZodError } from "zod";
@@ -56,8 +60,15 @@ async function winbackSave(f: FormData) {
 async function codeSave(f: FormData) {
   "use server";
   const id = s(f, "codeId") || null;
-  await run(f, id ? "Code gespeichert" : "Code angelegt", ({ hotel, actor }) =>
-    saveCode(hotel.id, id, { companyId: s(f, "companyId"), code: s(f, "code"), discountPct: Number(s(f, "discount").replace(",", ".")) || 0, payOnInvoice: f.get("invoice") === "on", validFrom: s(f, "from") || null, validUntil: s(f, "until") || null, active: id ? f.get("active") === "on" : true }, actor), "#codes");
+  const c = await requireHotel(s(f, "hotelId"), "manager");
+  try {
+    await saveCode(c.hotel.id, id, { companyId: s(f, "companyId"), code: s(f, "code"), discountPct: Number(s(f, "discount").replace(",", ".")) || 0, payOnInvoice: f.get("invoice") === "on", validFrom: s(f, "from") || null, validUntil: s(f, "until") || null, active: id ? f.get("active") === "on" : true }, c.actor);
+  } catch (e) {
+    if (!(e instanceof DirectError) && !(e instanceof ZodError)) throw e;
+    const m = e instanceof ZodError ? e.issues.map((i) => i.message).join(", ") : e.message;
+    redirect(`/admin/${c.hotel.id}/direktbuchung?code=${id ?? "neu"}&msg=${encodeURIComponent(`Nicht gespeichert: ${m}`)}#codes`); // Seitenleiste bleibt offen
+  }
+  back(c.hotel.id, id ? "Code gespeichert" : "Code angelegt", "#codes");
 }
 async function codeDelete(f: FormData) {
   "use server";
@@ -83,10 +94,34 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
   const debtors = await moduleOn(hotel.id, "debtors");
   const [codes, companies, gapList, waiting] = await Promise.all([debtors ? listCodes(hotel.id) : [], debtors ? listCompanies(hotel.id, true) : [], listGaps(hotel), listWaitlist(hotel.id)]);
 
+  const editCode = sp.code === "neu" ? null : codes.find((c) => c.id === sp.code) ?? null;
+  const codeDrawer = debtors && (sp.code === "neu" ? companies.length > 0 : !!editCode);
+  const close = "/admin/" + hotel.id + "/direktbuchung#codes";
   return (
     <div className="stack">
+      {codeDrawer ? (
+        <Drawer title={editCode ? `Code ${editCode.code}` : "Neuer Firmencode"} closeHref={close}>
+          {sp.msg ? <Notice text={sp.msg} /> : null}
+          <form action={codeSave} className="stack">
+            {hidden}
+            {editCode ? <><input type="hidden" name="codeId" value={editCode.id} /><input type="hidden" name="companyId" value={editCode.companyId} /><p className="m0"><strong>{editCode.companyName}</strong> · {editCode.used} Buchungen</p></> : (
+              <div><label htmlFor="dc-company">Firma</label><select id="dc-company" name="companyId" required>{companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+            )}
+            <div className="form-grid">
+              <div><label htmlFor="dc-code">{editCode ? "Code" : "Code (leer = wird erzeugt)"}</label><input className="upper" id="dc-code" name="code" maxLength={24} defaultValue={editCode?.code ?? ""} /></div>
+              <div><label htmlFor="dc-discount">Rabatt %</label><input id="dc-discount" name="discount" type="number" min={0} max={50} step="0.5" defaultValue={editCode ? editCode.discountBps / 100 : 10} /></div>
+              <div><label htmlFor="dc-from">Gültig ab (Anreise)</label><input id="dc-from" name="from" type="date" defaultValue={editCode?.validFrom ?? ""} /></div>
+              <div><label htmlFor="dc-until">bis</label><input id="dc-until" name="until" type="date" defaultValue={editCode?.validUntil ?? ""} /></div>
+            </div>
+            <label className="check"><input type="checkbox" name="invoice" defaultChecked={editCode?.payOnInvoice ?? false} /> Auf Rechnung buchen (keine Kartenzahlung)</label>
+            {editCode ? <label className="check"><input type="checkbox" name="active" defaultChecked={editCode.active} /> Aktiv</label> : null}
+            <DrawerActions submit={editCode ? "Speichern" : "Code anlegen"} cancelHref={close} />
+          </form>
+          {editCode ? <form action={codeDelete}>{hidden}<input type="hidden" name="codeId" value={editCode.id} /><ConfirmButton ask={`Code «${editCode.code}» wirklich löschen?`} className="btn secondary small danger-text">Löschen</ConfirmButton></form> : null}
+        </Drawer>
+      ) : null}
       <h1>Direktbuchung<InfoTip>Werkzeuge, die mehr Gäste zur Direktbuchung bringen und freie Nächte füllen. Alles ist je Betrieb ein- und ausschaltbar.</InfoTip></h1>
-      {sp.msg ? <Notice text={sp.msg} /> : null}
+      {sp.msg && !codeDrawer ? <Notice text={sp.msg} /> : null}
 
       <section className="card stack" id="vorteile">
         <h2>Vorteile bei Direktbuchung</h2>
@@ -94,20 +129,16 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
         <form action={benefitsSave} className="stack">
           {hidden}
           <label className="check"><input type="checkbox" name="enabled" defaultChecked={d?.benefits?.enabled === true} /> Vorteile im Buchungsfenster anzeigen</label>
+          {langs.length > 1 ? <><LangTabs langs={langs.filter((l) => l !== "de").map((l) => ({ code: l, name: LOCALE_NAMES[l] }))} /><p className="muted small m0">Fehlt eine Sprache, sehen Gäste Englisch oder Deutsch.</p></> : null}
           {items.map((b, i) => (
             <div key={i} className="stack gap6">
               <div className="row">
                 <div style={{ flex: "1 1 320px" }}><label htmlFor={`db-text_${i}_de`}>Vorteil {i + 1} (Deutsch)</label><input id={`db-text_${i}_de`} name={`text_${i}_de`} defaultValue={b?.text.de ?? ""} maxLength={90} placeholder={i === 0 ? "z. B. Late Check-out bis 14 Uhr" : ""} /></div>
                 <div style={{ width: 150 }}><label htmlFor={`fbe24m1-${i}`}>ab Nächten</label><input id={`fbe24m1-${i}`} name={`min_${i}`} type="number" min={1} max={30} defaultValue={b?.minNights ?? ""} placeholder="alle" /></div>
               </div>
-              {langs.length > 1 ? (
-                <details><summary className="small muted">Übersetzungen</summary>
-                  <div className="row mt6">
-                    {langs.filter((l) => l !== "de").map((l) => <div key={l} style={{ flex: "1 1 220px" }}><label htmlFor={`db-text_${i}_${l}`}>{LOCALE_NAMES[l]}</label><input id={`db-text_${i}_${l}`} name={`text_${i}_${l}`} defaultValue={b?.text[l] ?? ""} maxLength={90} /></div>)}
-                  </div>
-                  <p className="muted small m-4-0-0">Fehlt eine Sprache, sehen Gäste Englisch oder Deutsch.</p>
-                </details>
-              ) : null}
+              {langs.filter((l) => l !== "de").map((l) => (
+                <div key={l} data-lang={l} hidden={l !== langs.filter((x) => x !== "de")[0]}><label htmlFor={`db-text_${i}_${l}`}>Vorteil {i + 1} ({LOCALE_NAMES[l]})</label><input id={`db-text_${i}_${l}`} name={`text_${i}_${l}`} defaultValue={b?.text[l] ?? ""} maxLength={90} /></div>
+              ))}
             </div>
           ))}
           <div><button className="btn">Speichern</button></div>
@@ -133,39 +164,14 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
                       <td>{c.payOnInvoice ? "ja" : "nein"}</td>
                       <td className="small">{c.validFrom ? formatDay(c.validFrom, "de") : "–"} bis {c.validUntil ? formatDay(c.validUntil, "de") : "–"}</td>
                       <td>{c.used}</td>
-                      <td>
-                        <details><summary className="small">Ändern</summary>
-                          <form action={codeSave} className="stack" style={{ marginTop: 8, minWidth: 260 }}>
-                            {hidden}<input type="hidden" name="codeId" value={c.id} /><input type="hidden" name="companyId" value={c.companyId} />
-                            <div><label htmlFor={`fbe24m2-${c.id}`}>Code</label><input id={`fbe24m2-${c.id}`} name="code" defaultValue={c.code} /></div>
-                            <div><label htmlFor={`fbe24m3-${c.id}`}>Rabatt %</label><input id={`fbe24m3-${c.id}`} name="discount" type="number" min={0} max={50} step="0.5" defaultValue={c.discountBps / 100} /></div>
-                            <label className="check"><input type="checkbox" name="invoice" defaultChecked={c.payOnInvoice} /> Auf Rechnung buchen</label>
-                            <div className="row"><div><label htmlFor={`fbe24m4-${c.id}`}>Gültig ab</label><input id={`fbe24m4-${c.id}`} name="from" type="date" defaultValue={c.validFrom ?? ""} /></div><div><label htmlFor={`fbe24m5-${c.id}`}>bis</label><input id={`fbe24m5-${c.id}`} name="until" type="date" defaultValue={c.validUntil ?? ""} /></div></div>
-                            <label className="check"><input type="checkbox" name="active" defaultChecked={c.active} /> Aktiv</label>
-                            <div className="inline-form"><button className="btn small">Speichern</button></div>
-                          </form>
-                          <form className="mt6" action={codeDelete}>{hidden}<input type="hidden" name="codeId" value={c.id} /><button className="btn secondary small">Löschen</button></form>
-                        </details>
-                      </td>
+                      <td><Link className="btn secondary small" href={`?code=${c.id}#codes`} scroll={false}>Bearbeiten</Link></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             ) : <p className="muted">Noch kein Code angelegt. Mit «+ Neuer Code» legen Sie den ersten an.</p>}
             {companies.length ? (
-              <details className="card"><summary><strong>+ Neuer Code</strong></summary>
-                <form action={codeSave} className="stack mt12">
-                  {hidden}
-                  <div style={{ maxWidth: 360 }}><label htmlFor="fbe241">Firma</label><select id="fbe241" name="companyId" required>{companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
-                  <div className="row">
-                    <div><label htmlFor="fbe242">Code (leer = wird erzeugt)</label><input className="upper" id="fbe242" name="code" maxLength={24} /></div>
-                    <div><label htmlFor="fbe243">Rabatt %</label><input id="fbe243" name="discount" type="number" min={0} max={50} step="0.5" defaultValue={10} /></div>
-                  </div>
-                  <label className="check"><input type="checkbox" name="invoice" /> Auf Rechnung buchen (keine Kartenzahlung)</label>
-                  <div className="row"><div><label htmlFor="fbe244">Gültig ab (Anreise)</label><input id="fbe244" name="from" type="date" /></div><div><label htmlFor="fbe245">bis</label><input id="fbe245" name="until" type="date" /></div></div>
-                  <div><button className="btn small">Code anlegen</button></div>
-                </form>
-              </details>
+              <div><Link className="btn secondary" href="?code=neu#codes" scroll={false}>+ Neuer Code</Link></div>
             ) : <p className="muted small m0">Legen Sie zuerst unter <a href={`/admin/${hotel.id}/invoices/debitoren`}>Finanzen → Debitoren</a> eine Firma an.</p>}
           </>
         )}
