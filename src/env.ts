@@ -18,6 +18,12 @@ const schema = z.object({
   CHANNEX_BASE_URL: z.string().default("https://staging.channex.io/api/v1"),
   CHANNEX_API_KEY: z.string().optional(),
   CHANNEX_WEBHOOK_SECRET: z.string().optional(),
+  // Google Hotelpreise als eigener Connectivity-Partner (SPEC 19.70). Gesendet wird nur mit Partner-Schlüssel und GOOGLE_HOTELS_SEND=1.
+  GOOGLE_HOTELS_PARTNER_KEY: z.string().optional(),
+  GOOGLE_HOTELS_BASE_URL: z.string().url().default("https://www.google.com"),
+  GOOGLE_HOTELS_SEND: z.string().optional(),
+  /** Geheimer Wert in der Adresse der Hotelliste und der Landingpage-Datei (Google ruft sie ohne Anmeldung ab) */
+  GOOGLE_HOTELS_FEED_TOKEN: z.string().min(16).optional(),
   // Cloudflare Turnstile (Bot-Schutz für Registrierung und Login). Ohne beide Schlüssel ist die Prüfung aus.
   TURNSTILE_SITE_KEY: z.string().optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),

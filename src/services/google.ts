@@ -21,15 +21,16 @@ import { raiseAlert } from "./monitor";
 export class GoogleError extends UserError {}
 
 export type HotelLinksStatus = "off" | "requested" | "active";
-export type GoogleSettings = { reserve: boolean; order: boolean; hotelLinks: HotelLinksStatus; requestedAt?: string; activeAt?: string };
-const DEFAULTS: GoogleSettings = { reserve: false, order: false, hotelLinks: "off" };
+/** `partner`: der Betrieb steht im eigenen Google-Partnerfeed von Pontivo (SPEC 19.70), ohne Channex-Kanal */
+export type GoogleSettings = { reserve: boolean; order: boolean; hotelLinks: HotelLinksStatus; partner: boolean; requestedAt?: string; activeAt?: string };
+const DEFAULTS: GoogleSettings = { reserve: false, order: false, hotelLinks: "off", partner: false };
 
 export async function googleSettings(hotelId: string): Promise<GoogleSettings & { enabled: boolean }> {
   const [r] = await db().select().from(hotelModules).where(and(eq(hotelModules.hotelId, hotelId), eq(hotelModules.module, "google")));
   return { ...DEFAULTS, ...((r?.settings ?? {}) as Partial<GoogleSettings>), enabled: r ? r.enabled : moduleDef("google")!.defaultOn };
 }
 
-async function writeSettings(hotelId: string, patch: Partial<GoogleSettings>, actor: string, action: string) {
+export async function writeSettings(hotelId: string, patch: Partial<GoogleSettings>, actor: string, action: string) {
   const cur = await googleSettings(hotelId);
   const { enabled: _e, ...rest } = cur;
   const next = { ...rest, ...patch };
@@ -60,7 +61,7 @@ export type GoogleOverview = {
 };
 
 /** Koordinaten aus dem Baustein «Lage» (wie die strukturierten Daten) */
-async function coordinates(hotelId: string): Promise<{ lat: number; lng: number } | null> {
+export async function coordinates(hotelId: string): Promise<{ lat: number; lng: number } | null> {
   const blocks = (await listPages(hotelId)).flatMap((p) => p.blocks as Block[]);
   const loc = blocks.find((b): b is Extract<Block, { type: "location" }> => b.type === "location" && b.lat !== null && b.lng !== null);
   return loc ? { lat: loc.lat!, lng: loc.lng! } : null;

@@ -16,6 +16,7 @@
  * - guests-purge:   abgelaufene Meldescheine löschen (täglich 02:30, SPEC 14.6)
  * - onboarding-reminders: Erinnerung an Gastgeber mit offener Einrichtung (täglich 09:20)
  * - billing-minimum: Mindestgebühr des Vormonats abrechnen und Fehlversuche wiederholen (täglich 07:10)
+ * - google-hotels: Preise, Bestand und Einschränkungen an Google senden, nur Geändertes (jede Minute, SPEC 19.70; nur mit Partner-Schlüssel und GOOGLE_HOTELS_SEND=1)
  * - channex-outbox: ARI an Channex senden (Schleife alle 6 Sekunden, SPEC 7.2)
  */
 import { PgBoss } from "pg-boss";
@@ -44,6 +45,7 @@ import { tableJob } from "../services/reservations";
 import { halfboardJob } from "../services/halfboard";
 import { introNoticeJob, onlineOrdersJob } from "../services/online-orders";
 import { sendDueSms } from "../services/sms";
+import { googleHotelsJob } from "../services/google-hotels";
 
 const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "webhooks", cron: "* * * * *", run: () => deliverDue() },
@@ -54,6 +56,7 @@ const jobs: { name: string; cron: string; run: () => Promise<unknown> }[] = [
   { name: "halfboard-tables", cron: "*/15 * * * *", run: () => halfboardJob() },
   { name: "online-orders", cron: "* * * * *", run: () => onlineOrdersJob() },
   { name: "sms", cron: "* * * * *", run: () => sendDueSms() },
+  { name: "google-hotels", cron: "* * * * *", run: () => googleHotelsJob() },
   { name: "booking-recovery", cron: "*/10 * * * *", run: () => recoveryJob() },
   { name: "winback", cron: "10 10 * * *", run: () => winbackJob() },
   { name: "monthly-mail", cron: "30 7 2 * *", run: () => monthlyMailJob() },

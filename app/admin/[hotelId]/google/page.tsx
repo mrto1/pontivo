@@ -58,6 +58,7 @@ export default async function GooglePage({ params, searchParams }: { params: Pro
           <h2 className="m0">2. Kostenlose Buchungslinks</h2>
           <p className="muted small m0">Google zeigt in der Hotelsuche neben den Portalen auch Ihren eigenen Preis mit Link zu Ihrer Buchung, ohne Provision. Zimmer und Preise gehen über den Channel-Manager an Google. Google prüft neue Häuser etwa einmal pro Woche.</p>
           <p className="m0">Status: <strong>{LINKS_STATUS[o.settings.hotelLinks]}</strong></p>
+          {o.settings.partner ? <p className="notice" data-testid="google-partner-on">Ihr Haus ist im Google-Hotelfeed von Pontivo: Pontivo meldet Zimmer, Preise und Bestand direkt an Google, die Gäste landen auf Ihrer Buchungsseite.</p> : null}
           <ul className="ready-list">
             {o.checklist.map((c) => (
               <li key={c.key} className={c.ok ? "done" : ""}>

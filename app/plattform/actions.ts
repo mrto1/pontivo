@@ -12,10 +12,11 @@ import { PlatformSettingsError, savePlatformBilling, savePlatformVat, setOrderFe
 import { importPlatformCamt, markChargePaid, remindNow, resendQrInvoice, retryCharge, processCharges } from "@/src/services/billing";
 import { formatChf } from "@/src/domain/money";
 import { importSchoolHolidays } from "@/src/services/holidays";
-import { setHotelLinksStatus } from "@/src/services/google";
+import { GoogleError, setHotelLinksStatus } from "@/src/services/google";
+import { setPartner } from "@/src/services/google-hotels";
 
 // Alle Aktionen der Plattform-Verwaltung. Jede Seite schickt in `to` ihren eigenen Pfad mit; danach geht es dorthin zurück.
-const PAGES = ["/plattform/betriebe", "/plattform/benutzer", "/plattform/rechnungen", "/plattform/mwst", "/plattform/zahlungsverbindung", "/plattform/admins", "/plattform/schulferien"];
+const PAGES = ["/plattform/betriebe", "/plattform/benutzer", "/plattform/rechnungen", "/plattform/mwst", "/plattform/zahlungsverbindung", "/plattform/admins", "/plattform/schulferien", "/plattform/google"];
 const target = (f: FormData) => { const t = String(f.get("to") ?? ""); return PAGES.includes(t) ? t : "/plattform"; };
 const go = (to: string, msg: string, key: "done" | "error" = "done"): never => redirect(`${to}?${key}=${encodeURIComponent(msg)}`);
 
@@ -205,4 +206,20 @@ export async function googleStatus(f: FormData) {
   if (st !== "off" && st !== "requested" && st !== "active") go(to, "Status ungültig", "error");
   await setHotelLinksStatus(String(f.get("hotelId") ?? ""), st as "off" | "requested" | "active", `user:${admin.id}`);
   go(to, st === "active" ? "Als aktiv markiert" : "Status gespeichert");
+}
+
+/** Google Hotelpreise (SPEC 19.70): Betrieb in den eigenen Partnerfeed aufnehmen oder herausnehmen */
+export async function googlePartner(f: FormData) {
+  const to = target(f);
+  const admin = await requirePlatformAdmin();
+  const hotel = await getHotelById(String(f.get("hotelId") ?? ""));
+  if (!hotel) go(to, "Betrieb nicht gefunden", "error");
+  const on = f.get("on") === "1";
+  try {
+    await setPartner(hotel!, on, `user:${admin.id}`);
+  } catch (e) {
+    if (e instanceof GoogleError) go(to, e.message, "error");
+    throw e;
+  }
+  go(to, on ? `«${hotel!.name}» steht im Google-Partnerfeed` : `«${hotel!.name}» ist aus dem Google-Partnerfeed genommen`);
 }

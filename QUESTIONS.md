@@ -309,6 +309,15 @@ Annahmen sind im Code mit `// ASSUMPTION:` markiert (`grep -rn "ASSUMPTION" src 
 - [ ] Google Business Profile API (Links automatisch setzen) bewusst nicht genutzt: braucht Zugang von Google und Anmeldung des Betriebs; heute kopiert der Betrieb die Links selbst.
 - [ ] ASSUMPTION: Prüfliste «Tarif mit Stornoregel» = mindestens ein aktiver Tarif (jeder Tarif hat eine Stornoregel).
 
+## Google Hotelpreise als Partner (SPEC 19.70)
+- [ ] **Zulassung:** Google nimmt Connectivity-Partner nach Interessenformular und Vertrag auf; eine feste Mindestzahl an Häusern nennt Google für Hotels nicht (Channex nennt rund 25 Häuser für ein eigenes Hotel Center). Betreiber meldet Pontivo an und gibt die Antworten aus dem Formular; ohne Zusage bleibt der Weg über Channex oder die Links im Unternehmensprofil. Ablauf: `docs/GOOGLE-PARTNER.md`.
+- [ ] ASSUMPTION: Reihenfolge der Kindelemente in Property Data (RoomData: ID, Name, Beschreibung, erlaubte Tarife, Fotos, Kapazität) und das Format von `refundable_until_time` (`HH:MM:SS`) sind aus den Beispielen der Doku abgeleitet. Vor dem Livegang alle Nachrichten gegen die Schemas von Google prüfen (xmllint, Download auf der Plattform-Seite).
+- [ ] ASSUMPTION: Landingpage mit sofortiger Weiterleitung (302) von `/g/<Hotel-ID>` auf die Buchungsseite des Betriebs; Google verbietet Zwischenseiten mit Verzögerung, nicht die direkte Weiterleitung. Mit Google bestätigen; sonst die Landingpage-Datei je Betrieb mit dessen Adresse führen.
+- [ ] ASSUMPTION: Kinder erhöhen den Preis nicht (`AdditionalGuestAmount` für Kinder mit Betrag 0, bis 17 Jahre), Preis nach Anzahl Erwachsener. Gleiche Rechnung wie die Buchungsseite.
+- [ ] ASSUMPTION: Stornofrist: `refundable_until_days` = Stunden der freien Stornierung geteilt durch 24, aufgerundet, bis zur Anreisezeit des Hauses (Google erhält nie ein grosszügigeres Versprechen).
+- [ ] Offen: Betriebe mit Pflicht-Zusatzleistungen (z. B. Endreinigung) sind nicht zugelassen, bis diese als Gebühr (`TaxFeeInfo`/`Fee`) abgebildet sind. Wie häufig ist das bei den Pilotbetrieben?
+- [ ] Offen: Pull-Modus (Live-Preise auf Anfrage von Google) und Promotions nicht gebaut; ARI genügt laut Google für Partner mit Preisen je Nacht.
+
 ## SMS-Erinnerung (SPEC 19.68)
 - [ ] Preis je SMS = `SMS_GUEST_PRICE_RAPPEN` (Standard CHF 0.08, Selbstkosten ASPSMS). Bei Preisänderung von ASPSMS anpassen; die Zustimmung der Betriebe nennt den Preis zum Zeitpunkt des Einschaltens nicht ausdrücklich als fix.
 - [ ] SMS-Erinnerung auch für Hotelgäste vor der Anreise? Heute nur Tischreservationen.

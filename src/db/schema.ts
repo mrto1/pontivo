@@ -457,6 +457,21 @@ export const channexOutbox = pgTable("channex_outbox", {
   sentAt: ts("sent_at"),
 });
 
+/** Google Hotelpreise (SPEC 19.70): zuletzt erfolgreich gesendeter Stand je Betrieb und Baustein (Migration 0111) */
+export const googleAriState = pgTable(
+  "google_ari_state",
+  {
+    hotelId: uuid("hotel_id").notNull(),
+    kind: text("kind").$type<"property" | "taxes" | "inventory" | "rate" | "availability">().notNull(),
+    key: text("key").notNull(),
+    hash: text("hash"),
+    sentAt: ts("sent_at"),
+    failedAt: ts("failed_at"),
+    lastError: text("last_error"),
+  },
+  (t) => [primaryKey({ columns: [t.hotelId, t.kind, t.key] })],
+);
+
 /** Gesperrte Empfänger (Postmark Bounce/Spam-Webhook). Plattformweit, deshalb ohne hotel_id. */
 export const emailSuppressions = pgTable("email_suppressions", {
   email: text("email").primaryKey(),
