@@ -37,7 +37,7 @@ export const CONFIGURABLE_AREAS: { key: string; label: string; group: string }[]
   { group: "Restaurant", key: "reservations", label: "Reservierungen" },
   { group: "Restaurant", key: "resplan", label: "Tischplan" },
   { group: "Restaurant", key: "waitlist", label: "Warteliste" },
-  { group: "Restaurant", key: "restaurant", label: "Tische" },
+  { group: "Restaurant", key: "restaurant", label: "Bestellen am Tisch (Kasse)" },
   { group: "Restaurant", key: "kasse", label: "Kasse" },
   { group: "Restaurant", key: "kitchen", label: "Küchenbildschirm" },
   { group: "Restaurant", key: "onlineorders", label: "Online-Bestellungen (Bestellbildschirm)" },
@@ -72,7 +72,10 @@ export const isCustomRole = (r: string | null): r is CustomRole => typeof r === 
 const parseCustom = (r: CustomRole) => { const [, name, areas] = r.split(":"); return { name: decodeURIComponent(name), areas: areas.split(",").filter(Boolean) }; };
 
 export const isLimitedRole = (r: Role | null): r is LimitedRole | CustomRole => r === "reception" || r === "housekeeping" || r === "accounting" || r === "service" || r === "driver" || isCustomRole(r);
-export const areasOf = (r: LimitedRole | CustomRole): readonly string[] => (isCustomRole(r) ? parseCustom(r).areas : ROLE_AREAS[r]);
+/** Wer am Tisch bestellt, braucht den Tischplan (dort wird eröffnet, SPEC 19.64) */
+const IMPLIED: Record<string, string[]> = { restaurant: ["resplan"] };
+const withImplied = (a: readonly string[]): readonly string[] => [...new Set(a.flatMap((x) => [x, ...(IMPLIED[x] ?? [])]))];
+export const areasOf = (r: LimitedRole | CustomRole): readonly string[] => withImplied(isCustomRole(r) ? parseCustom(r).areas : ROLE_AREAS[r]);
 export const roleAllowsArea = (r: LimitedRole | CustomRole, area: string) => areasOf(r).includes(area);
 export const roleLabel = (r: Role): string => (isCustomRole(r) ? parseCustom(r).name : ROLE_LABEL[r as FullRole | LimitedRole] ?? r);
 
@@ -80,7 +83,7 @@ export const roleLabel = (r: Role): string => (isCustomRole(r) ? parseCustom(r).
 export const LANDING: Record<LimitedRole, string> = { reception: "", housekeeping: "housekeeping", accounting: "invoices", service: "restaurant/heute", driver: "restaurant/fahrer" };
 const LANDING_ORDER = ["tag", "housekeeping", "bookings", "calendar", "invoices", "dininghome", "onlineorders", "driver", "kasse", "restaurant", "reservations", "kitchen", "reports", "inbox", "statistics"];
 /** Bereiche, deren Adresse nicht dem Schlüssel entspricht */
-const AREA_PATH: Record<string, string> = { onlinesales: "restaurant/online-verkaeufe", onlineorders: "restaurant/bestellungen", driver: "restaurant/fahrer", dininghome: "restaurant/heute", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste" };
+const AREA_PATH: Record<string, string> = { onlinesales: "restaurant/online-verkaeufe", onlineorders: "restaurant/bestellungen", driver: "restaurant/fahrer", dininghome: "restaurant/heute", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", resplan: "restaurant/tischplan", waitlist: "restaurant/warteliste", restaurant: "restaurant/tischplan" };
 export function landingFor(r: LimitedRole | CustomRole): string {
   if (!isCustomRole(r)) return LANDING[r];
   const areas = parseCustom(r).areas;

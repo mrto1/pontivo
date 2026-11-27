@@ -8,7 +8,7 @@ import type { PlanArea, PlanItemView, PlanRes, PlanTable, PlanWaiter } from "./f
  * Stühle um die Tische in Statusfarben (grün frei, orange bald/reserviert, rot besetzt), Orientierungselemente (WC, Bar …),
  * daneben die Reservierungen des Tages; Antippen eines Tisches oder einer Reservierung wählt beides. Bearbeiten: TableEditor.
  */
-export function FloorPlan({ tables: tablesIn, areas = [], items = [], reservations = [], resLabel = "Reservierungen", waiters = [], clock }: { tables: PlanTable[]; areas?: PlanArea[]; items?: PlanItemView[]; reservations?: PlanRes[]; resLabel?: string; waiters?: PlanWaiter[]; clock?: { time: string; durationMin: number } }) {
+export function FloorPlan({ tables: tablesIn, areas = [], items = [], reservations = [], resLabel = "Reservierungen", waiters = [], clock, openOrder }: { tables: PlanTable[]; areas?: PlanArea[]; items?: PlanItemView[]; reservations?: PlanRes[]; resLabel?: string; waiters?: PlanWaiter[]; clock?: { time: string; durationMin: number }; /** Kasse: Bestellung am Tisch eröffnen (Server Action) */ openOrder?: { action: (f: FormData) => Promise<void>; hotelId: string } }) {
   const [at, setAt] = useState(clock?.time ?? "19:00");
   const [wf, setWf] = useState("");
   const wmap = new Map(waiters.map((w) => [w.id, w]));
@@ -76,7 +76,13 @@ export function FloorPlan({ tables: tablesIn, areas = [], items = [], reservatio
           <div className="card stack plan-detail" aria-live="polite">
             <strong>{cur.name} <span className="small muted">· {cur.seats} Plätze</span></strong>
             {(cur.detail ?? (cur.info ? [cur.info] : [])).map((l, i) => <div key={i} className="small">{l}</div>)}
-            {cur.href ? <div><a className="btn secondary small" href={cur.href}>{cur.hrefLabel ?? "Öffnen"}</a></div> : null}
+            {cur.href || cur.links?.length || (openOrder && cur.openLabel) ? (
+              <div className="inline-form">
+                {cur.href ? <a className="btn secondary small" href={cur.href}>{cur.hrefLabel ?? "Öffnen"}</a> : null}
+                {cur.links?.map((l) => <a key={l.href} className="btn secondary small" href={l.href}>{l.label}</a>)}
+                {openOrder && cur.openLabel ? <form action={openOrder.action}><input type="hidden" name="hotelId" value={openOrder.hotelId} /><input type="hidden" name="tableId" value={cur.id} /><button className="btn small">{cur.openLabel}</button></form> : null}
+              </div>
+            ) : null}
           </div>
         ) : placed.length ? <p className="small muted m0">Tisch antippen für Einzelheiten.</p> : null}
       </div>

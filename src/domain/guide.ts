@@ -55,7 +55,7 @@ export const GUIDE: Record<GuideRole, GuideTask[]> = {
     { key: "s_order", area: "kasse", title: "Eine Bestellung am Tisch aufnehmen", hint: "Tisch eröffnen, Artikel antippen, im Haus oder Take-away." },
     { key: "s_split", area: "kasse", title: "Getrennt bezahlen üben", hint: "Bei «Jetzt» die Menge je Posten wählen, dann kassieren." },
     { key: "s_room", area: "kasse", title: "Aufs Zimmer buchen", hint: "Gast aus der Liste wählen. Der Posten erscheint in der Hotelrechnung." },
-    { key: "s_tables", area: "restaurant", title: "Tischübersicht lesen", hint: "Offene Beträge je Tisch." },
+    { key: "s_tables", area: "resplan", title: "Tischplan lesen", hint: "Belegung, Reservationen und offene Beträge je Tisch; antippen zum Eröffnen." },
   ],
 };
 

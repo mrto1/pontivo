@@ -102,11 +102,37 @@ test("Reservierung: online buchen, Liste, Storno per Link; Plan zeigt Tisch", as
   await list.getByLabel("Tisch Frau Muster", { exact: true }).selectOption({ label: "Tisch 1 (2)" });
   await list.getByRole("button", { name: "Setzen" }).click();
   await expect(page.getByText("Tisch zugewiesen")).toBeVisible();
-  await page.goto(`/admin/${h.hotel.id}/restaurant`);
+  await page.goto(`/admin/${h.hotel.id}/restaurant/tischplan`);
   await expect(page.getByTestId("plan-area").getByText("Tisch 1")).toBeVisible();
 
   // Gast storniert
   await page.goto(link.replace("?new=1", ""));
   await page.getByRole("button", { name: "Reservierung stornieren" }).click();
   await expect(page.getByRole("heading", { name: "Die Reservierung wurde storniert." })).toBeVisible();
+});
+
+/** Ein Tischplan für Reservationen und Bestellungen (SPEC 19.64): Tisch antippen, Bestellung eröffnen; alte Adresse leitet weiter */
+test("Tischplan: Bestellung am Tisch eröffnen und ohne Tisch", async ({ page, context, baseURL }) => {
+  const h = await makeHotel();
+  await db().insert(hotelModules).values([{ hotelId: h.hotel.id, module: "invoicing", enabled: true }, { hotelId: h.hotel.id, module: "restaurant", enabled: true }, { hotelId: h.hotel.id, module: "pos", enabled: true }]).onConflictDoNothing();
+  const email = `tp-${Math.random().toString(36).slice(2, 8)}@example.ch`;
+  await addMember(h.hotel.id, email, "owner", "e2e");
+  const [u] = await db().select().from(users).where(eq(users.email, email));
+  await context.addCookies([{ name: SESSION_COOKIE, value: createSessionValue(u.id), url: baseURL! }]);
+  const { saveTable, saveTablePlan, listTables } = await import("../../src/services/pos");
+  await saveTable(h.hotel.id, "Tisch 1", "e2e");
+  await saveTable(h.hotel.id, "Tisch 2", "e2e");
+  const [t1] = await listTables(h.hotel.id);
+  await saveTablePlan(h.hotel.id, [{ id: t1.id, x: 300, y: 300 }], "e2e");
+
+  await page.goto(`/admin/${h.hotel.id}/restaurant`);
+  await expect(page).toHaveURL(/restaurant\/tischplan/);
+  await page.getByTestId("plan-area").getByRole("button", { name: /Tisch 1/ }).click();
+  await page.locator(".plan-detail").getByRole("button", { name: "Bestellung eröffnen" }).click();
+  await expect(page).toHaveURL(/restaurant\/bestellung\//);
+  await page.goto(`/admin/${h.hotel.id}/restaurant/tischplan`);
+  await expect(page.getByTestId("unplaced-tables")).toContainText("Tisch 2");
+  await page.getByTestId("order-no-table").getByLabel(/Bestellung ohne Tisch/).fill("Bar");
+  await page.getByTestId("order-no-table").getByRole("button", { name: "Eröffnen" }).click();
+  await expect(page).toHaveURL(/restaurant\/bestellung\//);
 });

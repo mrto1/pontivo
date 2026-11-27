@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { atLeast, canAccess, isLimitedRole, LANDING, ROLE_AREAS } from "../../src/domain/roles";
+import { atLeast, canAccess, encodeCustomRole, hasArea, isLimitedRole, LANDING, landingFor, ROLE_AREAS } from "../../src/domain/roles";
 import { adminNav, allPages } from "../../src/admin/nav";
 import { visibleNav } from "../../src/admin/visible-nav";
 
@@ -45,7 +45,7 @@ describe("Rollen (SPEC 17.4)", () => {
     const keys = new Set<string>();
     const walk = (items: { key: string; tabs?: { key: string }[] }[]) => items.forEach((i) => { keys.add(i.key); walk(i.tabs ?? []); });
     for (const nav of [adminNav(hotel), adminNav(hotel, new Set(), { area: "dining" })]) { walk(nav.primary); walk(nav.settings.tabs ?? []); walk([nav.account]); }
-    for (const areas of Object.values(ROLE_AREAS)) for (const a of areas) if (a !== "layout" && a !== "konto" && a !== "tag") expect(keys.has(a), a).toBe(true);
+    for (const areas of Object.values(ROLE_AREAS)) for (const a of areas) if (a !== "layout" && a !== "konto" && a !== "tag" && a !== "restaurant") expect(keys.has(a), a).toBe(true); // «restaurant» = Berechtigung «am Tisch bestellen», ohne eigenen Menüpunkt (SPEC 19.64)
   });
 });
 
@@ -90,9 +90,9 @@ describe("Zahnrad und Menü je Rolle (SPEC 19.42)", () => {
     const h = visibleNav(hotel, "housekeeping", none).nav;
     expect(h.primary).toHaveLength(1);
     expect(h.primary[0].href).toBe("/admin/h/housekeeping");
-    // Service: Restaurant mit Tische und Kasse
+    // Service: Tischplan (dort wird eröffnet) und Kasse
     const s = visibleNav(hotel, "service", new Set(["posclose"])).nav;
-    expect(allPages(s).map((i) => i.key).filter((k) => ["restaurant", "kasse"].includes(k))).toEqual(["restaurant", "kasse"]);
+    expect(allPages(s).map((i) => i.key).filter((k) => ["resplan", "kasse"].includes(k))).toEqual(["resplan", "kasse"]);
   });
 
   it("Umschalter (SPEC 20.1): nur Unterkunft mit Gastronomie und nur, wer beide Bereiche sieht", () => {
@@ -114,5 +114,14 @@ describe("Zahnrad und Menü je Rolle (SPEC 19.42)", () => {
     // gewählter Bereich wird übernommen
     expect(visibleNav(hotel, "owner", on, "dining").nav.primary[1].label).toBe("Reservierungen");
     expect(visibleNav(hotel, "owner", on, "lodging").nav.primary[1].label).toBe("Kalender");
+  });
+});
+
+describe("Bestellen am Tisch schliesst den Tischplan ein (SPEC 19.64)", () => {
+  it("eigene Rolle mit «restaurant» sieht den Tischplan und landet dort", () => {
+    const r = encodeCustomRole("Service Terrasse", ["restaurant"]);
+    expect(hasArea(r, "resplan")).toBe(true);
+    expect(landingFor(r)).toBe("restaurant/tischplan");
+    expect(hasArea(encodeCustomRole("Nur Küche", ["kitchen"]), "resplan")).toBe(false);
   });
 });

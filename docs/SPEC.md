@@ -1371,3 +1371,10 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 - **Nach einem Hinweis** (z. B. Zeit nicht mehr frei) bleiben Name, E-Mail, Telefon, Wunsch und Zeit 10 Minuten erhalten (Cookie `res_draft`, nur HTTP, nicht in der Adresse); nach erfolgreicher Reservierung wird er gelöscht.
 - **Tisch-QR-Seite:** Mit eingeschaltetem Bestellen heisst die Seite wie der Tisch, zuerst «Bestellen», darunter «Bezahlen». Der Sprachwechsel bleibt auf der Tischseite. Auf Tisch- und Reservierungsseite kein fester «Jetzt buchen»-Knopf.
 - **Personal:** Reservierungsliste warnt bei bezahlter Vorbestellung ohne Tisch («geht erst mit Tisch in die Küche»), die Tagesübersicht zeigt Vorbestellungen. Einstellungen → Reservierung in Abschnitten (Zeiten und Plätze, Tische, Vorbestellung, Anzahlung, Hotelgäste; Halbpension nur bei Betrieben mit Zimmern).
+
+## 19.64 Ein Tischplan für Reservationen und Bestellungen
+
+- Der Tischplan (`restaurant/tischplan`, Reiter unter Reservationen) ist die einzige Planansicht im Service: Belegung mit Zeitregler, Reservationen, Kellner, offene Bestellungen. Mit der Kasse (Modul `pos`, Bereich `restaurant`) zeigt das Antippen eines Tisches «Bestellung eröffnen» bzw. «Weitere Bestellung» und Links zu den offenen Bestellungen; darunter Tische ohne Platz im Plan und «Bestellung ohne Tisch» (z. B. Bar).
+- Der frühere Reiter «Bestellungen → Tische» entfällt; `/restaurant` leitet zum Tischplan weiter. Bestelldetails (`restaurant/bestellung/…`) gehören im Menü zum Tischplan.
+- Rollen: Der Bereich «restaurant» heisst «Bestellen am Tisch (Kasse)» und schliesst den Tischplan ein (`IMPLIED` in `src/domain/roles.ts`); eigene Rollen mit diesem Bereich landen im Tischplan.
+- Abnahme: `tests/e2e/pos-options.spec.ts` («Tischplan: Bestellung am Tisch eröffnen …»), `tests/unit/roles.test.ts`.

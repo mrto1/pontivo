@@ -4,7 +4,10 @@ import { formatInTimeZone } from "date-fns-tz";
 import { requireHotel, requireHotelModule } from "@/src/auth/guard";
 import { moduleRows } from "@/src/services/modules";
 import { isOn } from "@/src/domain/modules";
-import { listTables, tablesOverview } from "@/src/services/pos";
+import { PosError, listTables, openOrder, tablesOverview, webDevice } from "@/src/services/pos";
+import { redirect } from "next/navigation";
+import { Notice } from "@/components/admin/Notice";
+import { s as str } from "@/src/lib/form";
 import { listAreas, listPlanItems, listWaiters } from "@/src/services/floorplan";
 import { getSettings, reservationsOfDay } from "@/src/services/reservations";
 import { addDays, isDay, todayIn } from "@/src/domain/dates";
@@ -14,6 +17,17 @@ import { formatChf } from "@/src/domain/money";
 import { atLeast, hasArea } from "@/src/domain/roles";
 
 export const dynamic = "force-dynamic";
+
+/** Kasse: Bestellung an einem Tisch (oder ohne Tisch, z. B. «Bar») eröffnen und direkt öffnen */
+async function openAt(f: FormData) {
+  "use server";
+  const c = await requireHotelModule("pos", str(f, "hotelId"), "staff", "restaurant");
+  const dev = await webDevice(c.hotel.id);
+  let id = "";
+  try { id = (await openOrder(c.hotel.id, { tableId: str(f, "tableId") || null, deviceId: dev.id, label: str(f, "label") }, c.actor)).id; }
+  catch (e) { if (!(e instanceof PosError)) throw e; redirect(`/admin/${c.hotel.id}/restaurant/tischplan?msg=${encodeURIComponent(`Nicht eröffnet: ${e.message}`)}`); }
+  redirect(`/admin/${c.hotel.id}/restaurant/bestellung/${id}`);
+}
 const SOON_MIN = 30;
 
 /** Tischplan mit Reservierungszustand (SPEC 20.1): frei, reserviert (bald), am Tisch; mit Kasse auch offene Bestellungen */
@@ -41,6 +55,7 @@ export default async function ReservationPlan({ params, searchParams }: { params
   return (
     <div className="stack">
       <h1 className="sr-only">Tischplan</h1>
+      {sp.msg ? <Notice text={sp.msg} /> : null}
       <PeriodNav prev={`?day=${addDays(day, -1)}&time=${time}&seats=${minSeats}`} next={`?day=${addDays(day, 1)}&time=${time}&seats=${minSeats}`} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day", keep: { time, seats: String(minSeats) } }}>
         <form method="get" className="plan-filter"><input type="hidden" name="day" value={day} />
           <div><label htmlFor="time" className="small">Zeit</label><input id="time" name="time" type="time" step={900} defaultValue={time} /></div>
@@ -49,7 +64,7 @@ export default async function ReservationPlan({ params, searchParams }: { params
       </PeriodNav>
       <p className="small muted m0">{formatDay(day, "de")}, {time} · grün frei (mit Uhrzeit, bis wann) · orange belegt oder in weniger als 30 Minuten reserviert · rot am Tisch{pos ? " oder offene Bestellung" : ""}</p>
       {planned.length ? (
-        <FloorPlan waiters={waiters.map((w) => ({ id: w.id, name: w.name, color: w.color }))} clock={{ time, durationMin: cfg.durationMin }} areas={areas.map((a) => ({ id: a.id, name: a.name }))} items={planItems.filter((i) => areas.some((a) => a.id === i.areaId)).map((i) => ({ id: i.id, kind: i.kind, label: i.label, x: i.planX, y: i.planY, w: i.w, h: i.h, areaId: i.areaId }))}
+        <FloorPlan waiters={waiters.map((w) => ({ id: w.id, name: w.name, color: w.color }))} clock={{ time, durationMin: cfg.durationMin }} openOrder={pos ? { action: openAt, hotelId: hotel.id } : undefined} areas={areas.map((a) => ({ id: a.id, name: a.name }))} items={planItems.filter((i) => areas.some((a) => a.id === i.areaId)).map((i) => ({ id: i.id, kind: i.kind, label: i.label, x: i.planX, y: i.planY, w: i.w, h: i.h, areaId: i.areaId }))}
           reservations={live.slice().sort((a, b) => toMin(a.time) - toMin(b.time)).map((r) => ({ id: r.id, time: r.time, name: r.name, party: r.party, tableId: r.tableId, extraTableIds: r.extraTableIds, status: r.status }))} tables={planned.map((t) => {
           const cur = now(t.id); const nxt = next(t.id); const orders = openBy.get(t.id) ?? [];
           const busy = orders.length > 0 || (cur?.status === "seated");
@@ -70,10 +85,33 @@ export default async function ReservationPlan({ params, searchParams }: { params
             info: orders.length ? "offen" : cur ? `bis ${endCur}` : freeUntil ? `frei bis ${freeUntil}` : undefined,
             detail,
             href: orders[0] ? `${base}/restaurant/bestellung/${orders[0].order.id}` : cur || nxt ? `${base}/restaurant/reservierungen?day=${day}` : undefined,
-            hrefLabel: orders[0] ? "Bestellung öffnen" : "Reservierungen des Tages",
+            hrefLabel: orders[0] ? (orders.length > 1 ? `Bestellung 1 (${formatChf(orders[0].openRappen)})` : "Bestellung öffnen") : "Reservierungen des Tages",
+            links: orders.slice(1).map((o, i) => ({ href: `${base}/restaurant/bestellung/${o.order.id}`, label: `Bestellung ${i + 2} (${formatChf(o.openRappen)})` })),
+            openLabel: pos ? (orders.length ? "Weitere Bestellung" : "Bestellung eröffnen") : undefined,
           };
         })} />
       ) : <p className="muted">Noch kein Tischplan.{atLeast(role, "manager") ? <> <a href={`${base}/restaurant/tische`}>Tische im Plan platzieren</a></> : null}</p>}
+      {pos && tables.length > planned.length ? (
+        <section className="card stack" data-testid="unplaced-tables">
+          <h2>{planned.length ? "Tische ohne Platz im Plan" : "Tische"}</h2>
+          <div className="tq-admin-grid">
+            {tables.filter((t) => t.planX === null || t.planY === null).map((t) => { const orders = openBy.get(t.id) ?? []; return (
+              <div key={t.id} className="stack">
+                <strong>{t.name}</strong>
+                {orders.map((o) => <a key={o.order.id} className="btn secondary small" href={`${base}/restaurant/bestellung/${o.order.id}`}>offen {formatChf(o.openRappen)}</a>)}
+                <form action={openAt}><input type="hidden" name="hotelId" value={hotel.id} /><input type="hidden" name="tableId" value={t.id} /><button className="btn small">{orders.length ? "Weitere Bestellung" : "Bestellung eröffnen"}</button></form>
+              </div>
+            ); })}
+          </div>
+        </section>
+      ) : null}
+      {pos ? (
+        <form action={openAt} className="card inline-form" data-testid="order-no-table">
+          <input type="hidden" name="hotelId" value={hotel.id} />
+          <div className="flex1"><label htmlFor="label">Bestellung ohne Tisch (z. B. «Bar», «Take-away Meier»)</label><input id="label" name="label" maxLength={60} /></div>
+          <button className="btn">Eröffnen</button>
+        </form>
+      ) : null}
     </div>
   );
 }

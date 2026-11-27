@@ -29,7 +29,7 @@ describe("Admin-Menü", () => {
   it("Seitenschlüssel und Adressen bleiben wie bisher", () => {
     const byKey = Object.fromEntries(allPagesBoth(hotel).map((i) => [i.key, i.href.replace("/admin/h1/", "")]));
     expect(byKey).toMatchObject({
-      home: "/admin/h1", housekeeping: "housekeeping", inbox: "inbox", restaurant: "restaurant", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", kasse: "kasse", posclose: "restaurant/abschluss", plan: "plan", calendar: "calendar", pricing: "preise",
+      home: "/admin/h1", housekeeping: "housekeeping", inbox: "inbox", reservations: "restaurant/reservierungen", kitchen: "restaurant/kueche", kasse: "kasse", posclose: "restaurant/abschluss", plan: "plan", calendar: "calendar", pricing: "preise",
       bookings: "bookings", groups: "groups", resources: "resources", resourcelist: "resources/angebote", shop: "shop", vouchers: "vouchers", guestbook: "guestbook", marketing: "marketing", feedback: "feedback",
       invoices: "invoices", dayclose: "invoices/tagesabschluss", debtors: "invoices/debitoren", owners: "owners", statistics: "statistics", hesta: "statistics/hesta", accountingexport: "buchhaltung", reports: "berichte",
       settings: "settings", rooms: "rooms", extras: "rooms/extras", payments: "zahlungen", team: "team", site: "site", direct: "direktbuchung", api: "api", channex: "channex", ical: "ical", mailtexts: "mail-texte", upsell: "upsell", "ki-chat": "ki-chat",
@@ -78,7 +78,7 @@ describe("Admin-Menü", () => {
     expect(onlyRes).not.toContain("kasse");
     expect(onlyRes).not.toContain("restaurant");
     expect(onlyRes).not.toContain("posclose");
-    expect(dining([{ module: "restaurant", enabled: true }, { module: "pos", enabled: true }])).toEqual(expect.arrayContaining(["restaurant", "kasse", "posclose", "posdevices"]));
+    expect(dining([{ module: "restaurant", enabled: true }, { module: "pos", enabled: true }])).toEqual(expect.arrayContaining(["kasse", "posclose", "posdevices"]));
     // beides ist von Haus aus aus
     const none = dining([]);
     for (const k of ["dininghome", "reservations", "kasse", "positems"]) expect(none).not.toContain(k);
@@ -88,7 +88,7 @@ describe("Admin-Menü", () => {
     const d = adminNav(hotel, new Set(), { area: "dining", kind: "restaurant" });
     expect(d.primary.map((i) => i.label)).toEqual(["Heute", "Reservierungen", "Bestellungen", "Finanzen"]);
     expect(d.primary.map((i) => i.tabs!.map((t) => t.key))).toEqual([
-      ["dininghome", "inbox"], ["reservations", "resplan", "waitlist", "guestbook"], ["onlineorders", "restaurant", "kasse", "kitchen", "driver"], ["posclose", "onlinesales", "diningstats", "invoices", "vouchers", "accountingexport"],
+      ["dininghome", "inbox"], ["reservations", "resplan", "waitlist", "guestbook"], ["onlineorders", "kasse", "kitchen", "driver"], ["posclose", "onlinesales", "diningstats", "invoices", "vouchers", "accountingexport"],
     ]);
     const keys = allPages(d).map((i) => i.key);
     for (const k of ["rooms", "extras", "channex", "ical", "gaesteportal", "upsell", "direct", "api", "access", "migration", "plan", "calendar", "housekeeping"]) expect(keys).not.toContain(k);

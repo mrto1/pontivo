@@ -61,8 +61,8 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
   // Restaurant-Baum (SPEC 20.1, Navigation Teil B): gleiche Seiten und Schlüssel, eigene vier Hauptpunkte
   const dining: NavItem[] = [
     { key: "g-dining-today", label: "Heute", href: `${base}/restaurant/heute`, icon: "home", tabs: [link("dininghome", "Tagesübersicht", "restaurant/heute"), link("inbox", "Posteingang", "inbox?bereich=restaurant")] },
-    { key: "g-dining-res", label: "Reservierungen", href: `${base}/restaurant/reservierungen`, icon: "bookings", tabs: [link("reservations", "Liste", "restaurant/reservierungen"), link("resplan", "Tischplan", "restaurant/tischplan"), link("waitlist", "Warteliste", "restaurant/warteliste"), link("guestbook", "Gäste")] },
-    { key: "g-dining-orders", label: "Bestellungen", href: `${base}/restaurant`, icon: "orders", tabs: [link("onlineorders", "Online", "restaurant/bestellungen"), link("restaurant", "Tische"), link("kasse", "Kasse"), link("kitchen", "Küche", "restaurant/kueche"), link("driver", "Lieferungen", "restaurant/fahrer")] },
+    { key: "g-dining-res", label: "Reservierungen", href: `${base}/restaurant/reservierungen`, icon: "bookings", tabs: [link("reservations", "Liste", "restaurant/reservierungen"), link("resplan", "Tischplan", "restaurant/tischplan", { match: [`${base}/restaurant/bestellung/`] }), link("waitlist", "Warteliste", "restaurant/warteliste"), link("guestbook", "Gäste")] },
+    { key: "g-dining-orders", label: "Bestellungen", href: `${base}/restaurant`, icon: "orders", tabs: [link("onlineorders", "Online", "restaurant/bestellungen"), link("kasse", "Kasse"), link("kitchen", "Küche", "restaurant/kueche"), link("driver", "Lieferungen", "restaurant/fahrer")] },
     { key: "g-dining-finance", label: "Finanzen", href: `${base}/restaurant/abschluss`, icon: "finance", tabs: [link("posclose", "Kassenabschluss", "restaurant/abschluss"), link("onlinesales", "Online-Verkäufe", "restaurant/online-verkaeufe"), link("diningstats", "Auswertung", "restaurant/auswertung"), link("invoices", "Rechnungen"), link("vouchers", "Gutscheine"), link("accountingexport", "Buchhaltung", "buchhaltung")] },
   ];
   return {
@@ -175,7 +175,7 @@ export const inSettings = (pathname: string, nav: Nav, home: string): boolean =>
 
 /**
  * Aktiv im Menü oben: nur der Punkt mit dem genauesten Treffer (Hauptpunkte, Zahnrad, Konto). So leuchtet bei «restaurant/abschluss»
- * nur «Finanzen», obwohl «Bestellungen → Tische» (restaurant) eine Adresse davor liegt, und bei einer Zahnrad-Seite kein Hauptpunkt.
+ * nur «Finanzen» (und nicht ein Punkt mit kürzerer Adresse), und bei einer Zahnrad-Seite kein Hauptpunkt.
  */
 export const isActiveIn = (pathname: string, nav: Nav, item: NavItem, home: string): boolean => {
   const own = bestMatch(pathname, item, home);
