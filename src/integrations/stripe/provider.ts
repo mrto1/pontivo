@@ -22,7 +22,7 @@ export class StripePaymentProvider implements PaymentProvider {
     const metadata = { booking_id: booking.id, hotel_id: hotel.id };
     if (a.element) {
       // SPEC 19.52: Payment Element. PaymentIntent als Direct Charge; läuft anders als eine Checkout-Session nicht von selbst ab,
-      // deshalb bricht Pontivo ihn beim Ablauf der Reservierung selbst ab (cancelPendingIntents in bookings.ts).
+      // deshalb bricht Pontivo ihn beim Ablauf der Reservation selbst ab (cancelPendingIntents in bookings.ts).
       // Zahlarten dynamisch aus den Stripe-Einstellungen des Hotels (wie beim Checkout); TWINT nur, wenn aktiv und unter dem Limit.
       const pi = await stripe().paymentIntents.create(
         {

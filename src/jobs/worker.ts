@@ -2,7 +2,7 @@
  * Hintergrund-Jobs mit pg-boss (SPEC 2): eigener Prozess `npm run worker`.
  * - holds:   abgelaufene Holds freigeben (jede Minute, SPEC 5.5)
  * - waitlist: Warteliste prüfen und Gäste benachrichtigen (alle 5 Minuten, SPEC 19.29)
- * - table-reservations: Tischreservierungen: unbezahlte freigeben, Wartelisten, Erinnerungen (alle 5 Minuten, SPEC 19.49)
+ * - table-reservations: Tischreservationen: unbezahlte freigeben, Wartelisten, Erinnerungen (alle 5 Minuten, SPEC 19.49)
  * - online-orders: Online-Bestellung: Alarm nach 5 Min., Storno nach 10 Min., Herzschlag der Bestellbildschirme (jede Minute, SPEC 20.4)
  * - sms: SMS-Outbox über ASPSMS senden (jede Minute, SPEC 20.4)
  * - booking-recovery: Erinnerung nach abgebrochener Buchung (alle 10 Minuten, SPEC 19.29)

@@ -9,7 +9,7 @@ import { saveSettings } from "../../src/services/reservations";
 import { makeHotel } from "../helpers";
 
 /** Vorbestellung (SPEC 19.57): Gast reserviert mit Vorbestellung und bezahlt vorab */
-test("Reservierung mit Vorbestellung", async ({ page }) => {
+test("Reservation mit Vorbestellung", async ({ page }) => {
   const m = await makeHotel();
   await db().update(hotels).set({ stripeAccountId: `acct_${crypto.randomUUID()}`, stripeChargesEnabled: true }).where(eq(hotels.id, m.hotel.id));
   await db().insert(hotelModules).values({ hotelId: m.hotel.id, module: "restaurant", enabled: true }).onConflictDoNothing();

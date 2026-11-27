@@ -54,7 +54,7 @@ describe("Admin-Menü", () => {
       ["Betriebsdaten", "Funktionen", "Team & Rollen", "Geräte", "Zahlungsmethoden", "Pontivo-Abrechnung", "Datenübernahme"],
       ["Zimmer & Tarife", "Zusatzleistungen", "Angebote vor Ort", "Gästeportal", "Upselling", "KI-Chat"],
       ["Website & Buchung", "Kanäle", "Shop & Lager", "Gäste-Mails"],
-      ["Speisekarte", "Tischplan", "Tisch-QR", "Reservierung", "Bestellung", "Kasse"],
+      ["Speisekarte", "Tischplan", "Tisch-QR", "Reservation", "Bestellung", "Kasse"],
     ]);
     for (const g of groups) { expect(g.lead.length).toBeGreaterThan(10); for (const i of g.items) expect(i.lead, i.label).toBeTruthy(); }
     expect(nav.settings.tabs!.find((i) => i.label === "Website & Buchung")!.tabs!.map((t) => t.key)).toEqual(["site", "direct", "api"]);
@@ -71,7 +71,7 @@ describe("Admin-Menü", () => {
     expect(cal.href).toBe("/admin/h1/calendar");
   });
 
-  it("Gastronomie: Reservierung, Speisekarte, Küche mit Modul restaurant; Tische, Kasse, Abschluss nur mit pos (SPEC 20.1)", () => {
+  it("Gastronomie: Reservation, Speisekarte, Küche mit Modul restaurant; Tische, Kasse, Abschluss nur mit pos (SPEC 20.1)", () => {
     const dining = (rows: { module: string; enabled: boolean }[]) => allPages(adminNav(hotel, hiddenNavKeys(rows), { area: "dining" })).map((i) => i.key);
     const onlyRes = dining([{ module: "restaurant", enabled: true }]);
     expect(onlyRes).toEqual(expect.arrayContaining(["dininghome", "reservations", "resplan", "waitlist", "kitchen", "positems", "tables", "ressettings"]));
@@ -86,7 +86,7 @@ describe("Admin-Menü", () => {
 
   it("Restaurant-Baum: vier Hauptpunkte; reines Restaurant ohne Unterkunftspunkte im Zahnrad (SPEC 20.1)", () => {
     const d = adminNav(hotel, new Set(), { area: "dining", kind: "restaurant" });
-    expect(d.primary.map((i) => i.label)).toEqual(["Heute", "Reservierungen", "Bestellungen", "Finanzen"]);
+    expect(d.primary.map((i) => i.label)).toEqual(["Heute", "Reservationen", "Bestellungen", "Finanzen"]);
     expect(d.primary.map((i) => i.tabs!.map((t) => t.key))).toEqual([
       ["dininghome", "inbox"], ["reservations", "resplan", "waitlist", "guestbook"], ["onlineorders", "kasse", "kitchen", "driver"], ["posclose", "onlinesales", "diningstats", "invoices", "vouchers", "accountingexport"],
     ]);
@@ -111,7 +111,7 @@ describe("Admin-Menü", () => {
     const active = d.primary.filter((i) => isActiveIn(`${home}/restaurant/abschluss`, d, i, home)).map((i) => i.label);
     expect(active).toEqual(["Finanzen"]);
     expect(sectionFor(`${home}/restaurant/abschluss`, d, home)?.label).toBe("Finanzen");
-    expect(sectionFor(`${home}/restaurant/tischplan`, d, home)?.label).toBe("Reservierungen");
+    expect(sectionFor(`${home}/restaurant/tischplan`, d, home)?.label).toBe("Reservationen");
   });
 
   it("Ferienwohnung mit Grundausstattung: Heute (nur Tagesliste und Posteingang), Kalender, Buchungen, Finanzen", () => {

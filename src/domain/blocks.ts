@@ -94,7 +94,7 @@ export const blockSchema = z.discriminatedUnion("type", [
   }),
   // Öffnungszeiten: 7 Tage (Mo–So), je bis 3 Zeitfenster; leer = geschlossen. Betriebsferien mit Datum.
   z.object({
-    // source «opening» (SPEC 20.7): Zeiten aus den Öffnungszeiten der Grunddaten (gleiche wie Reservierung und Online-Bestellung)
+    // source «opening» (SPEC 20.7): Zeiten aus den Öffnungszeiten der Grunddaten (gleiche wie Reservation und Online-Bestellung)
     id: z.string(), type: z.literal("hours"), heading: l10n(200), place: z.enum(HOURS_PLACES).default("restaurant"), source: z.enum(["manual", "opening"]).default("manual"),
     days: z.array(z.array(z.object({ from: time, to: time })).max(3)).length(7).default([[], [], [], [], [], [], []]),
     closures: z.array(z.object({ from: dayStr, to: dayStr, label: l10n(120) }).refine((c) => c.to >= c.from, "Ferien: Ende vor Beginn")).max(10).default([]),

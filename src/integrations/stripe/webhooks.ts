@@ -102,14 +102,14 @@ async function upsellForSession(session: Stripe.Checkout.Session, account: strin
   return o;
 }
 
-/** Tischreservierung zur Session (Anzahlung): nur, wenn das Ereignis vom Konto des Hotels kommt */
+/** Tischreservation zur Session (Anzahlung): nur, wenn das Ereignis vom Konto des Hotels kommt */
 async function reservationForSession(session: Stripe.Checkout.Session, account: string | undefined) {
   const id = session.metadata?.reservation_id;
   if (!id) return null;
   const [r] = await db().select().from(posReservations).where(eq(posReservations.id, id));
   if (!r) return null;
   const [h] = await db().select().from(hotels).where(eq(hotels.id, r.hotelId));
-  if (!h || !account || h.stripeAccountId !== account) throw new Error(`Ereignis von Konto ${account} passt nicht zum Hotel der Reservierung ${id}`);
+  if (!h || !account || h.stripeAccountId !== account) throw new Error(`Ereignis von Konto ${account} passt nicht zum Hotel der Reservation ${id}`);
   return r;
 }
 
@@ -262,7 +262,7 @@ async function processEvent(event: Stripe.Event) {
       return;
     }
     case "payment_intent.canceled": {
-      // Von Pontivo beim Ablauf abgebrochen oder vom Hotel im Stripe-Dashboard: Reservierung freigeben (idempotent)
+      // Von Pontivo beim Ablauf abgebrochen oder vom Hotel im Stripe-Dashboard: Reservation freigeben (idempotent)
       const pi = event.data.object as Stripe.PaymentIntent;
       if (pi.metadata?.flow !== "element" || !account) return;
       const found = await bookingForSession({ metadata: pi.metadata } as unknown as Stripe.Checkout.Session, account);
@@ -271,7 +271,7 @@ async function processEvent(event: Stripe.Event) {
     }
     case "payment_intent.payment_failed":
       // Absichtlich nichts: ein abgelehnter Versuch (Karte, TWINT nicht bestätigt) lässt den Gast im selben Formular erneut zahlen.
-      // Die Reservierung läuft nach 32 Minuten von selbst ab und bricht den PaymentIntent ab.
+      // Die Reservation läuft nach 32 Minuten von selbst ab und bricht den PaymentIntent ab.
       return;
     case "charge.refunded": {
       const ch = event.data.object as Stripe.Charge;

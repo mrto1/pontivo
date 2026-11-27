@@ -6,7 +6,7 @@ import { raiseAlert } from "./monitor";
 
 /**
  * Payment Element (SPEC 19.52): Zahlungen laufen über einen PaymentIntent auf dem Konto des Hotels.
- * Anders als eine Checkout-Session läuft er nicht von selbst ab. Wird die Reservierung freigegeben, brechen wir ihn ab,
+ * Anders als eine Checkout-Session läuft er nicht von selbst ab. Wird die Reservation freigegeben, brechen wir ihn ab,
  * damit der Gast danach nicht mehr bezahlen kann. Ist die Zahlung schon im Gang (processing) oder durch, geht das nicht:
  * dann entscheidet der Webhook (späte Zahlung → Zimmer wieder belegen oder voll zurückerstatten, SPEC 5.4).
  */
@@ -72,7 +72,7 @@ export async function sweepIntents(now = new Date()): Promise<number> {
     if (!x.intent) continue;
     const res = await cancelOne({ id: x.id, hotelId: x.hotelId, intent: x.intent });
     if (res === "canceled") n++;
-    else if (res === "not_cancelable") await raiseAlert(`element:not-cancelable:${x.bookingId}`, "Zahlung läuft trotz abgelaufener Reservierung", `Buchung ${x.bookingId}: Der PaymentIntent ${x.intent} lässt sich nicht abbrechen (im Gang oder bezahlt). Bitte prüfen, ob die Zahlung zurückerstattet werden muss.`, now, 864e5);
+    else if (res === "not_cancelable") await raiseAlert(`element:not-cancelable:${x.bookingId}`, "Zahlung läuft trotz abgelaufener Reservation", `Buchung ${x.bookingId}: Der PaymentIntent ${x.intent} lässt sich nicht abbrechen (im Gang oder bezahlt). Bitte prüfen, ob die Zahlung zurückerstattet werden muss.`, now, 864e5);
   }
   return n;
 }
@@ -82,7 +82,7 @@ export type ResumeInfo =
   | { state: "paid" | "processing" }
   | { state: "gone" };
 
-/** Offene Zahlung einer Reservierung für «Zahlung fortsetzen» (Seite neu geladen, TWINT abgebrochen, Karte abgelehnt) */
+/** Offene Zahlung einer Reservation für «Zahlung fortsetzen» (Seite neu geladen, TWINT abgebrochen, Karte abgelehnt) */
 export async function resumeIntent(hotel: Hotel, bookingId: string): Promise<ResumeInfo> {
   if (!hotel.stripeAccountId) return { state: "gone" };
   const [p] = await db()

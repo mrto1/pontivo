@@ -164,7 +164,7 @@ export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
 
 /**
  * Schritte für reine Restaurants (SPEC 20.1, Selbst-Onboarding Konzept 7a): feste Reihenfolge, Reservation geht vor allem anderen live.
- * Es gibt keinen Schritt «Online gehen»: «Reservation live schalten» stellt Website und Reservierung zugleich online. Stripe blockiert nur Zahlungen.
+ * Es gibt keinen Schritt «Online gehen»: «Reservation live schalten» stellt Website und Reservation zugleich online. Stripe blockiert nur Zahlungen.
  */
 async function restaurantSteps(hotel: Hotel): Promise<Step[]> {
   const [tables, items, cfg] = await Promise.all([
@@ -227,7 +227,7 @@ export async function diningChecklist(hotel: Hotel): Promise<CheckItem[]> {
   list.push({
     key: "zahlungen", title: "Zahlungen (Stripe)", done: stripe, href: resto ? `${base}/einrichten?step=zahlungen` : `${base}/zahlungen`, wait: !stripe && !!hotel.stripeAccountId,
     hint: stripe ? undefined : hotel.stripeAccountId
-      ? "In Prüfung bei Stripe, meist 1–2 Werktage. Pontivo kann das nicht beschleunigen. Bis dahin ohne Anzahlung; Reservierungen laufen normal."
+      ? "In Prüfung bei Stripe, meist 1–2 Werktage. Pontivo kann das nicht beschleunigen. Bis dahin ohne Anzahlung; Reservationen laufen normal."
       : "Nötig für Anzahlungen und später die Online-Bestellung. Alles andere läuft schon ohne.",
   });
   // Online-Bestellung (SPEC 20.4): freiwillig, schaltet erst nach Speisekarte, Stripe und Probebestellung live

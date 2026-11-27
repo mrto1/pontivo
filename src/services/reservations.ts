@@ -16,7 +16,7 @@ import { PosError, addLines, createDevice, openOrder, pay } from "./pos";
 import { priceCart, type CartLine } from "./online-orders";
 import { posDevices, type OnlineOrderItem } from "../db/schema";
 
-/** Tischreservierungen, intern und online (SPEC 19.49 Etappe C). Jede Abfrage nach hotel_id. */
+/** Tischreservationen, intern und online (SPEC 19.49 Etappe C). Jede Abfrage nach hotel_id. */
 const clean = (v: string, max: number) => v.replace(/\s+/g, " ").trim().slice(0, max);
 
 export const DEFAULT_SETTINGS: ResSettings = {
@@ -24,7 +24,7 @@ export const DEFAULT_SETTINGS: ResSettings = {
   depositPerPersonRappen: 0, depositFromParty: 1, cancelHours: 24, reminderHours: 24, autoAssign: true,
 };
 
-/** Online-Reservierung für Gäste möglich? (Modul «restaurant» an und Online-Reservierung eingeschaltet, SPEC 20.2) */
+/** Online-Reservation für Gäste möglich? (Modul «restaurant» an und Online-Reservation eingeschaltet, SPEC 20.2) */
 export async function tableReservationOnline(hotelId: string): Promise<boolean> {
   const [m] = rows<{ on: boolean }>(await db().execute(sql`SELECT enabled AS on FROM hotel_modules WHERE hotel_id = ${hotelId} AND module = 'restaurant'`));
   return !!m?.on && (await getSettings(hotelId)).onlineEnabled;
@@ -65,23 +65,23 @@ export async function saveOpeningHours(hotelId: string, h: Record<string, { from
   });
 }
 
-/** Online-Reservierungen, die heute eingegangen sind (Punkt am Umschalter, SPEC 20.1) */
+/** Online-Reservationen, die heute eingegangen sind (Punkt am Umschalter, SPEC 20.1) */
 export async function onlineReservationsToday(hotel: Hotel): Promise<number> {
   const start = zonedToUtc(todayIn(hotel.timezone), "00:00", hotel.timezone);
   const [r] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM pos_reservations WHERE hotel_id = ${hotel.id} AND source = 'online' AND status IN ('confirmed','pending') AND created_at >= ${start}`));
   return r?.n ?? 0;
 }
 
-/** Mitteilung «Neue Reservierung» (nur Online-Reservierungen; ohne Namen, die Mitteilung erscheint auf dem Sperrbildschirm) */
+/** Mitteilung «Neue Reservation» (nur Online-Reservationen; ohne Namen, die Mitteilung erscheint auf dem Sperrbildschirm) */
 async function pushNewReservation(ex: Parameters<typeof enqueuePush>[0], hotelId: string, r: PosReservation) {
   if (r.source !== "online") return;
-  await enqueuePush(ex, hotelId, `reservation:${r.id}`, { title: "Neue Reservierung", body: `${r.day} ${r.time} · ${r.party} ${r.party === 1 ? "Person" : "Personen"}`, url: `/admin/${hotelId}/restaurant/reservierungen`, kind: "reservations" });
+  await enqueuePush(ex, hotelId, `reservation:${r.id}`, { title: "Neue Reservation", body: `${r.day} ${r.time} · ${r.party} ${r.party === 1 ? "Person" : "Personen"}`, url: `/admin/${hotelId}/restaurant/reservierungen`, kind: "reservations" });
 }
 
 export const reservationsOfDay = (hotelId: string, day: string) =>
   db().select().from(posReservations).where(and(eq(posReservations.hotelId, hotelId), eq(posReservations.day, day))).orderBy(asc(posReservations.time), asc(posReservations.createdAt));
 
-/** Reservierungen im Zeitraum */
+/** Reservationen im Zeitraum */
 export const reservationsBetween = (hotelId: string, from: string, to: string) =>
   db().select().from(posReservations).where(and(eq(posReservations.hotelId, hotelId), gte(posReservations.day, from), lte(posReservations.day, to))).orderBy(asc(posReservations.day), asc(posReservations.time));
 
@@ -90,14 +90,14 @@ function nowIn(hotel: Hotel) {
   return { day: todayIn(hotel.timezone, d), minutes: Number(formatInTimeZone(d, hotel.timezone, "H")) * 60 + Number(formatInTimeZone(d, hotel.timezone, "m")) };
 }
 
-/** Öffentliche Adresse einer Reservierung (eigene Domain im Betrieb, sonst Vorschau unter /h/<slug>) */
+/** Öffentliche Adresse einer Reservation (eigene Domain im Betrieb, sonst Vorschau unter /h/<slug>) */
 export function reservationUrl(hotel: Hotel, locale: string, token: string): string {
   const own = Boolean(hotel.primaryDomain) && env().NODE_ENV === "production" && !env().ENVIRONMENT_LABEL;
   return `${own ? `https://${hotel.primaryDomain}` : `${env().APP_BASE_URL}/h/${hotel.slug}`}/${locale}/tisch/${token}`;
 }
 
 /** Freie Zeiten für Gäste an einem Tag */
-/** Online buchbare Tische; `restricted` = der Betrieb hat Tische oder Räume ausgenommen (dann braucht jede Online-Reservierung einen solchen Tisch) */
+/** Online buchbare Tische; `restricted` = der Betrieb hat Tische oder Räume ausgenommen (dann braucht jede Online-Reservation einen solchen Tisch) */
 async function onlineTableSet(hotelId: string) {
   const all = await db().select().from(posTables).where(and(eq(posTables.hotelId, hotelId), eq(posTables.active, true))).orderBy(asc(posTables.sortOrder), asc(posTables.name));
   const offAreas = new Set((await db().select({ id: posAreas.id }).from(posAreas).where(and(eq(posAreas.hotelId, hotelId), eq(posAreas.online, false)))).map((a) => a.id));
@@ -119,7 +119,7 @@ export type ReservationInput = { day: string; time: string; party: number; name:
 export type Created = { reservation: PosReservation; /** nur bei Anzahlung: Zahlungsseite, auf die der Gast weitergeleitet wird */ checkoutUrl: string | null };
 
 /**
- * Reservierung anlegen. `online`: Zeitfenster, Vorlauf, Kapazität und Gruppengrösse gelten; intern darf der Betrieb überbuchen.
+ * Reservation anlegen. `online`: Zeitfenster, Vorlauf, Kapazität und Gruppengrösse gelten; intern darf der Betrieb überbuchen.
  * Online mit Anzahlung: Status «pending» (hält die Plätze 35 Minuten), bestätigt wird erst nach der Zahlung. Ohne Tisch wird bei «autoAssign» der passende gewählt.
  */
 export async function createReservation(hotel: Hotel, i: ReservationInput, source: "admin" | "online", actor: string): Promise<Created> {
@@ -133,7 +133,7 @@ export async function createReservation(hotel: Hotel, i: ReservationInput, sourc
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new PosError("E-Mail-Adresse ungültig.");
   if (source === "online" && !email && !phone) throw new PosError("Bitte E-Mail oder Telefon angeben.");
   const s = await getSettings(hotel.id);
-  // Anzahlung erst, wenn Stripe Zahlungen freigegeben hat (Konzept 7a: Prüfung blockiert nur Zahlungen, nicht die Reservierung)
+  // Anzahlung erst, wenn Stripe Zahlungen freigegeben hat (Konzept 7a: Prüfung blockiert nur Zahlungen, nicht die Reservation)
   const stripeOk = env().PAYMENT_PROVIDER !== "stripe" || !!(hotel.stripeAccountId && hotel.stripeChargesEnabled);
   // Vorbestellung (SPEC 19.57): wird ganz vorab bezahlt und ersetzt die Anzahlung (ASSUMPTION: Summe der Vorbestellung = Anzahlung)
   const pre = (i.preorder ?? []).filter((l) => l.quantity > 0);
@@ -157,7 +157,7 @@ export async function createReservation(hotel: Hotel, i: ReservationInput, sourc
     if (source === "online") {
       const now = nowIn(hotel);
       const slot = onlineSlots(s, i.day, i.party, existing, now, diffDays(now.day, i.day)).find((x) => x.time === i.time);
-      if (!s.onlineEnabled || !(await tableReservationOnline(hotel.id))) throw new PosError("Online-Reservierung ist nicht aktiv.");
+      if (!s.onlineEnabled || !(await tableReservationOnline(hotel.id))) throw new PosError("Online-Reservation ist nicht aktiv.");
       if (i.party > s.maxParty) throw new PosError(`Für Gruppen ab ${s.maxParty + 1} Personen bitte anrufen.`);
       if (!slot || !slot.ok) throw new PosError("Diese Zeit ist leider nicht mehr frei. Bitte eine andere wählen.");
     }
@@ -187,13 +187,13 @@ export async function createReservation(hotel: Hotel, i: ReservationInput, sourc
     return row;
   });
   if (!deposit) return { reservation: r, checkoutUrl: null };
-  // Zahlungsseite ausserhalb der Transaktion; schlägt sie fehl, wird die Reservierung wieder freigegeben
+  // Zahlungsseite ausserhalb der Transaktion; schlägt sie fehl, wird die Reservation wieder freigegeben
   try {
     const provider = await getPaymentProvider();
     const lang = isLocale(r.language) ? r.language : "de";
     const back = reservationUrl(hotel, lang, token);
     const co = await provider.createPaymentCheckout({
-      hotel, amountRappen: deposit, feeRappen: 0, email, lang, description: `${hotel.name} – ${preTotal > 0 ? "Vorbestellung" : `${i.party} × Tischreservierung`} ${i.day} ${i.time}`.slice(0, 250),
+      hotel, amountRappen: deposit, feeRappen: 0, email, lang, description: `${hotel.name} – ${preTotal > 0 ? "Vorbestellung" : `${i.party} × Tischreservation`} ${i.day} ${i.time}`.slice(0, 250),
       successUrl: `${back}?new=1`, cancelUrl: `${back}`, metadata: { reservation_id: r.id }, reference: r.id.slice(0, 8), idempotencyKey: `table-${r.id}`,
     });
     await db().update(posReservations).set({ stripeSessionId: co.sessionId }).where(eq(posReservations.id, r.id));
@@ -215,7 +215,7 @@ async function sendConfirmation(ex: Ex, hotel: Hotel, r: PosReservation) {
   await enqueueEmail(ex, { hotelId: hotel.id, template: "table_reserved", to: r.email, language: r.language, data: { name: r.name, day: r.day, time: r.time, party: r.party, token: r.publicToken, reservationId: r.id, depositRappen: r.depositStatus === "paid" ? r.depositRappen : 0 } });
 }
 
-/** Zahlung der Anzahlung bestätigt (Webhook oder Fake): Reservierung gilt, Mail geht raus. Kam die Zahlung zu spät, wird zurückerstattet. Wiederholung unschädlich. */
+/** Zahlung der Anzahlung bestätigt (Webhook oder Fake): Reservation gilt, Mail geht raus. Kam die Zahlung zu spät, wird zurückerstattet. Wiederholung unschädlich. */
 export async function markReservationPaid(id: string, p: { sessionId: string | null; paymentIntentId: string | null }): Promise<void> {
   const late = await db().transaction(async (tx) => {
     const [r] = await tx.select().from(posReservations).where(eq(posReservations.id, id)).for("update");
@@ -235,7 +235,7 @@ export async function markReservationPaid(id: string, p: { sessionId: string | n
   }
 }
 
-/** Zahlungsseite abgelaufen oder gescheitert: nicht bezahlte Reservierung freigeben */
+/** Zahlungsseite abgelaufen oder gescheitert: nicht bezahlte Reservation freigeben */
 export async function cancelUnpaid(id: string): Promise<void> {
   const [r] = await db().update(posReservations).set({ status: "cancelled", depositStatus: "none" }).where(and(eq(posReservations.id, id), eq(posReservations.status, "pending"))).returning();
   if (r) {
@@ -269,7 +269,7 @@ export async function reservationForSession(sessionId: string): Promise<PosReser
 /** Gast storniert über seinen Link. Anzahlung kommt zurück, wenn bis `cancelHours` vor Beginn storniert wird; später bleibt sie beim Betrieb. */
 export async function cancelByToken(token: string): Promise<{ reservation: PosReservation; refunded: boolean }> {
   const [r] = await db().update(posReservations).set({ status: "cancelled" }).where(and(eq(posReservations.publicToken, token), eq(posReservations.status, "confirmed"))).returning();
-  if (!r) throw new PosError("Diese Reservierung kann nicht mehr storniert werden.");
+  if (!r) throw new PosError("Diese Reservation kann nicht mehr storniert werden.");
   await audit(db(), { hotelId: r.hotelId, actor: "guest", action: "reservation.cancel", entity: "pos_reservation", entityId: r.id });
   let refunded = false;
   if (r.depositStatus === "paid") {
@@ -284,7 +284,7 @@ export async function cancelByToken(token: string): Promise<{ reservation: PosRe
 /** Betrieb setzt den Status. Storniert der Betrieb, kommt die Anzahlung immer zurück; «nicht erschienen» behält sie. */
 export async function setReservationStatus(hotelId: string, id: string, status: "confirmed" | "seated" | "cancelled" | "noshow", actor: string) {
   const [r] = await db().update(posReservations).set({ status }).where(and(eq(posReservations.id, id), eq(posReservations.hotelId, hotelId), ne(posReservations.status, "pending"))).returning();
-  if (!r) throw new PosError("Reservierung nicht gefunden.");
+  if (!r) throw new PosError("Reservation nicht gefunden.");
   await audit(db(), { hotelId, actor, action: "reservation.status", entity: "pos_reservation", entityId: id, details: { status } });
   if (status === "seated") await seatPreorder(hotelId, r, actor);
   if (status === "cancelled") {
@@ -301,7 +301,7 @@ export async function assignTable(hotelId: string, id: string, tableId: string |
 /** Einen oder mehrere (zusammengelegte) Tische zuweisen, der erste ist der Haupttisch; leer = lösen. Alle müssen zur Zeit frei sein. */
 export async function assignTables(hotelId: string, id: string, tableIds: string[], actor: string) {
   const [r] = await db().select().from(posReservations).where(and(eq(posReservations.id, id), eq(posReservations.hotelId, hotelId)));
-  if (!r) throw new PosError("Reservierung nicht gefunden.");
+  if (!r) throw new PosError("Reservation nicht gefunden.");
   const ids = [...new Set(tableIds)];
   if (ids.length > 4) throw new PosError("Höchstens 4 Tische zusammenlegen.");
   if (ids.length) {
@@ -351,7 +351,7 @@ export async function joinWaitlist(hotel: Hotel, i: { day: string; party: number
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new PosError("E-Mail-Adresse ungültig.");
   if (!isDay(i.day) || !Number.isInteger(i.party) || i.party < 1 || i.party > 50) throw new PosError("Angaben ungültig.");
   const s = await getSettings(hotel.id);
-  if (!s.onlineEnabled) throw new PosError("Online-Reservierung ist nicht aktiv.");
+  if (!s.onlineEnabled) throw new PosError("Online-Reservation ist nicht aktiv.");
   const today = todayIn(hotel.timezone);
   if (i.day < today || diffDays(today, i.day) > s.horizonDays) throw new PosError("Datum ungültig.");
   const open = await db().select({ id: posWaitlist.id }).from(posWaitlist).where(and(eq(posWaitlist.hotelId, hotel.id), eq(posWaitlist.day, i.day), eq(posWaitlist.email, email), isNull(posWaitlist.notifiedAt)));
@@ -382,7 +382,7 @@ export async function notifyWaitlist(hotelId: string, day: string): Promise<numb
 
 // ---------------------------------------------------------------- Job: Erinnerung, Wartelisten, unbezahlte freigeben
 
-/** Läuft alle 5 Minuten: unbezahlte Reservierungen freigeben, Wartelisten prüfen, Erinnerungen senden */
+/** Läuft alle 5 Minuten: unbezahlte Reservationen freigeben, Wartelisten prüfen, Erinnerungen senden */
 export async function tableJob(now = new Date()): Promise<{ released: number; waitlist: number; reminders: number }> {
   const stale = rows<{ id: string }>(await db().execute(sql`
     SELECT id FROM pos_reservations WHERE status = 'pending' AND created_at < ${new Date(now.getTime() - PENDING_MINUTES * 60_000)}`));
@@ -436,7 +436,7 @@ export async function kitchenLead(now = new Date()): Promise<number> {
 
 /**
  * Gast wird platziert: die bezahlte Vorbestellung wird zur Bestellung am Tisch (Küche sieht sie) und der Betrag als Bon gebucht
- * (Zahlart Karte, Gerät «RSV»). Einmalig je Reservierung. Ohne Tisch bleibt die Vorbestellung in der Liste, bis ein Tisch zugewiesen ist.
+ * (Zahlart Karte, Gerät «RSV»). Einmalig je Reservation. Ohne Tisch bleibt die Vorbestellung in der Liste, bis ein Tisch zugewiesen ist.
  */
 async function seatPreorder(hotelId: string, r: PosReservation, actor: string): Promise<void> {
   if (!r.preorder?.length || r.depositStatus !== "paid" || r.preorderOrderId || !r.tableId) return;

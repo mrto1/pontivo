@@ -7,9 +7,9 @@ import { audit } from "./audit";
 import { getSettings } from "./reservations";
 
 /**
- * Halbpension mit Tisch (SPEC 19.62): Für jede Nacht eines bestätigten Aufenthalts mit Halb- oder Vollpension (Tarif) gibt es eine Reservierung
+ * Halbpension mit Tisch (SPEC 19.62): Für jede Nacht eines bestätigten Aufenthalts mit Halb- oder Vollpension (Tarif) gibt es eine Reservation
  * zur Abendessenszeit, Personen = Erwachsene + Kinder der Zimmer. Eindeutig je (Buchung, Tag); der Abgleich legt fehlende an,
- * passt Personen und Zimmer an und storniert Reservierungen, deren Nacht nicht mehr zutrifft (Storno, kürzerer Aufenthalt, anderer Tarif), solange der Gast nicht sitzt.
+ * passt Personen und Zimmer an und storniert Reservationen, deren Nacht nicht mehr zutrifft (Storno, kürzerer Aufenthalt, anderer Tarif), solange der Gast nicht sitzt.
  */
 export type HalfboardStay = { bookingId: string; name: string; phone: string; party: number; rooms: string };
 

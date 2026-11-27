@@ -151,7 +151,7 @@ export async function redeemVoucher(hotel: Hotel, code: string, amountRappen: nu
 type Tx = Parameters<Parameters<ReturnType<typeof db>["transaction"]>[0]>[0];
 
 /**
- * Gutschein für eine Reservierung sperren und anrechnen (in der Hold-Transaktion).
+ * Gutschein für eine Reservation sperren und anrechnen (in der Hold-Transaktion).
  * Angerechnet wird höchstens der Restwert. Gültig ist der Gutschein, wenn er am Buchungstag nicht abgelaufen ist.
  */
 export async function takeVoucherForBooking(tx: Tx, hotel: Hotel, code: string, totalRappen: number, today: string): Promise<{ voucher: Voucher; amountRappen: number }> {
@@ -169,7 +169,7 @@ export async function chargeVoucher(tx: Tx, v: { id: string; hotelId: string }, 
   await tx.insert(voucherRedemptions).values({ voucherId: v.id, hotelId: v.hotelId, bookingId, amountRappen, note, actor });
 }
 
-/** Betrag wieder auf den Gutschein gutschreiben (Reservierung abgelaufen, Buchung storniert) */
+/** Betrag wieder auf den Gutschein gutschreiben (Reservation abgelaufen, Buchung storniert) */
 export async function creditVoucher(tx: Tx, voucherId: string, hotelId: string, bookingId: string, amountRappen: number, note: string, actor: string) {
   if (amountRappen <= 0) return;
   await tx.execute(sql`UPDATE vouchers SET remaining_rappen = LEAST(amount_rappen, remaining_rappen + ${amountRappen}) WHERE id = ${voucherId}`);

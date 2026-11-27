@@ -6,7 +6,7 @@ import { enqueueEmail } from "../email/enqueue";
 import { env } from "../env";
 
 /**
- * Überwachung: Lebenszeichen des Workers, Rückstau bei E-Mail und Channex, hängende Reservierungen, Speicherplatz.
+ * Überwachung: Lebenszeichen des Workers, Rückstau bei E-Mail und Channex, hängende Reservationen, Speicherplatz.
  * `checkSystem` liefert die Probleme (für /api/health?deep=1), `runWatchdog` schickt Alarm-Mails (höchstens alle 6 Stunden pro Problem).
  */
 
@@ -46,7 +46,7 @@ export async function checkSystem(opts: { includeWorker: boolean; now?: Date; di
   const [c] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM channex_outbox WHERE status = 'pending' AND next_attempt_at < ${cut}::timestamptz`));
   if (c.n > 0) problems.push({ name: "channex_backlog", detail: `${c.n} Channex-Meldung(en) warten seit über 30 Minuten` });
   const [h] = rows<{ n: number }>(await db().execute(sql`SELECT count(*)::int AS n FROM bookings WHERE status = 'hold' AND hold_expires_at < ${cut}::timestamptz`));
-  if (h.n > 0) problems.push({ name: "stuck_holds", detail: `${h.n} Reservierung(en) sind seit über 30 Minuten abgelaufen und noch nicht freigegeben (Worker prüfen)` });
+  if (h.n > 0) problems.push({ name: "stuck_holds", detail: `${h.n} Reservation(en) sind seit über 30 Minuten abgelaufen und noch nicht freigegeben (Worker prüfen)` });
   const free = opts.diskRatio === undefined ? diskFreeRatio() : opts.diskRatio;
   if (free !== null && free < MIN_FREE_DISK) problems.push({ name: "disk", detail: `Nur noch ${(free * 100).toFixed(1)} % Speicherplatz frei` });
   return problems;

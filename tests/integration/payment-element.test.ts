@@ -138,7 +138,7 @@ describe("Payment Element (SPEC 19.52)", () => {
     expect((await db().select().from(bookings).where(eq(bookings.id, b.id)))[0].status).toBe("hold");
   });
 
-  it("abgelehnter Versuch (payment_failed) gibt die Reservierung NICHT frei", async () => {
+  it("abgelehnter Versuch (payment_failed) gibt die Reservation NICHT frei", async () => {
     const h = await stripeHotel();
     await web(h, inDays(35));
     const b = await bookingOf(h);
@@ -146,7 +146,7 @@ describe("Payment Element (SPEC 19.52)", () => {
     expect((await db().select().from(bookings).where(eq(bookings.id, b.id)))[0].status).toBe("hold");
   });
 
-  it("payment_intent.canceled gibt die Reservierung frei", async () => {
+  it("payment_intent.canceled gibt die Reservation frei", async () => {
     const h = await stripeHotel();
     await web(h, inDays(36));
     const b = await bookingOf(h);
@@ -155,7 +155,7 @@ describe("Payment Element (SPEC 19.52)", () => {
     for (let i = 0; i < 2; i++) expect((await inv(h.rooms[0].roomType.id, addDays(b.checkin, i))).booked).toBe(0);
   });
 
-  it("Ablauf der Reservierung bricht den PaymentIntent ab", async () => {
+  it("Ablauf der Reservation bricht den PaymentIntent ab", async () => {
     const h = await stripeHotel();
     await web(h, inDays(37));
     const b = await bookingOf(h);
@@ -166,7 +166,7 @@ describe("Payment Element (SPEC 19.52)", () => {
     expect((await paymentOf(b.id)).status).toBe("failed");
   });
 
-  it("Abbruch scheitert (Stripe nicht erreichbar): Reservierung wird trotzdem frei, der Job holt den Abbruch nach", async () => {
+  it("Abbruch scheitert (Stripe nicht erreichbar): Reservation wird trotzdem frei, der Job holt den Abbruch nach", async () => {
     const h = await stripeHotel();
     await web(h, inDays(38));
     const b = await bookingOf(h);
@@ -222,7 +222,7 @@ describe("Payment Element (SPEC 19.52)", () => {
     expect((await (await payRes(b.publicToken)).json()).state).toBe("gone");
   });
 
-  it("«Zahlung fortsetzen»: Stripe nicht erreichbar → Fehlerantwort, Reservierung bleibt", async () => {
+  it("«Zahlung fortsetzen»: Stripe nicht erreichbar → Fehlerantwort, Reservation bleibt", async () => {
     const h = await stripeHotel();
     await web(h, inDays(43));
     const b = await bookingOf(h);
@@ -244,7 +244,7 @@ describe("Payment Element (SPEC 19.52)", () => {
     expect(r.issues).toBeGreaterThanOrEqual(1);
   });
 
-  it("Stripe lehnt die Anlage ab: Reservierung wird freigegeben, Fehler 502", async () => {
+  it("Stripe lehnt die Anlage ab: Reservation wird freigegeben, Fehler 502", async () => {
     const h = await stripeHotel();
     const orig = stripe.paymentIntents.create;
     stripe.paymentIntents.create = vi.fn(async () => { throw new Error("Stripe down"); }) as never;

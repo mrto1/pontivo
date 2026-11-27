@@ -12,7 +12,7 @@ export type DirectSettings = {
   benefits?: { enabled?: boolean; items?: Benefit[] };
   /** Lückenfüller: ein Aufenthalt, der eine kurze Lücke genau füllt, darf den Mindestaufenthalt unterschreiten und kann günstiger sein */
   gaps?: { enabled?: boolean; maxNights?: number; discountBps?: number; relaxMinStay?: boolean };
-  /** Abbruch-Mail: einmalige Erinnerung nach einer nicht bezahlten Reservierung (Standard aus) */
+  /** Abbruch-Mail: einmalige Erinnerung nach einer nicht bezahlten Reservation (Standard aus) */
   recovery?: { enabled?: boolean };
   /** Warteliste bei Ausgebucht (Standard an) */
   waitlist?: { enabled?: boolean };
@@ -157,6 +157,6 @@ export function codeUsable(c: { active: boolean; validFrom: Day | null; validUnt
 
 // ---------------------------------------------------------------- Abbruch-Mail
 
-/** Reservierung abgelaufen vor mindestens 30 Minuten und höchstens 24 Stunden: Zeit für die einmalige Erinnerung */
+/** Reservation abgelaufen vor mindestens 30 Minuten und höchstens 24 Stunden: Zeit für die einmalige Erinnerung */
 export const RECOVERY_AFTER_MIN = 30;
 export const RECOVERY_WITHIN_HOURS = 24;

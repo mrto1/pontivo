@@ -126,7 +126,7 @@ export default async function Overview({ params, searchParams }: { params: Promi
         {showPlan ? <a className="btn secondary small" href={`${base}/plan`}>Zimmerplan</a> : null}
       </PeriodNav>
       <p className="day-line">{isToday ? "Heute, " : ""}{formatDay(v.day, "de")}</p>
-      {dining ? <a className="notice" href={`${base}/restaurant/heute`} style={{ display: "block", textDecoration: "none", color: "inherit" }} data-testid="dining-hint">{dining.label} heute: {dining.n} Reservierungen, {dining.guests} Gäste <strong>→</strong></a> : null}
+      {dining ? <a className="notice" href={`${base}/restaurant/heute`} style={{ display: "block", textDecoration: "none", color: "inherit" }} data-testid="dining-hint">{dining.label} heute: {dining.n} Reservationen, {dining.guests} Gäste <strong>→</strong></a> : null}
 
       {v.notices.length ? (
         <section className="stack" aria-label="Hinweise">

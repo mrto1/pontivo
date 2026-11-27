@@ -34,7 +34,7 @@ export const CONFIGURABLE_AREAS: { key: string; label: string; group: string }[]
   { group: "Heute", key: "housekeeping", label: "Reinigung" },
   { group: "Heute", key: "inbox", label: "Posteingang" },
   { group: "Restaurant", key: "dininghome", label: "Tagesübersicht" },
-  { group: "Restaurant", key: "reservations", label: "Reservierungen" },
+  { group: "Restaurant", key: "reservations", label: "Reservationen" },
   { group: "Restaurant", key: "resplan", label: "Tischplan" },
   { group: "Restaurant", key: "waitlist", label: "Warteliste" },
   { group: "Restaurant", key: "restaurant", label: "Bestellen am Tisch (Kasse)" },

@@ -4,7 +4,7 @@ import { checkWindows, coversAt, depositFor, onlineSlots, refundable, slotTimes,
 const S: ResSettings = { onlineEnabled: true, windows: [{ from: "18:00", to: "20:00" }], durationMin: 90, maxParty: 6, capacity: 10, leadHours: 2, horizonDays: 30, depositPerPersonRappen: 0, depositFromParty: 1, cancelHours: 24, reminderHours: 24, autoAssign: true };
 const now = { day: "2026-11-21", minutes: 16 * 60 };
 
-describe("Reservierungen (SPEC 19.49 C)", () => {
+describe("Reservationen (SPEC 19.49 C)", () => {
   it("Zeitfenster prüfen", () => {
     expect(checkWindows([{ from: "11:30", to: "13:30" }, { from: "18:00", to: "21:00" }])).toBeNull();
     expect(checkWindows([])).toMatch(/Mindestens/);
@@ -15,7 +15,7 @@ describe("Reservierungen (SPEC 19.49 C)", () => {
   it("Beginnzeiten im 30-Minuten-Raster inklusive Fensterende", () => {
     expect(slotTimes([{ from: "18:00", to: "20:00" }])).toEqual(["18:00", "18:30", "19:00", "19:30", "20:00"]);
   });
-  it("Gäste überlappender Reservierungen, Storno zählt nicht", () => {
+  it("Gäste überlappender Reservationen, Storno zählt nicht", () => {
     const ex = [{ time: "18:00", party: 4, tableId: null, status: "confirmed" }, { time: "19:00", party: 3, tableId: null, status: "cancelled" }, { time: "19:30", party: 2, tableId: null, status: "seated" }];
     expect(coversAt(ex, "18:00", 90)).toBe(4); // 19:30 beginnt erst nach 19:30 = Ende 18:00+90
     expect(coversAt(ex, "19:00", 90)).toBe(6);
@@ -48,7 +48,7 @@ describe("Reservierungen (SPEC 19.49 C)", () => {
     expect(refundable(S, start, new Date("2026-11-30T17:59:00Z"))).toBe(true);
     expect(refundable(S, start, new Date("2026-11-30T18:01:00Z"))).toBe(false);
   });
-  it("nicht bezahlte Reservierung hält nur kurz Plätze", () => {
+  it("nicht bezahlte Reservation hält nur kurz Plätze", () => {
     const fresh = { time: "18:00", party: 4, tableId: null, status: "pending", createdAt: new Date() };
     const stale = { ...fresh, createdAt: new Date(Date.now() - 40 * 60_000) };
     expect(coversAt([fresh], "18:00", 90)).toBe(4);

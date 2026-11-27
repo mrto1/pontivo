@@ -6,19 +6,19 @@ import type { PlanArea, PlanItemView, PlanRes, PlanTable, PlanWaiter } from "./f
 /**
  * Grafischer Tischplan (Anzeige, SPEC 19.53/20.1). Ein Raum pro Plan, oben Tabs zum Umschalten (Hauptsaal, Terrasse …).
  * Stühle um die Tische in Statusfarben (grün frei, orange bald/reserviert, rot besetzt), Orientierungselemente (WC, Bar …),
- * daneben die Reservierungen des Tages; Antippen eines Tisches oder einer Reservierung wählt beides. Bearbeiten: TableEditor.
+ * daneben die Reservationen des Tages; Antippen eines Tisches oder einer Reservation wählt beides. Bearbeiten: TableEditor.
  */
-export function FloorPlan({ tables: tablesIn, areas = [], items = [], reservations = [], resLabel = "Reservierungen", waiters = [], clock, openOrder }: { tables: PlanTable[]; areas?: PlanArea[]; items?: PlanItemView[]; reservations?: PlanRes[]; resLabel?: string; waiters?: PlanWaiter[]; clock?: { time: string; durationMin: number }; /** Kasse: Bestellung am Tisch eröffnen (Server Action) */ openOrder?: { action: (f: FormData) => Promise<void>; hotelId: string } }) {
+export function FloorPlan({ tables: tablesIn, areas = [], items = [], reservations = [], resLabel = "Reservationen", waiters = [], clock, openOrder }: { tables: PlanTable[]; areas?: PlanArea[]; items?: PlanItemView[]; reservations?: PlanRes[]; resLabel?: string; waiters?: PlanWaiter[]; clock?: { time: string; durationMin: number }; /** Kasse: Bestellung am Tisch eröffnen (Server Action) */ openOrder?: { action: (f: FormData) => Promise<void>; hotelId: string } }) {
   const [at, setAt] = useState(clock?.time ?? "19:00");
   const [wf, setWf] = useState("");
   const wmap = new Map(waiters.map((w) => [w.id, w]));
-  // Mit Zeitregler: Zustand, Kurzinfo und Einzelheiten je Tisch aus den Reservierungen zur gewählten Zeit
+  // Mit Zeitregler: Zustand, Kurzinfo und Einzelheiten je Tisch aus den Reservationen zur gewählten Zeit
   const tables = clock ? tablesIn.map((t) => {
     const v = tableView(t.id, reservations.map((r) => ({ ...r, status: r.status as ResView["status"] })), at, clock.durationMin);
     const busy = !!t.busy || v.state === "seated";
     const detail = [...(t.extra ?? [])];
     if (v.cur) detail.push(`${v.cur.status === "seated" ? "Am Tisch" : "Reserviert"}: ${v.cur.name}, ${v.cur.party} Pers., ${v.cur.time} bis ${v.endCur}`);
-    if (v.next) detail.push(`${v.cur ? "Danach" : "Nächste"} Reservierung: ${v.next.time} ${v.next.name}, ${v.next.party} Pers.`);
+    if (v.next) detail.push(`${v.cur ? "Danach" : "Nächste"} Reservation: ${v.next.time} ${v.next.name}, ${v.next.party} Pers.`);
     if (!v.cur && !v.next && !t.extra?.length) detail.push("Frei für den Rest des Tages.");
     return { ...t, tone: busy ? "busy" as const : v.cur || v.soon ? "soon" as const : "free" as const, info: t.busy ? t.info : v.cur ? `bis ${v.endCur}` : v.next ? `frei bis ${v.next.time}` : undefined, detail };
   }) : tablesIn;

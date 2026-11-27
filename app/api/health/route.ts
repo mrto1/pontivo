@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 /**
  * Für Docker-Healthcheck und Überwachung.
  * Einfach: App läuft und erreicht die Datenbank (Docker startet den Container bei Fehler neu).
- * `?deep=1`: zusätzlich Worker-Lebenszeichen, Rückstau bei E-Mail und Channex, hängende Reservierungen, Speicherplatz.
+ * `?deep=1`: zusätzlich Worker-Lebenszeichen, Rückstau bei E-Mail und Channex, hängende Reservationen, Speicherplatz.
  * Für einen externen Uptime-Dienst (503 bei Problemen, nur Namen der Probleme, keine Details).
  */
 export async function GET(req: Request) {

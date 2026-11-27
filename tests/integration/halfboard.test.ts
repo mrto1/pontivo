@@ -25,7 +25,7 @@ async function setup(board: "half" | "none" = "half") {
 }
 
 describe("Halbpension mit Tisch (SPEC 19.62)", () => {
-  it("legt je Nacht eine Reservierung mit Tisch an, ohne Doppel, passt Personen an und storniert bei Stornierung der Buchung", async () => {
+  it("legt je Nacht eine Reservation mit Tisch an, ohne Doppel, passt Personen an und storniert bei Stornierung der Buchung", async () => {
     const { hotel, b, today } = await setup();
     expect(await syncHalfboard(hotel, today)).toEqual({ created: 1, updated: 0, cancelled: 0 });
     expect(await syncHalfboard(hotel, today)).toEqual({ created: 0, updated: 0, cancelled: 0 }); // idempotent

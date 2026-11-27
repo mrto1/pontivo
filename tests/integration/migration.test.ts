@@ -20,7 +20,7 @@ const count = async (hotelId: string) => Number((await db().select({ n: sql<numb
 const booked = async (roomTypeId: string, night: string) => (await db().select().from(inventoryDays).where(and(eq(inventoryDays.roomTypeId, roomTypeId), eq(inventoryDays.night, night))))[0]?.booked ?? 0;
 
 describe("Datenübernahme (PMS-ERSATZ 2.10)", () => {
-  it("1+2: 200 Reservierungen im Trockenlauf melden Fehler, schreiben nichts; zweimal importieren = keine Dubletten", async () => {
+  it("1+2: 200 Reservationen im Trockenlauf melden Fehler, schreiben nichts; zweimal importieren = keine Dubletten", async () => {
     const { hotel, rooms } = await makeHotel({}, [{ name: "Doppelzimmer", roomCount: 300, maxAdults: 2, maxChildren: 2, maxOccupancy: 4, basePriceRappen: 18000 }]);
     const rt = rooms[0].roomType.id;
     const lines = Array.from({ length: 200 }, (_, i) => line(`A-${i}`, 10 + (i % 50), 2));

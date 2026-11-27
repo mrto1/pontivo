@@ -48,7 +48,7 @@ describe("initials und tableView", () => {
     { id: "a", tableId: "t1", time: "18:00", status: "confirmed" as const, name: "A", party: 2 },
     { id: "b", tableId: "t1", time: "20:00", status: "confirmed" as const, name: "B", party: 2 },
   ];
-  it("laufende und nächste Reservierung", () => {
+  it("laufende und nächste Reservation", () => {
     const v = tableView("t1", list, "18:30", 90);
     expect(v).toMatchObject({ state: "reserved", endCur: "19:30" });
     expect(v.next?.id).toBe("b");

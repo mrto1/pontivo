@@ -66,8 +66,8 @@ test("Küche: Posten erscheint, antippen meldet fertig", async ({ page, context,
   await expect(page.getByText("Nichts offen.")).toBeVisible();
 });
 
-/** Tischplan und Reservierung (SPEC 19.49 Etappe C): Gast reserviert online, Personal sieht es, Gast storniert */
-test("Reservierung: online buchen, Liste, Storno per Link; Plan zeigt Tisch", async ({ page, context, baseURL }) => {
+/** Tischplan und Reservation (SPEC 19.49 Etappe C): Gast reserviert online, Personal sieht es, Gast storniert */
+test("Reservation: online buchen, Liste, Storno per Link; Plan zeigt Tisch", async ({ page, context, baseURL }) => {
   const h = await makeHotel();
   await db().insert(hotelModules).values([{ hotelId: h.hotel.id, module: "invoicing", enabled: true }, { hotelId: h.hotel.id, module: "restaurant", enabled: true }, { hotelId: h.hotel.id, module: "pos", enabled: true }]).onConflictDoNothing();
   const email = `res-${Math.random().toString(36).slice(2, 8)}@example.ch`;
@@ -84,7 +84,7 @@ test("Reservierung: online buchen, Liste, Storno per Link; Plan zeigt Tisch", as
 
   // Gast: Online aus → Hinweis; dann an
   await page.goto(`/h/${h.hotel.slug}/de/tisch`);
-  await expect(page.getByText("Online-Reservierung ist hier nicht möglich")).toBeVisible();
+  await expect(page.getByText("Online-Reservation ist hier nicht möglich")).toBeVisible();
   await saveSettings(h.hotel.id, { onlineEnabled: true, windows: [{ from: "18:00", to: "20:00" }], durationMin: 90, maxParty: 6, capacity: 20, leadHours: 0, horizonDays: 30, depositPerPersonRappen: 0, depositFromParty: 1, cancelHours: 24, reminderHours: 24, autoAssign: true }, "e2e");
   await page.goto(`/h/${h.hotel.slug}/de/tisch?date=${day}&party=2`);
   const form = page.getByTestId("reserve-form");
@@ -95,7 +95,7 @@ test("Reservierung: online buchen, Liste, Storno per Link; Plan zeigt Tisch", as
   await expect(page.getByRole("heading", { name: "Ihr Tisch ist reserviert." })).toBeVisible();
   const link = page.url();
 
-  // Personal sieht die Reservierung und setzt den Tisch
+  // Personal sieht die Reservation und setzt den Tisch
   await page.goto(`/admin/${h.hotel.id}/restaurant/reservierungen?day=${day}`);
   const list = page.getByTestId("res-list");
   await expect(list.getByText("Frau Muster")).toBeVisible();
@@ -107,8 +107,8 @@ test("Reservierung: online buchen, Liste, Storno per Link; Plan zeigt Tisch", as
 
   // Gast storniert
   await page.goto(link.replace("?new=1", ""));
-  await page.getByRole("button", { name: "Reservierung stornieren" }).click();
-  await expect(page.getByRole("heading", { name: "Die Reservierung wurde storniert." })).toBeVisible();
+  await page.getByRole("button", { name: "Reservation stornieren" }).click();
+  await expect(page.getByRole("heading", { name: "Die Reservation wurde storniert." })).toBeVisible();
 });
 
 /** Ein Tischplan für Reservationen und Bestellungen (SPEC 19.64): Tisch antippen, Bestellung eröffnen; alte Adresse leitet weiter */

@@ -116,7 +116,7 @@ export default async function TablesSettingsPage({ params, searchParams }: { par
       {tables.length ? (
         <section className="card stack" id="tischplan" data-testid="table-plan">
           <h2>Plätze, Form und Plan</h2>
-          <p className="small muted">Plätze und Form je Tisch festlegen, dann die Tische im Plan an ihren Ort ziehen. Der Plan erscheint unter Reservierungen → Tischplan mit dem aktuellen Zustand; mit der Kasse eröffnen Sie dort auch Bestellungen.</p>
+          <p className="small muted">Plätze und Form je Tisch festlegen, dann die Tische im Plan an ihren Ort ziehen. Der Plan erscheint unter Reservationen → Tischplan mit dem aktuellen Zustand; mit der Kasse eröffnen Sie dort auch Bestellungen.</p>
           <TableEditor key={`${areas.length}-${tables.length}-${waiters.length}`} waiters={waiters.map((w) => ({ id: w.id, name: w.name, color: w.color }))} areas={areas.map((a) => ({ id: a.id, name: a.name }))} tables={tables.map((t) => ({ id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY, areaId: t.areaId ?? areas[0].id, waiterId: t.waiterId, online: t.online }))} items={items.filter((i) => areas.some((a) => a.id === i.areaId)).map((i) => ({ key: i.id, areaId: i.areaId, kind: i.kind, label: i.label, x: i.planX, y: i.planY, w: i.w, h: i.h }))} action={tablesSave} hotelId={hotel.id} />
         </section>
       ) : null}

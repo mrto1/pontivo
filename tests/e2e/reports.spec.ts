@@ -54,7 +54,7 @@ test("Restaurant: Zahnrad-Menü bleibt, CSV-Import Artikel und Tische", async ({
   await page.locator("#file").setInputFiles({ name: "artikel.csv", mimeType: "text/csv", buffer: Buffer.from("name;preis\nTee;abc\n") });
   await page.getByRole("button", { name: "Importieren" }).click();
   await expect(page.getByText("Nicht importiert")).toBeVisible();
-  // Tische importiert die Seite «Tischplan & Reservierung online» (SPEC 20.1)
+  // Tische importiert die Seite «Tischplan & Reservation online» (SPEC 20.1)
   await page.goto(`/admin/${h.hotel.id}/restaurant/tische`);
   await page.locator("#tfile").setInputFiles({ name: "tische.csv", mimeType: "text/csv", buffer: Buffer.from("name\n1\n2\n") });
   await page.getByRole("button", { name: "Importieren" }).click();

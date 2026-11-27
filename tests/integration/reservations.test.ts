@@ -22,7 +22,7 @@ async function setup() {
   return { hotel, day };
 }
 
-describe("Tischreservierung (SPEC 19.49 C)", () => {
+describe("Tischreservation (SPEC 19.49 C)", () => {
   it("online reservieren, Mail, Kapazität, Gruppengrösse, Storno per Link", async () => {
     const { hotel, day } = await setup();
     const r = (await createReservation(hotel, { day, time: "18:00", party: 4, name: "Meier", email: "meier@example.ch" }, "online", "guest")).reservation;
@@ -161,7 +161,7 @@ describe("Anzahlung, Warteliste, Erinnerung, Zuteilung (SPEC 19.49 C2)", () => {
     expect(mails).toHaveLength(1);
     expect((await tableJob()).reminders).toBe(0);
     expect((await reservationByToken(r.publicToken))!.reminderSentAt).not.toBeNull();
-    // alte unbezahlte Reservierung wird freigegeben
+    // alte unbezahlte Reservation wird freigegeben
     await db().update(posReservations).set({ status: "pending", depositStatus: "pending", createdAt: new Date(Date.now() - 60 * 60_000) }).where(eq(posReservations.id, r.id));
     expect((await tableJob()).released).toBeGreaterThanOrEqual(1);
     expect((await reservationByToken(r.publicToken))!.status).toBe("cancelled");

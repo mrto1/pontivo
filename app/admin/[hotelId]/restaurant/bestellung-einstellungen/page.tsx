@@ -89,7 +89,7 @@ export default async function OrderSettingsPage({ params, searchParams }: { para
           <>
             <p>Bevor Gäste bestellen können, fehlt noch:</p>
             <ul className="list">{problems.map((p) => <li key={p.key}><a href={fix[p.key]}>{p.text}</a></li>)}</ul>
-            <p className="small muted">Reservierung und Website laufen schon; die Online-Bestellung kommt dazu, sobald alles bereit ist.</p>
+            <p className="small muted">Reservation und Website laufen schon; die Online-Bestellung kommt dazu, sobald alles bereit ist.</p>
           </>
         ) : <form action={toggle} className="stack">{H}<input type="hidden" name="on" value="1" />
           {cfg.startedOn ? null : <label className="check"><input type="checkbox" name="accept" required /> Ich habe Preis und die <a href="/pilot-bedingungen" target="_blank">Pilotbedingungen der Online-Bestellung</a> gelesen und bestätige sie (Sonderangebot ab heute, danach {feePercentText(hotel.platformFeeBps)} % pro Bestellung).</label>}

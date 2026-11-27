@@ -15,7 +15,7 @@ import { cashByDriver, orderSettings, screenOrders } from "@/src/services/online
 export const dynamic = "force-dynamic";
 const STATUS = { pending: "Zahlung offen", confirmed: "erwartet", seated: "am Tisch", cancelled: "storniert", noshow: "nicht erschienen" } as const;
 
-/** Tagesübersicht der Gastronomie (SPEC 20.1): Reservierungen von heute, Warteliste, offene Tische, Hinweise */
+/** Tagesübersicht der Gastronomie (SPEC 20.1): Reservationen von heute, Warteliste, offene Tische, Hinweise */
 export default async function DiningToday({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
@@ -72,14 +72,14 @@ export default async function DiningToday({ params, searchParams }: { params: Pr
         </details>
       ) : null}
       <div className="hk-summary" aria-label="Übersicht" data-testid="dining-summary">
-        <span className="hk-stat"><b>{live.length}</b> Reservierungen</span>
+        <span className="hk-stat"><b>{live.length}</b> Reservationen</span>
         <span className="hk-stat"><b>{guests}</b> Gäste</span>
         <span className="hk-stat"><b>{expected.length}</b> noch erwartet</span>
         <span className="hk-stat"><b>{seated.length}</b> am Tisch</span>
         {wait.length ? <a className="hk-stat" href={`${base}/restaurant/warteliste`}><b>{wait.length}</b> auf der Warteliste</a> : null}
       </div>
       <section className="card stack">
-        <h2 className="m0">{isToday ? "Reservierungen heute" : "Reservierungen"}</h2>
+        <h2 className="m0">{isToday ? "Reservationen heute" : "Reservationen"}</h2>
         {live.length ? (
           <div className="scroll-x"><table className="table" data-testid="dining-today">
             <thead><tr><th>Zeit</th><th>Pers.</th><th>Gast</th><th>Tisch</th><th>Status</th></tr></thead>
@@ -87,8 +87,8 @@ export default async function DiningToday({ params, searchParams }: { params: Pr
               <tr key={r.id}><td>{r.time}</td><td>{r.party}</td><td>{r.name}{r.note ? <div className="small muted">{r.note}</div> : null}{r.preorder?.length ? <div className="small"><span className="badge">Vorbestellung</span> {r.preorder.map((l) => `${l.quantity}× ${l.description}`).join(", ")}</div> : null}</td><td>{r.tableId ? tname.get(r.tableId) ?? "–" : "–"}</td><td>{STATUS[r.status]}</td></tr>
             ))}</tbody>
           </table></div>
-        ) : <p className="muted small m0">Keine Reservierungen.</p>}
-        <p className="small m0"><Link href={`${base}/restaurant/reservierungen`}>Alle Reservierungen und neue erfassen →</Link></p>
+        ) : <p className="muted small m0">Keine Reservationen.</p>}
+        <p className="small m0"><Link href={`${base}/restaurant/reservierungen`}>Alle Reservationen und neue erfassen →</Link></p>
       </section>
       {orders ? (
         <section className="card stack" data-testid="dining-orders">

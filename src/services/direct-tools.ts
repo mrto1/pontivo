@@ -230,7 +230,7 @@ export async function waitlistJob(now = new Date()): Promise<{ notified: number;
 // ---------------------------------------------------------------- Abbruch-Mail
 
 /**
- * Job (alle 10 Minuten): Reservierungen, die abgelaufen sind, ohne dass bezahlt wurde, bekommen einmalig eine Erinnerung,
+ * Job (alle 10 Minuten): Reservationen, die abgelaufen sind, ohne dass bezahlt wurde, bekommen einmalig eine Erinnerung,
  * wenn das Hotel sie eingeschaltet hat. Nicht gesendet wird, wenn die Anreise vorbei ist, der Gast inzwischen für diese Zeit gebucht hat,
  * dieselbe Adresse in den letzten 7 Tagen schon eine solche Mail bekam oder für die Daten nichts mehr frei ist.
  */

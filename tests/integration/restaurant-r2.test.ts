@@ -19,7 +19,7 @@ async function withRestaurant(on = true) {
 }
 
 describe("R2-Rest (SPEC 20.2)", () => {
-  it("Online-Reservierung nur mit Modul restaurant, ohne Kasse", async () => {
+  it("Online-Reservation nur mit Modul restaurant, ohne Kasse", async () => {
     const day = addDays(todayIn("Europe/Zurich"), 3);
     const off = await withRestaurant(false);
     expect(await tableReservationOnline(off.id)).toBe(false);
@@ -29,15 +29,15 @@ describe("R2-Rest (SPEC 20.2)", () => {
     expect(await tableReservationOnline(on.id)).toBe(true);
     const r = await createReservation(on, { day, time: "18:00", party: 2, name: "Gast", phone: "1" }, "online", "guest");
     expect(r.reservation.status).toBe("confirmed");
-    // Mitteilung «Neue Reservierung» (Art reservations, ohne Namen); selbst erfasste Reservierungen lösen keine aus
+    // Mitteilung «Neue Reservation» (Art reservations, ohne Namen); selbst erfasste Reservationen lösen keine aus
     await createReservation(on, { day, time: "19:00", party: 2, name: "Telefon", phone: "2" }, "admin", "staff");
     const pushes = await db().select().from(pushOutbox).where(eq(pushOutbox.hotelId, on.id));
     expect(pushes.filter((p) => p.kind === "reservations")).toHaveLength(1);
-    expect(pushes.find((p) => p.kind === "reservations")).toMatchObject({ title: "Neue Reservierung", url: `/admin/${on.id}/restaurant/reservierungen` });
+    expect(pushes.find((p) => p.kind === "reservations")).toMatchObject({ title: "Neue Reservation", url: `/admin/${on.id}/restaurant/reservierungen` });
     expect(JSON.stringify(pushes)).not.toContain("Gast");
   });
 
-  it("Kartei: Besuche aus Reservierungen, Stammgast ab 3, Gäste nur aus Reservierungen, Notiz je E-Mail", async () => {
+  it("Kartei: Besuche aus Reservationen, Stammgast ab 3, Gäste nur aus Reservationen, Notiz je E-Mail", async () => {
     const h = await withRestaurant();
     const today = todayIn(h.timezone);
     for (let i = 1; i <= REGULAR_VISITS; i++) {

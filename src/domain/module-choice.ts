@@ -7,7 +7,7 @@ import { MODULES, moduleDef, type ModuleRow } from "./modules";
 export type Choice = { key: string; question: string; /** Eine Zeile Erklärung unter der Frage (für Fachbegriffe) */ hint?: string; modules: string[]; /** angekreuzt, sobald eine der Funktionen läuft (bestehende Betriebe mit nur einer davon bleiben angekreuzt) */ anyOn?: boolean };
 export const CHOICES: Choice[] = [
   { key: "staff", question: "Wir arbeiten mit Personal in Rezeption und Reinigung (Tagesliste, Zimmerplan, Reinigungsliste am Handy)", modules: ["frontdesk", "housekeeping"], anyOn: true },
-  { key: "restaurant", question: "Wir haben ein Restaurant oder Café (Tischreservierung, Speisekarte, Küche)", modules: ["restaurant"] },
+  { key: "restaurant", question: "Wir haben ein Restaurant oder Café (Tischreservation, Speisekarte, Küche)", modules: ["restaurant"] },
   { key: "pos", question: "Wir wollen die Kasse von Pontivo nutzen (Bestellen, Kassieren, aufs Zimmer; CHF 29 pro Monat)", modules: ["pos"] },
   { key: "posbridge", question: "Unsere eigene Restaurantkasse soll Posten aufs Zimmer buchen", hint: "Nur wenn Sie bereits eine andere Kasse haben und deren Rechnungen aufs Zimmer gehen sollen.", modules: ["posbridge"] },
   { key: "shop", question: "Wir verkaufen Waren (Getränke, Snacks, Minibar) oder führen ein Lager", modules: ["shop"] },

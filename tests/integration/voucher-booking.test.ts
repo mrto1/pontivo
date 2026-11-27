@@ -101,7 +101,7 @@ describe("Gutschein bei der Online-Buchung", () => {
     expect(await remaining(other.voucher.id)).toBe(10000);
   });
 
-  it("Reservierung abgelaufen → Betrag zurück auf den Gutschein; späte Zahlung zieht ihn wieder ab", async () => {
+  it("Reservation abgelaufen → Betrag zurück auf den Gutschein; späte Zahlung zieht ihn wieder ab", async () => {
     stripeLike();
     const h = await hotelWithVoucher(10000);
     const { booking } = await createDirectBooking(h.hotel, input(h, inDays(35), h.voucher.code));

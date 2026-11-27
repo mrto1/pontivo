@@ -12,7 +12,7 @@ export const PUSH_KINDS: PushKind[] = ["orders", "reservations", "bookings", "in
 export const isPushKind = (k: string): k is PushKind => (PUSH_KINDS as string[]).includes(k);
 export const PUSH_KIND_LABEL: Record<PushKind, { title: string; hint: string }> = {
   orders: { title: "Online-Bestellungen", hint: "Neue Bestellung und Erinnerung, wenn eine wartet" },
-  reservations: { title: "Reservierungen", hint: "Neue Online-Reservierung" },
+  reservations: { title: "Reservationen", hint: "Neue Online-Reservation" },
   bookings: { title: "Buchungen", hint: "Neue Buchung, Stornierung, Überbuchung" },
   inbox: { title: "Anfragen und Nachrichten", hint: "Neue Anfrage, Gästewunsch, Gästenachricht, Check-out im Portal" },
   dininginbox: { title: "Anfragen (Restaurant)", hint: "Neue Tischanfrage über die Website" },

@@ -13,7 +13,7 @@ describe("Mitteilungen zusammenfassen (SPEC 20.1)", () => {
 
   it("eine einzelne Meldung bleibt unverändert; zwei Betriebe und zwei Arten werden getrennt", () => {
     const u = groupPushes([row(1, "order:a", "orders"), row(2, "order:b", "orders", "h2"), row(3, "reservation:a", "reservations"), row(4, "reservation:b", "reservations")]);
-    expect(u.map((x) => [x.ids, x.title])).toEqual([[[1], "T1"], [[2], "T2"], [[3, 4], "2 neue Reservierungen"]]);
+    expect(u.map((x) => [x.ids, x.title])).toEqual([[[1], "T1"], [[2], "T2"], [[3, 4], "2 neue Reservationen"]]);
   });
 
   it("Dringendes bleibt einzeln: Erinnerung «wartet», Überbuchung, Storno, Sonstiges", () => {

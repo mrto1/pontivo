@@ -74,7 +74,7 @@ describe("Betriebsart Restaurant (SPEC 20.1)", () => {
     expect((await slotsFor(h, day, 2)).filter((x) => x.ok)).toHaveLength(0);
     const next = addDays(day, 1);
     expect((await slotsFor(h, next, 2)).filter((x) => x.ok).map((x) => x.time)).toEqual(["18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00"]);
-    // andere Einstellungen bleiben beim Speichern der Reservierung erhalten
+    // andere Einstellungen bleiben beim Speichern der Reservation erhalten
     await saveSettings(h.id, { ...(await getSettings(h.id)), capacity: 30 }, "t");
     expect((await getSettings(h.id)).openingHours?.[String(wd)]).toEqual([]);
     await expect(saveOpeningHours(h.id, { "1": [{ from: "22:00", to: "18:00" }] }, "t")).rejects.toThrow(/Montag/);

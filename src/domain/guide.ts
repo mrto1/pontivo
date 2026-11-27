@@ -49,8 +49,8 @@ export const GUIDE: Record<GuideRole, GuideTask[]> = {
   ],
   service: [
     { key: "s_orders", area: "onlineorders", title: "Online-Bestellung annehmen", hint: "Bestellbildschirm offen lassen; neue Bestellungen läuten, bis sie angenommen sind." },
-    { key: "s_today", area: "dininghome", title: "Tagesübersicht lesen", hint: "Reservierungen von heute, wer noch kommt, wer am Tisch sitzt." },
-    { key: "s_res", area: "reservations", title: "Eine Reservierung erfassen", hint: "Zeit, Personen, Name; Tisch wählen oder automatisch zuteilen." },
+    { key: "s_today", area: "dininghome", title: "Tagesübersicht lesen", hint: "Reservationen von heute, wer noch kommt, wer am Tisch sitzt." },
+    { key: "s_res", area: "reservations", title: "Eine Reservation erfassen", hint: "Zeit, Personen, Name; Tisch wählen oder automatisch zuteilen." },
     { key: "s_kasse", area: "kasse", title: "Kasse öffnen und Gerät wählen", hint: "Einmal mit Internet, danach geht es auch ohne." },
     { key: "s_order", area: "kasse", title: "Eine Bestellung am Tisch aufnehmen", hint: "Tisch eröffnen, Artikel antippen, im Haus oder Take-away." },
     { key: "s_split", area: "kasse", title: "Getrennt bezahlen üben", hint: "Bei «Jetzt» die Menge je Posten wählen, dann kassieren." },

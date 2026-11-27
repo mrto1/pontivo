@@ -45,7 +45,7 @@ export default async function Guestbook({ params, searchParams }: { params: Prom
         ) : <p className="muted small">Keine Treffer.</p>}
         {rows.length >= 200 ? <p className="muted small">Es werden die neuesten 200 gezeigt. Mit der Suche finden Sie weitere.</p> : null}
       </section>
-      <p className="small muted">Notizen und Tags bearbeiten Sie bei der Buchung{dining ? " oder bei der Tischreservierung" : ""} des Gastes. Sie gelten für die E-Mail-Adresse und nur in diesem Betrieb.{dining ? ` Ab ${REGULAR_VISITS} Restaurantbesuchen steht «Stammgast». Allergien nur als kurzer Hinweis für die Küche (z. B. «ohne Nüsse»), keine Gesundheitsangaben.` : ""}</p>
+      <p className="small muted">Notizen und Tags bearbeiten Sie bei der Buchung{dining ? " oder bei der Tischreservation" : ""} des Gastes. Sie gelten für die E-Mail-Adresse und nur in diesem Betrieb.{dining ? ` Ab ${REGULAR_VISITS} Restaurantbesuchen steht «Stammgast». Allergien nur als kurzer Hinweis für die Küche (z. B. «ohne Nüsse»), keine Gesundheitsangaben.` : ""}</p>
     </div>
   );
 }

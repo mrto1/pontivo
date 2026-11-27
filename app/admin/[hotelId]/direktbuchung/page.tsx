@@ -194,7 +194,7 @@ export default async function Direktbuchung({ params, searchParams }: { params: 
 
       <section className="card stack" id="warteliste">
         <h2>Warteliste</h2>
-        <p className="muted small m0">Ist für die gesuchten Daten alles ausgebucht, kann sich der Gast eintragen. Wird etwas frei (Stornierung, abgelaufene Reservierung), erhält er einmalig eine Mail mit Link zur Buchung. Wer zuerst bucht, bekommt das Zimmer.</p>
+        <p className="muted small m0">Ist für die gesuchten Daten alles ausgebucht, kann sich der Gast eintragen. Wird etwas frei (Stornierung, abgelaufene Reservation), erhält er einmalig eine Mail mit Link zur Buchung. Wer zuerst bucht, bekommt das Zimmer.</p>
         <form action={toggleSave} className="inline-form">
           {hidden}<input type="hidden" name="what" value="waitlist" />
           <label className="check"><input type="checkbox" name="enabled" defaultChecked={waitlistEnabled(d)} /> Warteliste anbieten</label>

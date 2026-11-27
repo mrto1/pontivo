@@ -34,7 +34,7 @@ export async function Shell({ hotel, locale, base, path = "", current, noBookBut
   const jsonLd = await hotelJsonLd(hotel, locale, publicBase(hotel), pages);
   // Fester «Jetzt buchen»-Knopf auf dem Handy (nicht auf Buchungs- und Gutscheinseiten)
   const today = todayIn(hotel.timezone);
-  // Reines Restaurant (SPEC 20.2): der feste Knopf führt zur Tischreservierung, sofern online eingeschaltet
+  // Reines Restaurant (SPEC 20.2): der feste Knopf führt zur Tischreservation, sofern online eingeschaltet
   const resto = hotel.propertyType === "restaurant";
   const tableOnline = resto && (await tableReservationOnline(hotel.id));
   const bookHref = resto ? `${base}/${locale}/tisch` : `${base}/${locale}/book?checkin=${addDays(today, 1)}&checkout=${addDays(today, 3)}&adults=2`;

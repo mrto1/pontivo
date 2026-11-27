@@ -33,7 +33,7 @@ export const SETTINGS_GROUPS: { title: string; lead: string }[] = [
   { title: "Betrieb", lead: "Wer Sie sind, wer mitarbeitet, Zahlungen, Geräte, Funktionen und Abrechnung." },
   { title: "Unterkunft", lead: "Zimmer, Preise und alles, was Gäste rund um den Aufenthalt nutzen." },
   { title: "Verkauf", lead: "Wie Gäste Sie finden und buchen, auf Ihrer Website, über Portale und per Mail." },
-  { title: "Gastronomie", lead: "Speisekarte, Tische und Reservierung, Online-Bestellung und Kasse." },
+  { title: "Gastronomie", lead: "Speisekarte, Tische und Reservation, Online-Bestellung und Kasse." },
 ];
 
 /** `hidden`: Menüpunkte ausgeschalteter Module (src/domain/modules.ts) oder nicht erlaubter Bereiche. Gruppen ohne Reiter verschwinden; hat eine Gruppe nur noch einen Reiter, bleibt sie ein einfacher Punkt. Sonst führt der Punkt zum ersten übrigen Reiter. */
@@ -61,7 +61,7 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
   // Restaurant-Baum (SPEC 20.1, Navigation Teil B): gleiche Seiten und Schlüssel, eigene vier Hauptpunkte
   const dining: NavItem[] = [
     { key: "g-dining-today", label: "Heute", href: `${base}/restaurant/heute`, icon: "home", tabs: [link("dininghome", "Tagesübersicht", "restaurant/heute"), link("inbox", "Posteingang", "inbox?bereich=restaurant")] },
-    { key: "g-dining-res", label: "Reservierungen", href: `${base}/restaurant/reservierungen`, icon: "bookings", tabs: [link("reservations", "Liste", "restaurant/reservierungen"), link("resplan", "Tischplan", "restaurant/tischplan", { match: [`${base}/restaurant/bestellung/`] }), link("waitlist", "Warteliste", "restaurant/warteliste"), link("guestbook", "Gäste")] },
+    { key: "g-dining-res", label: "Reservationen", href: `${base}/restaurant/reservierungen`, icon: "bookings", tabs: [link("reservations", "Liste", "restaurant/reservierungen"), link("resplan", "Tischplan", "restaurant/tischplan", { match: [`${base}/restaurant/bestellung/`] }), link("waitlist", "Warteliste", "restaurant/warteliste"), link("guestbook", "Gäste")] },
     { key: "g-dining-orders", label: "Bestellungen", href: `${base}/restaurant`, icon: "orders", tabs: [link("onlineorders", "Online", "restaurant/bestellungen"), link("kasse", "Kasse"), link("kitchen", "Küche", "restaurant/kueche"), link("driver", "Lieferungen", "restaurant/fahrer")] },
     { key: "g-dining-finance", label: "Finanzen", href: `${base}/restaurant/abschluss`, icon: "finance", tabs: [link("posclose", "Kassenabschluss", "restaurant/abschluss"), link("onlinesales", "Online-Verkäufe", "restaurant/online-verkaeufe"), link("diningstats", "Auswertung", "restaurant/auswertung"), link("invoices", "Rechnungen"), link("vouchers", "Gutscheine"), link("accountingexport", "Buchhaltung", "buchhaltung")] },
   ];
@@ -121,7 +121,7 @@ function baseNav(hotel: HotelRef, area: Area): Nav {
         set("Gastronomie", link("positems", "Speisekarte", "restaurant/artikel"), "Artikel mit Preisen, Optionen und Menüs, KI-Speisekarte und Import per CSV."),
         set("Gastronomie", link("tables", "Tischplan", "restaurant/tische"), "Tische anlegen, Plätze und Form festlegen, Tische im Plan platzieren, Import per CSV."),
         set("Gastronomie", link("tableqr", "Tisch-QR", "restaurant/tisch-qr"), "QR-Code pro Tisch: Gäste bestellen und bezahlen am Tisch mit TWINT oder Karte, geben Trinkgeld und bewerten den Besuch."),
-        set("Gastronomie", link("ressettings", "Reservierung", "restaurant/einstellungen"), "Zeiten, Plätze und Regeln für die Online-Reservierung, Anzahlung, Vorbestellung, Halbpension und Erinnerung."),
+        set("Gastronomie", link("ressettings", "Reservation", "restaurant/einstellungen"), "Zeiten, Plätze und Regeln für die Online-Reservation, Anzahlung, Vorbestellung, Halbpension und Erinnerung."),
         set("Gastronomie", link("ordersettings", "Bestellung", "restaurant/bestellung-einstellungen"), "Abholung und Lieferung, Zeiten, Liefergebiete, Barzahlung, Probebestellung und Live-Schaltung."),
         set("Gastronomie", { ...link("g-pos", "Kasse", "restaurant/geraete"), tabs: [link("posdevices", "Kassen-Geräte", "restaurant/geraete"), link("posbridge", "Kassen-Schnittstelle")] }, "Kassen-Geräte, Verbindung zum Hotel und Schnittstelle zu Ihrer bisherigen Kasse."),
       ],

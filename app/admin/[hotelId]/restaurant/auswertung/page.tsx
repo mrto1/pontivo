@@ -50,10 +50,10 @@ export default async function DiningStatsPage({ params, searchParams }: { params
       <Table title="Je Kellner" rows={s.waiters} testid="stats-waiters" />
       <Table title="Je Tisch" rows={s.tables} testid="stats-tables" />
       <section className="card stack">
-        <h2>Gäste nach Uhrzeit (Reservierungen)</h2>
+        <h2>Gäste nach Uhrzeit (Reservationen)</h2>
         {s.guestsByHour.length ? s.guestsByHour.map((h) => (
           <div key={h.hour} className="bar-row"><span className="small">{String(h.hour).padStart(2, "0")}:00</span><div className="bar" style={{ width: `${(h.guests / maxG) * 100}%` }} /><span className="small">{h.guests}</span></div>
-        )) : <p className="muted">Keine Reservierungen im Zeitraum.</p>}
+        )) : <p className="muted">Keine Reservationen im Zeitraum.</p>}
       </section>
       {s.feedback.low.length ? (
         <section className="card stack"><h2>Kritische Rückmeldungen</h2>

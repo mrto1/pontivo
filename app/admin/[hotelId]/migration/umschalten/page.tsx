@@ -57,7 +57,7 @@ export default async function Umschalten({ params, searchParams }: { params: Pro
             <p className="small muted m0">{i.hint}</p>
             {i.key === "reservierungen" ? (
               <form action={oldCount} className="inline-form">{H}
-                <div><label htmlFor="n">Künftige Reservierungen in der alten Software</label><input id="n" name="n" type="number" min={0} defaultValue={v.state.oldFuture ?? ""} required /></div>
+                <div><label htmlFor="n">Künftige Reservationen in der alten Software</label><input id="n" name="n" type="number" min={0} defaultValue={v.state.oldFuture ?? ""} required /></div>
                 <div><button className="btn secondary small">Vergleichen</button></div>
               </form>
             ) : null}

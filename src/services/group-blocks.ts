@@ -43,7 +43,7 @@ export async function adjustBlock(tx: Tx, hotelId: string, groupId: string, room
 
 /**
  * Ein Zimmer aus dem Block an eine Buchung vergeben: pro Nacht ein freies Blockzimmer und ein gebuchtes Zimmer zurück an den Bestand,
- * sodass die normale Reservierung danach dieselben Zimmer wieder belegt (alles in derselben Transaktion).
+ * sodass die normale Reservation danach dieselben Zimmer wieder belegt (alles in derselben Transaktion).
  */
 export async function consumeBlock(tx: Tx, hotelId: string, groupId: string, roomTypeId: string, checkin: string, checkout: string): Promise<void> {
   const nights = nightsOf(checkin, checkout);

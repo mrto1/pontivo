@@ -486,7 +486,7 @@ export async function releaseHold(
     assertTransition("hold", "expired");
     await tx.update(bookings).set({ status: "expired", holdExpiresAt: null, updatedAt: now }).where(eq(bookings.id, bookingId));
     if (booking.voucherId && booking.voucherRappen > 0) {
-      await creditVoucher(tx, booking.voucherId, booking.hotelId, booking.id, booking.voucherRappen, `Reservierung ${booking.reference} nicht bezahlt`, opts.actor);
+      await creditVoucher(tx, booking.voucherId, booking.hotelId, booking.id, booking.voucherRappen, `Reservation ${booking.reference} nicht bezahlt`, opts.actor);
     }
     if (opts.paymentFailed) {
       await tx.update(payments).set({ status: "failed", updatedAt: now }).where(and(eq(payments.bookingId, bookingId), eq(payments.status, "pending")));

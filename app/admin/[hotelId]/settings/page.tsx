@@ -112,7 +112,7 @@ export default async function Settings({ params, searchParams }: { params: Promi
         <form action={saveDining} className="card stack" id="gastronomie" data-testid="dining-settings">
           {hidden}
           <h2>{restaurantKind ? "Öffnungszeiten" : "Öffnungszeiten Restaurant"}</h2>
-          <FormSwitch name="useHours" defaultOn={!!cfg.openingHours} label="Öffnungszeiten verwenden" hint="Online-Reservierungen gibt es dann nur zu diesen Zeiten; leerer Tag = Ruhetag. Aus = jeden Tag in den Zeitfenstern der Online-Reservierung." />
+          <FormSwitch name="useHours" defaultOn={!!cfg.openingHours} label="Öffnungszeiten verwenden" hint="Online-Reservationen gibt es dann nur zu diesen Zeiten; leerer Tag = Ruhetag. Aus = jeden Tag in den Zeitfenstern der Online-Reservation." />
           <div className="form-grid">
             {WEEKDAYS_DE.map((d, i) => ({ d, i })).slice(1).concat({ d: WEEKDAYS_DE[0], i: 0 }).map(({ d, i }) => (
               <div key={i}><label htmlFor={`h${i}`}>{d}</label><input id={`h${i}`} name={`h${i}`} defaultValue={hoursText(cfg.openingHours?.[String(i)])} placeholder="11:30-14:00, 17:30-22:00" /></div>

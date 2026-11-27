@@ -98,7 +98,7 @@ async function saveOnlineStep(f: FormData) {
     const windows = [1, 2].flatMap((n) => (s(f, `from${n}`) && s(f, `to${n}`) ? [{ from: s(f, `from${n}`), to: s(f, `to${n}`) }] : []));
     await saveSettings(hotel.id, { ...cur, onlineEnabled: true, windows, capacity: Number(s(f, "capacity") || cur.capacity), maxParty: Number(s(f, "maxParty") || cur.maxParty) }, actor);
     // Konzept 7a Schritt 3: Reservation und Website sofort live, ohne auf Stripe zu warten
-    try { await goLiveRestaurant(hotel, actor); } catch (e) { throw new OnboardingError(`Reservierung ist eingestellt, aber noch nicht online: ${(e as Error).message}`); }
+    try { await goLiveRestaurant(hotel, actor); } catch (e) { throw new OnboardingError(`Reservation ist eingestellt, aber noch nicht online: ${(e as Error).message}`); }
   });
 }
 
@@ -312,7 +312,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       body = (
         <div className="stack">
           {items.length ? <p className="notice">✓ {items.length} Artikel auf der Speisekarte.</p> : null}
-          <p>Ihre Speisekarte brauchen Website, Reservierung und später Online-Bestellung und Kasse. Drei Wege:</p>
+          <p>Ihre Speisekarte brauchen Website, Reservation und später Online-Bestellung und Kasse. Drei Wege:</p>
           <ul className="list">
             <li><a href={`/admin/${hotel.id}/restaurant/artikel#ki`}><strong>Mit KI einlesen</strong></a>: Adresse Ihrer bisherigen Speisekarte oder PDF; Sie prüfen den Entwurf vor der Übernahme.</li>
             <li><a href={`/admin/${hotel.id}/restaurant/artikel`}><strong>CSV-Datei</strong></a> aus Excel oder Ihrer bisherigen Kasse.</li>
@@ -332,11 +332,11 @@ export default async function Wizard({ params, searchParams }: { params: Promise
         <form action={saveOnlineStep} className="stack">{H}
           {live ? (
             <div className="notice stack" data-testid="reservation-live">
-              <strong>✓ Reservierung ist online.</strong>
+              <strong>✓ Reservation ist online.</strong>
               <span>Link für Ihre Website, Google-Profil oder Social Media:</span>
-              <CopyBox text={link} label="Link zur Reservierung" />
+              <CopyBox text={link} label="Link zur Reservation" />
               <span className="small">QR-Code für Tischkarten, Schaufenster oder Flyer:</span>
-              <img src={await QRCode.toDataURL(link, { margin: 1, width: 200 })} alt="QR-Code zur Tischreservierung" width={200} height={200} />
+              <img src={await QRCode.toDataURL(link, { margin: 1, width: 200 })} alt="QR-Code zur Tischreservation" width={200} height={200} />
             </div>
           ) : null}
           <p>Gäste reservieren auf Ihrer Website, über einen Link oder QR-Code selbst und bekommen eine Bestätigung mit Storno-Link. Das geht sofort, ohne auf Stripe zu warten; die Anzahlung bleibt aus, bis Stripe freigegeben ist.</p>
@@ -350,7 +350,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
             <div><label htmlFor="capacity">Plätze online (gleichzeitig)</label><input id="capacity" name="capacity" type="number" min={1} max={1000} defaultValue={cfg.onlineEnabled ? cfg.capacity : Math.max(1, seats || cfg.capacity)} /></div>
             <div><label htmlFor="maxParty">Grösste Gruppe online</label><input id="maxParty" name="maxParty" type="number" min={1} max={50} defaultValue={cfg.maxParty} /></div>
           </div>
-          <p className="small muted">Anzahlung, Erinnerung, Warteliste und Vorlauf stellen Sie später unter <a href={`/admin/${hotel.id}/restaurant/einstellungen#online`}>Reservierung</a> ein.</p>
+          <p className="small muted">Anzahlung, Erinnerung, Warteliste und Vorlauf stellen Sie später unter <a href={`/admin/${hotel.id}/restaurant/einstellungen#online`}>Reservation</a> ein.</p>
           <div style={{ display: "flex", gap: 8 }}><button className="btn">{live ? "Speichern und weiter" : "Reservation live schalten"}</button></div>
         </form>
       );
@@ -362,7 +362,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
           <p className="muted m0">Haben Sie bereits eine Hotelsoftware oder Buchungsverwaltung?</p>
           <div className="mode-pick">
             <label><input type="radio" name="answer" value="none" defaultChecked={hotel.onboarding.previousSoftware !== "yes"} /><span><strong>Nein, ich starte neu mit Pontivo.</strong></span></label>
-            <label><input type="radio" name="answer" value="yes" defaultChecked={hotel.onboarding.previousSoftware === "yes"} /><span><strong>Ja, ich wechsle von einer anderen Software</strong><span className="small muted">und möchte meine Reservierungen übernehmen.</span></span></label>
+            <label><input type="radio" name="answer" value="yes" defaultChecked={hotel.onboarding.previousSoftware === "yes"} /><span><strong>Ja, ich wechsle von einer anderen Software</strong><span className="small muted">und möchte meine Reservationen übernehmen.</span></span></label>
           </div>
           <p className="small muted m0">Bei «Ja» läuft Ihre alte Software zunächst parallel weiter. Unter «Datenübernahme» finden Sie dann den Import, die Umschalt-Checkliste und Hinweise zum Parallelbetrieb.</p>
           <div><button className="btn">Speichern und weiter</button></div>
@@ -508,7 +508,7 @@ export default async function Wizard({ params, searchParams }: { params: Promise
       ) : (
         <div className="stack">
           <p>Gäste bezahlen mit TWINT, Karte, Apple Pay oder Google Pay. Das Geld geht direkt auf Ihr eigenes Konto bei Stripe und wird Ihnen auf Ihr Bankkonto überwiesen. Dafür eröffnen Sie bei Stripe ein Konto (ca. 10 Minuten, Ausweis und IBAN bereithalten).</p>
-          {resto ? <p className="small muted">Die Prüfung durch Stripe dauert meist 1–2 Werktage; Pontivo kann sie nicht beschleunigen. Solange blockiert sie nur Zahlungen (Anzahlung, später Online-Bestellung). Reservierung und Website laufen schon.</p> : null}
+          {resto ? <p className="small muted">Die Prüfung durch Stripe dauert meist 1–2 Werktage; Pontivo kann sie nicht beschleunigen. Solange blockiert sie nur Zahlungen (Anzahlung, später Online-Bestellung). Reservation und Website laufen schon.</p> : null}
           {sp.stripe === "return" ? <p className="notice">Zurück von Stripe. Die Prüfung kann einige Minuten dauern.</p> : null}
           <p>Status: {hotel.stripeChargesEnabled ? <span className="badge">✓ Zahlungen möglich</span> : hotel.stripeAccountId ? <span className="badge warn">in Prüfung oder unvollständig</span> : <span className="badge warn">noch kein Konto</span>}</p>
           {isOwner && !hotel.stripeChargesEnabled && env().STRIPE_PUBLISHABLE_KEY && sp.stripe !== "return" ? (

@@ -129,9 +129,9 @@ export const importTemplate = () => toCsv(IMPORT_COLUMNS.map((c) => c.key), [
 // ---------------------------------------------------------------- Gäste und Gutscheine
 
 export type ImportKind = "reservations" | "guests" | "vouchers";
-export const KIND_LABEL: Record<ImportKind, string> = { reservations: "Reservierungen", guests: "Gäste", vouchers: "Gutscheine" };
+export const KIND_LABEL: Record<ImportKind, string> = { reservations: "Reservationen", guests: "Gäste", vouchers: "Gutscheine" };
 
-/** Art der Datei aus der Kopfzeile: Reservierungen (externe_nummer), Gutscheine (code + restwert), sonst Gäste */
+/** Art der Datei aus der Kopfzeile: Reservationen (externe_nummer), Gutscheine (code + restwert), sonst Gäste */
 export function detectKind(text: string): ImportKind {
   const header = (parseCsv(text)[0] ?? []).map(norm);
   if (header.includes("externe_nummer")) return "reservations";

@@ -1,6 +1,6 @@
 /**
- * Tischreservierungen (SPEC 19.49 Etappe C). Reine Logik ohne I/O.
- * Zeiten sind lokale Uhrzeiten 'HH:MM' des Betriebs, Tage 'YYYY-MM-DD'. Eine Reservierung belegt `durationMin` Minuten ab Beginn.
+ * Tischreservationen (SPEC 19.49 Etappe C). Reine Logik ohne I/O.
+ * Zeiten sind lokale Uhrzeiten 'HH:MM' des Betriebs, Tage 'YYYY-MM-DD'. Eine Reservation belegt `durationMin` Minuten ab Beginn.
  */
 export type Window = { from: string; to: string };
 export type ResSettings = {
@@ -44,9 +44,9 @@ export function checkOpeningHours(h: OpeningHours): string | null {
   return null;
 }
 export type ResLite = { id?: string; time: string; party: number; tableId: string | null; /** zusammengelegte Tische (SPEC 19.58) */ extraTableIds?: string[]; status: string; createdAt?: Date };
-/** Alle Tische einer Reservierung (Haupttisch zuerst) */
+/** Alle Tische einer Reservation (Haupttisch zuerst) */
 export const tablesOfRes = (r: { tableId: string | null; extraTableIds?: string[] }): string[] => (r.tableId ? [r.tableId, ...(r.extraTableIds ?? [])] : []);
-/** Nicht bezahlte Online-Reservierung hält Plätze nur so lange (Stripe-Zahlungsseite läuft nach 30 Minuten ab) */
+/** Nicht bezahlte Online-Reservation hält Plätze nur so lange (Stripe-Zahlungsseite läuft nach 30 Minuten ab) */
 export const PENDING_MINUTES = 35;
 
 export const SLOT_STEP_MIN = 30;
@@ -84,7 +84,7 @@ export function coversAt(existing: ResLite[], time: string, dur: number): number
   return existing.filter((r) => active(r) && overlaps(time, r.time, dur)).reduce((a, r) => a + r.party, 0);
 }
 
-/** Tisch zur Zeit noch frei? (ohne die Reservierung `ignoreId`, z. B. beim Umsetzen) */
+/** Tisch zur Zeit noch frei? (ohne die Reservation `ignoreId`, z. B. beim Umsetzen) */
 export function tableFree(existing: ResLite[], tableId: string, time: string, dur: number, ignoreId?: string): boolean {
   return !existing.some((r) => active(r) && tablesOfRes(r).includes(tableId) && (ignoreId === undefined || r.id !== ignoreId) && overlaps(time, r.time, dur));
 }

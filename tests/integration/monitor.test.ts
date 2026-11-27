@@ -33,7 +33,7 @@ describe("Überwachung", () => {
     expect(await names({ includeWorker: false, diskRatio: 0.5 })).toEqual([]);
   });
 
-  it("Rückstau bei E-Mail, hängende Reservierung und knapper Speicher werden erkannt", async () => {
+  it("Rückstau bei E-Mail, hängende Reservation und knapper Speicher werden erkannt", async () => {
     const h = await makeHotel();
     await db().insert(emailOutbox).values({ hotelId: h.hotel.id, template: "platform_alert", toEmail: "x@example.ch", sendAfter: old(45), data: {} });
     expect(await names({ includeWorker: false, diskRatio: 0.5 })).toEqual(["email_backlog"]);

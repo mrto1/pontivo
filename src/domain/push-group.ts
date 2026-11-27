@@ -12,7 +12,7 @@ export type PushUnit = { ids: number[]; hotelId: string; kind: PushKind; title: 
 const GROUPABLE = ["order:", "reservation:", "inquiry:", "inbox:", "guest_request:", "booking_new:"];
 const NOUN: Record<Exclude<PushKind, "other">, [string, string]> = {
   orders: ["neue Bestellung", "neue Bestellungen"],
-  reservations: ["neue Reservierung", "neue Reservierungen"],
+  reservations: ["neue Reservation", "neue Reservationen"],
   bookings: ["neue Buchung", "neue Buchungen"],
   inbox: ["neue Anfrage oder Nachricht", "neue Anfragen und Nachrichten"],
   dininginbox: ["neue Tischanfrage", "neue Tischanfragen"],

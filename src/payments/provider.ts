@@ -34,7 +34,7 @@ export type PaymentCheckoutArgs = {
 
 export type RefundArgs = {
   hotel: Hotel;
-  /** nur die Id wird gebraucht (Schlüssel gegen doppelte Rückerstattung); auch für Zahlungen ohne Buchung, z. B. Tischreservierung */
+  /** nur die Id wird gebraucht (Schlüssel gegen doppelte Rückerstattung); auch für Zahlungen ohne Buchung, z. B. Tischreservation */
   booking: Pick<Booking, "id">;
   paymentIntentId: string | null;
   amountRappen: number;

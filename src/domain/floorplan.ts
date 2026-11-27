@@ -11,7 +11,7 @@ export interface ResLike {
   status: "confirmed" | "seated" | "cancelled" | "noshow";
 }
 
-/** Alle Tische einer Reservierung */
+/** Alle Tische einer Reservation */
 export const resTables = (r: { tableId: string | null; extraTableIds?: string[] }): string[] => (r.tableId ? [r.tableId, ...(r.extraTableIds ?? [])] : []);
 
 export function toMinutes(hhmm: string): number {
@@ -21,7 +21,7 @@ export function toMinutes(hhmm: string): number {
 
 /**
  * Zustand eines Tisches zu einem Zeitpunkt `at` ('HH:MM').
- * Eine Reservierung belegt den Tisch von `time` bis `time + durationMin`.
+ * Eine Reservation belegt den Tisch von `time` bis `time + durationMin`.
  * seated = Gast sitzt (Status seated), reserved = bestätigt und im Fenster.
  */
 export function tableState(tableId: string, reservations: ResLike[], at: string, durationMin: number): TableState {
@@ -101,7 +101,7 @@ export interface TableView { state: TableState; cur: ResView | null; next: ResVi
 
 const hhmm = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 
-/** Zustand eines Tisches zur Zeit `at` samt laufender und nächster Reservierung; `soon` = nächste beginnt in weniger als `soonMin` Minuten. */
+/** Zustand eines Tisches zur Zeit `at` samt laufender und nächster Reservation; `soon` = nächste beginnt in weniger als `soonMin` Minuten. */
 export function tableView(tableId: string, list: ResView[], at: string, durationMin: number, soonMin = 30): TableView {
   const t = toMinutes(at);
   const mine = list.filter((r) => resTables(r).includes(tableId) && r.status !== "cancelled" && r.status !== "noshow");

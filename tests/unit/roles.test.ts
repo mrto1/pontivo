@@ -104,15 +104,15 @@ describe("Zahnrad und Menü je Rolle (SPEC 19.42)", () => {
     // Service sieht nur die Gastronomie: kein Umschalter, Menü des Restaurants
     const sv = visibleNav(hotel, "service", on);
     expect(sv.showSwitch).toBe(false);
-    expect(sv.nav.primary.map((i) => i.label)).toEqual(["Heute", "Reservierungen", "Bestellungen"]);
+    expect(sv.nav.primary.map((i) => i.label)).toEqual(["Heute", "Reservationen", "Bestellungen"]);
     expect(visibleNav(hotel, "reception", on).showSwitch).toBe(false);
     // Reines Restaurant: nur der Restaurant-Baum, ohne Umschalter
     const r = visibleNav({ ...hotel, propertyType: "restaurant" }, "owner", on);
     expect(r.showSwitch).toBe(false);
     expect(r.navs.lodging).toBeNull();
-    expect(r.nav.primary.map((i) => i.label)).toEqual(["Heute", "Reservierungen", "Bestellungen", "Finanzen"]);
+    expect(r.nav.primary.map((i) => i.label)).toEqual(["Heute", "Reservationen", "Bestellungen", "Finanzen"]);
     // gewählter Bereich wird übernommen
-    expect(visibleNav(hotel, "owner", on, "dining").nav.primary[1].label).toBe("Reservierungen");
+    expect(visibleNav(hotel, "owner", on, "dining").nav.primary[1].label).toBe("Reservationen");
     expect(visibleNav(hotel, "owner", on, "lodging").nav.primary[1].label).toBe("Kalender");
   });
 });

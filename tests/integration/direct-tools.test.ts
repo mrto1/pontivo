@@ -239,7 +239,7 @@ describe("Abbruch-Mail", () => {
   });
 });
 
-describe("abgelaufene Reservierung: Warteliste und Code bleiben unberührt", () => {
+describe("abgelaufene Reservation: Warteliste und Code bleiben unberührt", () => {
   it("expireHolds läuft weiter wie bisher", async () => {
     const s = await oneRoom();
     setPaymentProvider(holdOnly);

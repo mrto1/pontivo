@@ -80,7 +80,7 @@ export async function kartei(hotelId: string, q = "", tag = "", limit = 200): Pr
     const v = visits.get(r.email);
     return { email: r.email, name: [r.first, r.last].filter(Boolean).join(" "), stays: r.stays, lastCheckin: r.lastCheckin, tags: p?.tags ?? [], note: p?.note ?? "", visits: v?.visits ?? 0, lastVisit: v?.lastVisit ?? null };
   });
-  // Gäste nur aus Tischreservierungen (ohne Hotelbuchung) kommen dazu
+  // Gäste nur aus Tischreservationen (ohne Hotelbuchung) kommen dazu
   const known = new Set(out.map((r) => r.email));
   for (const [email, v] of visits) {
     if (known.has(email)) continue;

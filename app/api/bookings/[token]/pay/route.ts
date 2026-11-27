@@ -22,7 +22,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ token: string 
     if (r.state !== "open") return json({ state: r.state });
     return json({ state: "open", client_secret: r.clientSecret, stripe_account: r.stripeAccount, publishable_key: env().STRIPE_PUBLISHABLE_KEY ?? null, amount_rappen: r.amountRappen });
   } catch (e) {
-    // Stripe nicht erreichbar o. Ä.: der Client zeigt «später erneut versuchen», die Reservierung bleibt
+    // Stripe nicht erreichbar o. Ä.: der Client zeigt «später erneut versuchen», die Reservation bleibt
     return errorResponse(e);
   }
 }

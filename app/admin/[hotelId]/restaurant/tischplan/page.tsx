@@ -30,7 +30,7 @@ async function openAt(f: FormData) {
 }
 const SOON_MIN = 30;
 
-/** Tischplan mit Reservierungszustand (SPEC 20.1): frei, reserviert (bald), am Tisch; mit Kasse auch offene Bestellungen */
+/** Tischplan mit Reservationszustand (SPEC 20.1): frei, reserviert (bald), am Tisch; mit Kasse auch offene Bestellungen */
 export default async function ReservationPlan({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
@@ -44,7 +44,7 @@ export default async function ReservationPlan({ params, searchParams }: { params
   const [tables, list, cfg, open, areas, planItems, waiters] = await Promise.all([listTables(hotel.id), reservationsOfDay(hotel.id, day), getSettings(hotel.id), pos ? tablesOverview(hotel.id) : Promise.resolve([]), listAreas(hotel.id), listPlanItems(hotel.id), listWaiters(hotel.id)]);
   const t0 = toMin(time);
   const live = list.filter((r) => r.status === "confirmed" || r.status === "seated" || r.status === "pending");
-  // Reservierung, die zur gewählten Zeit läuft (Tisch belegt bis Ende) und die nächste danach (Tisch frei bis dahin)
+  // Reservation, die zur gewählten Zeit läuft (Tisch belegt bis Ende) und die nächste danach (Tisch frei bis dahin)
   const now = (id: string) => live.find((r) => resTables(r).includes(id) && toMin(r.time) <= t0 && toMin(r.time) + cfg.durationMin > t0);
   const next = (id: string) => live.filter((r) => resTables(r).includes(id) && toMin(r.time) > t0).sort((a, b) => toMin(a.time) - toMin(b.time))[0];
   const hhmm = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
@@ -68,14 +68,14 @@ export default async function ReservationPlan({ params, searchParams }: { params
           reservations={live.slice().sort((a, b) => toMin(a.time) - toMin(b.time)).map((r) => ({ id: r.id, time: r.time, name: r.name, party: r.party, tableId: r.tableId, extraTableIds: r.extraTableIds, status: r.status }))} tables={planned.map((t) => {
           const cur = now(t.id); const nxt = next(t.id); const orders = openBy.get(t.id) ?? [];
           const busy = orders.length > 0 || (cur?.status === "seated");
-          // ASSUMPTION: «bald» (orange) heisst: nächste Reservierung in weniger als 30 Minuten; sonst bleibt der Tisch grün mit «frei bis HH:MM».
+          // ASSUMPTION: «bald» (orange) heisst: nächste Reservation in weniger als 30 Minuten; sonst bleibt der Tisch grün mit «frei bis HH:MM».
           const soon = nxt && toMin(nxt.time) < t0 + SOON_MIN;
           const freeUntil = nxt ? nxt.time : null;
           const endCur = cur ? hhmm(toMin(cur.time) + cfg.durationMin) : null;
           const detail: string[] = [];
           if (orders.length) detail.push(`Offene Bestellung: ${formatChf(orders.reduce((a, o) => a + o.openRappen, 0))}`);
           if (cur) detail.push(`${cur.status === "seated" ? "Am Tisch" : "Reserviert"}: ${cur.name}, ${cur.party} Pers., ${cur.time} bis ${endCur}`);
-          if (nxt) detail.push(`${cur ? "Danach" : "Nächste"} Reservierung: ${nxt.time} ${nxt.name}, ${nxt.party} Pers.${cur ? "" : ` (Tisch bis dahin frei)`}`);
+          if (nxt) detail.push(`${cur ? "Danach" : "Nächste"} Reservation: ${nxt.time} ${nxt.name}, ${nxt.party} Pers.${cur ? "" : ` (Tisch bis dahin frei)`}`);
           if (!cur && !nxt && !orders.length) detail.push("Frei für den Rest des Tages.");
           return {
             id: t.id, name: t.name, seats: t.seats, shape: t.shape, x: t.planX, y: t.planY, areaId: t.areaId, waiterId: t.waiterId, busy: orders.length > 0,
@@ -85,7 +85,7 @@ export default async function ReservationPlan({ params, searchParams }: { params
             info: orders.length ? "offen" : cur ? `bis ${endCur}` : freeUntil ? `frei bis ${freeUntil}` : undefined,
             detail,
             href: orders[0] ? `${base}/restaurant/bestellung/${orders[0].order.id}` : cur || nxt ? `${base}/restaurant/reservierungen?day=${day}` : undefined,
-            hrefLabel: orders[0] ? (orders.length > 1 ? `Bestellung 1 (${formatChf(orders[0].openRappen)})` : "Bestellung öffnen") : "Reservierungen des Tages",
+            hrefLabel: orders[0] ? (orders.length > 1 ? `Bestellung 1 (${formatChf(orders[0].openRappen)})` : "Bestellung öffnen") : "Reservationen des Tages",
             links: orders.slice(1).map((o, i) => ({ href: `${base}/restaurant/bestellung/${o.order.id}`, label: `Bestellung ${i + 2} (${formatChf(o.openRappen)})` })),
             openLabel: pos ? (orders.length ? "Weitere Bestellung" : "Bestellung eröffnen") : undefined,
           };

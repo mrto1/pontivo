@@ -25,7 +25,7 @@ async function settings(f: FormData) {
   here(c.hotel.id, "Einstellungen gespeichert.");
 }
 
-/** Reservierung (SPEC 20.1, Zahnrad → Gastronomie): Einstellungen der Online-Reservierung. Tische und Plan: Seite «Tischplan» (restaurant/tische) */
+/** Reservation (SPEC 20.1, Zahnrad → Gastronomie): Einstellungen der Online-Reservation. Tische und Plan: Seite «Tischplan» (restaurant/tische) */
 export default async function RestaurantSettingsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
@@ -36,13 +36,13 @@ export default async function RestaurantSettingsPage({ params, searchParams }: {
   const qr = cfg.onlineEnabled ? await QRCode.toDataURL(publicUrl, { margin: 1, width: 180 }) : null;
   return (
     <div className="stack">
-      <h1>Reservierung</h1>
+      <h1>Reservation</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
         <form action={settings} className="card stack" id="online">
           {H}
-          <h2>Online-Reservierung für Gäste</h2>
+          <h2>Online-Reservation für Gäste</h2>
           <FormSwitch name="onlineEnabled" defaultOn={cfg.onlineEnabled} label="Gäste können online reservieren" hint={<>Formular unter <a href={publicUrl}>{publicUrl}</a> (der Knopf «Tisch reservieren» auf Ihrer Website führt dorthin).</>} />
-          {qr ? <div className="inline-form"><img src={qr} alt="QR-Code zur Tischreservierung" width={120} height={120} /><span className="small muted">QR-Code für Tischkarten, Schaufenster oder Flyer (Rechtsklick → Bild speichern).</span></div> : null}
+          {qr ? <div className="inline-form"><img src={qr} alt="QR-Code zur Tischreservation" width={120} height={120} /><span className="small muted">QR-Code für Tischkarten, Schaufenster oder Flyer (Rechtsklick → Bild speichern).</span></div> : null}
           <h3>Zeiten und Plätze</h3>
           <p className="small muted">Zeitfenster, in denen Gäste einen Tisch beginnen können (im Raster von 30 Minuten):</p>
           <div className="inline-form">
@@ -60,9 +60,9 @@ export default async function RestaurantSettingsPage({ params, searchParams }: {
           <div><label htmlFor="slotMaxGuests">Küchentakt: höchstens Gäste je Beginnzeit online (0 = ohne Grenze)</label><input id="slotMaxGuests" name="slotMaxGuests" type="number" min={0} max={1000} defaultValue={cfg.slotMaxGuests ?? 0} className="w90" /><p className="small muted m0">Verteilt die Ankünfte, damit nicht alle Gäste gleichzeitig kommen und die Küche nicht überlastet ist.</p></div>
           <h3>Tische</h3>
           <FormSwitch name="autoAssign" defaultOn={cfg.autoAssign} label="Tisch automatisch zuteilen" hint="Der kleinste freie Tisch mit genug Plätzen." />
-          <FormSwitch name="combineTables" defaultOn={!!cfg.combineTables} label="Tische zusammenlegen" hint="Passt keine Gruppe an einen Tisch, werden bis zu 4 freie, nahe Tische im selben Raum zusammengelegt. Von Hand geht es immer (zweiter Tisch in der Reservierungsliste)." />
+          <FormSwitch name="combineTables" defaultOn={!!cfg.combineTables} label="Tische zusammenlegen" hint="Passt keine Gruppe an einen Tisch, werden bis zu 4 freie, nahe Tische im selben Raum zusammengelegt. Von Hand geht es immer (zweiter Tisch in der Reservationsliste)." />
           <h3>Vorbestellung</h3>
-          <FormSwitch name="preorderEnabled" defaultOn={!!cfg.preorderEnabled} label="Vorbestellung zulassen" hint="Gäste wählen bei der Online-Reservierung schon Gerichte und bezahlen sie vorab (nur mit Stripe). Beim Platzieren des Gastes erscheint die Bestellung am Tisch, und der Betrag ist als Bon gebucht. Angeboten werden alle Artikel, die «online» bestellbar sind, auch mit Optionen wie Garstufe. Die Vorbestellung ersetzt die Anzahlung." />
+          <FormSwitch name="preorderEnabled" defaultOn={!!cfg.preorderEnabled} label="Vorbestellung zulassen" hint="Gäste wählen bei der Online-Reservation schon Gerichte und bezahlen sie vorab (nur mit Stripe). Beim Platzieren des Gastes erscheint die Bestellung am Tisch, und der Betrag ist als Bon gebucht. Angeboten werden alle Artikel, die «online» bestellbar sind, auch mit Optionen wie Garstufe. Die Vorbestellung ersetzt die Anzahlung." />
           <div><label htmlFor="preorderRequiredFrom">Vorbestellung Pflicht ab Personen (0 = nie)</label><input id="preorderRequiredFrom" name="preorderRequiredFrom" type="number" min={0} max={50} defaultValue={cfg.preorderRequiredFrom ?? 0} className="w90" /></div>
           <div><label htmlFor="preorderLeadMin">Küchenvorlauf: Vorbestellung erscheint so viele Minuten vor Ankunft in der Küche (0 = erst beim Platzieren)</label><input id="preorderLeadMin" name="preorderLeadMin" type="number" min={0} max={240} defaultValue={cfg.preorderLeadMin ?? 0} className="w90" /><p className="small muted m0">Nur mit zugewiesenem Tisch und bezahlter Vorbestellung. Die Küche sieht die Zeilen mit Optionen (z. B. Garstufe).</p></div>
           <h3>Anzahlung, Storno und Erinnerung</h3>
@@ -75,7 +75,7 @@ export default async function RestaurantSettingsPage({ params, searchParams }: {
           <p className="small muted">Die Anzahlung wird online über Stripe bezahlt (Ihr verbundenes Konto, keine Plattformgebühr) und bei rechtzeitiger Stornierung zurückerstattet. Sie gilt erst, wenn Stripe Ihr Konto freigegeben hat; bis dahin wird ohne Anzahlung reserviert. Storniert der Betrieb, kommt sie immer zurück; bei «nicht erschienen» bleibt sie. Den bezahlten Betrag ziehen Sie bei der Rechnung ab.</p>
           {hotel.propertyType !== "restaurant" ? <>
             <h3>Hotelgäste</h3>
-            <FormSwitch name="halfboardEnabled" defaultOn={!!cfg.halfboardEnabled} label="Halbpension mit Tisch" hint="Hotelgäste mit Halbpension oder Vollpension (Tarif) bekommen für jede Nacht automatisch eine Reservierung mit Tisch. Das Personal sieht sie im Plan und in der Liste und kann Zeit und Tisch ändern." />
+            <FormSwitch name="halfboardEnabled" defaultOn={!!cfg.halfboardEnabled} label="Halbpension mit Tisch" hint="Hotelgäste mit Halbpension oder Vollpension (Tarif) bekommen für jede Nacht automatisch eine Reservation mit Tisch. Das Personal sieht sie im Plan und in der Liste und kann Zeit und Tisch ändern." />
             <div><label htmlFor="halfboardTime">Uhrzeit Abendessen (Halbpension)</label><input id="halfboardTime" name="halfboardTime" type="time" defaultValue={cfg.halfboardTime ?? "19:00"} className="w90" /></div>
           </> : null}
           <div><button className="btn">Speichern</button></div>

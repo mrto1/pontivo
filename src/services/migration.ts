@@ -16,7 +16,7 @@ import { evaluateSwitchover, type SwitchFacts } from "../domain/switchover";
 /**
  * Datenübernahme aus der bisherigen Software (PMS-ERSATZ E1, SPEC 19.19).
  * Trockenlauf und Import laufen über denselben Code: der Trockenlauf macht alles in einer Transaktion und rollt am Ende zurück.
- * ASSUMPTION: Nur Reservierungen (inkl. Gäste) aus dem generischen CSV, direkt verarbeitet (höchstens 2000 Zeilen je Datei, kein Hintergrundjob).
+ * ASSUMPTION: Nur Reservationen (inkl. Gäste) aus dem generischen CSV, direkt verarbeitet (höchstens 2000 Zeilen je Datei, kein Hintergrundjob).
  */
 export class ImportError extends Error {}
 class DryRollback extends Error {}

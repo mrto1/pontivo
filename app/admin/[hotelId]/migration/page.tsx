@@ -67,7 +67,7 @@ export default async function Migration({ params, searchParams }: { params: Prom
   const sm = job?.summary;
   return (
     <div className="stack">
-      <h1>Datenübernahme<InfoTip>Reservierungen aus Ihrer bisherigen Software übernehmen. Zuerst wird die Datei nur geprüft, es wird nichts gespeichert. Erst wenn der Bericht keine Fehler zeigt, können Sie den Import ausführen. Er lässt sich rückgängig machen.</InfoTip></h1>
+      <h1>Datenübernahme<InfoTip>Reservationen aus Ihrer bisherigen Software übernehmen. Zuerst wird die Datei nur geprüft, es wird nichts gespeichert. Erst wenn der Bericht keine Fehler zeigt, können Sie den Import ausführen. Er lässt sich rückgängig machen.</InfoTip></h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       {sp.error ? <p className="notice warn" role="alert">{sp.error}</p> : null}
 
@@ -86,9 +86,9 @@ export default async function Migration({ params, searchParams }: { params: Prom
 
       <section className="card stack">
         <h2>1. Datei vorbereiten</h2>
-        <p>Exportieren Sie die Reservierungen aus Ihrer bisherigen Software als Excel/CSV und bringen Sie sie in das Format unserer Vorlage. Zimmertyp und Tarif müssen genau so heissen wie in Pontivo, legen Sie sie also vorher unter Einstellungen → Zimmer & Tarife an.</p>
-        <p><DownloadLink href={`/admin/${hotel.id}/migration/vorlage`}>Vorlage Reservierungen (CSV)</DownloadLink></p>
-        <p className="small muted">Gäste und Gutscheine übernehmen Sie mit denselben Schritten. Die Art der Datei erkennt Pontivo an der Kopfzeile: <strong>Gäste</strong> <code>vorname;nachname;email;telefon;sprache;marketing_einwilligung;einwilligung_am</code> (Einwilligung nur mit «ja» und Datum, sonst nicht übernommen), <strong>Gutscheine mit Restwert</strong> <code>code;betrag;restwert;gueltig_bis;kaeufer;kaeufer_email;empfaenger</code>. Reihenfolge: zuerst Zimmer in Pontivo anlegen, dann Gäste, Gutscheine, Reservierungen. Offene Rechnungen übernehmen wir nicht: Rechnungen der alten Software stellen Sie dort fertig, die Nummernreihe setzen Sie unten fort.</p>
+        <p>Exportieren Sie die Reservationen aus Ihrer bisherigen Software als Excel/CSV und bringen Sie sie in das Format unserer Vorlage. Zimmertyp und Tarif müssen genau so heissen wie in Pontivo, legen Sie sie also vorher unter Einstellungen → Zimmer & Tarife an.</p>
+        <p><DownloadLink href={`/admin/${hotel.id}/migration/vorlage`}>Vorlage Reservationen (CSV)</DownloadLink></p>
+        <p className="small muted">Gäste und Gutscheine übernehmen Sie mit denselben Schritten. Die Art der Datei erkennt Pontivo an der Kopfzeile: <strong>Gäste</strong> <code>vorname;nachname;email;telefon;sprache;marketing_einwilligung;einwilligung_am</code> (Einwilligung nur mit «ja» und Datum, sonst nicht übernommen), <strong>Gutscheine mit Restwert</strong> <code>code;betrag;restwert;gueltig_bis;kaeufer;kaeufer_email;empfaenger</code>. Reihenfolge: zuerst Zimmer in Pontivo anlegen, dann Gäste, Gutscheine, Reservationen. Offene Rechnungen übernehmen wir nicht: Rechnungen der alten Software stellen Sie dort fertig, die Nummernreihe setzen Sie unten fort.</p>
         <details><summary>Spalten der Vorlage</summary>
           <table className="table small"><tbody>{IMPORT_COLUMNS.map((c) => <tr key={c.key}><td><code>{c.key}</code></td><td>{c.help}</td></tr>)}</tbody></table>
         </details>
@@ -98,7 +98,7 @@ export default async function Migration({ params, searchParams }: { params: Prom
       <section className="card stack">
         <h2>2. Datei prüfen</h2>
         <form action={upload} className="stack">{H}
-          <div><label htmlFor="file">CSV-Datei (Reservierungen höchstens 2000 Zeilen)</label><input id="file" name="file" type="file" accept=".csv,text/csv" required /></div>
+          <div><label htmlFor="file">CSV-Datei (Reservationen höchstens 2000 Zeilen)</label><input id="file" name="file" type="file" accept=".csv,text/csv" required /></div>
           <div><button className="btn">Prüfen (Trockenlauf)</button></div>
         </form>
       </section>
@@ -142,7 +142,7 @@ export default async function Migration({ params, searchParams }: { params: Prom
       {atLeast(role, "owner") ? (
         <section className="card stack">
           <h2>Meine Daten exportieren</h2>
-          <p>Alle Ihre Daten als ZIP mit einer CSV je Tabelle: Reservierungen (im Format der Vorlage, so können Sie jederzeit wechseln), Gäste, Zimmertypen, Tarife, Rechnungen, Gutscheine. Jederzeit und kostenlos.</p>
+          <p>Alle Ihre Daten als ZIP mit einer CSV je Tabelle: Reservationen (im Format der Vorlage, so können Sie jederzeit wechseln), Gäste, Zimmertypen, Tarife, Rechnungen, Gutscheine. Jederzeit und kostenlos.</p>
           <p><DownloadLink href={`/admin/${hotel.id}/migration/export`}>ZIP herunterladen</DownloadLink></p>
         </section>
       ) : null}

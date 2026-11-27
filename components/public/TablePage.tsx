@@ -14,12 +14,12 @@ import { MenuPicker } from "./MenuPicker";
 import { readDraft } from "./reservation-draft";
 import { onlineMenu } from "@/src/services/online-orders";
 
-/** Öffentliche Tischreservierung (SPEC 19.49 Etappe C): Datum und Personen wählen, freie Zeiten, Daten, Bestätigung */
+/** Öffentliche Tischreservation (SPEC 19.49 Etappe C): Datum und Personen wählen, freie Zeiten, Daten, Bestätigung */
 export async function TablePage({ hotel, locale, base, sp }: { hotel: Hotel; locale: Locale; base: string; sp: Record<string, string | string[] | undefined> }) {
   const r = RES[locale];
   const one = (k: string) => { const v = sp[k]; return Array.isArray(v) ? v[0] : v; };
   const settings = { ...(await getSettings(hotel.id)) };
-  settings.onlineEnabled = await tableReservationOnline(hotel.id); // ohne Modul «restaurant» keine Online-Reservierung
+  settings.onlineEnabled = await tableReservationOnline(hotel.id); // ohne Modul «restaurant» keine Online-Reservation
   // Anzahlung nur, wenn Stripe Zahlungen freigegeben hat (sonst wird ohne Anzahlung reserviert)
   if (env().PAYMENT_PROVIDER === "stripe" && !(hotel.stripeAccountId && hotel.stripeChargesEnabled)) settings.depositPerPersonRappen = 0;
   const today = todayIn(hotel.timezone);

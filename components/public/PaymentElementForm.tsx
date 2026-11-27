@@ -8,7 +8,7 @@ import { loadStripe } from "./EmbeddedCheckout";
  * Payment Element (SPEC 19.52): Zahlungsformular im Look des Hotels. Die Eingabefelder liegen in Rahmen von Stripe,
  * Kartendaten erreichen nie unseren Server. Farben, Schrift und Rundung kommen aus dem Design des Hotels (CSS-Variablen, auch Dunkelmodus).
  * Stripe-Doku: «Accept a payment» (Payment Element), Appearance API, `confirmPayment` mit `redirect: "if_required"`.
- * Alle Fehlerfälle (Laden, Ablehnung, Netz, Zeitüberschreitung, abgelaufene Reservierung, TWINT-Rückkehr) werden hier abgefangen.
+ * Alle Fehlerfälle (Laden, Ablehnung, Netz, Zeitüberschreitung, abgelaufene Reservation, TWINT-Rückkehr) werden hier abgefangen.
  */
 type StripeError = { type?: string; code?: string; message?: string };
 type PaymentIntentLite = { status: string };

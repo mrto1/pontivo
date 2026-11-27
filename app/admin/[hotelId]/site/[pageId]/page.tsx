@@ -489,7 +489,7 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
         <div><label htmlFor="fff0822">Öffnungszeiten von</label><select id="fff0822" name="place" defaultValue={b.place}>{HOURS_PLACES.map((p) => <option key={p} value={p}>{PLACE_LABEL[p]}</option>)}</select></div>
         <div><label htmlFor="fff0823">Zeiten</label><select id="fff0823" name="source" defaultValue={b.source}>
-          <option value="opening">Aus den Öffnungszeiten der Betriebsdaten (wie Reservierung und Online-Bestellung)</option>
+          <option value="opening">Aus den Öffnungszeiten der Betriebsdaten (wie Reservation und Online-Bestellung)</option>
           <option value="manual">Hier von Hand erfassen</option>
         </select></div>
         {b.source === "opening" ? <p className="muted small">Die Zeiten kommen aus <a href={`/admin/${hotelId}/settings#gastronomie`}>Betriebsdaten → Öffnungszeiten</a>. Betriebsferien und Hinweis erfassen Sie hier.</p> : null}
@@ -525,7 +525,7 @@ function BlockFields({ b, lib, docs, hotelId, langs, plans, hotelEmail }: { b: B
       return (<>
         <LField name="heading" label="Überschrift" value={b.heading} max={200} langs={langs} />
         <LField name="intro" label="Einleitung" value={b.intro} rows={2} max={1000} langs={langs} />
-        <p className="muted small">Zeiten, Plätze und Ein/Aus stellen Sie unter <a href={`/admin/${hotelId}/restaurant/einstellungen#online`}>Reservierung</a> ein. Ist die Online-Reservierung aus, bleibt der Baustein unsichtbar.</p>
+        <p className="muted small">Zeiten, Plätze und Ein/Aus stellen Sie unter <a href={`/admin/${hotelId}/restaurant/einstellungen#online`}>Reservation</a> ein. Ist die Online-Reservation aus, bleibt der Baustein unsichtbar.</p>
       </>);
     case "order":
       return (<>

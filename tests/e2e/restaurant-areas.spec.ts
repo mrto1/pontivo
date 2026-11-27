@@ -26,17 +26,17 @@ test("Hotel mit Restaurant: Umschalter Hotel | Restaurant", async ({ page, conte
   const sw = page.getByRole("group", { name: "Bereich wählen" });
   await expect(sw.getByRole("button", { name: /Hotel/ })).toHaveAttribute("aria-pressed", "true");
   await expect(nav.getByRole("link", { name: "Kalender" })).toBeVisible();
-  await expect(page.getByTestId("dining-hint")).toContainText("Restaurant heute: 0 Reservierungen");
+  await expect(page.getByTestId("dining-hint")).toContainText("Restaurant heute: 0 Reservationen");
 
   await sw.getByRole("button", { name: /Restaurant/ }).click();
   await expect(page).toHaveURL(/\/restaurant\/heute$/, { timeout: 20_000 });
-  await expect(nav.getByRole("link", { name: "Reservierungen" })).toBeVisible({ timeout: 20_000 });
+  await expect(nav.getByRole("link", { name: "Reservationen" })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByRole("heading", { name: "Heute", level: 1 })).toBeVisible();
 
   // geteilte Seite bleibt im Bereich Gastronomie; Startseite führt zur Tagesübersicht
   await expect.poll(async () => (await context.cookies()).find((c) => c.name.startsWith("pv_area_"))?.value).toBe("dining");
   await page.goto(`/admin/${h.hotel.id}/vouchers`);
-  await expect(nav.getByRole("link", { name: "Reservierungen" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Reservationen" })).toBeVisible();
   await page.goto(`/admin/${h.hotel.id}`);
   await expect(page).toHaveURL(/\/restaurant\/heute$/);
   // Seite der Unterkunft wechselt den Bereich von selbst (z. B. Link aus einer Mail)
@@ -56,7 +56,7 @@ test("Reines Restaurant: nur Gastronomie, kein Umschalter; Service landet in der
   await page.goto(`/admin/${hotel.id}`);
   await expect(page).toHaveURL(/\/restaurant\/heute$/);
   await expect(page.getByRole("group", { name: "Bereich wählen" })).toHaveCount(0);
-  await expect(page.locator(".admin-nav a")).toHaveText(["Heute", "Reservierungen", "Bestellungen", "Finanzen"]);
+  await expect(page.locator(".admin-nav a")).toHaveText(["Heute", "Reservationen", "Bestellungen", "Finanzen"]);
   await page.goto(`/admin/${hotel.id}/einstellungen`);
   await expect(page.getByRole("link", { name: "Zimmer & Tarife" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Speisekarte" }).first()).toBeVisible();
@@ -76,8 +76,8 @@ test("Reines Restaurant: nur Gastronomie, kein Umschalter; Service landet in der
   await page.getByRole("button", { name: "Reservation live schalten" }).click();
   await expect(page).toHaveURL(/ok=1/);
   await page.goto(`/admin/${hotel.id}/einrichten?step=reservierung`);
-  await expect(page.getByTestId("reservation-live")).toContainText("Reservierung ist online");
-  await expect(page.getByRole("img", { name: "QR-Code zur Tischreservierung" })).toBeVisible();
+  await expect(page.getByTestId("reservation-live")).toContainText("Reservation ist online");
+  await expect(page.getByRole("img", { name: "QR-Code zur Tischreservation" })).toBeVisible();
   await page.goto(`/admin/${hotel.id}/restaurant/heute`);
   const check = page.getByTestId("ready-checklist");
   await expect(check).toContainText("Bereit für den Betrieb");
@@ -98,8 +98,8 @@ test("Reines Restaurant: nur Gastronomie, kein Umschalter; Service landet in der
   await expect(page.getByRole("group", { name: "Bereich wählen" })).toHaveCount(0);
 });
 
-/** R2-Rest (SPEC 20.2): Baustein und Knopf «Tisch reservieren» auf der Website, Kartei-Notiz bei der Reservierung */
-test("Restaurant-Website: Tisch reservieren, Kartei bei der Reservierung", async ({ page, context, baseURL }) => {
+/** R2-Rest (SPEC 20.2): Baustein und Knopf «Tisch reservieren» auf der Website, Kartei-Notiz bei der Reservation */
+test("Restaurant-Website: Tisch reservieren, Kartei bei der Reservation", async ({ page, context, baseURL }) => {
   const { hotel } = await makeHotel({}, []);
   await db().update(hotels).set({ propertyType: "restaurant" }).where(eq(hotels.id, hotel.id));
   await db().insert(hotelModules).values([{ hotelId: hotel.id, module: "restaurant", enabled: true }, { hotelId: hotel.id, module: "guestnotes", enabled: true }]).onConflictDoNothing();

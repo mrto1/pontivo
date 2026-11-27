@@ -33,7 +33,7 @@ async function create(f: FormData) {
   const day = s(f, "day");
   try { await createReservation(c.hotel, { day, time: s(f, "time"), party: Number(s(f, "party")), name: s(f, "name"), phone: s(f, "phone"), email: s(f, "email"), note: s(f, "note"), tableId: s(f, "tableId") || null }, "admin", c.actor); }
   catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, isDay(day) ? day : todayIn(c.hotel.timezone), `Nicht gespeichert: ${e.message}`); }
-  here(c.hotel.id, day, "Reservierung gespeichert.");
+  here(c.hotel.id, day, "Reservation gespeichert.");
 }
 async function status(f: FormData) {
   "use server";
@@ -53,10 +53,10 @@ async function autoAssign(f: FormData) {
   "use server";
   const c = await guard(f);
   const n = await autoAssignDay(c.hotel.id, s(f, "day"), c.actor);
-  here(c.hotel.id, s(f, "day"), n ? `${n} Reservierungen einem Tisch zugeteilt.` : "Nichts zuzuteilen: alle haben einen Tisch oder es passt keiner.");
+  here(c.hotel.id, s(f, "day"), n ? `${n} Reservationen einem Tisch zugeteilt.` : "Nichts zuzuteilen: alle haben einen Tisch oder es passt keiner.");
 }
 
-/** Kartei-Notiz und Tags zum Gast der Reservierung (SPEC 20.2, gleiche Kartei wie bei Hotelbuchungen) */
+/** Kartei-Notiz und Tags zum Gast der Reservation (SPEC 20.2, gleiche Kartei wie bei Hotelbuchungen) */
 async function profile(f: FormData) {
   "use server";
   const c = await guard(f);
@@ -66,7 +66,7 @@ async function profile(f: FormData) {
   here(c.hotel.id, s(f, "day"), "Kartei gespeichert.");
 }
 
-/** Tischreservierungen (SPEC 19.49 Etappe C): Liste je Tag, Tisch zuweisen, Status, neue Reservierung, Online-Einstellungen */
+/** Tischreservationen (SPEC 19.49 Etappe C): Liste je Tag, Tisch zuweisen, Status, neue Reservation, Online-Einstellungen */
 export default async function ReservationsPage({ params, searchParams }: { params: Promise<{ hotelId: string }>; searchParams: Promise<Record<string, string | undefined>> }) {
   const { hotelId } = await params;
   const sp = await searchParams;
@@ -91,10 +91,10 @@ export default async function ReservationsPage({ params, searchParams }: { param
   return (
     <div className="stack">
       <SeenMark hotelId={hotel.id} kind="reservations" />
-      <h1 className="sr-only">Tischreservierungen</h1>
+      <h1 className="sr-only">Tischreservationen</h1>
       {sp.msg ? <Notice text={sp.msg} /> : null}
       <PeriodNav prev={`?day=${addDays(day, -1)}`} next={`?day=${addDays(day, 1)}`} todayHref="?" todayActive={day === today} prevLabel="Vortag" nextLabel="Folgetag" jump={{ value: day, param: "day" }}>
-        <span className="small muted">{formatDay(day, "de")} · {live.length} Reservierungen, {guests} Gäste{peak ? `, gleichzeitig bis zu ${peak} von ${cfg.capacity} Plätzen` : ""}</span>
+        <span className="small muted">{formatDay(day, "de")} · {live.length} Reservationen, {guests} Gäste{peak ? `, gleichzeitig bis zu ${peak} von ${cfg.capacity} Plätzen` : ""}</span>
       </PeriodNav>
       {!tables.length ? <p className="notice">Noch keine Tische angelegt. {atLeast(role, "manager") ? <a href={`/admin/${hotel.id}/restaurant/tische`}>Tische anlegen</a> : "Bitte die Leitung, Tische anzulegen."}</p> : atLeast(role, "manager") ? <p className="small muted m0"><a href={`/admin/${hotel.id}/restaurant/tische`}>Tische bearbeiten</a></p> : null}
       <section className="card">
@@ -131,7 +131,7 @@ export default async function ReservationsPage({ params, searchParams }: { param
               </tr>
             ))}
           </tbody></table>
-        ) : <p className="muted">Keine Reservierungen an diesem Tag.</p>}
+        ) : <p className="muted">Keine Reservationen an diesem Tag.</p>}
       </section>
       {live.some((r) => !r.tableId) && tables.length ? (
         <form action={autoAssign}>{H}{D}<button className="btn secondary">Offene automatisch einem Tisch zuteilen</button></form>
@@ -139,7 +139,7 @@ export default async function ReservationsPage({ params, searchParams }: { param
       {wait.length ? <p className="small"><a href={`/admin/${hotel.id}/restaurant/warteliste?day=${day}`}>Warteliste an diesem Tag: {wait.length}</a></p> : null}
       <form action={create} className="card stack">
         {H}{D}
-        <h2>Neue Reservierung</h2>
+        <h2>Neue Reservation</h2>
         <div className="inline-form">
           <div><label htmlFor="time">Zeit</label><input id="time" name="time" type="time" step={900} required /></div>
           <div><label htmlFor="party">Personen</label><input id="party" name="party" type="number" min={1} max={50} defaultValue={2} required className="w80" /></div>

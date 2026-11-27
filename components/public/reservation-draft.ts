@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 
-/** Entwurf der Tischreservierung nach einem Fehler (Server Action setzt ihn, die Seite füllt die Felder vor) */
+/** Entwurf der Tischreservation nach einem Fehler (Server Action setzt ihn, die Seite füllt die Felder vor) */
 export const DRAFT_COOKIE = "res_draft";
 export type ReservationDraft = { name: string; email: string; phone: string; note: string; time: string };
 

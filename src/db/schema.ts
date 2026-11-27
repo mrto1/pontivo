@@ -1844,12 +1844,12 @@ export const setupImports = pgTable("setup_imports", {
 });
 export type SetupImport = typeof setupImports.$inferSelect;
 
-/** Online-Reservierung und Kapazität (SPEC 19.49 Etappe C) */
+/** Online-Reservation und Kapazität (SPEC 19.49 Etappe C) */
 export const restaurantSettings = pgTable("restaurant_settings", {
   hotelId: uuid("hotel_id").primaryKey(),
   /** Link zur Google-Bewertung (Bewertungsanfrage nach dem Bezahlen am Tisch) */
   reviewUrl: text("review_url").notNull().default(""),
-  /** Vorbestellung zur Reservierung (SPEC 19.57): an, und ab wie vielen Personen Pflicht (0 = nie) */
+  /** Vorbestellung zur Reservation (SPEC 19.57): an, und ab wie vielen Personen Pflicht (0 = nie) */
   preorderEnabled: boolean("preorder_enabled").notNull().default(false),
   preorderRequiredFrom: integer("preorder_required_from").notNull().default(0),
   /** grosse Gruppen automatisch auf mehrere nahe Tische legen (SPEC 19.58) */
@@ -1905,7 +1905,7 @@ export const posReservations = pgTable("pos_reservations", {
   preorderRappen: integer("preorder_rappen").notNull().default(0),
   preorderOrderId: uuid("preorder_order_id"),
   /** weitere Tische bei zusammengelegten Tischen (SPEC 19.58); `table_id` bleibt der Haupttisch */
-  /** Halbpension: Buchung, aus der die Reservierung entstand (SPEC 19.62) */
+  /** Halbpension: Buchung, aus der die Reservation entstand (SPEC 19.62) */
   bookingId: uuid("booking_id"),
   extraTableIds: uuid("extra_table_ids").array().notNull().default([]),
   stripeSessionId: text("stripe_session_id"),
