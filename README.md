@@ -46,7 +46,7 @@ npm run worker                       # optional, zweites Terminal: Holds freigeb
 docker compose exec db createdb -U postgres hotel_test   # einmalig
 # TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/hotel_test setzen
 npm test                             # Unit + Integration gegen echte Postgres-DB (102 Tests)
-npm run test:e2e                     # Playwright: suchen, buchen, stornieren (Dev-Server muss laufen oder wird gestartet)
+npm run test:e2e                     # Playwright: suchen, buchen, stornieren (Dev-Server muss laufen oder wird gestartet; eigener Dev-Server mit E2E_CLOCK=1, damit Tests die Uhrzeit vorgeben können)
 ```
 
 Abnahmetests (SPEC 12): `tests/unit/pricing.test.ts` (Preis-Testfälle 5.2), `tests/integration/m1-booking.test.ts` (20 parallele Holds, Ablauf, Suchregeln, Mandantentrennung), `tests/integration/m2-stripe.test.ts` (Direct Charge + Gebühr, doppelter Webhook, Storno vor/nach Frist, Session abgelaufen, Kalender → Outbox + Audit), `tests/integration/m2-admin.test.ts` (Login, Rollen, Kurtaxe bestätigen, E-Mails).
