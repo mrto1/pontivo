@@ -335,6 +335,8 @@ export const bookings = pgTable("bookings", {
   /** Datenübernahme (Migration 0057): Nummer in der bisherigen Software, je Betrieb eindeutig, und der Auftrag */
   sourceRef: text("source_ref"),
   importJobId: uuid("import_job_id"),
+  /** Herkunft einer Direktbuchung (Migration 0109, SPEC 19.67): «google» = über Google gekommen */
+  referrer: text("referrer").$type<"google">(),
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
@@ -1875,6 +1877,10 @@ export const restaurantSettings = pgTable("restaurant_settings", {
   depositFromParty: integer("deposit_from_party").notNull().default(1),
   cancelHours: integer("cancel_hours").notNull().default(24),
   reminderHours: integer("reminder_hours").notNull().default(24),
+  /** SMS-Erinnerung (Migration 0110, SPEC 19.68): freiwillig, Kosten je SMS trägt der Betrieb; Zustimmung mit Zeitpunkt */
+  smsReminder: boolean("sms_reminder").notNull().default(false),
+  smsReminderHours: integer("sms_reminder_hours").notNull().default(3),
+  smsReminderAcceptedAt: ts("sms_reminder_accepted_at"),
   autoAssign: boolean("auto_assign").notNull().default(true),
   /** Öffnungszeiten je Wochentag (0 = Sonntag), null = keine Einschränkung (SPEC 20.1) */
   openingHours: jsonb("opening_hours").$type<Record<string, { from: string; to: string }[]> | null>(),
@@ -1911,6 +1917,10 @@ export const posReservations = pgTable("pos_reservations", {
   stripeSessionId: text("stripe_session_id"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   reminderSentAt: ts("reminder_sent_at"),
+  /** SMS-Erinnerung gesendet (Migration 0110, SPEC 19.68) */
+  smsReminderSentAt: ts("sms_reminder_sent_at"),
+  /** Herkunft (Migration 0109): «google» = über Google gekommen */
+  referrer: text("referrer").$type<"google">(),
 });
 export type PosReservation = typeof posReservations.$inferSelect;
 
@@ -1982,6 +1992,8 @@ export const onlineOrders = pgTable("online_orders", {
   status: text("status").$type<OnlineOrderStatus>().notNull(),
   payment: text("payment").$type<"card" | "cash">().notNull(),
   name: text("name").notNull(),
+  /** Herkunft (Migration 0109): «google» = über Google gekommen */
+  referrer: text("referrer").$type<"google">(),
   phone: text("phone").notNull(),
   email: text("email").notNull().default(""),
   language: text("language").notNull().default("de"),

@@ -4,7 +4,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { db, rows } from "../db/client";
 import { posAreas, posReservations, posTables, posWaitlist, restaurantSettings, type Hotel, type PosReservation } from "../db/schema";
 import { addDays, diffDays, isDay, todayIn, zonedToUtc } from "../domain/dates";
-import { TIME_RE, checkOpeningHours, checkWindows, coversAt, depositFor, onlineSlots, refundable, onlineTableAvailable, onlineTables, suggestCombination, suggestTable, tableFree, type ResSettings, type Slot, PENDING_MINUTES } from "../domain/reservations";
+import { smsReminderText, TIME_RE, checkOpeningHours, checkWindows, coversAt, depositFor, onlineSlots, refundable, onlineTableAvailable, onlineTables, suggestCombination, suggestTable, tableFree, type ResSettings, type Slot, PENDING_MINUTES } from "../domain/reservations";
 import { enqueueEmail } from "../email/enqueue";
 import { env } from "../env";
 import { getPaymentProvider } from "../payments/provider";
@@ -12,6 +12,8 @@ import { isLocale } from "../i18n/dict";
 import { enqueuePush } from "../push/service";
 import { audit } from "./audit";
 import { getHotelById } from "./hotels";
+import { enqueueSms } from "./sms";
+import { publicBase } from "./brand";
 import { PosError, addLines, createDevice, openOrder, pay } from "./pos";
 import { priceCart, type CartLine } from "./online-orders";
 import { posDevices, type OnlineOrderItem } from "../db/schema";
@@ -409,8 +411,53 @@ export async function tableJob(now = new Date()): Promise<{ released: number; wa
     await enqueueEmail(db(), { hotelId: hotel.id, template: "table_reminder", to: r.email, language: r.language, data: { name: r.name, day: r.day, time: r.time, party: r.party, token: r.publicToken, reservationId: r.id } });
     reminders++;
   }
+  const smsReminders = await smsReminderJob(now);
   await kitchenLead(now);
-  return { released: stale.length, waitlist, reminders };
+  return { released: stale.length, waitlist, reminders: reminders + smsReminders };
+}
+
+/**
+ * SMS-Erinnerung (SPEC 19.68): einmal X Stunden vor Beginn an Gäste mit Telefonnummer, nur wenn der Betrieb sie eingeschaltet
+ * und den Kosten zugestimmt hat. Die SMS gehen als verrechenbare Gast-SMS in die Outbox (Monatsrechnung, Selbstkosten).
+ */
+export async function smsReminderJob(now = new Date()): Promise<number> {
+  const due = rows<{ id: string }>(await db().execute(sql`
+    SELECT r.id FROM pos_reservations r JOIN restaurant_settings s ON s.hotel_id = r.hotel_id
+     WHERE r.status = 'confirmed' AND r.phone <> '' AND r.sms_reminder_sent_at IS NULL AND r.booking_id IS NULL
+       AND s.sms_reminder AND s.sms_reminder_accepted_at IS NOT NULL
+       AND r.day BETWEEN (${now}::timestamptz AT TIME ZONE 'UTC')::date - 1 AND (${now}::timestamptz AT TIME ZONE 'UTC')::date + 3`));
+  let n = 0;
+  for (const x of due) {
+    const [r] = await db().select().from(posReservations).where(eq(posReservations.id, x.id));
+    const hotel = r && (await getHotelById(r.hotelId));
+    if (!r || !hotel) continue;
+    const s = await getSettings(r.hotelId);
+    const start = zonedToUtc(r.day, r.time, hotel.timezone).getTime();
+    if (start <= now.getTime() || start - now.getTime() > (s.smsReminderHours ?? 3) * 3_600_000) continue;
+    const lang = ["de", "en", "fr", "it"].includes(r.language) ? r.language : "de";
+    const text = smsReminderText({ hotelName: hotel.name, day: r.day, today: todayIn(hotel.timezone, now), time: r.time, party: r.party, language: lang, link: `${publicBase(hotel)}/${lang}/tisch/${r.publicToken}` });
+    const sent = await db().transaction(async (tx) => {
+      const [u] = await tx.update(posReservations).set({ smsReminderSentAt: now }).where(and(eq(posReservations.id, r.id), isNull(posReservations.smsReminderSentAt))).returning();
+      if (!u) return false;
+      await enqueueSms(tx, { hotelId: hotel.id, to: r.phone, text, kind: "guest", ref: `table-sms:${r.id}` });
+      return true;
+    });
+    if (sent) n++;
+  }
+  return n;
+}
+
+/** SMS-Erinnerung ein- und ausschalten (SPEC 19.68). Einschalten nur mit Zustimmung zu den Kosten; die Zustimmung wird mit Zeitpunkt gespeichert. */
+export async function saveSmsReminder(hotelId: string, v: { on: boolean; hours: number; acceptCosts: boolean }, actor: string) {
+  if (!Number.isInteger(v.hours) || v.hours < 1 || v.hours > 48) throw new PosError("Zeitpunkt: 1 bis 48 Stunden vor Beginn.");
+  const cur = await getSettings(hotelId);
+  const accepted = cur.smsReminderAcceptedAt ?? null;
+  if (v.on && !accepted && !v.acceptCosts) throw new PosError("Bitte bestätigen Sie, dass die SMS-Kosten auf Ihrer Monatsrechnung erscheinen.");
+  const set = { smsReminder: v.on, smsReminderHours: v.hours, smsReminderAcceptedAt: accepted ?? (v.on ? new Date() : null) };
+  await db().transaction(async (tx) => {
+    await tx.insert(restaurantSettings).values({ hotelId, ...cur, ...set }).onConflictDoUpdate({ target: restaurantSettings.hotelId, set: { ...set, updatedAt: new Date() } });
+    await audit(tx, { hotelId, actor, action: v.on ? "restaurant.sms_reminder_on" : "restaurant.sms_reminder_off", entity: "restaurant_settings", entityId: hotelId, details: { hours: v.hours } });
+  });
 }
 
 /** Küchenvorlauf (SPEC 19.60): Vorbestellungen mit Tisch gehen X Minuten vor der Ankunft in die Küche */

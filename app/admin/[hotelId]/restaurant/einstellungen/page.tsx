@@ -1,28 +1,37 @@
 import { Notice } from "@/components/admin/Notice";
 import { FormSwitch } from "@/components/admin/FormSwitch";
-import { redirect } from "next/navigation";
-import { requireHotel, requireHotelModule } from "@/src/auth/guard";
-import { PosError } from "@/src/services/pos";
-import { getSettings, saveSettings } from "@/src/services/reservations";
+import { requireHotelModule } from "@/src/auth/guard";
+import { getSettings, saveSettings, saveSmsReminder } from "@/src/services/reservations";
+import { smsConfigured } from "@/src/integrations/sms/aspsms";
+import { billableSmsCount } from "@/src/services/sms";
+import { env } from "@/src/env";
+import { formatChf } from "@/src/domain/money";
+import { todayIn } from "@/src/domain/dates";
 import { publicBase } from "@/src/services/brand";
 import QRCode from "qrcode";
 import { s } from "@/src/lib/form";
+import { hotelAction, type HotelCtx } from "@/src/lib/hotel-action";
 
 export const dynamic = "force-dynamic";
-const here = (h: string, msg: string) => redirect(`/admin/${h}/restaurant/einstellungen?msg=${encodeURIComponent(msg)}`);
+const run = (f: FormData, fn: (c: HotelCtx) => Promise<string>, anchor = "") =>
+  hotelAction(f, { page: "restaurant/einstellungen", module: "restaurant", role: "manager", fail: "Einstellungen nicht gespeichert", anchor }, fn);
 
-async function guard(f: FormData) {
-  const c = await requireHotelModule("restaurant", s(f, "hotelId"), "manager");
-  return c;
-}
 async function settings(f: FormData) {
   "use server";
-  const c = await guard(f);
   const windows = [1, 2].flatMap((n) => (s(f, `from${n}`) && s(f, `to${n}`) ? [{ from: s(f, `from${n}`), to: s(f, `to${n}`) }] : []));
-  try {
+  await run(f, async (c) => {
     await saveSettings(c.hotel.id, { onlineEnabled: f.get("onlineEnabled") === "on", windows, durationMin: Number(s(f, "durationMin")), depositPerPersonRappen: Math.round(Number((s(f, "deposit") || "0").replace(",", ".")) * 100), depositFromParty: Number(s(f, "depositFromParty") || 1), cancelHours: Number(s(f, "cancelHours") || 0), reminderHours: Number(s(f, "reminderHours") || 0), autoAssign: f.get("autoAssign") === "on", preorderEnabled: f.get("preorderEnabled") === "on", combineTables: f.get("combineTables") === "on", slotMaxGuests: Math.max(0, Math.floor(Number(s(f, "slotMaxGuests") || 0))), halfboardEnabled: f.get("halfboardEnabled") === "on", halfboardTime: /^([01]\d|2[0-3]):[0-5]\d$/.test(s(f, "halfboardTime")) ? s(f, "halfboardTime") : "19:00", preorderLeadMin: Math.min(240, Math.max(0, Math.floor(Number(s(f, "preorderLeadMin") || 0)))), preorderRequiredFrom: Math.max(0, Math.floor(Number(s(f, "preorderRequiredFrom") || 0))), maxParty: Number(s(f, "maxParty")), capacity: Number(s(f, "capacity")), leadHours: Number(s(f, "leadHours")), horizonDays: Number(s(f, "horizonDays")) }, c.actor);
-  } catch (e) { if (!(e instanceof PosError)) throw e; here(c.hotel.id, `Einstellungen nicht gespeichert: ${e.message}`); }
-  here(c.hotel.id, "Einstellungen gespeichert.");
+    return "Einstellungen gespeichert.";
+  });
+}
+
+async function smsSave(f: FormData) {
+  "use server";
+  await run(f, async (c) => {
+    const on = f.get("smsReminder") === "on";
+    await saveSmsReminder(c.hotel.id, { on, hours: Number(s(f, "smsHours") || 3), acceptCosts: f.get("acceptCosts") === "on" }, c.actor);
+    return on ? "SMS-Erinnerung eingeschaltet." : "SMS-Erinnerung ausgeschaltet.";
+  }, "#sms");
 }
 
 /** Reservation (SPEC 20.1, Zahnrad → Gastronomie): Einstellungen der Online-Reservation. Tische und Plan: Seite «Tischplan» (restaurant/tische) */
@@ -31,6 +40,8 @@ export default async function RestaurantSettingsPage({ params, searchParams }: {
   const sp = await searchParams;
   const { hotel } = await requireHotelModule("restaurant", hotelId, "manager");
   const cfg = await getSettings(hotel.id);
+  const smsPrice = env().SMS_GUEST_PRICE_RAPPEN;
+  const smsMonth = await billableSmsCount(hotel.id, todayIn("Europe/Zurich").slice(0, 7));
   const H = <input type="hidden" name="hotelId" value={hotel.id} />;
   const publicUrl = `${publicBase(hotel)}/${hotel.defaultLanguage}/tisch`;
   const qr = cfg.onlineEnabled ? await QRCode.toDataURL(publicUrl, { margin: 1, width: 180 }) : null;
@@ -78,6 +89,17 @@ export default async function RestaurantSettingsPage({ params, searchParams }: {
             <FormSwitch name="halfboardEnabled" defaultOn={!!cfg.halfboardEnabled} label="Halbpension mit Tisch" hint="Hotelgäste mit Halbpension oder Vollpension (Tarif) bekommen für jede Nacht automatisch eine Reservation mit Tisch. Das Personal sieht sie im Plan und in der Liste und kann Zeit und Tisch ändern." />
             <div><label htmlFor="halfboardTime">Uhrzeit Abendessen (Halbpension)</label><input id="halfboardTime" name="halfboardTime" type="time" defaultValue={cfg.halfboardTime ?? "19:00"} className="w90" /></div>
           </> : null}
+          <div><button className="btn">Speichern</button></div>
+        </form>
+        <form action={smsSave} className="card stack" id="sms" data-testid="sms-reminder">{H}
+          <h2 className="m0">SMS-Erinnerung</h2>
+          <p className="muted small m0">Gäste mit Handynummer bekommen vor der Reservation eine SMS mit Link zum Absagen oder Ändern. Das senkt die Zahl der Gäste, die nicht erscheinen. Die E-Mail-Erinnerung oben bleibt unabhängig davon.</p>
+          <FormSwitch name="smsReminder" defaultOn={!!cfg.smsReminder} label="SMS-Erinnerung senden" hint={`Kosten: ${formatChf(smsPrice)} je SMS (Selbstkosten), auf Ihrer Monatsrechnung von Pontivo. Diesen Monat: ${smsMonth} SMS an Gäste (${formatChf(smsMonth * smsPrice)}).`} />
+          <div><label htmlFor="smsHours">Zeitpunkt (Stunden vor Beginn)</label><input id="smsHours" name="smsHours" type="number" min={1} max={48} defaultValue={cfg.smsReminderHours ?? 3} className="w90" /></div>
+          {cfg.smsReminderAcceptedAt ? <p className="small muted m0">Kosten bestätigt am {cfg.smsReminderAcceptedAt.toLocaleDateString("de-CH")}.</p> : (
+            <label className="check"><input type="checkbox" name="acceptCosts" />Ich bin einverstanden, dass jede gesendete SMS mit {formatChf(smsPrice)} auf der Monatsrechnung erscheint.</label>
+          )}
+          {!smsConfigured() ? <p className="notice warn small m0">Der SMS-Versand ist bei Pontivo noch nicht eingerichtet. Bis dahin wird nichts gesendet und nichts verrechnet.</p> : null}
           <div><button className="btn">Speichern</button></div>
         </form>
     </div>

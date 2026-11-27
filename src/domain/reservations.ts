@@ -17,6 +17,10 @@ export type ResSettings = {
   qrOrdering?: boolean;
   halfboardEnabled?: boolean;
   halfboardTime?: string;
+  /** SMS-Erinnerung (SPEC 19.68): freiwillig, Kosten je SMS trägt der Betrieb; erst nach Zustimmung (`smsReminderAcceptedAt`) */
+  smsReminder?: boolean;
+  smsReminderHours?: number;
+  smsReminderAcceptedAt?: Date | null;
   /** Öffnungszeiten je Wochentag (0 = Sonntag), null/fehlend = keine Einschränkung (SPEC 20.1) */
   openingHours?: OpeningHours | null;
 };
@@ -172,3 +176,16 @@ export function parseHoursText(t: string): Window[] | null {
 }
 export const hoursText = (ws: Window[] | undefined) => (ws ?? []).map((w) => `${w.from}–${w.to}`).join(", ");
 export const WEEKDAYS_DE = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+
+/** Kurztext der SMS-Erinnerung (SPEC 19.68), höchstens 2 SMS lang; Sprache des Gastes, sonst Deutsch */
+export function smsReminderText(o: { hotelName: string; day: string; today: string; time: string; party: number; link: string; language: string }): string {
+  const same = o.day === o.today;
+  const d = o.day.split("-").reverse().join(".").slice(0, 5) + ".";
+  const T: Record<string, string> = {
+    de: `${o.hotelName}: Wir freuen uns auf Sie ${same ? "heute" : `am ${d}`} um ${o.time} Uhr (${o.party} Pers.). Absagen oder ändern: ${o.link}`,
+    en: `${o.hotelName}: We look forward to seeing you ${same ? "today" : `on ${d}`} at ${o.time} (${o.party} ppl). Cancel or change: ${o.link}`,
+    fr: `${o.hotelName} : Nous nous réjouissons de vous accueillir ${same ? "aujourd'hui" : `le ${d}`} à ${o.time} (${o.party} pers.). Annuler ou modifier : ${o.link}`,
+    it: `${o.hotelName}: Vi aspettiamo ${same ? "oggi" : `il ${d}`} alle ${o.time} (${o.party} pers.). Annullare o modificare: ${o.link}`,
+  };
+  return (T[o.language] ?? T.de).slice(0, 300);
+}
