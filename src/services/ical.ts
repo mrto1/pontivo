@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq, lte, or, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, rows } from "../db/client";
@@ -16,7 +17,7 @@ export const MAX_FEEDS_PER_ROOM = 5;
 export const SYNC_EVERY_MS = 14 * 60_000;
 const FAIL_ALERT_MS = 48 * 3600_000;
 
-export class IcalError extends Error {}
+export class IcalError extends UserError {}
 
 // ---------------------------------------------------------------- Export
 

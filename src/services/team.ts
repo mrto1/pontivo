@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client";
@@ -6,7 +7,7 @@ import { CONFIGURABLE_AREAS, EDITABLE_STANDARD_ROLES, ROLE_AREAS, ROLE_LABEL, ty
 import { audit } from "./audit";
 
 /** Team eines Betriebs: Mitglieder und frei konfigurierbare Rollen (nur Inhaber). Jede Abfrage nach hotel_id. */
-export class TeamError extends Error {}
+export class TeamError extends UserError {}
 
 export const STANDARD_ROLES = Object.keys(ROLE_LABEL) as (FullRole | LimitedRole)[];
 

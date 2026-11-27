@@ -1,3 +1,4 @@
+import { UserError } from "../../domain/errors";
 /**
  * Nuki Web API (Swagger 4.26.0, https://api.nuki.io). Verwendete Endpunkte (laut Swagger-Datei):
  *  GET /smartlock · GET/PUT /smartlock/{id}/auth · POST/DELETE /smartlock/{id}/auth/{authId}  (Scope smartlock.auth)
@@ -5,7 +6,7 @@
  * ASSUMPTION: Datumsfelder im ISO-8601-Format (UTC), Typ 13 = Keypad-Code (Swagger: type 13 .. keypad).
  * Anlegen/Ändern/Löschen antwortet 204 und läuft asynchron: die Auth-ID kommt erst über die Liste.
  */
-export class NukiError extends Error {
+export class NukiError extends UserError {
   constructor(message: string, readonly status = 0) { super(message); }
 }
 

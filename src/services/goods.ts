@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
 import { bookings, folioItems, goods, minibarRefills, posItems, rooms, type FolioItem, type Good } from "../db/schema";
@@ -6,7 +7,7 @@ import { audit } from "./audit";
 import { insertFolioItem } from "./folio";
 
 /** Shop & Lager (SPEC 19.51). Jede Abfrage nach hotel_id. */
-export class GoodsError extends Error {}
+export class GoodsError extends UserError {}
 
 export type GoodInput = {
   name: string; category: string; priceRappen: number; vat: Good["vat"]; sellable: boolean; active: boolean;

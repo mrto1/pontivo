@@ -1,3 +1,4 @@
+import { UserError } from "../../domain/errors";
 import type { Hotel } from "../../db/schema";
 import { db } from "../../db/client";
 import { audit } from "../../services/audit";
@@ -17,7 +18,7 @@ export const WALLET_KEYS: WalletKey[] = ["apple_pay", "google_pay", "twint"];
 export type MethodState = { key: WalletKey; preference: "on" | "off" | "none"; value: "on" | "off"; available: boolean };
 export type DomainState = { domain: string; enabled: boolean; apple: string; google: string } | { domain: string; error: string };
 
-export class PaymentMethodsError extends Error {}
+export class PaymentMethodsError extends UserError {}
 
 /** Domains, auf denen das Zahlungsformular des Hotels erscheint: eigene Domain und die Pontivo-Adresse (/h/<slug>, /b/<Token>) */
 export function hotelDomains(hotel: Pick<Hotel, "primaryDomain">): string[] {

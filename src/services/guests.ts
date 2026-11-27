@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, rows } from "../db/client";
@@ -113,7 +114,7 @@ export const checkinSchema = z.object({
 });
 export type CheckinInput = z.input<typeof checkinSchema>;
 
-export class CheckinError extends Error {
+export class CheckinError extends UserError {
   constructor(public code: "invalid" | "signature" | "confirm" | "locked" | "not_found" | "closed", public fields: string[] = []) {
     super(code);
   }

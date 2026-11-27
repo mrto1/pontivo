@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, ne, sql } from "drizzle-orm";
 import { db, rows, type Executor } from "../db/client";
 import { bookingRooms, bookings, companies, companyCodes, guests, hotels, inventoryDays, roomTypes, waitlistEntries, type Company, type CompanyCode, type Hotel, type WaitlistEntry } from "../db/schema";
@@ -23,7 +24,7 @@ import { isLocale } from "../i18n/dict";
  * Direktbuchungs-Werkzeuge (SPEC 19.29): Einstellungen, Firmencodes, Warteliste, Lückenübersicht, Abbruch-Mail.
  * Jede Abfrage nach hotel_id.
  */
-export class DirectError extends Error {}
+export class DirectError extends UserError {}
 
 // ---------------------------------------------------------------- Einstellungen
 

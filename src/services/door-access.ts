@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { bookingRooms, bookings, doorCodes, doorLocks, hotels, type DoorCode, type DoorLock, type Hotel } from "../db/schema";
@@ -9,7 +10,7 @@ import { audit } from "./audit";
 import { moduleOn } from "./modules";
 
 /** Zutritt mit Nuki (SPEC 18.5): je Buchung ein Keypad-Code pro Eingangstür und für das zugewiesene Zimmer */
-export class AccessError extends Error {}
+export class AccessError extends UserError {}
 
 const tokenOf = (hotel: Hotel): string => {
   const enc = hotel.content?.nuki?.tokenEnc;

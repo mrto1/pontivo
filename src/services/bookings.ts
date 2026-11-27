@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { feeShare, planPayment } from "../domain/deposit";
 import { chargeVoucher, creditVoucher, takeVoucherForBooking, VoucherError } from "./vouchers";
 import { t, type Locale } from "../i18n/dict";
@@ -43,7 +44,7 @@ function withParams(url: string, p: Record<string, string>): string {
   return u.toString();
 }
 
-export class BookingError extends Error {
+export class BookingError extends UserError {
   constructor(public code: string, public httpStatus: number, message?: string) {
     super(message ?? code);
   }

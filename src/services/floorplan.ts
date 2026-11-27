@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { posAreas, posPlanItems, posTables, posWaiters, type PlanItemKind, type PosArea, type PosPlanItem, type PosWaiter } from "../db/schema";
@@ -5,7 +6,7 @@ import { PLAN_ITEM_KINDS, WAITER_COLORS, clampPlan } from "../domain/floorplan";
 import { audit } from "./audit";
 
 /** Tischplan: Räume und Orientierungselemente (SPEC 19.53). Jede Abfrage nach hotel_id. */
-export class FloorplanError extends Error {}
+export class FloorplanError extends UserError {}
 
 const clean = (s: string | undefined, n: number) => (s ?? "").trim().slice(0, n);
 

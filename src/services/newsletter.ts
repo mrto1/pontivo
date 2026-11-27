@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import crypto from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../db/client";
@@ -8,7 +9,7 @@ import { normEmail, select, validEmail, type Recipient } from "../domain/newslet
 import { audit } from "./audit";
 
 /** Newsletter (SPEC 19.12): nur Gäste mit Einwilligung; Abmeldung widerruft sie für alle Gästeeinträge dieser E-Mail im Betrieb. */
-export class NewsletterError extends Error {}
+export class NewsletterError extends UserError {}
 
 export const unsubscribeToken = (hotelId: string, email: string) =>
   crypto.createHmac("sha256", requireEnv("AUTH_SECRET")).update(`unsub:${hotelId}:${normEmail(email)}`).digest("base64url");

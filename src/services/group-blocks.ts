@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { sql } from "drizzle-orm";
 import type { Tx } from "../db/client";
 import { rows } from "../db/client";
@@ -8,7 +9,7 @@ import { enqueueAvailability } from "./outbox";
  * Zimmerblock einer Gruppe (SPEC 18.1). Reservierte Zimmer sind in `inventory_days.booked` mitgezählt und in
  * `group_block_days.rooms` pro Nacht als «noch nicht vergeben» geführt. Verfügbarkeit, Channex und iCal ändern sich dadurch nicht.
  */
-export class BlockError extends Error {
+export class BlockError extends UserError {
   constructor(public code: "sold_out" | "block_exhausted" | "not_enough" | "bad_range", msg: string) { super(msg); }
 }
 

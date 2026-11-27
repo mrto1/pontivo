@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { platformSettings } from "../db/schema";
@@ -38,7 +39,7 @@ export async function getPlatformBilling(): Promise<PlatformBilling> {
   return { iban: typeof v.iban === "string" ? v.iban : DEFAULT_PLATFORM_BILLING.iban, paymentDays: typeof v.paymentDays === "number" ? v.paymentDays : DEFAULT_PLATFORM_BILLING.paymentDays };
 }
 
-export class PlatformSettingsError extends Error {}
+export class PlatformSettingsError extends UserError {}
 
 export async function savePlatformBilling(input: { iban: string; paymentDays: number }, actor: string): Promise<PlatformBilling> {
   const iban = cleanIban(input.iban);

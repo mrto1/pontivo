@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client";
@@ -21,7 +22,7 @@ export const extraSchema = z.object({
 });
 export type ExtraInput = z.input<typeof extraSchema>;
 
-export class ExtraAdminError extends Error {}
+export class ExtraAdminError extends UserError {}
 
 export async function listExtras(hotelId: string) {
   return db().select().from(extras).where(eq(extras.hotelId, hotelId)).orderBy(asc(extras.sortOrder), asc(extras.createdAt));

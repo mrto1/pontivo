@@ -1,3 +1,4 @@
+import { UserError } from "./errors";
 import { extraAmount, perPerson, type ExtraUnit } from "./extras";
 
 /** Upselling (SPEC 14d): reine Logik für Auswahl und Provision */
@@ -5,7 +6,7 @@ import { extraAmount, perPerson, type ExtraUnit } from "./extras";
 /** Provision auf Upselling-Verkäufe: 5 % (Basispunkte). ASSUMPTION: gilt ab Einschalten, Änderungen mit 60 Tagen Frist (Gastgeber-Bedingungen). */
 export const UPSELL_PROVISION_BPS = 500;
 
-export class UpsellError extends Error {
+export class UpsellError extends UserError {
   constructor(public code: "not_available" | "invalid_selection" | "empty" | "not_found") {
     super(code);
   }

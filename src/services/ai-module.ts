@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, eq, sql } from "drizzle-orm";
 import { billingReady } from "../domain/platform-invoice";
 import { db, rows } from "../db/client";
@@ -14,7 +15,7 @@ import { applyModules } from "./modules";
  * Nutzungsübersicht und Abrechnung. Die Konditionen werden beim Einschalten kopiert (hotel_modules.settings.terms).
  */
 
-export class AiModuleError extends Error {}
+export class AiModuleError extends UserError {}
 
 export const AI_MODULE = "ai_chat";
 

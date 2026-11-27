@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import {
@@ -9,7 +10,7 @@ import { proposePrice, validateRule, type Rule } from "../domain/pricing-rules";
 import { audit } from "./audit";
 import { updateRatesBatch } from "./inventory";
 
-export class PricingError extends Error {}
+export class PricingError extends UserError {}
 
 export type RuleInput = {
   baseRappen: number; minRappen: number; maxRappen: number;

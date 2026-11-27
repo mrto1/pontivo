@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { insertFolioItem } from "./folio";
 import { db, rows } from "../db/client";
@@ -6,7 +7,7 @@ import { freeSeats, parseHhmm, priceOf, validRange } from "../domain/resources";
 import { audit } from "./audit";
 
 /** Angebote vor Ort (SPEC 19.11). Jede Abfrage nach hotel_id. */
-export class ResourceError extends Error {}
+export class ResourceError extends UserError {}
 
 export type ResourceInput = { name: string; kind: Resource["kind"]; capacity: number; slotMinutes: number; openFrom: string; openTo: string; priceRappen: number; pricePerPerson: boolean; vatKind: Resource["vatKind"]; active?: boolean };
 

@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { insertFolioItem } from "./folio";
 import { db, rows } from "../db/client";
@@ -21,7 +22,7 @@ import { RoomLinkError, activeLink, chargeRemote } from "./room-link";
  * Restaurant und Kasse (SPEC 19.16). Bestellzeilen, Bons, Zahlungen und Tagesabschlüsse werden nur angehängt (Datenbank-Trigger sperren
  * Änderungen); Korrekturen sind Stornozeilen und Gegenbons. Jede Abfrage nach hotel_id.
  */
-export class PosError extends Error {}
+export class PosError extends UserError {}
 
 const clean = (s: string | undefined, n: number) => (s ?? "").trim().slice(0, n);
 

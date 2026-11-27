@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { hotels, roomTypes, setupImports, type Hotel, type SetupImport } from "../db/schema";
@@ -14,7 +15,7 @@ import { addBlock, ensureHomePage, updateBlock } from "./site";
  * KI-Einrichtung (SPEC 19.36). Kostenbremsen: nur nach Abo (Karte + Bedingungen), je Betrieb und Monat wenige Läufe,
  * Obergrenze aller Läufe je 24 Stunden, begrenzte Textmenge, günstiges Modell, begrenzte Antwort. Es entsteht nur ein Entwurf zur Prüfung.
  */
-export class SetupImportError extends Error {}
+export class SetupImportError extends UserError {}
 
 type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<{ status: number; text(): Promise<string> }>;
 let fetchOverride: FetchLike | null = null;

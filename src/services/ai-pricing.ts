@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
 import { aiPricingRuns, inventoryDays, pricingEvents, pricingProposals, ratePlans, ratesDays, hotels, hotelModules, type Hotel } from "../db/schema";
@@ -16,7 +17,7 @@ import { applyProposals, generateProposals, listRules } from "./pricing-rules";
  * «automatisch übernehmen» eingeschaltet hat, und dann nur im Korridor (applyProposals prüft ihn erneut).
  * Gebühr: im KI-Zusatz (CHF 29/Monat) enthalten; technische Obergrenze je Hotel und Tag; keine Wettbewerbsdaten.
  */
-export class AiPricingError extends Error {}
+export class AiPricingError extends UserError {}
 export type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<{ status: number; text: () => Promise<string> }>;
 const WEEKDAYS = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 const DAYS = 90;

@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
 import { hotels, roomLinks, type ApiKey, type PosReceipt, type PosReceiptItem, type RoomLink } from "../db/schema";
@@ -11,7 +12,7 @@ import { PosBridgeError, addItemFromPos, authenticate, inHouseForBridge } from "
  * R6 (SPEC 20.10): Ein verpachtetes Restaurant (eigener Betrieb) bucht über den Kassen-Schlüssel des Hotels aufs Zimmer.
  * Kein direkter Zugriff zwischen Betrieben: jeder Schritt geht über die Funktionen der Schnittstelle, das Hotel kommt aus dem Schlüssel.
  */
-export class RoomLinkError extends Error {}
+export class RoomLinkError extends UserError {}
 
 // Modul-Prüfung ohne services/modules (das zieht next/navigation nach und bricht Skripte und Playwright-Tests, die die Kasse laden)
 async function moduleOn(hotelId: string, key: string): Promise<boolean> {

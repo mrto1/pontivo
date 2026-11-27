@@ -89,16 +89,23 @@ export default async function Overview({ params, searchParams }: { params: Promi
             </div>
             <a className="btn" href={`/admin/${hotel.id}/einrichten?step=${next}`}>Einrichtung fortsetzen</a>
           </div>
-          <div className="setup-bar" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done} aria-label="Fortschritt der Einrichtung"><span style={{ width: `${Math.round((done / steps.length) * 100)}%` }} /></div>
-          <ol className="setup-steps">
-            {steps.map((x) => (
-              <li key={x.key} className={x.done ? "done" : x.key === next ? "next" : undefined}>
-                <span className="setup-mark" aria-hidden="true">{x.done ? "✓" : ""}</span>
-                <a href={`/admin/${hotel.id}/einrichten?step=${x.key}`}>{x.title}</a>
-                {x.done ? <span className="muted small">erledigt</span> : x.key === next ? <span className="badge">als Nächstes</span> : x.required ? null : <span className="muted small">optional</span>}
-              </li>
-            ))}
-          </ol>
+          <div className="wizard-bar" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done} aria-label="Fortschritt der Einrichtung"><span style={{ width: `${Math.round((done / steps.length) * 100)}%` }} /></div>
+          <ul className="ready-list" data-testid="setup-steps">
+            {steps.map((x) => {
+              const href = `/admin/${hotel.id}/einrichten?step=${x.key}`;
+              return (
+                <li key={x.key} className={x.done ? "done" : x.key === next ? "next" : undefined}>
+                  <span className="dot" aria-hidden="true">{x.done ? "✓" : ""}</span>
+                  <span className="ready-text">
+                    {x.done ? <span className="muted">{x.label ?? x.title}</span> : <a href={href}>{x.label ?? x.title}</a>}
+                    {x.done ? null : x.key === next ? <span className="badge">als Nächstes</span> : x.required ? null : <span className="small muted">optional</span>}
+                    {!x.done && x.hint ? <span className="small muted ready-hint">{x.hint}</span> : null}
+                  </span>
+                  {x.done ? null : <a className="ready-go" href={href} aria-hidden="true" tabIndex={-1}>→</a>}
+                </li>
+              );
+            })}
+          </ul>
         </section>
       </div>
     );

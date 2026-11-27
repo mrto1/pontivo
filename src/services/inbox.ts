@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { auditLog, bookings, hotels, inboxMessages, inboxThreads } from "../db/schema";
@@ -9,7 +10,7 @@ import { enqueuePush } from "../push/service";
  * Posteingang (SPEC 19.9). Nachrichten kommen per Channex-Webhook (Ereignis «message»); Antworten gehen über die Channex-Messages-API.
  * Der Betrieb wird über property_id ↔ hotels.channex_property_id bestimmt, jede Abfrage filtert nach hotel_id.
  */
-export class InboxError extends Error {}
+export class InboxError extends UserError {}
 
 /** Eingehende Webhook-Nachricht speichern. Idempotent je (Thread, Nachrichten-Id). Gibt false zurück, wenn ignoriert. */
 export async function ingestWebhook(body: unknown): Promise<boolean> {

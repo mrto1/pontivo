@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { bookings, guestProfiles, guests, hotels, type GuestProfile } from "../db/schema";
@@ -6,7 +7,7 @@ import { rows as sqlRows } from "../db/client";
 import { audit } from "./audit";
 
 /** Gäste-Notizen und Tags (SPEC 17.2): pro Betrieb und E-Mail-Adresse, nie über Betriebe hinweg. */
-export class GuestNoteError extends Error {}
+export class GuestNoteError extends UserError {}
 
 export const MAX_TAGS = 8;
 export const MAX_NOTE = 1000;

@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq, gt, inArray, lt, ne, sql } from "drizzle-orm";
 import { db, rows, type Executor } from "../db/client";
 import { bookingRooms, bookings, guests, roomMoves, roomTypes, rooms, type Room } from "../db/schema";
@@ -9,7 +10,7 @@ import { audit } from "./audit";
  * Die Verfügbarkeit (Zähler pro Zimmertyp, Channex, iCal) bleibt unberührt; die Zuweisung ist eine zweite Schicht.
  */
 
-export class FrontdeskError extends Error {}
+export class FrontdeskError extends UserError {}
 
 const ACTIVE = ["hold", "confirmed"] as const;
 

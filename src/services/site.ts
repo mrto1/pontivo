@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import crypto from "node:crypto";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -6,7 +7,7 @@ import { hotels, sitePages, type Hotel, type HotelDocument, type SitePage } from
 import { blockSchema, newBlock, RESERVED_SLUGS, slugify, type Block, type BlockType } from "../domain/blocks";
 import { audit } from "./audit";
 
-export class SiteError extends Error {}
+export class SiteError extends UserError {}
 
 export async function listPages(hotelId: string) {
   return db().select().from(sitePages).where(eq(sitePages.hotelId, hotelId)).orderBy(asc(sitePages.sortOrder), asc(sitePages.createdAt));

@@ -1,3 +1,4 @@
+import { UserError } from "./errors";
 /**
  * Zusatzleistungen pro Buchung (reine Logik, auch im Browser für die Live-Summe).
  * Preis × Menge × (Nächte, wenn «pro Nacht»). «Pro Person»: Menge = Anzahl Personen (0 … Personen).
@@ -18,7 +19,7 @@ export type ExtraDef = {
 export type ExtraCtx = { roomTypeId: string; nights: number; persons: number };
 export type ExtraLine<T extends ExtraDef = ExtraDef> = { extra: T; quantity: number; amountRappen: number };
 
-export class ExtrasError extends Error {
+export class ExtrasError extends UserError {
   constructor(public code: "extra_invalid") {
     super(code);
   }

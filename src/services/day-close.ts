@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db, rows, type Executor } from "../db/client";
 import { dayCloses, type DayClose, type DayTotals, type Hotel } from "../db/schema";
@@ -9,7 +10,7 @@ import { audit } from "./audit";
  * Kassenzählung (Bargeld) mit Differenz. Ein abgeschlossener Tag ist gesperrt: keine neuen Zahlungen und Rechnungen mit diesem Datum.
  * Korrekturen gehören auf den heutigen Tag (Gegenbuchung, Gutschrift). Abschlüsse werden nie geändert oder gelöscht.
  */
-export class DayCloseError extends Error {}
+export class DayCloseError extends UserError {}
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function isDayClosed(ex: Executor, hotelId: string, day: string): Promise<boolean> {

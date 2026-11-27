@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
 import { hotels, platformCharges, type Hotel, type PlatformCharge } from "../db/schema";
@@ -212,7 +213,7 @@ export async function retryCharge(chargeId: string, actor: string): Promise<bool
 
 // ---------------------------------------------------------------- QR-Rechnung und Mahnwesen (SPEC 20.6)
 
-export class BillingError extends Error {}
+export class BillingError extends UserError {}
 
 /** Zahlungsart der Grundgebühr wählen (Karte oder QR-Rechnung); gilt ab der nächsten Monatsrechnung */
 export async function setBillingMethod(hotel: Hotel, method: "card" | "qr", actor: string) {

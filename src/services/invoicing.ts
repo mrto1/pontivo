@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { insertFolioItem } from "./folio";
 import QRCode from "qrcode";
@@ -22,7 +23,7 @@ import { emailOutbox } from "../db/schema";
  * Posten, Zahlungen vor Ort, QR-Rechnung. Preise sind Brutto; Geld immer in Rappen.
  */
 
-export class InvoiceError extends Error {}
+export class InvoiceError extends UserError {}
 
 /** Tagesabschluss (SPEC 19.1): auf einen abgeschlossenen Tag darf nichts mehr gebucht werden */
 async function assertOpenDay(ex: Executor, hotelId: string, day: string): Promise<void> {

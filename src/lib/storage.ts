@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -14,7 +15,7 @@ export const MAX_PDF_BYTES = 15 * 1024 * 1024;
 const TYPES = { jpg: "image/jpeg", png: "image/png", webp: "image/webp", pdf: "application/pdf" } as const;
 type Ext = keyof typeof TYPES;
 
-export class UploadError extends Error {}
+export class UploadError extends UserError {}
 
 /** Bildtyp anhand der ersten Bytes (nicht anhand des Dateinamens). SVG/HTML werden nie akzeptiert. */
 export function sniffImage(b: Uint8Array): Ext | null {

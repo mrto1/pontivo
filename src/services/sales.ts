@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { hotelMembers, hotels, salesLeadEvents, salesLeads, users, type SalesLead } from "../db/schema";
@@ -8,7 +9,7 @@ import { todayIn } from "../domain/dates";
 
 /** Vertriebs-Cockpit der Plattform-Verwaltung (SPEC 19.31) */
 
-export class SalesError extends Error {}
+export class SalesError extends UserError {}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const clip = (s: unknown, n: number) => String(s ?? "").replace(/\s+$/g, "").trim().slice(0, n);

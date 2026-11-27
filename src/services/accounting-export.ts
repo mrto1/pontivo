@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { onlineSalesDays } from "./online-sales";
 import { db, rows } from "../db/client";
@@ -6,7 +7,7 @@ import { accountOk, ACCOUNT_KEYS, buildJournal, DEFAULT_ACCOUNTS, type AccountMa
 import { audit } from "./audit";
 
 /** Buchungsjournal (SPEC 18.3). Jede Abfrage nach hotel_id. */
-export class AccountingExportError extends Error {}
+export class AccountingExportError extends UserError {}
 
 export const accountsOf = (hotel: Pick<Hotel, "content">): AccountMap => ({ ...DEFAULT_ACCOUNTS, ...(hotel.content.accounting?.accounts ?? {}) });
 

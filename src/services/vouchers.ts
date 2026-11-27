@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client";
@@ -21,7 +22,7 @@ import crypto from "node:crypto";
  */
 // ASSUMPTION: v1 ohne Einlösung bei der Online-Buchung; Gültigkeit Standard 3 Jahre (rechtlich prüfen lassen).
 
-export class VoucherError extends Error {}
+export class VoucherError extends UserError {}
 
 export type VoucherSettings = { enabled: boolean; amounts: number[]; minRappen: number; maxRappen: number; validityYears: number };
 export const DEFAULT_VOUCHERS: VoucherSettings = { enabled: false, amounts: [5000, 10000, 20000], minRappen: 2000, maxRappen: 100000, validityYears: 3 };

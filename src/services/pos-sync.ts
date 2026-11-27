@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { remoteGuests } from "./room-link";
 import { db, rows } from "../db/client";
@@ -8,7 +9,7 @@ import { PosError, addLines, catalogGroups, listItems, listTables, openOrder, or
 import { audit } from "./audit";
 
 /** Offline-Kasse: Daten zum Mitnehmen und Übertragung der lokal gesammelten Vorgänge (SPEC 19.16). Jede Abfrage nach hotel_id. */
-export class DeviceError extends Error {}
+export class DeviceError extends UserError {}
 
 /** Gerät für diesen Browser (Schlüssel) belegen oder bestätigen. Ein Code gehört genau einem Browser, sonst entstünden doppelte Bon-Nummern. */
 async function claim(hotelId: string, code: string, key: string) {

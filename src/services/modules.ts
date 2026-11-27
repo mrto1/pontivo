@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "../db/client";
@@ -6,7 +7,7 @@ import { isOn, MODULES, moduleDef, switchProblem, type ModuleRow } from "../doma
 import { resolveModules } from "../domain/module-choice";
 import { audit } from "./audit";
 
-export class ModuleError extends Error {}
+export class ModuleError extends UserError {}
 
 export async function moduleRows(hotelId: string): Promise<ModuleRow[]> {
   return (await db().select({ module: hotelModules.module, enabled: hotelModules.enabled }).from(hotelModules).where(eq(hotelModules.hotelId, hotelId)));

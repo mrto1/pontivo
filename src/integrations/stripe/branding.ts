@@ -1,3 +1,4 @@
+import { UserError } from "../../domain/errors";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/client";
 import { hotels, type Hotel } from "../../db/schema";
@@ -9,7 +10,7 @@ import { stripe } from "./client";
 export const DEFAULT_BRAND_COLOR = "#2f5d50";
 const MIN_SIDE = 128;
 
-export class BrandingError extends Error {}
+export class BrandingError extends UserError {}
 
 export type BrandingResult = { color: string; logo: boolean; icon: boolean };
 

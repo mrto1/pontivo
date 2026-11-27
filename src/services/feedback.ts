@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, avg, count, desc, eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { bookings, guests, hotels, stayFeedback, type Hotel, type StayFeedback } from "../db/schema";
@@ -8,7 +9,7 @@ import { audit } from "./audit";
  * Bewertungen einholen (SPEC 19.2): Nach dem Aufenthalt gibt der Gast eine Note von 1 bis 5. Ab der Mindestnote bekommt er den Link
  * zur öffentlichen Bewertungsseite des Hauses, darunter geht die Rückmeldung nur intern ans Haus (Mail). Eine Rückmeldung pro Buchung. Der Link steht in der Nachher-Mail (gleiche Einwilligung wie dort).
  */
-export class FeedbackError extends Error {}
+export class FeedbackError extends UserError {}
 
 export const DEFAULT_MIN_SCORE = 4;
 export const feedbackSettings = (hotel: Pick<Hotel, "content">) => ({ reviewUrl: hotel.content?.feedback?.reviewUrl ?? "", minScore: hotel.content?.feedback?.minScore ?? DEFAULT_MIN_SCORE });

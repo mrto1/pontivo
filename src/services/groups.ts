@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, desc, eq, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, rows } from "../db/client";
@@ -8,7 +9,7 @@ import { adjustBlock, BlockError, releaseAll } from "./group-blocks";
 import { audit } from "./audit";
 
 /** Gruppen (SPEC 18.1): Zimmerblock mit Freigabefrist, Rooming-Liste. Jede Abfrage nach hotel_id. */
-export class GroupError extends Error {}
+export class GroupError extends UserError {}
 
 const str = (max: number) => z.string().trim().max(max).default("");
 export const groupSchema = z.object({

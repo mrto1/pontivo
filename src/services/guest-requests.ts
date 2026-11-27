@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { bookings, guestRequests, type GuestRequest, type Hotel } from "../db/schema";
@@ -11,7 +12,7 @@ import { audit } from "./audit";
  * einen freien Text. Der Wunsch gehört zur Buchung, erscheint im Posteingang (Push + Mail ans Hotel) und trägt einen Status,
  * den der Gast sieht. Der Link ist der einzige Zugang, darum gibt es Obergrenzen pro Buchung.
  */
-export class RequestError extends Error {
+export class RequestError extends UserError {
   constructor(public code: "closed" | "disabled" | "empty" | "unknown_wish" | "too_many_open" | "too_many", message?: string) { super(message ?? code); }
 }
 

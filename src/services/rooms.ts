@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, rows } from "../db/client";
@@ -12,7 +13,7 @@ import { ensureInventory, HORIZON_DAYS } from "./inventory";
  * Jede Änderung, die Verfügbarkeit oder Preise betrifft: Transaktion + Outbox + audit_log.
  */
 
-export class RoomError extends Error {}
+export class RoomError extends UserError {}
 
 export const roomTypeSchema = z
   .object({

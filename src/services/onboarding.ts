@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, eq, sql } from "drizzle-orm";
 import { applyModules } from "./modules";
 import { startModules } from "../domain/module-choice";
@@ -37,7 +38,7 @@ export const unitWord = (t: string) => (t === "apartment" ? "Wohnung" : t === "c
 
 export const CANTONS = ["AG", "AI", "AR", "BE", "BL", "BS", "FR", "GE", "GL", "GR", "JU", "LU", "NE", "NW", "OW", "SG", "SH", "SO", "SZ", "TG", "TI", "UR", "VD", "VS", "ZG", "ZH"] as const;
 
-export class OnboardingError extends Error {}
+export class OnboardingError extends UserError {}
 
 export const registerSchema = z.object({
   propertyType: z.enum(PROPERTY_TYPES),
@@ -82,11 +83,11 @@ async function uniqueHotelSlug(name: string): Promise<string> {
  * Willkommensmail und Login-Link. Gibt den Login-Link zurück (für die Entwicklung ohne Mailversand).
  */
 /** Die E-Mail-Adresse hat schon ein Konto: kein zweites Konto und kein zweiter Entwurf (weitere Betriebe: angemeldet über /admin/neu) */
-export class DisposableEmailError extends Error {
+export class DisposableEmailError extends UserError {
   constructor() { super("Wegwerf-E-Mail-Adresse"); }
 }
 
-export class AccountExistsError extends Error {
+export class AccountExistsError extends UserError {
   constructor(readonly email: string) { super("Für diese E-Mail-Adresse gibt es schon ein Konto."); }
 }
 
@@ -137,7 +138,8 @@ export async function chooseModules(hotel: Hotel, wanted: Record<string, boolean
 
 
 export type StepKey = "betrieb" | "funktionen" | "umstieg" | "kurtaxe" | "unterkunft" | "fotos" | "ankunft" | "zahlungen" | "karte" | "live" | "einbinden" | "tische" | "speisekarte" | "reservierung";
-export type Step = { key: StepKey; title: string; done: boolean; required: boolean };
+/** `title`: Überschrift im Assistenten; `label`: kurzer Titel in der Checkliste (sonst `title`); `hint`: eine Zeile, worum es geht */
+export type Step = { key: StepKey; title: string; label?: string; hint?: string; done: boolean; required: boolean };
 
 export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
   if (isRestaurant(hotel.propertyType)) return restaurantSteps(hotel);
@@ -147,18 +149,18 @@ export async function onboardingSteps(hotel: Hotel): Promise<Step[]> {
   const unit = unitWord(hotel.propertyType);
   const photos = (hotel.content.photos?.length ?? 0) + rts.reduce((n, r) => n + r.photos.length, 0);
   return [
-    { key: "betrieb", title: "Angaben zum Betrieb", done: !!(hotel.addressLine && hotel.postalCode && hotel.city), required: true },
-    { key: "funktionen", title: "Was brauchen Sie?", done: !!hotel.onboarding.modulesChosenAt, required: true },
-    { key: "umstieg", title: "Bisherige Software", done: !!hotel.onboarding.previousSoftware, required: true },
-    { key: "kurtaxe", title: "Kurtaxe", done: !problems.some((p) => p.startsWith("Kurtaxe")), required: true },
-    { key: "unterkunft", title: `${isWholeUnit(hotel.propertyType) ? unit : "Zimmer"} und Preise`, done: rts.length > 0 && rts.every((r) => rps.some((p) => p.roomTypeId === r.id)), required: true },
-    { key: "fotos", title: "Fotos", done: photos > 0, required: true },
-    { key: "ankunft", title: "Infos zur Ankunft", done: !!hotel.content.arrivalInfo?.de, required: false },
-    { key: "zahlungen", title: "Zahlungen empfangen", done: !problems.some((p) => p.startsWith("Stripe")), required: true },
-    { key: "karte", title: "Grundgebühr: Karte oder QR-Rechnung", done: hotel.monthlyMinimumRappen === 0 || billingReady(hotel), required: hotel.monthlyMinimumRappen > 0 },
-    { key: "live", title: "Online gehen", done: hotel.status === "live", required: true },
+    { key: "betrieb", title: "Angaben zum Betrieb", hint: "Adresse und Kontakt für Website, Rechnungen und Mails.", done: !!(hotel.addressLine && hotel.postalCode && hotel.city), required: true },
+    { key: "funktionen", title: "Was brauchen Sie?", label: "Funktionen wählen", hint: "Nur einschalten, was Ihr Betrieb braucht. Später jederzeit änderbar.", done: !!hotel.onboarding.modulesChosenAt, required: true },
+    { key: "umstieg", title: "Bisherige Software", hint: "Daten aus dem alten Programm übernehmen oder neu beginnen.", done: !!hotel.onboarding.previousSoftware, required: true },
+    { key: "kurtaxe", title: "Kurtaxe", hint: "Gemeinde und Sätze prüfen, damit Preise und Rechnungen stimmen.", done: !problems.some((p) => p.startsWith("Kurtaxe")), required: true },
+    { key: "unterkunft", title: `${isWholeUnit(hotel.propertyType) ? unit : "Zimmer"} und Preise`, hint: "Was Sie vermieten, wie oft und zu welchem Preis.", done: rts.length > 0 && rts.every((r) => rps.some((p) => p.roomTypeId === r.id)), required: true },
+    { key: "fotos", title: "Fotos", hint: "Bilder für die Website und die Buchung.", done: photos > 0, required: true },
+    { key: "ankunft", title: "Infos zur Ankunft", hint: "Schlüssel, Code, WLAN: geht vor der Anreise an die Gäste.", done: !!hotel.content.arrivalInfo?.de, required: false },
+    { key: "zahlungen", title: "Zahlungen empfangen", hint: "Stripe-Konto eröffnen, damit Gäste online bezahlen können.", done: !problems.some((p) => p.startsWith("Stripe")), required: true },
+    { key: "karte", title: "Grundgebühr: Karte oder QR-Rechnung", label: "Grundgebühr", hint: "Karte oder QR-Rechnung für die Monatsgebühr hinterlegen.", done: hotel.monthlyMinimumRappen === 0 || billingReady(hotel), required: hotel.monthlyMinimumRappen > 0 },
+    { key: "live", title: "Online gehen", hint: "Website und Buchung für Gäste freischalten.", done: hotel.status === "live", required: true },
     // Nur Buchungssystem: Link oder Knopf auf der eigenen Website einbauen
-    ...(bookingOnly(hotel) ? [{ key: "einbinden" as const, title: "Auf Website einbauen", done: !!hotel.onboarding.embeddedAt, required: false }] : []),
+    ...(bookingOnly(hotel) ? [{ key: "einbinden" as const, title: "Auf Website einbauen", hint: "Buchungsknopf in Ihre bestehende Website einfügen.", done: !!hotel.onboarding.embeddedAt, required: false }] : []),
   ];
 }
 
@@ -173,14 +175,14 @@ async function restaurantSteps(hotel: Hotel): Promise<Step[]> {
     db().select().from(restaurantSettings).where(eq(restaurantSettings.hotelId, hotel.id)),
   ]);
   return [
-    { key: "betrieb", title: "Angaben und Öffnungszeiten", done: !!(hotel.addressLine && hotel.postalCode && hotel.city), required: true },
-    { key: "tische", title: "Tische und Plätze", done: tables.length > 0, required: true },
-    { key: "reservierung", title: "Reservation live schalten", done: !!cfg[0]?.onlineEnabled && hotel.status === "live", required: true },
-    { key: "speisekarte", title: "Speisekarte", done: items.length > 0, required: true },
-    { key: "zahlungen", title: "Zahlungen (Stripe)", done: stripeReady(hotel), required: false },
-    { key: "funktionen", title: "Weitere Funktionen", done: !!hotel.onboarding.modulesChosenAt, required: false },
-    { key: "karte", title: "Grundgebühr: Karte oder QR-Rechnung", done: hotel.monthlyMinimumRappen === 0 || billingReady(hotel), required: hotel.monthlyMinimumRappen > 0 },
-    ...(bookingOnly(hotel) ? [{ key: "einbinden" as const, title: "Auf Website einbauen", done: !!hotel.onboarding.embeddedAt, required: false }] : []),
+    { key: "betrieb", title: "Angaben und Öffnungszeiten", hint: "Adresse, Kontakt und wann Sie geöffnet haben.", done: !!(hotel.addressLine && hotel.postalCode && hotel.city), required: true },
+    { key: "tische", title: "Tische und Plätze", hint: "Welche Tische es gibt und wie viele Gäste Platz haben.", done: tables.length > 0, required: true },
+    { key: "reservierung", title: "Reservation live schalten", hint: "Website und Online-Reservation für Gäste freischalten.", done: !!cfg[0]?.onlineEnabled && hotel.status === "live", required: true },
+    { key: "speisekarte", title: "Speisekarte", hint: "Gerichte und Getränke mit Preis, für Kasse und Website.", done: items.length > 0, required: true },
+    { key: "zahlungen", title: "Zahlungen (Stripe)", hint: "Nötig für Anzahlungen und Online-Bestellungen.", done: stripeReady(hotel), required: false },
+    { key: "funktionen", title: "Weitere Funktionen", hint: "Nur einschalten, was Ihr Betrieb braucht.", done: !!hotel.onboarding.modulesChosenAt, required: false },
+    { key: "karte", title: "Grundgebühr: Karte oder QR-Rechnung", label: "Grundgebühr", hint: "Karte oder QR-Rechnung für die Monatsgebühr hinterlegen.", done: hotel.monthlyMinimumRappen === 0 || billingReady(hotel), required: hotel.monthlyMinimumRappen > 0 },
+    ...(bookingOnly(hotel) ? [{ key: "einbinden" as const, title: "Auf Website einbauen", hint: "Buchungsknopf in Ihre bestehende Website einfügen.", done: !!hotel.onboarding.embeddedAt, required: false }] : []),
   ];
 }
 

@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client";
 import { extras, hotels, ratePlans, roomTypes, sitePages, type Hotel } from "../db/schema";
@@ -13,7 +14,7 @@ import { getPage, SiteError } from "./site";
  * Formatierungszeichen (src/domain/richtext.ts), Links, E-Mail, Telefon und Eigennamen bleiben erhalten.
  */
 
-export class TranslateError extends Error {}
+export class TranslateError extends UserError {}
 
 type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<{ status: number; text: () => Promise<string> }>;
 let fetchOverride: FetchLike | null = null;

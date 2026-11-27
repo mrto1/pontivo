@@ -1,10 +1,11 @@
+import { UserError } from "../domain/errors";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
 import { bookingRooms, bookings, guests, housekeepingTasks, roomIssues, rooms, roomTypes, type HousekeepingTask, type RoomIssue } from "../db/schema";
 import { audit } from "./audit";
 
 /** Housekeeping (SPEC 17.1): Reinigungsstatus je Zimmer, Tagesaufträge, Mängelmeldungen. Jede Abfrage nach hotel_id. */
-export class HousekeepingError extends Error {}
+export class HousekeepingError extends UserError {}
 
 export type CleanStatus = "dirty" | "clean" | "inspected";
 

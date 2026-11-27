@@ -25,6 +25,9 @@ test("Selbst-Registrierung und Einrichtungs-Assistent bis live", async ({ page, 
 
   // Nach dem Login: volles Menü, Einrichtungskarte, Hinweise auf jeder Seite; Konto über den Avatar
   await expect(page.getByRole("heading", { name: "Willkommen bei Pontivo" })).toBeVisible();
+  // Checkliste wie «Bereit für den Betrieb»: eine Zeile je Schritt, kurzer Titel, Beschreibung darunter
+  await expect(page.getByTestId("setup-steps").getByRole("link", { name: "Funktionen wählen" })).toBeVisible();
+  await expect(page.getByTestId("setup-steps")).toContainText("Adresse und Kontakt für Website, Rechnungen und Mails.");
   await expect(page.locator(".admin-nav").getByRole("link", { name: "Kalender" })).toBeVisible();
   await expect(page.locator(".avatar-link")).toHaveText("RK");
   await expect(page.locator(".setup-chip")).toContainText("Einrichtung");

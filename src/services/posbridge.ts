@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import crypto from "node:crypto";
 import { insertFolioItem } from "./folio";
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
@@ -9,7 +10,7 @@ import { audit } from "./audit";
 import { hotels } from "../db/schema";
 
 /** PosBridge (SPEC 19.15): Schlüssel je Betrieb und Posten aufs Zimmer buchen. Jede Abfrage nach hotel_id aus dem Schlüssel. */
-export class PosBridgeError extends Error {
+export class PosBridgeError extends UserError {
   constructor(public code: "not_found" | "ambiguous" | "conflict" | "invalid", message: string) { super(message); }
 }
 

@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { db, rows } from "../db/client";
 import { bankEntries, bookings, companies, guests, invoiceDunnings, invoices, emailOutbox, type Company, type Hotel, type Invoice } from "../db/schema";
@@ -6,7 +7,7 @@ import { diffDays, todayIn } from "../domain/dates";
 import { audit } from "./audit";
 import { InvoiceError, recordOnsitePayment } from "./invoicing";
 
-export class DebtorError extends Error {}
+export class DebtorError extends UserError {}
 
 // ---------------------------------------------------------------- Firmenkunden
 

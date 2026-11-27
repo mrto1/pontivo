@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { bookingRooms, bookings, ownerCosts, ownerStatements, owners, roomTypes, type Hotel, type Owner } from "../db/schema";
@@ -7,7 +8,7 @@ import { monthRevenue, overlap, statement, validMonth, type Statement } from "..
 import { audit } from "./audit";
 
 /** Eigentümerabrechnung (SPEC 19.10). Jede Abfrage nach hotel_id. */
-export class OwnerError extends Error {}
+export class OwnerError extends UserError {}
 
 export type OwnerInput = { name: string; email?: string; commissionPercent: number; roomTypeIds: string[]; note?: string; active?: boolean };
 

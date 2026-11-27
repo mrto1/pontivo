@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, rows } from "../db/client";
@@ -15,7 +16,7 @@ import { cancelResourceBooking, createResourceBooking, ResourceError } from "./r
  * Angebote (SPEC 19.21): Anfrage → Angebot → Annahme per Link → Raumbuchung.
  * Jede Abfrage nach hotel_id; der öffentliche Zugriff nur über das Token.
  */
-export class OfferError extends Error {}
+export class OfferError extends UserError {}
 
 const KIND_TITLE: Record<string, string> = { seminar: "Seminar / Tagung", group: "Gruppe", wedding: "Hochzeit / Fest", company: "Firmenanlass", other: "Anlass", table: "Tischreservation" };
 const DEFAULT_VALID_DAYS = 14;

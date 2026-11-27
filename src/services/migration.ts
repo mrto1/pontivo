@@ -1,3 +1,4 @@
+import { UserError } from "../domain/errors";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db, rows, type Tx } from "../db/client";
 import { bookingRooms, bookings, guests, hotelMembers, hotels, importJobs, invoices, onsitePayments, ratePlans, roomTypes, voucherRedemptions, vouchers, type Hotel, type ImportJob, type ImportSummary } from "../db/schema";
@@ -18,7 +19,7 @@ import { evaluateSwitchover, type SwitchFacts } from "../domain/switchover";
  * Trockenlauf und Import laufen über denselben Code: der Trockenlauf macht alles in einer Transaktion und rollt am Ende zurück.
  * ASSUMPTION: Nur Reservationen (inkl. Gäste) aus dem generischen CSV, direkt verarbeitet (höchstens 2000 Zeilen je Datei, kein Hintergrundjob).
  */
-export class ImportError extends Error {}
+export class ImportError extends UserError {}
 class DryRollback extends Error {}
 
 const MAX_ISSUES = 200;

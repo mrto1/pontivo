@@ -1,3 +1,4 @@
+import { UserError } from "./errors";
 /** Kurtaxe (SPEC 5.2). Reine Logik, die passende Regel liefert der Aufrufer. */
 
 export type TaxRule = {
@@ -8,7 +9,7 @@ export type TaxRule = {
   status: string; // 'verified' | 'needs_confirmation' | 'none'
 };
 
-export class TouristTaxUnconfirmedError extends Error {
+export class TouristTaxUnconfirmedError extends UserError {
   constructor() {
     super("Kurtaxe-Satz für diese Gemeinde ist nicht bestätigt");
   }
