@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation";
 import { InfoTip } from "@/components/admin/InfoTip";
 import { requireHotel } from "@/src/auth/guard";
-import { adminNav, allPages } from "@/src/admin/nav";
-import { hiddenNavKeys } from "@/src/domain/modules";
 import { GUIDE_ROLE_LABEL, guideRole, progress, tasksFor } from "@/src/domain/guide";
-import { moduleRows } from "@/src/services/modules";
+import { helpContext } from "@/src/services/help";
 import { doneTasks, setTask } from "@/src/services/guide";
 import { s } from "@/src/lib/form";
 
@@ -20,8 +18,8 @@ async function toggle(f: FormData) {
 export default async function FirstWeekPage({ params }: { params: Promise<{ hotelId: string }> }) {
   const { hotelId } = await params;
   const { hotel, user, role } = await requireHotel(hotelId, "staff", "firstweek");
-  const pages = allPages(adminNav(hotel, hiddenNavKeys(await moduleRows(hotel.id))));
-  const href = new Map(pages.map((p) => [p.key, p.href]));
+  // Menüs wie in der Navigation (Unterkunft und Gastronomie, nach Rolle), damit auch Restaurant-Aufgaben erscheinen
+  const href = new Map((await helpContext(hotel, role)).pages);
   href.set("konto", `/admin/${hotel.id}/konto`);
   const tasks = tasksFor(role, new Set(href.keys()));
   const done = await doneTasks(hotel.id, user.id);

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { adminNav, allPages } from "../../src/admin/nav";
 import { GUIDE, HELP_START, guideRole, progress, tasksFor } from "../../src/domain/guide";
 import { ROLE_AREAS, type LimitedRole } from "../../src/domain/roles";
 import { MODULES } from "../../src/domain/modules";
@@ -12,7 +13,10 @@ describe("Einarbeitung (PMS-ERSATZ 4.2)", () => {
     const all = Object.values(GUIDE).flat().map((t) => t.key);
     expect(new Set(all).size).toBe(all.length);
     for (const [r, list] of Object.entries(GUIDE)) expect(list.length, r).toBeGreaterThanOrEqual(r === "housekeeping" ? 4 : r === "driver" ? 2 : 5); // Fahrer: eine Seite, zwei Handgriffe
-    for (const list of Object.values(GUIDE)) expect(list.length).toBeLessThanOrEqual(8);
+    // Inhaber: Aufgaben für Unterkunft und Gastronomie; ein Betrieb sieht davon höchstens 8 (die übrigen Seiten fehlen im Menü)
+    for (const [r, list] of Object.entries(GUIDE)) expect(list.length, r).toBeLessThanOrEqual(r === "owner" ? 12 : 8);
+    const lodgingOnly = new Set(allPages(adminNav({ id: "h", slug: "s", primaryDomain: null }, new Set(["dininghome", "positems", "tables", "tableqr", "ressettings"]))).map((p) => p.key));
+    expect(GUIDE.owner.filter((t) => lodgingOnly.has(t.area)).length).toBeLessThanOrEqual(8);
   });
   it("jede Aufgabe zeigt auf einen echten Menüpunkt", () => {
     for (const t of Object.values(GUIDE).flat()) expect(keys.has(t.area), `${t.key}: ${t.area}`).toBe(true);

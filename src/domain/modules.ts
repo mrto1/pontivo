@@ -85,3 +85,18 @@ export function switchProblem(rows: ModuleRow[], key: string, on: boolean): stri
   const users = MODULES.filter((m) => m.deps.includes(key) && isOn(rows, m.key)).map((m) => m.label);
   return users.length ? `«${def.label}» wird noch gebraucht von: ${users.join(", ")}. Bitte zuerst dort ausschalten.` : null;
 }
+
+/** Funktionen, die zu einem reinen Restaurant passen (ohne Zimmer); alle übrigen setzen Zimmer voraus */
+export const DINING_MODULES = ["restaurant", "pos", "guestnotes", "inquiries", "marketing", "invoicing", "debtors", "accountingexport", "monthlymail", "vouchers", "shop"] as const;
+/** Nur für Verwalter ganzer Wohnungen sinnvoll */
+const WHOLE_UNIT_MODULES = ["owners"];
+
+/**
+ * Welche Funktionen passen zur Betriebsart? (Hilfe: «Weitere Funktionen», die man einschalten könnte.)
+ * Reines Restaurant: nur Gastronomie und Allgemeines. Hotels und B&Bs: alles ausser Eigentümerabrechnung. Ferienwohnungen: alles.
+ */
+export function modulesForKind(kind: { restaurantOnly: boolean; wholeUnit: boolean }): string[] {
+  if (kind.restaurantOnly) return [...DINING_MODULES];
+  return MODULES.map((m) => m.key).filter((k) => kind.wholeUnit || !WHOLE_UNIT_MODULES.includes(k));
+}
+

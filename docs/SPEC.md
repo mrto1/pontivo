@@ -1378,3 +1378,11 @@ Entscheid 25.11.2026: Dritte Zahlungsvariante neben gehostetem und eingebettetem
 - Der frühere Reiter «Bestellungen → Tische» entfällt; `/restaurant` leitet zum Tischplan weiter. Bestelldetails (`restaurant/bestellung/…`) gehören im Menü zum Tischplan.
 - Rollen: Der Bereich «restaurant» heisst «Bestellen am Tisch (Kasse)» und schliesst den Tischplan ein (`IMPLIED` in `src/domain/roles.ts`); eigene Rollen mit diesem Bereich landen im Tischplan.
 - Abnahme: `tests/e2e/pos-options.spec.ts` («Tischplan: Bestellung am Tisch eröffnen …»), `tests/unit/roles.test.ts`.
+
+## 19.65 Hilfe je Betrieb und Rolle
+
+- Die Hilfe (Mein Konto → Hilfe: Wegweiser, Abläufe, Fachbegriffe) zeigt nur, was der Betrieb hat und die Person sehen darf: dieselben Menüs wie die Navigation (Unterkunft und Gastronomie, nach Rolle; `helpContext` in `src/services/help.ts`). Inhalte tragen einen Bereich (`scope`: Unterkunft, Gastronomie, beides, alle); reine Restaurants sehen keine Zimmer-Themen, Halbpension nur Betriebe mit Zimmern und Restaurant.
+- **Einstieg:** «Ihr Einstieg als <Rolle>» mit Fortschritt der Checkliste «Erste Woche», den vier wichtigsten Abläufen der Rolle (bei Hotel mit Restaurant aus beiden Bereichen), Wegweiser und Fachbegriffen. Wegweiser gegliedert nach Unterkunft, Gastronomie, Einstellungen und Konto; Abläufe nach Bereich (Rezeption, Reinigung, Restaurant …) mit Inhaltsverzeichnis.
+- **Weitere Funktionen:** Funktionen, die zur Betriebsart passen (`modulesForKind`), aber aus sind, stehen als «Weitere Funktionen für Ihren Betrieb» mit Kurzbeschreibung und den Abläufen, die sie mitbringen; Inhaber und Manager mit Link zu Einstellungen → Funktionen, alle anderen mit dem Hinweis, die Inhaberin oder den Inhaber zu fragen. Ebenso «Mit weiteren Funktionen» bei den Abläufen und «Begriffe zu weiteren Funktionen».
+- Die Checkliste «Erste Woche» nutzt dieselben Menüs; Inhaber eines Restaurants bekommen Aufgaben zu Speisekarte, Tischen, Reservation und Tisch-QR.
+- Abnahme: `tests/integration/help.test.ts`, `tests/unit/help-content.test.ts`, `tests/unit/guide.test.ts`.
